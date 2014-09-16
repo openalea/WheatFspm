@@ -46,10 +46,10 @@ describing what they are and what they do.
     :synopsis: 
     
     
-:mod:`cnwheat.post_processings` module
+:mod:`cnwheat.post_processing` module
 *********************************************************
 
-.. automodule:: cnwheat.post_processings
+.. automodule:: cnwheat.post_processing
     :members:
     :undoc-members:
     :inherited-members:
