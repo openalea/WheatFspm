@@ -1,7 +1,10 @@
-.. |cnwheat| replace:: :mod:`cnwheat`
+
+.. _cnwheat:
+
+.. module:: cnwheat
 
 CN-Wheat documentation
-#########################################################################
+######################
 
 Module description
 ==================
@@ -12,10 +15,12 @@ Module description
     :Release: |release|
     :Date: |today|
     :Author: See `Authors`_ section
-
+    :ChangeLog: See `ChangeLog`_ section
+    
 .. topic:: Overview
 
-    Modèle de distribution spatiale de l'azote et du carbone chez le blé
+    CN-Wheat is a model of CN distribution for wheat.
+    
 
 Documentation
 =============
@@ -25,21 +30,27 @@ Documentation
 
     User Guide<user.rst>   
     Reference Guide<ref.rst>
-    
-- A `PDF <../latex/main.pdf>`_ version of |cnwheat| documentation is 
-  available.
+
 
 Authors
 =======
 
-C.Chambon and R.Barillot
+.. include:: ../AUTHORS.txt
+
+
+ChangeLog
+=========
+
+.. include:: ../ChangeLog.txt
+
 
 License
 =======
 
-|cnwheat| is released under a TODO License.
+|cnwheat| is released under TODO License.
 
-.. note:: TODO: add the URL to the license 
+See :download:`TODO <../LICENSE.txt>`.
+
 
 Indices and tables
 ==================
@@ -47,4 +58,7 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+.. |cnwheat| replace:: :mod:`cnwheat`
 
