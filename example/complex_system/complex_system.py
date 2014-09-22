@@ -102,6 +102,5 @@ cnwheat_output_df = cnwheat.run(start_time=0, stop_time=960, number_of_output_st
                                 organs=[chaff]+internodes+laminae+peduncles+sheaths+[grains]+[roots], 
                                 phloem=phloem)
 
-cnwheat_output_filepath = os.path.join(DATA_DIRPATH, CNWHEAT_OUTPUT_FILENAME)
-cnwheat_output_df.to_csv(cnwheat_output_filepath, na_rep='NA', index=False)
+cnwheat_output_df.to_csv(CNWHEAT_OUTPUT_FILENAME, na_rep='NA', index=False)
  
