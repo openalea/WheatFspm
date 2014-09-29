@@ -84,7 +84,7 @@ def test_simplified_system():
     roots = organ.Roots(Mstruct=0.504, Sucrose_0=0, name='roots')
      
     # create the phloem
-    phloem = organ.Phloem(SUCROSE_0=0, Respiration_0=0, name='phloem')
+    phloem = organ.Phloem(SUCROSE_0=0, name='phloem')
      
     # run the model
     actual_output_df = cnwheat.run(start_time=0, stop_time=96, number_of_output_steps=13,

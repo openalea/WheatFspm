@@ -95,7 +95,7 @@ grains = organ.Grains(STORAGE_0=0, STRUCTURE_0=10850, name='grains')
 roots = organ.Roots(Mstruct=0.504, Sucrose_0=0, name='roots')
  
 # create the phloem
-phloem = organ.Phloem(SUCROSE_0=0, Respiration_0=0, name='phloem')
+phloem = organ.Phloem(SUCROSE_0=0, name='phloem')
  
 # run the model
 cnwheat_output_df = cnwheat.run(start_time=0, stop_time=960, number_of_output_steps=241,
