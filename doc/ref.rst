@@ -56,4 +56,14 @@ describing what they are and what they do.
     :show-inheritance:
     :synopsis: 
     
+
+:mod:`cnwheat.photosynthesis` module
+*********************************************************
+
+.. automodule:: cnwheat.photosynthesis
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
+    :synopsis: 
     
