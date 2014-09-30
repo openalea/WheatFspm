@@ -247,3 +247,5 @@ intersphinx_mapping = {'python': ('http://docs.python.org/2', None),
                        'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
                         'matplotlib': ('http://matplotlib.sourceforge.net/', None) 
                        }
+
+autodoc_member_order = 'bysource'

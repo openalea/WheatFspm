@@ -1,10 +1,16 @@
 # -*- coding: latin-1 -*-
 '''
-Test cnwheat.py. 
+    test_cn_wheat
+    ~~~~~~~~~~~~~
+    
+    Test the cnwheat.cnwheat module.  
 
-CSV files must contain only ASCII characters and ',' as separator.
+    CSV files must contain only ASCII characters and ',' as separator.
 
-Be sure to add the 'src' directory to your PYTHONPATH before running this script.
+    Be sure to add the 'src' directory to your PYTHONPATH before running this script.
+    
+    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.txt.
+    :license: TODO, see LICENSE.txt for details.
 '''
 
 import os

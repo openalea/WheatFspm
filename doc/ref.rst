@@ -19,7 +19,6 @@ describing what they are and what they do.
 .. automodule:: cnwheat
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
     :synopsis:
     
@@ -30,7 +29,6 @@ describing what they are and what they do.
 .. automodule:: cnwheat.cnwheat
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
     :synopsis: 
     
@@ -41,7 +39,6 @@ describing what they are and what they do.
 .. automodule:: cnwheat.organ
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
     :synopsis: 
     
@@ -52,7 +49,6 @@ describing what they are and what they do.
 .. automodule:: cnwheat.post_processing
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
     :synopsis: 
     
@@ -63,7 +59,6 @@ describing what they are and what they do.
 .. automodule:: cnwheat.photosynthesis
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
     :synopsis: 
     
