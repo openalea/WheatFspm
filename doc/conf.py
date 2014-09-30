@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: latin-1 -*-
 #
 # CN-Wheat documentation build configuration file, created by
 # sphinx-quickstart on Fri Sep 12 17:31:09 2014.

@@ -86,12 +86,11 @@ def test_minimalist_system():
     number_of_laminae = 3
     Areas = [0.00346, 0.0034, 0.00228]
     Mstructs = [0.14, 0.09, 0.05]
-    Rdarks = [1.5, 0.0, 0.0]
     laminae = []
     for i in xrange(number_of_laminae):
         name = 'lamina%d' % (i + 1)
         PAR_df = read_t_data(curr_data_dirpath, 'PAR_%s.csv' % name)
-        laminae.append(organ.Lamina(Area=Areas[i], Mstruct=Mstructs[i], Rdark=Rdarks[i],
+        laminae.append(organ.Lamina(Area=Areas[i], Mstruct=Mstructs[i], 
                                     PAR=PAR_df.PAR, 
                                     STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0,
                                     name=name))
@@ -137,7 +136,7 @@ def test_minimalist_system():
                                     meteo=meteo_df,
                                     photosynthesis_computation_interval=4)
     
-    compare_actual_to_desired(curr_data_dirpath, actual_output_df)
+    compare_actual_to_desired(curr_data_dirpath, actual_output_df, True)
     
 
 if __name__ == '__main__':

@@ -56,12 +56,11 @@ for i in xrange(number_of_internodes):
 number_of_laminae = 3
 Areas = [0.00346, 0.0034, 0.00228]
 Mstructs = [0.14, 0.09, 0.05]
-Rdarks = [1.5, 0.0, 0.0]
 laminae = []
 for i in xrange(number_of_laminae):
     name = 'lamina%d' % (i + 1)
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    laminae.append(organ.Lamina(Area=Areas[i], Mstruct=Mstructs[i], Rdark=Rdarks[i],
+    laminae.append(organ.Lamina(Area=Areas[i], Mstruct=Mstructs[i], 
                                 PAR=PAR_df.PAR, 
                                 STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0,
                                 name=name))
