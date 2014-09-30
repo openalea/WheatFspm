@@ -1,5 +1,5 @@
 # -*- coding: latin-1 -*-
-'''
+"""
     test_cn_wheat
     ~~~~~~~~~~~~~
     
@@ -11,7 +11,7 @@
     
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.txt.
     :license: TODO, see LICENSE.txt for details.
-'''
+"""
 
 import os
 

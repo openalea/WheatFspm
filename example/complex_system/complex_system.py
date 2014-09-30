@@ -1,11 +1,11 @@
-'''
+"""
 Construct a model equivalent to Distribution_CN_postflo_V2.mbk and run it.
 The outputs are saved in 'cnwheat_output.csv'
 
 The package cnwheat must be correctly installed before running this example. 
 
 CSV files must contain only ASCII characters and ',' as separator.
-'''
+"""
 
 import os
 

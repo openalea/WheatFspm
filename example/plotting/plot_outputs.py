@@ -1,4 +1,4 @@
-'''
+"""
 Use :func:`cnwheat.post_processing.plot_columns` and :func:`cnwheat.post_processing.plot_columns` 
 to plot some curves from the outputs of :func:`cnwheat.cnwheat.run`.
 
@@ -7,7 +7,7 @@ The plots are saved in the current working directory.
 The package cnwheat must be correctly installed before running this example. 
 
 CSV files must contain only ASCII characters and ',' as separator.
-'''
+"""
 
 import os
 

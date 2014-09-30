@@ -1,4 +1,4 @@
-'''
+"""
 Use :func:`cnwheat.post_processing.plot_linear_regression` to compare:
     * the output computed using ModelMaker, 
     * and the output computed using :func:`cnwheat.cnwheat.run`.
@@ -8,7 +8,7 @@ The plot is saved in 'compare_outputs.png'.
 The package cnwheat must be correctly installed before running this example. 
 
 CSV files must contain only ASCII characters and ',' as separator.
-'''
+"""
 
 import os
 

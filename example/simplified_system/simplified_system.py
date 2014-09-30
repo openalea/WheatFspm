@@ -1,4 +1,4 @@
-'''
+"""
 Construct a model with a chaff, an internode, a lamina, a peduncle, a sheath 
 a grains, a roots and a phloem, and run it.
 The outputs are saved in 'cnwheat_output.csv'
@@ -6,7 +6,7 @@ The outputs are saved in 'cnwheat_output.csv'
 The package cnwheat must be correctly installed before running this example. 
 
 CSV files must contain only ASCII characters and ',' as separator.
-'''
+"""
 
 import os
 
