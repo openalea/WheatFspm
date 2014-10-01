@@ -35,21 +35,19 @@ Documentation
 Authors
 =======
 
-.. include:: ../AUTHORS.txt
+.. include:: ../AUTHORS
 
 
 ChangeLog
 =========
 
-.. include:: ../ChangeLog.txt
+.. include:: ../CHANGES
 
 
 License
 =======
 
 |cnwheat| is released under TODO License.
-
-See :download:`TODO <../LICENSE.txt>`.
 
 
 Indices and tables

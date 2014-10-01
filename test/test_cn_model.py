@@ -7,10 +7,10 @@
 
     CSV files must contain only ASCII characters and ',' as separator.
 
-    Be sure to add the 'src' directory to your PYTHONPATH before running this script.
+    Be sure to add the 'cnwheat' directory to your PYTHONPATH before running this script.
     
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.txt.
-    :license: TODO, see LICENSE.txt for details.
+    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :license: TODO, see LICENSE for details.
 """
 
 import os

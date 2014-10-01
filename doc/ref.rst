@@ -42,16 +42,6 @@ describing what they are and what they do.
     :show-inheritance:
     :synopsis: 
     
-    
-:mod:`cnwheat.post_processing` module
-*********************************************************
-
-.. automodule:: cnwheat.post_processing
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :synopsis: 
-    
 
 :mod:`cnwheat.photosynthesis` module
 *********************************************************
