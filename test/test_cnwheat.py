@@ -57,23 +57,23 @@ def test_run():
     # create the chaff
     name='chaff'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    chaff = organ.Chaff(Area=0.00075, Mstruct=0.21, PAR=PAR_df.PAR, 
-                        STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, name=name)
+    chaff = organ.Chaff(Area=0.00075, Mstruct=0.21, PAR=PAR_df.PAR, STORAGE_0=0, 
+                        SUCROSE_0=0, TRIOSESP_0=0, FRUCTAN_0=0, name=name)
     organs.append(chaff)
      
     # create the internode
     name='internode'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
     internode = organ.Internode(Area=0.0004, Mstruct=0.18, PAR=PAR_df.PAR, 
-                                FRUCTAN_0=0, STORAGE_0=0, SUCROSE_0=0, 
-                                TRIOSESP_0=0, name=name)
+                                STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, 
+                                FRUCTAN_0=0, name=name)
     organs.append(internode)
     
     # create the lamina
     name = 'lamina'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
     lamina = organ.Lamina(Area=0.0034, Mstruct=0.09, PAR=PAR_df.PAR, 
-                          STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0,
+                          STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, FRUCTAN_0=0,
                           name=name)
     organs.append(lamina)
          
@@ -81,16 +81,16 @@ def test_run():
     name = 'peduncle'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
     peduncle = organ.Peduncle(Area=0.00155, Mstruct=0.168, PAR=PAR_df.PAR, 
-                              FRUCTAN_0=0, STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, 
-                              name=name)
+                              STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, 
+                              FRUCTAN_0=0, name=name)
     organs.append(peduncle)
     
     # create the sheath
     name = 'sheath'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
     sheath = organ.Sheath(Area=0.0005, Mstruct=0.069, PAR=PAR_df.PAR, 
-                          FRUCTAN_0=0, STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, 
-                          name=name)
+                          STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, 
+                          FRUCTAN_0=0, name=name)
     organs.append(sheath)
          
     # create the grains

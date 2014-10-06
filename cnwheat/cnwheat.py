@@ -27,46 +27,27 @@ def _calculate_all_derivatives(y, t, phloem, organs, meteo_interpolations, photo
 
     SUCROSE_phloem = y_iter.next()
 
-    def _calculate_Photosynthesis(t, PAR_linear_interpolation, photosynthesis_mapping):
-        if photosynthesis_computation_interval == 0:
-            t_inf = t
-        else:
-            t_inf  = t // photosynthesis_computation_interval * photosynthesis_computation_interval
-        if t_inf not in photosynthesis_mapping:
-            PAR_t_inf = PAR_linear_interpolation(t_inf)
-            Tac_t_inf = meteo_interpolations['Tac'](t_inf)
-            hs_t_inf = meteo_interpolations['hs'](t_inf)
-            Ca_t_inf = meteo_interpolations['Ca'](t_inf)
-            An = photosynthesis.PhotosynthesisModel.calculate_An(t_inf, PAR_t_inf, Tac_t_inf, Ca_t_inf, hs_t_inf)
-            photosynthesis_mapping[t_inf] = organ_.calculate_Photosynthesis(t, An)
-        return photosynthesis_mapping[t_inf]
-
     for organ_ in organs:
 
-        if isinstance(organ_, (organ.Lamina, organ.Chaff)):
+        if isinstance(organ_, organ.PhotosyntheticOrgan):
             STORAGE = y_iter.next()
             SUCROSE = y_iter.next()
             TRIOSESP = y_iter.next()
-            # needed variables
-            Photosynthesis = _calculate_Photosynthesis(t, organ_.PAR_linear_interpolation, organ_.photosynthesis_mapping)
-            # flows
-            D_storage = organ_.calculate_D_storage(STORAGE)
-            S_storage = organ_.calculate_S_storage(TRIOSESP)
-            S_sucrose = organ_.calculate_S_sucrose(TRIOSESP)
-            organ_.Loading_sucrose = organ_.calculate_Loading_sucrose(SUCROSE, SUCROSE_phloem)
-            # compartments derivatives
-            STORAGE_derivative = organ_.calculate_STORAGE_derivative(S_storage, D_storage)
-            SUCROSE_derivative = organ_.calculate_SUCROSE_derivative(S_sucrose, D_storage, organ_.Loading_sucrose)
-            TRIOSESP_derivative = organ_.calculate_TRIOSESP_derivative(Photosynthesis, S_sucrose, S_storage)
-            y_derivatives.extend([STORAGE_derivative, SUCROSE_derivative, TRIOSESP_derivative])
-
-        elif isinstance(organ_, (organ.Internode, organ.Peduncle, organ.Sheath)):
             FRUCTAN = y_iter.next()
-            STORAGE = y_iter.next()
-            SUCROSE = y_iter.next()
-            TRIOSESP = y_iter.next()
-            # needed variables
-            Photosynthesis = _calculate_Photosynthesis(t, organ_.PAR_linear_interpolation, organ_.photosynthesis_mapping)
+            # calculate the time step at which we want to compute the photosynthesis
+            if photosynthesis_computation_interval == 0: # i.e. we want to compute the photosynthesis for each time step demanded by the integrator
+                t_inf = t
+            else:
+                t_inf  = t // photosynthesis_computation_interval * photosynthesis_computation_interval
+            # calculate the photosynthesis of organ_ only if it has not been already calculated at t_inf
+            if t_inf not in organ_.photosynthesis_mapping:
+                PAR_t_inf = organ_.PAR_linear_interpolation(t_inf)
+                Tac_t_inf = meteo_interpolations['Tac'](t_inf)
+                hs_t_inf = meteo_interpolations['hs'](t_inf)
+                Ca_t_inf = meteo_interpolations['Ca'](t_inf)
+                An = photosynthesis.PhotosynthesisModel.calculate_An(t_inf, PAR_t_inf, Tac_t_inf, Ca_t_inf, hs_t_inf)
+                organ_.photosynthesis_mapping[t_inf] = organ_.calculate_Photosynthesis(t, An)
+            Photosynthesis = organ_.photosynthesis_mapping[t_inf]
             # flows
             D_storage = organ_.calculate_D_storage(STORAGE)
             S_storage = organ_.calculate_S_storage(TRIOSESP)
@@ -76,11 +57,11 @@ def _calculate_all_derivatives(y, t, phloem, organs, meteo_interpolations, photo
             D_fructan = organ_.calculate_D_fructan(SUCROSE, FRUCTAN)
             S_fructan = organ_.calculate_S_fructan(SUCROSE, Regul_Sfructan)
             # compartments derivatives
-            FRUCTAN_derivative = organ_.calculate_FRUCTAN_derivative(S_fructan, D_fructan)
             STORAGE_derivative = organ_.calculate_STORAGE_derivative(S_storage, D_storage)
             SUCROSE_derivative = organ_.calculate_SUCROSE_derivative(S_sucrose, D_storage, organ_.Loading_sucrose, S_fructan, D_fructan)
             TRIOSESP_derivative = organ_.calculate_TRIOSESP_derivative(Photosynthesis, S_sucrose, S_storage)
-            y_derivatives.extend([FRUCTAN_derivative, STORAGE_derivative, SUCROSE_derivative, TRIOSESP_derivative])
+            FRUCTAN_derivative = organ_.calculate_FRUCTAN_derivative(S_fructan, D_fructan)
+            y_derivatives.extend([STORAGE_derivative, SUCROSE_derivative, TRIOSESP_derivative, FRUCTAN_derivative])
 
         elif isinstance(organ_, organ.Grains):
             STORAGE = y_iter.next()
@@ -170,7 +151,7 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
 
     # check the consistency of the PAR
     for organ_ in organs:
-        if 'PAR' in organ_.__dict__:
+        if isinstance(organ_, organ.PhotosyntheticOrgan):
             lowest_t = organ_.PAR.first_valid_index()
             if start_time < lowest_t:
                 raise Exception('Error: the lowest t ({}) in the PAR of {} is greater than start_time ({}).'.format(lowest_t, organ_.name, start_time))
@@ -191,10 +172,8 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
     initial_conditions.extend(phloem.get_initial_conditions())
 
     for organ_ in organs:
-        try:
+        if isinstance(organ_, organ.PhotosyntheticOrgan):
             organ_.PAR_linear_interpolation = interp1d(organ_.PAR.index, organ_.PAR)
-        except AttributeError:
-            pass
         initial_conditions.extend(organ_.get_initial_conditions())
 
     t = np.linspace(start_time, stop_time, number_of_output_steps)
@@ -216,36 +195,11 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
     result_items.extend(variables + compartments)
 
     for organ_ in organs:
-        if isinstance(organ_, (organ.Lamina, organ.Chaff)):
+        if isinstance(organ_, organ.PhotosyntheticOrgan):
             STORAGE = soln_iter.next()
             SUCROSE = soln_iter.next()
             TRIOSESP = soln_iter.next()
-
-            An = np.array(map(photosynthesis.PhotosynthesisModel.calculate_An,
-                              t,
-                              organ_.PAR_linear_interpolation(t),
-                              meteo_interpolations['Tac'](t),
-                              meteo_interpolations['Ca'](t),
-                              meteo_interpolations['hs'](t)))
-
-            Photosynthesis = map(organ_.calculate_Photosynthesis, t, An)
-
-            variables = [(('Photosynthesis_%s' % organ_.name).rstrip('_'), Photosynthesis),
-                         (('Conc_TriosesP_%s' % organ_.name).rstrip('_'), organ_.calculate_Conc_TriosesP(TRIOSESP)),
-                         (('Conc_Storage_%s' % organ_.name).rstrip('_'), organ_.calculate_Conc_Storage(STORAGE)),
-                         (('Conc_Sucrose_%s' % organ_.name).rstrip('_'), organ_.calculate_Conc_Sucrose(SUCROSE))]
-            flows = [(('D_storage_%s' % organ_.name).rstrip('_'), map(organ_.calculate_D_storage, STORAGE)),
-                     (('S_storage_%s' % organ_.name).rstrip('_'), map(organ_.calculate_S_storage, TRIOSESP)),
-                     (('S_sucrose_%s' % organ_.name).rstrip('_'), map(organ_.calculate_S_sucrose, TRIOSESP)),
-                     (('Loading_sucrose_%s' % organ_.name).rstrip('_'), map(organ_.calculate_Loading_sucrose, SUCROSE, SUCROSE_phloem))]
-            compartments = [(('STORAGE_%s' % organ_.name).rstrip('_'), STORAGE),
-                            (('SUCROSE_%s' % organ_.name).rstrip('_'), SUCROSE),
-                            (('TRIOSESP_%s' % organ_.name).rstrip('_'), TRIOSESP)]
-        elif isinstance(organ_, (organ.Internode, organ.Peduncle, organ.Sheath)):
             FRUCTAN = soln_iter.next()
-            STORAGE = soln_iter.next()
-            SUCROSE = soln_iter.next()
-            TRIOSESP = soln_iter.next()
             Loading_sucrose = map(organ_.calculate_Loading_sucrose, SUCROSE, SUCROSE_phloem)
             Regul_Sfructan = map(organ_.calculate_Regul_Sfructan, Loading_sucrose)
 
@@ -256,7 +210,7 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
                               meteo_interpolations['Ca'](t),
                               meteo_interpolations['hs'](t)))
 
-            variables = [(('Photosynthesis_%s' % organ_.name).rstrip('_'), organ_.calculate_Photosynthesis(t, An)),
+            variables = [(('Photosynthesis_%s' % organ_.name).rstrip('_'), map(organ_.calculate_Photosynthesis, t, An)),
                          (('Conc_TriosesP_%s' % organ_.name).rstrip('_'), organ_.calculate_Conc_TriosesP(TRIOSESP)),
                          (('Conc_Storage_%s' % organ_.name).rstrip('_'), organ_.calculate_Conc_Storage(STORAGE)),
                          (('Conc_Sucrose_%s' % organ_.name).rstrip('_'), organ_.calculate_Conc_Sucrose(SUCROSE)),
@@ -287,7 +241,7 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
             variables = [(('Dry_mass_%s' % organ_.name).rstrip('_'), organ_.calculate_Dry_mass(Sucrose))]
             flows = [(('Unloading_sucrose_%s' % organ_.name).rstrip('_'), map(organ_.calculate_Unloading_sucrose, SUCROSE_phloem))]
             compartments = [(('Sucrose_%s' % organ_.name).rstrip('_'), Sucrose)]
-        result_items.extend(variables + flows + compartments)
+        result_items.extend(variables + compartments)
 
     return pd.DataFrame.from_items(result_items)
 
