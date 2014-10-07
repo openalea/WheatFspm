@@ -57,7 +57,7 @@ class PhotosyntheticOrgan(Organ):
         # parameters
         self.area = area                    #: area (m-2)
         self.mstruct = mstruct              #: Structural mass (g)
-        self.PAR = PAR
+        self.PAR = PAR                      #: the PAR. Must be a :class:`pandas.Series` which index is time in hours 
 
         self.PAR_linear_interpolation = None #: linear interpolation of PAR
         

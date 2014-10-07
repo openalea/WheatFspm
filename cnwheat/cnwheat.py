@@ -109,7 +109,9 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
 
         - `organs` (:class:`list`) - List of :class:`cnwheat.organ.Organ`. Does not include the phloem.
 
-        - `meteo` (:class:`pandas.DataFrame`) - The meteo data: 'Tac', 'hs', 'Ca'.
+        - `meteo` (:class:`pandas.DataFrame`) - a :class:`pandas.DataFrame` which index 
+          is time in hours and which columns are 'Tac', 'hs' and 'Ca'. Due to the 
+          integrator of :func:`scipy.integrate.odeint`, `meteo` must provide data for t=`stop_time`+1.
 
         - `photosynthesis_computation_interval` (:class:`int`) - The interval which defined the time steps
           at which photosynthesis is computed. For example, if `photosynthesis_computation_interval`=4,
