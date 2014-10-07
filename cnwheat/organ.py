@@ -167,7 +167,7 @@ class PhotosyntheticOrgan(Organ):
         """ delta triosesP of organ integrated over delta-1 (µmol C triosesP).
         This is a differential equation of compartment expressed as a variation of the total amount of C substance in an organ per DELTA_T.
         """
-        return photosynthesis - (s_sucrose + s_storage) * (self.mstruct*Organ.ALPHA)
+        return max(0, photosynthesis) - (s_sucrose + s_storage) * (self.mstruct*Organ.ALPHA)
     
     def calculate_fructan_derivative(self, s_fructan, d_fructan):
         """delta fructan integrated over delta-1 (µmol C fructan)
