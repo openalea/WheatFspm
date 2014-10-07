@@ -32,7 +32,7 @@ def read_t_data(curr_data_dirpath, data_filename):
 name='chaff'
 PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
 chaff = organ.Chaff(Area=0.00075, Mstruct=0.21, PAR=PAR_df.PAR,
-                    STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, name=name)
+                    STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, FRUCTAN_0=0, name=name)
 
 # create the internodes
 number_of_internodes = 3
@@ -52,9 +52,8 @@ for i in xrange(number_of_internodes):
         current_Mstructs = (Mstructs[i],)
     for j in xrange(len(current_names)):
         PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % current_names[j])
-        internodes.append(organ.Internode(Area=current_Areas[j], Mstruct=current_Mstructs[j],
-                                          PAR=PAR_df.PAR, FRUCTAN_0=0, STORAGE_0=0, SUCROSE_0=0,
-                                          TRIOSESP_0=0, name=current_names[j]))
+        internodes.append(organ.Internode(Area=current_Areas[j], Mstruct=current_Mstructs[j], PAR=PAR_df.PAR,
+                                          STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, FRUCTAN_0=0, name=current_names[j]))
 
 # create the laminae
 number_of_laminae = 3
@@ -64,10 +63,8 @@ laminae = []
 for i in xrange(number_of_laminae):
     name = 'lamina%d' % (i + 1)
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    laminae.append(organ.Lamina(Area=Areas[i], Mstruct=Mstructs[i],
-                                PAR=PAR_df.PAR,
-                                STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0,
-                                name=name))
+    laminae.append(organ.Lamina(Area=Areas[i], Mstruct=Mstructs[i], PAR=PAR_df.PAR,
+                                STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, FRUCTAN_0=0, name=name))
 
 # create the peduncles
 peduncles = []
@@ -77,8 +74,7 @@ Mstructs = [0.168, 0.089]
 for i in xrange(len(names)):
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % names[i])
     peduncles.append(organ.Peduncle(Area=Areas[i], Mstruct=Mstructs[i], PAR=PAR_df.PAR,
-                                    FRUCTAN_0=0, STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0,
-                                    name=names[i]))
+                                    STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, FRUCTAN_0=0, name=names[i]))
 
 # create the sheaths
 number_of_sheaths = 3
@@ -89,7 +85,7 @@ for i in xrange(number_of_sheaths):
     name = 'sheath%d' % (i + 1)
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
     sheaths.append(organ.Sheath(Area=Areas[i], Mstruct=Mstructs[i], PAR=PAR_df.PAR,
-                                FRUCTAN_0=0, STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, name=name))
+                                STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, FRUCTAN_0=0, name=name))
 
 # create the grains
 grains = organ.Grains(STORAGE_0=0, STRUCTURE_0=10850, name='grains')
@@ -111,44 +107,51 @@ cnwheat_output_df = cnwheat.run(start_time=0, stop_time=960, number_of_output_st
                                 photosynthesis_computation_interval=2)
 
 cnwheat_output_df.to_csv(CNWHEAT_OUTPUT_FILENAME, na_rep='NA', index=False)
+print 'Model executed in ', int(time.time()-t0), ' seconds'
 
-
-print 'Model executed in ', time.time()-t0
-
-# Graphs output
-cnwheat_output_df = pd.read_csv(r'C:\Users\rbarillot\Documents\PostDoc_Grignon\Modeles\Distribution_CN\CN-Wheat_Python\trunk\example\complex_system\cnwheat_output.csv')
-
-Areas={'lamina1':0.00346, 'lamina2':0.0034, 'lamina3':0.00228, 'internode1_enclosed':0.0012, 'internode1_exposed':0.0003, 'internode2': 0.0004, 'internode3': 0.00025,
-        'sheath1':0.0006, 'sheath2':0.0005, 'sheath3':0.0004, 'peduncle_enclosed':0.00155, 'peduncle_exposed': 0.00085, 'chaff':0.00075}
-
-kwargs_lamina, kwargs_sheath, kwargs_internode, kwargs_peduncle_chaff ={},{},{},{}
-
-for col in cnwheat_output_df.columns:
-    data = col.split('_')
-    if data[0]=='Photosynthesis':
-        org = data[1]
-        if len(data)>2:
-            loc = data[2]
-            org_pos = (org + '_' + loc)
-            Area = Areas[org_pos]
-        else:
-            Area = Areas[(org)]
-            org_pos = org
-        new_header = (col + '_Surfacic_rate' )
-        cnwheat_output_df[new_header] = cnwheat_output_df[col] / (3600 * Area)
-        if org[:-1] =='lamina':
-            kwargs_lamina[new_header]={'label': org_pos}
-        elif org[:-1] =='sheath':
-            kwargs_sheath[new_header]={'label': org_pos}
-        elif org[:-1] =='internode':
-            kwargs_internode[new_header]={'label': org_pos}
-        elif org =='peduncle' or org=='chaff':
-            kwargs_peduncle_chaff[new_header]={'label': org_pos}
-
+#### POST-PROCESSING####
 import imp
-y_label_graphs = u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)'
 plot_columns = imp.load_source('plot_columns', r'C:\Users\rbarillot\Documents\PostDoc_Grignon\Modeles\Distribution_CN\CN-Wheat_Python\trunk\tools\plot_columns.py')
-plot_columns.plot_dataframe(cnwheat_output_df, y_label= y_label_graphs, column_to_matplotlib_kwargs = kwargs_lamina, plot_filepath = r'C:\Users\rbarillot\Documents\PostDoc_Grignon\Modeles\Distribution_CN\CN-Wheat_Python\trunk\example\complex_system\Graphs\Photosynthesis_lamina.PNG')
-plot_columns.plot_dataframe(cnwheat_output_df, y_label= y_label_graphs, column_to_matplotlib_kwargs = kwargs_sheath, plot_filepath = r'C:\Users\rbarillot\Documents\PostDoc_Grignon\Modeles\Distribution_CN\CN-Wheat_Python\trunk\example\complex_system\Graphs\Photosynthesis_sheath.PNG')
-plot_columns.plot_dataframe(cnwheat_output_df, y_label= y_label_graphs, column_to_matplotlib_kwargs = kwargs_internode, plot_filepath = r'C:\Users\rbarillot\Documents\PostDoc_Grignon\Modeles\Distribution_CN\CN-Wheat_Python\trunk\example\complex_system\Graphs\Photosynthesis_internode.PNG')
-plot_columns.plot_dataframe(cnwheat_output_df, y_label= y_label_graphs, column_to_matplotlib_kwargs = kwargs_peduncle_chaff, plot_filepath = r'C:\Users\rbarillot\Documents\PostDoc_Grignon\Modeles\Distribution_CN\CN-Wheat_Python\trunk\example\complex_system\Graphs\Photosynthesis_peduncle_chaff.PNG')
+
+cnwheat_output_df = pd.read_csv(r'C:\Users\rbarillot\Documents\PostDoc_Grignon\Modeles\Distribution_CN\CN-Wheat_Python\trunk\test\system\cnwheat_output.csv')
+model_organs = [[phloem], [chaff], laminae, sheaths, internodes, peduncles, [grains], [roots]]
+model_organs = [item for sublist in model_organs for item in sublist]
+
+# Computes Surfacic rate of photosynthesis
+path_graphs = r'C:\Users\rbarillot\Documents\PostDoc_Grignon\Modeles\Distribution_CN\CN-Wheat_Python\trunk\test\system\Graphs'
+
+for organ_ in model_organs:
+    if isinstance(organ_, organ.PhotosyntheticOrgan):
+        total_An = cnwheat_output_df['Photosynthesis_%s' % organ_.name]
+        new_header = ('Photosynthesis_Surfacic_rate_%s' % organ_.name)
+        cnwheat_output_df[new_header] = total_An / (3600 * organ_.Area)
+
+graph_variables = {'Photosynthesis_Surfacic_rate_': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Conc_TriosesP_': u'Conc_TriosesP (µmol g$^{-1}$ Mstruct)', 'Conc_Storage_':u'Conc_Storage (µmol g$^{-1}$ Mstruct)',
+                   'Conc_Sucrose_':u'Conc_Sucrose (µmol g$^{-1}$ Mstruct)', 'Conc_Fructan_':u'Conc_Fructan (µmol g$^{-1}$ Mstruct)', 'Dry_mass_grains':'Dry_mass_grains (g)',
+                   'Dry_mass_roots':'Dry_mass_roots (g)', 'Conc_Sucrose_phloem':u'Conc_Sucrose_phloem (µmol g$^{-1}$ Mstruct)'}
+
+for var in graph_variables.keys():
+    if var in ('Dry_mass_grains', 'Dry_mass_roots', 'Conc_Sucrose_phloem'):
+        kwargs = {var:{}}
+        plot_columns.plot_dataframe(cnwheat_output_df, y_label= graph_variables[var], column_to_matplotlib_kwargs = kwargs, plot_filepath = path_graphs + '\\' + var + '.PNG')
+
+    else:
+        kwargs_lamina, kwargs_sheath, kwargs_internode, kwargs_peduncle_chaff ={},{},{},{}
+        for lam in laminae:
+            header = var + lam.name
+            kwargs_lamina[header]={'label':lam.name}
+            plot_columns.plot_dataframe(cnwheat_output_df, y_label= graph_variables[var], column_to_matplotlib_kwargs = kwargs_lamina, plot_filepath = path_graphs + '\\' + var + '_lamina.PNG')
+        for sh in sheaths:
+            header = var + sh.name
+            kwargs_sheath[header]={'label':sh.name}
+            plot_columns.plot_dataframe(cnwheat_output_df, y_label= graph_variables[var], column_to_matplotlib_kwargs = kwargs_sheath, plot_filepath = path_graphs + '\\' + var + '_sheath.PNG')
+        for inte in internodes:
+            header = var + inte.name
+            kwargs_internode[header]={'label':inte.name}
+            plot_columns.plot_dataframe(cnwheat_output_df, y_label= graph_variables[var], column_to_matplotlib_kwargs = kwargs_internode, plot_filepath = path_graphs + '\\' + var + '_internode.PNG')
+        for ped in peduncles:
+            header = var + ped.name
+            kwargs_peduncle_chaff[header]={'label':ped.name}
+        header = var + chaff.name
+        kwargs_peduncle_chaff[header]={'label':chaff.name}
+        plot_columns.plot_dataframe(cnwheat_output_df, y_label= graph_variables[var], column_to_matplotlib_kwargs = kwargs_peduncle_chaff, plot_filepath = path_graphs + '\\' + var + '_peduncle_chaff.PNG')
