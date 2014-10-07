@@ -138,7 +138,10 @@ class PhotosyntheticOrgan(Organ):
         """Rate of sucrose loading to phloem (µmol C sucrose s-1 g-1 MS * DELTA_T).
         This is a flow (expressed in amount of C substance g-1 MS integrated over DELTA_T).
         """
-        return ((max(0.1, sucrose)/(self.mstruct*Organ.ALPHA)) * ((max(0.1, sucrose)/(self.mstruct*Organ.ALPHA)) - (max(0, sucrose_phloem)/(Organ.MSTRUCT_AXIS*Organ.ALPHA_AXIS))) * (PhotosyntheticOrgan.SIGMA * self.mstruct**(2/3))) * Organ.DELTA_T
+        driving_sucrose_compartment = max(sucrose / (self.mstruct*Organ.ALPHA), sucrose_phloem/(Organ.MSTRUCT_AXIS*Organ.ALPHA_AXIS))
+        diff_sucrose = sucrose/(self.mstruct*Organ.ALPHA) - sucrose_phloem/(Organ.MSTRUCT_AXIS*Organ.ALPHA_AXIS)
+        conductance = PhotosyntheticOrgan.SIGMA * self.mstruct**(2/3)
+        return driving_sucrose_compartment * diff_sucrose * conductance * Organ.DELTA_T
     
     def calculate_s_fructan(self, sucrose, regul_s_fructan):
         """Rate of fructan synthesis (µmol C fructan s-1 g-1 MS * DELTA_T)
