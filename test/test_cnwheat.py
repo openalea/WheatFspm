@@ -55,54 +55,54 @@ def test_run():
     
     organs = []
     # create the chaff
-    name='chaff'
+    name='Chaff'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    chaff = organ.Chaff(Area=0.00075, Mstruct=0.21, PAR=PAR_df.PAR, STORAGE_0=0, 
-                        SUCROSE_0=0, TRIOSESP_0=0, FRUCTAN_0=0, name=name)
+    chaff = organ.Chaff(area=0.00075, mstruct=0.21, PAR=PAR_df.PAR, storage_0=0, 
+                        sucrose_0=0, triosesP_0=0, fructan_0=0, name=name)
     organs.append(chaff)
      
     # create the internode
-    name='internode'
+    name='Internode'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    internode = organ.Internode(Area=0.0004, Mstruct=0.18, PAR=PAR_df.PAR, 
-                                STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, 
-                                FRUCTAN_0=0, name=name)
+    internode = organ.Internode(area=0.0004, mstruct=0.18, PAR=PAR_df.PAR, 
+                                storage_0=0, sucrose_0=0, triosesP_0=0, 
+                                fructan_0=0, name=name)
     organs.append(internode)
     
     # create the lamina
-    name = 'lamina'
+    name = 'Lamina'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    lamina = organ.Lamina(Area=0.0034, Mstruct=0.09, PAR=PAR_df.PAR, 
-                          STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, FRUCTAN_0=0,
+    lamina = organ.Lamina(area=0.0034, mstruct=0.09, PAR=PAR_df.PAR, 
+                          storage_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0,
                           name=name)
     organs.append(lamina)
          
     # create the peduncle
-    name = 'peduncle'
+    name = 'Peduncle'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    peduncle = organ.Peduncle(Area=0.00155, Mstruct=0.168, PAR=PAR_df.PAR, 
-                              STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, 
-                              FRUCTAN_0=0, name=name)
+    peduncle = organ.Peduncle(area=0.00155, mstruct=0.168, PAR=PAR_df.PAR, 
+                              storage_0=0, sucrose_0=0, triosesP_0=0, 
+                              fructan_0=0, name=name)
     organs.append(peduncle)
     
     # create the sheath
-    name = 'sheath'
+    name = 'Sheath'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    sheath = organ.Sheath(Area=0.0005, Mstruct=0.069, PAR=PAR_df.PAR, 
-                          STORAGE_0=0, SUCROSE_0=0, TRIOSESP_0=0, 
-                          FRUCTAN_0=0, name=name)
+    sheath = organ.Sheath(area=0.0005, mstruct=0.069, PAR=PAR_df.PAR, 
+                          storage_0=0, sucrose_0=0, triosesP_0=0, 
+                          fructan_0=0, name=name)
     organs.append(sheath)
          
     # create the grains
-    grains = organ.Grains(STORAGE_0=0, STRUCTURE_0=10850, name='grains')
+    grains = organ.Grains(storage_0=0, structure_0=10850, name='Grains')
     organs.append(grains)
      
     # create the roots
-    roots = organ.Roots(Mstruct=0.504, Sucrose_0=0, name='roots')
+    roots = organ.Roots(mstruct=0.504, sucrose_0=0, name='Roots')
     organs.append(roots)
      
     # create the phloem
-    phloem = organ.Phloem(SUCROSE_0=0, name='phloem')
+    phloem = organ.Phloem(sucrose_0=0, name='Phloem')
     
     # get meteo data
     meteo_df = read_t_data(DATA_DIRPATH, 'meteo.csv')
