@@ -18,8 +18,6 @@ class Organ(object):
     ALPHA_AXIS = 1                  #: Proportion of the structural mass containing the substrates
     DELTA_T = 3600                  #: Timestep of the model (s)
 
-    ALPHA = 1 #: Proportion of leaf structural mass containing substrate # TODO: is it really common to all organs? NOTE: I think this parameter is unneeded
-
     def __init__(self, name):
         if name is None:
             name = self.__class__.__name__
@@ -120,38 +118,38 @@ class PhotosyntheticOrgan(Organ):
         """Rate of sucrose synthesis from triosesP (µmol C sucrose s-1 g-1 MS * DELTA_T).
         This is a flow (expressed in amount of C substance g-1 MS integrated over DELTA_T).
         """
-        return (((max(0,triosesP)/(self.mstruct*Organ.ALPHA)) * PhotosyntheticOrgan.VMAX_SUCROSE) / ((max(0, triosesP)/(self.mstruct*Organ.ALPHA)) + PhotosyntheticOrgan.K_SUCROSE)) * Organ.DELTA_T
+        return (((max(0,triosesP)/(self.mstruct*self.ALPHA)) * PhotosyntheticOrgan.VMAX_SUCROSE) / ((max(0, triosesP)/(self.mstruct*self.ALPHA)) + PhotosyntheticOrgan.K_SUCROSE)) * Organ.DELTA_T
 
     def calculate_s_storage(self, triosesP):
         """Rate of storage synthesis from triosesP (µmol C storage s-1 g-1 MS * DELTA_T).
         This is a flow (expressed in amount of C substance g-1 MS integrated over DELTA_T).
         """
-        return (((max(0, triosesP)/(self.mstruct*Organ.ALPHA)) * PhotosyntheticOrgan.VMAX_STORAGE) / ((max(0, triosesP)/(self.mstruct*Organ.ALPHA)) + PhotosyntheticOrgan.K_STORAGE)) * Organ.DELTA_T
+        return (((max(0, triosesP)/(self.mstruct*self.ALPHA)) * PhotosyntheticOrgan.VMAX_STORAGE) / ((max(0, triosesP)/(self.mstruct*self.ALPHA)) + PhotosyntheticOrgan.K_STORAGE)) * Organ.DELTA_T
 
     def calculate_d_storage(self, storage):
         """Rate of storage degradation from triosesP (µmol C storage s-1 g-1 MS * DELTA_T).
         This is a flow (expressed in amount of C substance g-1 MS integrated over DELTA_T).
         """
-        return max(0, PhotosyntheticOrgan.DELTA_DSTORAGE * (storage/(self.mstruct*Organ.ALPHA))) * Organ.DELTA_T
+        return max(0, PhotosyntheticOrgan.DELTA_DSTORAGE * (storage/(self.mstruct*self.ALPHA))) * Organ.DELTA_T
 
     def calculate_loading_sucrose(self, sucrose, sucrose_phloem):
         """Rate of sucrose loading to phloem (µmol C sucrose s-1 g-1 MS * DELTA_T).
         This is a flow (expressed in amount of C substance g-1 MS integrated over DELTA_T).
         """
-        driving_sucrose_compartment = max(sucrose / (self.mstruct*Organ.ALPHA), sucrose_phloem/(Organ.MSTRUCT_AXIS*Organ.ALPHA_AXIS))
-        diff_sucrose = sucrose/(self.mstruct*Organ.ALPHA) - sucrose_phloem/(Organ.MSTRUCT_AXIS*Organ.ALPHA_AXIS)
+        driving_sucrose_compartment = max(sucrose / (self.mstruct*self.ALPHA), sucrose_phloem/(Organ.MSTRUCT_AXIS*self.ALPHA_AXIS))
+        diff_sucrose = sucrose/(self.mstruct*self.ALPHA) - sucrose_phloem/(Organ.MSTRUCT_AXIS*self.ALPHA_AXIS)
         conductance = PhotosyntheticOrgan.SIGMA * self.mstruct**(2/3)
         return driving_sucrose_compartment * diff_sucrose * conductance * Organ.DELTA_T
 
     def calculate_s_fructan(self, sucrose, regul_s_fructan):
         """Rate of fructan synthesis (µmol C fructan s-1 g-1 MS * DELTA_T)
         """
-        return (((max(0, sucrose)/(self.mstruct*Organ.ALPHA))**(PhotosyntheticOrgan.N_SFRUCTAN) * PhotosyntheticOrgan.VMAX_SFRUCTAN) / ((max(0, sucrose)/(self.mstruct*Organ.ALPHA))**(PhotosyntheticOrgan.N_SFRUCTAN) + PhotosyntheticOrgan.K_SFRUCTAN**(PhotosyntheticOrgan.N_SFRUCTAN))) * regul_s_fructan * Organ.DELTA_T
+        return (((max(0, sucrose)/(self.mstruct*self.ALPHA))**(PhotosyntheticOrgan.N_SFRUCTAN) * PhotosyntheticOrgan.VMAX_SFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.ALPHA))**(PhotosyntheticOrgan.N_SFRUCTAN) + PhotosyntheticOrgan.K_SFRUCTAN**(PhotosyntheticOrgan.N_SFRUCTAN))) * regul_s_fructan * Organ.DELTA_T
 
     def calculate_d_fructan(self, sucrose, fructan):
         """Rate of fructan degradation (µmol C fructan s-1 g-1 MS)
         """
-        return min((PhotosyntheticOrgan.K_DFRUCTAN * PhotosyntheticOrgan.VMAX_DFRUCTAN) / ((max(0, sucrose)/(Organ.MSTRUCT_AXIS*Organ.ALPHA)) + PhotosyntheticOrgan.K_DFRUCTAN) , max(0, fructan)) * Organ.DELTA_T
+        return min((PhotosyntheticOrgan.K_DFRUCTAN * PhotosyntheticOrgan.VMAX_DFRUCTAN) / ((max(0, sucrose)/(Organ.MSTRUCT_AXIS*self.ALPHA)) + PhotosyntheticOrgan.K_DFRUCTAN) , max(0, fructan)) * Organ.DELTA_T
 
     # COMPARTMENTS
 
@@ -159,29 +157,34 @@ class PhotosyntheticOrgan(Organ):
         """delta storage of organ integrated over delta-1 (µmol C storage).
         This is a differential equation of compartment expressed as a variation of the total amount of C substance in an organ per DELTA_T.
         """
-        return (s_storage - d_storage) * (self.mstruct*Organ.ALPHA)
+        return (s_storage - d_storage) * (self.mstruct*self.ALPHA)
 
     def calculate_sucrose_derivative(self, s_sucrose, d_storage, loading_sucrose, s_fructan, d_fructan):
         """delta sucrose of organ integrated over delta-1 (µmol C sucrose)
         """
-        return (s_sucrose + d_storage + d_fructan - s_fructan - loading_sucrose) * (self.mstruct*Organ.ALPHA)
+        return (s_sucrose + d_storage + d_fructan - s_fructan - loading_sucrose) * (self.mstruct*self.ALPHA)
 
     def calculate_triosesP_derivative(self, photosynthesis, s_sucrose, s_storage):
         """ delta triosesP of organ integrated over delta-1 (µmol C triosesP).
         This is a differential equation of compartment expressed as a variation of the total amount of C substance in an organ per DELTA_T.
         """
-        return max(0, photosynthesis) - (s_sucrose + s_storage) * (self.mstruct*Organ.ALPHA)
+        return max(0, photosynthesis) - (s_sucrose + s_storage) * (self.mstruct*self.ALPHA)
 
     def calculate_fructan_derivative(self, s_fructan, d_fructan):
         """delta fructan integrated over delta-1 (µmol C fructan)
         """
-        return (s_fructan - d_fructan)* (self.mstruct*Organ.ALPHA)
+        return (s_fructan - d_fructan)* (self.mstruct*self.ALPHA)
 
 
-class Chaff(PhotosyntheticOrgan): pass
+class Chaff(PhotosyntheticOrgan): 
+
+    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
 
 
 class Lamina(PhotosyntheticOrgan):
+    
+    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
+    
     #: Temporary estimation of lamina senescence ({'lamina_order': (time of senescence beginning (h), offset of the linear regression)})
     LAMINAE_INFLEXION_POINTS = {'lamina1': (600, 78.75),
                                 'lamina2': (480, 68.61),
@@ -200,16 +203,24 @@ class Lamina(PhotosyntheticOrgan):
         return green_area
 
 
-class Internode(PhotosyntheticOrgan): pass
+class Internode(PhotosyntheticOrgan): 
+
+    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
 
 
-class Peduncle(PhotosyntheticOrgan): pass
+class Peduncle(PhotosyntheticOrgan): 
+
+    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
 
 
-class Sheath(PhotosyntheticOrgan): pass
+class Sheath(PhotosyntheticOrgan): 
+
+    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
 
 
 class Phloem(Organ):
+    
+    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
 
     def __init__(self, sucrose_0, name=None):
         super(Phloem, self).__init__(name)
@@ -240,7 +251,7 @@ class Phloem(Organ):
         sucrose_derivative = 0
         for organ_ in organs:
             if isinstance(organ_, PhotosyntheticOrgan):
-                sucrose_derivative += organ_.loading_sucrose*organ_.mstruct*Organ.ALPHA
+                sucrose_derivative += organ_.loading_sucrose*organ_.mstruct*self.ALPHA
             elif isinstance(organ_, Grains):
                 sucrose_derivative -= (organ_.unloading_sucrose_structure + (organ_.unloading_sucrose_storage * ((organ_.structure/1E6)*12)))
             elif isinstance(organ_, Roots):
@@ -249,6 +260,8 @@ class Phloem(Organ):
 
 
 class Grains(Organ):
+    
+    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
 
     # Structure
     GRAIN_STRUCTURE = 0     #: Initial value of structural mass of grains (µmol of C sucrose) TODO: initial value given in ModelMaker?
@@ -324,6 +337,9 @@ class Grains(Organ):
 
 
 class Roots(Organ):
+    
+    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
+    
     VMAX_ROOTS = 0.015  #: Maximal rate of sucrose unloading from phloem to roots (µmol C unloaded sucrose s-1 g-1 MS)
     K_ROOTS = 100       #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C unloaded sucrose g-1 MS)
 
