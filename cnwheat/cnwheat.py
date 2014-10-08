@@ -272,6 +272,7 @@ def run(start_time, stop_time, number_of_output_steps, organs, meteo, photosynth
                               meteo_interpolations['hs'](t)))
 
             variables = [(('Photosynthesis_%s' % organ_.name).rstrip('_'), map(organ_.calculate_photosynthesis, t, An)),
+                         (('Photosynthesis_Surfacic_Rate_%s' % organ_.name).rstrip('_'), An),
                          (('Conc_TriosesP_%s' % organ_.name).rstrip('_'), organ_.calculate_conc_triosesP(triosesP)),
                          (('Conc_Storage_%s' % organ_.name).rstrip('_'), organ_.calculate_conc_storage(storage)),
                          (('Conc_Sucrose_%s' % organ_.name).rstrip('_'), organ_.calculate_conc_sucrose(sucrose)),
