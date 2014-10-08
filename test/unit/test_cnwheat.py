@@ -25,9 +25,9 @@ DATA_DIRPATH = 'data'
 DESIRED_OUTPUT_FILENAME = 'desired_output.csv'
 ACTUAL_OUTPUT_FILENAME = 'actual_output.csv'
 
-
-RELATIVE_TOLERANCE = 10e-3
-ABSOLUTE_TOLERANCE = 10e-3
+PRECISION = 2
+RELATIVE_TOLERANCE = 10**-PRECISION
+ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
 
 def read_t_data(DATA_DIRPATH, data_filename):
@@ -45,7 +45,7 @@ def compare_actual_to_desired(DATA_DIRPATH, actual_output_df, save_actual_output
       
     if save_actual_output:
         actual_output_filepath = os.path.join(DATA_DIRPATH, ACTUAL_OUTPUT_FILENAME)
-        actual_output_df.to_csv(actual_output_filepath, na_rep='NA', index=False)
+        actual_output_df.to_csv(actual_output_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(PRECISION))
       
     # compare to the desired output
     np.testing.assert_allclose(actual_output_df.values, desired_output_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
