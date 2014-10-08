@@ -102,7 +102,7 @@ def _calculate_all_derivatives(y, t, phloem, organs_without_phloem, meteo_interp
                 hs_t_inf = meteo_interpolations['hs'](t_inf)
                 Ca_t_inf = meteo_interpolations['Ca'](t_inf)
                 An = photosynthesis.PhotosynthesisModel.calculate_An(t_inf, PAR_t_inf, Tac_t_inf, Ca_t_inf, hs_t_inf)
-                organ_.photosynthesis_mapping[t_inf] = organ_.calculate_photosynthesis(t, An)
+                organ_.photosynthesis_mapping[t_inf] = organ_.calculate_photosynthesis(t_inf, An)
             photosynthesis_ = organ_.photosynthesis_mapping[t_inf]
             # flows
             d_storage = organ_.calculate_d_storage(storage)
