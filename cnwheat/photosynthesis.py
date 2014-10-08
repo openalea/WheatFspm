@@ -10,7 +10,7 @@
     :license: TODO, see LICENSE for details.
 """
 
-from __future__ import division # use "//" to do integer division
+from __future__ import division # use '//' to do integer division
 
 from math import sqrt, log,  exp
 
@@ -242,9 +242,9 @@ class PhotosynthesisModel(object):
         while abs((Ci - prec_Ci)/prec_Ci) >= 0.01 or abs((Tleaf - prec_Tleaf)/prec_Tleaf) >= 0.01:
             if count >=30: # TODO: test a faire? Semble prendre du tps de calcul
                 if abs((Ci - prec_Ci)/prec_Ci) >= 0.01:
-                    print "Ci cannot converge at t= %s, prec_Ci= %s, Ci= %s" %(t, prec_Ci, Ci)
+                    print 'Ci cannot converge at t= {}, prec_Ci= {}, Ci= {}'.format(t, prec_Ci, Ci)
                 else:
-                    print "Tleaf cannot converge at t= %s, prec_Tleaf= %s, Tleaf= %s" %(t, prec_Tleaf, Tleaf)
+                    print 'Tleaf cannot converge at t= {}, prec_Tleaf= {}, Tleaf= {}'.format(t, prec_Tleaf, Tleaf)
                 break
             else:
                 prec_Ci, prec_Tleaf = Ci, Tleaf

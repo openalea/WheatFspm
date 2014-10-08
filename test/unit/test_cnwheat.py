@@ -56,14 +56,14 @@ def test_run():
     organs = []
     # create the chaff
     name='Chaff'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
     chaff = organ.Chaff(area=0.00075, mstruct=0.21, PAR=PAR_df.PAR, storage_0=0, 
                         sucrose_0=0, triosesP_0=0, fructan_0=0, name=name)
     organs.append(chaff)
      
     # create the internode
     name='Internode'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
     internode = organ.Internode(area=0.0004, mstruct=0.18, PAR=PAR_df.PAR, 
                                 storage_0=0, sucrose_0=0, triosesP_0=0, 
                                 fructan_0=0, name=name)
@@ -71,7 +71,7 @@ def test_run():
     
     # create the lamina
     name = 'Lamina'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
     lamina = organ.Lamina(area=0.0034, mstruct=0.09, PAR=PAR_df.PAR, 
                           storage_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0,
                           name=name)
@@ -79,7 +79,7 @@ def test_run():
          
     # create the peduncle
     name = 'Peduncle'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
     peduncle = organ.Peduncle(area=0.00155, mstruct=0.168, PAR=PAR_df.PAR, 
                               storage_0=0, sucrose_0=0, triosesP_0=0, 
                               fructan_0=0, name=name)
@@ -87,7 +87,7 @@ def test_run():
     
     # create the sheath
     name = 'Sheath'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
     sheath = organ.Sheath(area=0.0005, mstruct=0.069, PAR=PAR_df.PAR, 
                           storage_0=0, sucrose_0=0, triosesP_0=0, 
                           fructan_0=0, name=name)

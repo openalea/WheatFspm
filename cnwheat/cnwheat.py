@@ -250,9 +250,9 @@ def run(start_time, stop_time, number_of_output_steps, organs, meteo, photosynth
     result_items = [('t', t)]
 
     sucrose_phloem = soln_iter.next()
-    variables = [(('Conc_Sucrose_%s' % phloem.name).rstrip('_'), phloem.calculate_conc_sucrose(sucrose_phloem)),
-                 (('Conc_C_Sucrose_%s' % phloem.name).rstrip('_'), phloem.calculate_conc_c_sucrose(sucrose_phloem))]
-    compartments = [(('Sucrose_%s' % phloem.name).rstrip('_'), sucrose_phloem)]
+    variables = [('Conc_Sucrose_{}'.format(phloem.name).rstrip('_'), phloem.calculate_conc_sucrose(sucrose_phloem)),
+                 ('Conc_C_Sucrose_{}'.format(phloem.name).rstrip('_'), phloem.calculate_conc_c_sucrose(sucrose_phloem))]
+    compartments = [('Sucrose_{}'.format(phloem.name).rstrip('_'), sucrose_phloem)]
     result_items.extend(variables + compartments)
 
     for organ_ in organs_without_phloem:
@@ -271,38 +271,38 @@ def run(start_time, stop_time, number_of_output_steps, organs, meteo, photosynth
                               meteo_interpolations['Ca'](t),
                               meteo_interpolations['hs'](t)))
 
-            variables = [(('Photosynthesis_%s' % organ_.name).rstrip('_'), map(organ_.calculate_photosynthesis, t, An)),
-                         (('Photosynthesis_Surfacic_Rate_%s' % organ_.name).rstrip('_'), An),
-                         (('Conc_TriosesP_%s' % organ_.name).rstrip('_'), organ_.calculate_conc_triosesP(triosesP)),
-                         (('Conc_Storage_%s' % organ_.name).rstrip('_'), organ_.calculate_conc_storage(storage)),
-                         (('Conc_Sucrose_%s' % organ_.name).rstrip('_'), organ_.calculate_conc_sucrose(sucrose)),
-                         (('Conc_Fructan_%s' % organ_.name).rstrip('_'), organ_.calculate_conc_fructan(fructan)),
-                         (('Regul_S_Fructan_%s' % organ_.name).rstrip('_'), regul_s_fructan)]
-            flows = [(('D_Storage_%s' % organ_.name).rstrip('_'), map(organ_.calculate_d_storage, storage)),
-                     (('S_Storage_%s' % organ_.name).rstrip('_'), map(organ_.calculate_s_storage, triosesP)),
-                     (('S_Sucrose_%s' % organ_.name).rstrip('_'), map(organ_.calculate_s_sucrose, triosesP)),
-                     (('Loading_Sucrose_%s' % organ_.name).rstrip('_'), loading_sucrose),
-                     (('D_Fructan_%s' % organ_.name).rstrip('_'), map(organ_.calculate_d_fructan, sucrose, fructan)),
-                     (('S_Fructan_%s' % organ_.name).rstrip('_'), map(organ_.calculate_s_fructan, sucrose, regul_s_fructan))]
-            compartments = [(('Storage_%s' % organ_.name).rstrip('_'), storage),
-                            (('Sucrose_%s' % organ_.name).rstrip('_'), sucrose),
-                            (('TriosesP_%s' % organ_.name).rstrip('_'), triosesP),
-                            (('Fructan_%s' % organ_.name).rstrip('_'), fructan)]
+            variables = [('Photosynthesis_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_photosynthesis, t, An)),
+                         ('Photosynthesis_Surfacic_Rate_{}'.format(organ_.name).rstrip('_'), An),
+                         ('Conc_TriosesP_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_triosesP(triosesP)),
+                         ('Conc_Storage_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_storage(storage)),
+                         ('Conc_Sucrose_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_sucrose(sucrose)),
+                         ('Conc_Fructan_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_fructan(fructan)),
+                         ('Regul_S_Fructan_{}'.format(organ_.name).rstrip('_'), regul_s_fructan)]
+            flows = [('D_Storage_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_d_storage, storage)),
+                     ('S_Storage_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_storage, triosesP)),
+                     ('S_Sucrose_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_sucrose, triosesP)),
+                     ('Loading_Sucrose_{}'.format(organ_.name).rstrip('_'), loading_sucrose),
+                     ('D_Fructan_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_d_fructan, sucrose, fructan)),
+                     ('S_Fructan_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_fructan, sucrose, regul_s_fructan))]
+            compartments = [('Storage_{}'.format(organ_.name).rstrip('_'), storage),
+                            ('Sucrose_{}'.format(organ_.name).rstrip('_'), sucrose),
+                            ('TriosesP_{}'.format(organ_.name).rstrip('_'), triosesP),
+                            ('Fructan_{}'.format(organ_.name).rstrip('_'), fructan)]
         elif isinstance(organ_, organ.Grains):
             storage = soln_iter.next()
             structure = soln_iter.next()
             RGR_structure = map(organ_.calculate_RGR_structure, sucrose_phloem)
-            variables = [(('Dry_Mass_%s' % organ_.name).rstrip('_'), organ_.calculate_dry_mass(structure, storage)),
-                         (('RGR_Structure_%s' % organ_.name).rstrip('_'), RGR_structure)]
-            flows = [(('Unloading_Sucrose_Storage_%s' % organ_.name).rstrip('_'), map(organ_.calculate_unloading_sucrose_storage, t, sucrose_phloem)),
-                     (('Unloading_Sucrose_Structure_%s' % organ_.name).rstrip('_'), map(organ_.calculate_unloading_sucrose_structure, t, structure, RGR_structure))]
-            compartments = [(('Storage_%s' % organ_.name).rstrip('_'), storage),
-                            (('Structure_%s' % organ_.name).rstrip('_'), structure)]
+            variables = [('Dry_Mass_{}'.format(organ_.name).rstrip('_'), organ_.calculate_dry_mass(structure, storage)),
+                         ('RGR_Structure_{}'.format(organ_.name).rstrip('_'), RGR_structure)]
+            flows = [('Unloading_Sucrose_Storage_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_unloading_sucrose_storage, t, sucrose_phloem)),
+                     ('Unloading_Sucrose_Structure_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_unloading_sucrose_structure, t, structure, RGR_structure))]
+            compartments = [('Storage_{}'.format(organ_.name).rstrip('_'), storage),
+                            ('Structure_{}'.format(organ_.name).rstrip('_'), structure)]
         elif isinstance(organ_, organ.Roots):
             sucrose = soln_iter.next()
-            variables = [(('Dry_Mass_%s' % organ_.name).rstrip('_'), organ_.calculate_dry_mass(sucrose))]
-            flows = [(('Unloading_Sucrose_%s' % organ_.name).rstrip('_'), map(organ_.calculate_unloading_sucrose, sucrose_phloem))]
-            compartments = [(('Sucrose_%s' % organ_.name).rstrip('_'), sucrose)]
+            variables = [('Dry_Mass_{}'.format(organ_.name).rstrip('_'), organ_.calculate_dry_mass(sucrose))]
+            flows = [('Unloading_Sucrose_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_unloading_sucrose, sucrose_phloem))]
+            compartments = [('Sucrose_{}'.format(organ_.name).rstrip('_'), sucrose)]
         result_items.extend(variables + flows + compartments)
 
     return pd.DataFrame.from_items(result_items)
