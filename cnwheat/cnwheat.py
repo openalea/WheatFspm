@@ -19,15 +19,71 @@ from scipy.interpolate import interp1d
 import organ
 import photosynthesis
 
-def _calculate_all_derivatives(y, t, phloem, organs, meteo_interpolations, photosynthesis_computation_interval):
+def _calculate_all_derivatives(y, t, phloem, organs_without_phloem, meteo_interpolations, photosynthesis_computation_interval):
     """Compute the derivative of `y` at `t`.
+    
+    :func:`_calculate_all_derivatives` is passed as **func** argument to 
+    :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
+    :func:`_calculate_all_derivatives` is called automatically by 
+    :func:`scipy.integrate.odeint`.
+    
+    First call to :func:`_calculate_all_derivatives` uses `y` = **y0** and 
+    `t` = **t** [0], where **y0** and **t** are arguments passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
+    
+    Following calls to :func:`_calculate_all_derivatives` use `t` in [min( **t** ), max( **t** ) + 1] where 
+    **t** is an argument passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`. `y` is 
+    computed automatically by the solver.
+    
+    :Parameters:
+
+        - `y` (:class:`list`) - The current y values. The y values of `phloem` 
+          must appear first. `y` is automatically set by 
+          :func:`scipy.integrate.odeint`. User does not have control over `y`. 
+          At first call to :func:`_calculate_all_derivatives` by :func:`scipy.integrate.odeint`, `y` = **y0** 
+          where **y0** is one of the arguments passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
+          For each following call to :func:`_calculate_all_derivatives`, `y` is 
+          computed automatically by the solver.
+
+        - `t` (:class:`float`) - The current t at which we want to compute the derivatives. 
+          `t` is automatically set by :func:`scipy.integrate.odeint`. 
+          User does not have control over `t`.
+          At first call to :func:`_calculate_all_derivatives` :func:`scipy.integrate.odeint`, 
+          `t` = **t** [0], where **t** is one of the arguments passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
+          For each following call to :func:`_calculate_all_derivatives`, `t` belongs 
+          to the interval [min( **t** ), max( **t** ) + 1], where **t** is an 
+          argument passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
+
+        - `phloem` (:class:`cnwheat.organ.Phloem`) - The phloem.
+
+        - `organs_without_phloem` (:class:`list`) - List of :class:`cnwheat.organ.Organ`. 
+          Does not include the phloem.
+        
+        - `meteo_interpolations` (:class:`dict`) - A dictionary which contains, 
+          for each data of meteo data, a function which permits to find the value 
+          of new points using interpolation. Keys are the name of meteo data (:class:`str`). 
+          Values are :class:`scipy.interpolate.interpolate.interp1d`.
+        
+        - `photosynthesis_computation_interval` (:class:`int`) - The interval which defined the time steps
+          at which photosynthesis is computed. For example, if `photosynthesis_computation_interval` = 4,
+          then photosynthesis is computed at t=0, t=4, t=8, ...
+          This permits to save computation time for large simulation.
+          If `photosynthesis_computation_interval` = 0 (the default), then photosynthesis is computed 
+          for each time step demanded by the solver.
+
+    :Returns:
+        The derivatives of `y` at `t`. 
+
+    :Returns Type:
+        :class:`list`
+
+
     """
     y_iter = iter(y)
     y_derivatives = []
 
     sucrose_phloem = y_iter.next()
 
-    for organ_ in organs:
+    for organ_ in organs_without_phloem:
 
         if isinstance(organ_, organ.PhotosyntheticOrgan):
             storage = y_iter.next()
@@ -35,7 +91,7 @@ def _calculate_all_derivatives(y, t, phloem, organs, meteo_interpolations, photo
             triosesP = y_iter.next()
             fructan = y_iter.next()
             # calculate the time step at which we want to compute the photosynthesis
-            if photosynthesis_computation_interval == 0: # i.e. we want to compute the photosynthesis for each time step demanded by the integrator
+            if photosynthesis_computation_interval == 0: # i.e. we want to compute the photosynthesis for each time step demanded by the solver
                 t_inf = t
             else:
                 t_inf  = t // photosynthesis_computation_interval * photosynthesis_computation_interval
@@ -85,13 +141,13 @@ def _calculate_all_derivatives(y, t, phloem, organs, meteo_interpolations, photo
             sucrose_derivative = organ_.calculate_sucrose_derivative(organ_.unloading_sucrose)
             y_derivatives.extend([sucrose_derivative])
 
-    sucrose_phloem_derivative = phloem.calculate_sucrose_derivative(organs)
+    sucrose_phloem_derivative = phloem.calculate_sucrose_derivative(organs_without_phloem)
     y_derivatives.insert(0, sucrose_phloem_derivative)
 
     return y_derivatives
 
 
-def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, photosynthesis_computation_interval=0, odeint_mxstep=5000):
+def run(start_time, stop_time, number_of_output_steps, organs, meteo, photosynthesis_computation_interval=0, odeint_mxstep=5000):
     """
     Compute CN exchanges in wheat architecture defined by lamina, sheaths, internodes, peduncles, a chaff, a phloem, roots and grains
 
@@ -105,23 +161,22 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
 
         - `number_of_output_steps` (:class:`int`) - Number of time points for which to compute the CN exchanges in the system.
 
-        - `phloem` (:class:`cnwheat.organ.Phloem`) - The phloem of the system.
-
-        - `organs` (:class:`list`) - List of :class:`cnwheat.organ.Organ`. Does not include the phloem.
+        - `organs` (:class:`list`) - List of :class:`cnwheat.organ.Organ`.
 
         - `meteo` (:class:`pandas.DataFrame`) - a :class:`pandas.DataFrame` which index 
-          is time in hours and which columns are 'Tac', 'hs' and 'Ca'. Due to the 
-          integrator of :func:`scipy.integrate.odeint`, `meteo` must provide data for t=`stop_time`+1.
+          is time in hours and which columns are "Tac", "hs" and "Ca". Due to the 
+          solver of :func:`scipy.integrate.odeint`, `meteo` must provide data for t = `stop_time` + 1.
 
         - `photosynthesis_computation_interval` (:class:`int`) - The interval which defined the time steps
-          at which photosynthesis is computed. For example, if `photosynthesis_computation_interval`=4,
+          at which photosynthesis is computed. For example, if `photosynthesis_computation_interval` = 4,
           then photosynthesis is computed at t=0, t=4, t=8, ...
           This permits to save computation time for large simulation.
-          If `photosynthesis_computation_interval`=0 (the default), then photosynthesis is computed for each time step demanded by the integrator.
+          If `photosynthesis_computation_interval`=0 (the default), then photosynthesis 
+          is computed for each time step demanded by the solver.
 
         - `odeint_mxstep` (:class:`int`) - Maximum number of (internally defined) steps allowed for each integration point in time grid.
-          `odeint_mxstep` is passed to :func:`scipy.integrate.odeint` as `mxstep`. If `odeint_mxstep`==0, then `mxstep` is determined by the solver.
-          The default value (`5000`) normally permits to solve the current model. User should increased this value if a more complex model is defined
+          `odeint_mxstep` is passed to :func:`scipy.integrate.odeint` as `mxstep`. If `odeint_mxstep` = 0, then `mxstep` is determined by the solver.
+          The default value ( `5000` ) normally permits to solve the current model. User should increased this value if a more complex model is defined
           and if this model make the integration failed.
 
     :Returns:
@@ -131,8 +186,8 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
     :Returns Type:
         :class:`pandas.DataFrame`
 
-    .. warning:: due to the integrator of :func:`scipy.integrate.odeint`, `meteo` must provide data for t=`stop_time`+1.
-                 For the same reason, the attribute `PAR` of each organ of `organs` must also provide data for t=`stop_time`+1.
+    .. warning:: due to the solver of :func:`scipy.integrate.odeint`, `meteo` must provide data for t = `stop_time` + 1.
+                 For the same reason, the attribute `PAR` of each organ of `organs` must also provide data for t = `stop_time` + 1.
                  This is automatically checked by the current function.
 
     .. seealso:: Barillot et al. 2014.
@@ -144,12 +199,12 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
     if start_time < lowest_t:
         raise Exception('Error: the lowest t ({}) in meteo data is greater than start_time ({}).'.format(lowest_t, start_time))
 
-    integrator_upper_boundary = stop_time + 1
+    solver_upper_boundary = stop_time + 1
     highest_t = meteo.last_valid_index()
-    if highest_t < integrator_upper_boundary:
+    if highest_t < solver_upper_boundary:
         raise Exception("""Error: the highest t ({}) in meteo data is lower than stop_time + 1 = {}.
                         scipy.integrate.odeint requires the highest t to be equal or
-                        greater than stop_time + 1""".format(highest_t, integrator_upper_boundary))
+                        greater than stop_time + 1""".format(highest_t, solver_upper_boundary))
 
     # check the consistency of the PAR
     for organ_ in organs:
@@ -158,10 +213,10 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
             if start_time < lowest_t:
                 raise Exception('Error: the lowest t ({}) in the PAR of {} is greater than start_time ({}).'.format(lowest_t, organ_.name, start_time))
             highest_t = organ_.PAR.last_valid_index()
-            if highest_t < integrator_upper_boundary:
+            if highest_t < solver_upper_boundary:
                 raise Exception("""Error: the highest t ({}) in the PAR of {} is lower than stop_time + 1 = {}.
                                 scipy.integrate.odeint requires the highest t to be equal or
-                                greater than stop_time + 1""".format(highest_t, organ_.name, integrator_upper_boundary))
+                                greater than stop_time + 1""".format(highest_t, organ_.name, solver_upper_boundary))
 
     # interpolate meteo data
     meteo_interpolations = {}
@@ -170,17 +225,21 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
 
     # interpolate the PAR and construct the list of initial conditions
     initial_conditions = []
-
-    initial_conditions.extend(phloem.get_initial_conditions())
+    organs_without_phloem = []
 
     for organ_ in organs:
         if isinstance(organ_, organ.PhotosyntheticOrgan):
             organ_.PAR_linear_interpolation = interp1d(organ_.PAR.index, organ_.PAR)
-        initial_conditions.extend(organ_.get_initial_conditions())
+        if isinstance(organ_, organ.Phloem):
+            phloem = organ_
+            initial_conditions = organ_.get_initial_conditions() + initial_conditions
+        else:
+            organs_without_phloem.append(organ_)
+            initial_conditions.extend(organ_.get_initial_conditions())
 
     t = np.linspace(start_time, stop_time, number_of_output_steps)
 
-    soln, infodict = odeint(_calculate_all_derivatives, initial_conditions, t, (phloem, organs, meteo_interpolations, photosynthesis_computation_interval), full_output=True, mxstep=odeint_mxstep)
+    soln, infodict = odeint(_calculate_all_derivatives, initial_conditions, t, (phloem, organs_without_phloem, meteo_interpolations, photosynthesis_computation_interval), full_output=True, mxstep=odeint_mxstep)
 
     if not set(infodict['mused']).issubset([1,2]): # I'm not sure if this test is robust or not... Beware especially when scipy is updated.
         raise Exception("Error: Integration failed. See the logs of lsoda or try to increase the value of 'mxstep'.")
@@ -196,7 +255,7 @@ def run(start_time, stop_time, number_of_output_steps, phloem, organs, meteo, ph
     compartments = [(('Sucrose_%s' % phloem.name).rstrip('_'), sucrose_phloem)]
     result_items.extend(variables + compartments)
 
-    for organ_ in organs:
+    for organ_ in organs_without_phloem:
         if isinstance(organ_, organ.PhotosyntheticOrgan):
             storage = soln_iter.next()
             sucrose = soln_iter.next()

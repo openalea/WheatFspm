@@ -103,13 +103,13 @@ def test_run():
      
     # create the phloem
     phloem = organ.Phloem(sucrose_0=0, name='Phloem')
+    organs.append(phloem)
     
     # get meteo data
     meteo_df = read_t_data(DATA_DIRPATH, 'meteo.csv')
      
     # run the model
     actual_output_df = cnwheat.run(start_time=0, stop_time=48, number_of_output_steps=7,
-                                    phloem=phloem,
                                     organs=organs, 
                                     meteo=meteo_df,
                                     photosynthesis_computation_interval=4)

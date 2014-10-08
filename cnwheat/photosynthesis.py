@@ -24,6 +24,7 @@ class PhotosynthesisModel(object):
 
     #: Nitrogen dependance of photosynthetic parameters
     #: Derived from Braune et al. (2009):
+    #:
     #:     * S_Na: slope of the relation between Na and the parameters (umol g-1 s-1)
     #:     * Na_min: minimum amount of leaf nitrogen below which photosynthesis rate is zero (g (N) m-2 leaf)
     #:     * Gamma_Na1 and Gamma_Na2: parameters of ALPHA dependance to Na (mol mol-1 and m2 g-1 respectively)
@@ -48,6 +49,7 @@ class PhotosynthesisModel(object):
     FT = 0.15               #: Physical parameter: Leaf radiation transmittance
 
     #: Temperature dependance of photosynthetic parameters
+    #:
     #: Parameter values derived from Braune et al. (2009) except for Kc, Ko, and Rdark (Bernacchi et al., 2001)
     #:     * deltaHa, deltaHd: enthalpie of activation and deactivation respectively (kJ mol-1)
     #:     * deltaS: entropy term (kJ mol-1 K-1)
