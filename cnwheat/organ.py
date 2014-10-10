@@ -37,7 +37,7 @@ class PhotosyntheticOrgan(Organ):
 
     # fructans
     VMAX_SFRUCTAN = 0.2             #: Maximal rate of fructan synthesis (µmol C s-1 g-1 MS)
-    K_SFRUCTAN = 20000              #: Affinity coefficient of fructan synthesis (µmol C g-1 MS)
+    K_SFRUCTAN = 5000               #: Affinity coefficient of fructan synthesis (µmol C g-1 MS)
     N_SFRUCTAN = 3                  #: Number of "substrates" for fructan synthesis (dimensionless)
     VMAX_REGUL_SFRUCTAN = 1         #: Maximal value of the regulation function of fructan synthesis (dimensionless)
     K_REGUL_SFRUCTAN = 8            #: Affinity coefficient of the regulation function of fructan synthesis (dimensionless)
@@ -55,7 +55,7 @@ class PhotosyntheticOrgan(Organ):
         # parameters
         self.area = area                    #: area (m-2)
         self.mstruct = mstruct              #: Structural mass (g)
-        self.PAR = PAR                      #: the PAR. Must be a :class:`pandas.Series` which index is time in hours 
+        self.PAR = PAR                      #: the PAR. Must be a :class:`pandas.Series` which index is time in hours
 
         self.PAR_linear_interpolation = None #: linear interpolation of PAR
 
@@ -149,7 +149,7 @@ class PhotosyntheticOrgan(Organ):
     def calculate_d_fructan(self, sucrose, fructan):
         """Rate of fructan degradation (µmol C fructan s-1 g-1 MS)
         """
-        return min((PhotosyntheticOrgan.K_DFRUCTAN * PhotosyntheticOrgan.VMAX_DFRUCTAN) / ((max(0, sucrose)/(Organ.MSTRUCT_AXIS*self.ALPHA)) + PhotosyntheticOrgan.K_DFRUCTAN) , max(0, fructan)) * Organ.DELTA_T
+        return min((PhotosyntheticOrgan.K_DFRUCTAN * PhotosyntheticOrgan.VMAX_DFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.ALPHA)) + PhotosyntheticOrgan.K_DFRUCTAN) , max(0, fructan)) * Organ.DELTA_T
 
     # COMPARTMENTS
 
@@ -176,15 +176,15 @@ class PhotosyntheticOrgan(Organ):
         return (s_fructan - d_fructan)* (self.mstruct*self.ALPHA)
 
 
-class Chaff(PhotosyntheticOrgan): 
+class Chaff(PhotosyntheticOrgan):
 
-    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
+    ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
 class Lamina(PhotosyntheticOrgan):
-    
-    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
-    
+
+    ALPHA = 1 #: Proportion of structural mass containing substrate
+
     #: Temporary estimation of lamina senescence ({'lamina_order': (time of senescence beginning (h), offset of the linear regression)})
     LAMINAE_INFLEXION_POINTS = {'lamina1': (600, 78.75),
                                 'lamina2': (480, 68.61),
@@ -203,24 +203,24 @@ class Lamina(PhotosyntheticOrgan):
         return green_area
 
 
-class Internode(PhotosyntheticOrgan): 
+class Internode(PhotosyntheticOrgan):
 
-    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
-
-
-class Peduncle(PhotosyntheticOrgan): 
-
-    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
+    ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
-class Sheath(PhotosyntheticOrgan): 
+class Peduncle(PhotosyntheticOrgan):
 
-    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
+    ALPHA = 1 #: Proportion of structural mass containing substrate
+
+
+class Sheath(PhotosyntheticOrgan):
+
+    ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
 class Phloem(Organ):
-    
-    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
+
+    ALPHA = 1 #: Proportion of structural mass containing substrate
 
     def __init__(self, sucrose_0, name=None):
         super(Phloem, self).__init__(name)
@@ -251,7 +251,7 @@ class Phloem(Organ):
         sucrose_derivative = 0
         for organ_ in organs:
             if isinstance(organ_, PhotosyntheticOrgan):
-                sucrose_derivative += organ_.loading_sucrose*organ_.mstruct*self.ALPHA
+                sucrose_derivative += organ_.loading_sucrose*organ_.mstruct*organ_.ALPHA
             elif isinstance(organ_, Grains):
                 sucrose_derivative -= (organ_.unloading_sucrose_structure + (organ_.unloading_sucrose_storage * ((organ_.structure/1E6)*12)))
             elif isinstance(organ_, Roots):
@@ -260,16 +260,14 @@ class Phloem(Organ):
 
 
 class Grains(Organ):
-    
-    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
+
+    ALPHA = 1 #: Proportion of structural mass containing substrate
 
     # Structure
-    GRAIN_STRUCTURE = 0     #: Initial value of structural mass of grains (µmol of C sucrose) TODO: initial value given in ModelMaker?
     VMAX_RGR = 1.9e-06      #: Maximal value of the Relative Growth Rate of grain structure (dimensionless)
     K_RGR = 300             #: Affinity coefficient of the Relative Growth Rate of grain structure (dimensionless)
 
     # storage
-    GRAIN_STORAGE = 0       #: Initial value of grain storage (µmol of C) TODO: needed?
     VMAX_STORAGE = 0.5      #: Maximal rate of grain filling (µmol C s-1 g-1 MS)
     K_STORAGE = 100         #: Affinity coefficient of grain filling (µmol C g-1 MS)
 
@@ -285,8 +283,8 @@ class Grains(Organ):
         self.structure = 0# TODO: utlisation valeur init??
 
         # initialize the compartments
-        self.storage_0 = storage_0 #: initial value of compartment storage
-        self.structure_0 = structure_0 #: initial value of compartment structure
+        self.storage_0 = storage_0 #: Initial value of grain storage (µmol of C)
+        self.structure_0 = structure_0 #: Initial value of structural mass of grains (µmol of C sucrose)
 
     def get_initial_conditions(self):
         return [self.storage_0, self.structure_0]
@@ -337,9 +335,9 @@ class Grains(Organ):
 
 
 class Roots(Organ):
-    
-    ALPHA = 1 #: Proportion of leaf structural mass containing substrate
-    
+
+    ALPHA = 1 #: Proportion of structural mass containing substrate
+
     VMAX_ROOTS = 0.015  #: Maximal rate of sucrose unloading from phloem to roots (µmol C unloaded sucrose s-1 g-1 MS)
     K_ROOTS = 100       #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C unloaded sucrose g-1 MS)
 
