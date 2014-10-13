@@ -13,6 +13,9 @@ from __future__ import division # use "//" to do integer division
 
 
 class Organ(object):
+    """
+    Base class for any organ. DO NOT INSTANTIATE IT TO USE IT DIRECTLY.
+    """
 
     MSTRUCT_AXIS = 2.08             #: Structural mass  of a plant (g) (Bertheloot, 2011)
     ALPHA_AXIS = 1                  #: Proportion of the structural mass containing the substrates
@@ -25,6 +28,9 @@ class Organ(object):
 
 
 class PhotosyntheticOrgan(Organ):
+    """
+    Base class for any photosynthetic organ. DO NOT INSTANTIATE IT TO USE IT DIRECTLY.
+    """
 
     # sucrose
     VMAX_SUCROSE = 1                #: Maximal rate of sucrose synthesis (µmol C s-1 g-1 MS)
@@ -177,11 +183,17 @@ class PhotosyntheticOrgan(Organ):
 
 
 class Chaff(PhotosyntheticOrgan):
+    """
+    Class for organ chaff.
+    """
 
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
 class Lamina(PhotosyntheticOrgan):
+    """
+    Class for organ lamina.
+    """
 
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
@@ -204,21 +216,33 @@ class Lamina(PhotosyntheticOrgan):
 
 
 class Internode(PhotosyntheticOrgan):
+    """
+    Class for organ internode.
+    """
 
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
 class Peduncle(PhotosyntheticOrgan):
+    """
+    Class for organ peduncle.
+    """
 
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
 class Sheath(PhotosyntheticOrgan):
+    """
+    Class for organ sheath.
+    """
 
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
 class Phloem(Organ):
+    """
+    Class for organ phloem.
+    """
 
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
@@ -260,6 +284,9 @@ class Phloem(Organ):
 
 
 class Grains(Organ):
+    """
+    Class for organ grains.
+    """
 
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
@@ -335,6 +362,9 @@ class Grains(Organ):
 
 
 class Roots(Organ):
+    """
+    Class for organ roots.
+    """
 
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
