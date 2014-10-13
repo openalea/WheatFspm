@@ -21,7 +21,6 @@ describing what they are and what they do.
     :undoc-members:
     :show-inheritance:
     :synopsis:
-    :private-members:
     
 
 :mod:`cnwheat.cnwheat` module
@@ -32,7 +31,6 @@ describing what they are and what they do.
     :undoc-members:
     :show-inheritance:
     :synopsis: 
-    :private-members:
     
     
 :mod:`cnwheat.organ` module
@@ -43,7 +41,6 @@ describing what they are and what they do.
     :undoc-members:
     :show-inheritance:
     :synopsis: 
-    :private-members:
     
 
 :mod:`cnwheat.photosynthesis` module
@@ -54,5 +51,4 @@ describing what they are and what they do.
     :undoc-members:
     :show-inheritance:
     :synopsis: 
-    :private-members:
     
