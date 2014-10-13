@@ -107,11 +107,12 @@ def test_run():
     
     # get meteo data
     meteo_df = read_t_data(DATA_DIRPATH, 'meteo.csv')
-     
+    
+    # initialize the simulator
+    cnwheat_ = cnwheat.CNWheat(organs=organs, meteo=meteo_df)
+    
     # run the model
-    actual_output_df = cnwheat.run(start_time=0, stop_time=48, number_of_output_steps=7,
-                                    organs=organs, 
-                                    meteo=meteo_df,
+    actual_output_df = cnwheat_.run(start_time=0, stop_time=48, number_of_output_steps=7,
                                     photosynthesis_computation_interval=4)
     
     compare_actual_to_desired(DATA_DIRPATH, actual_output_df)
