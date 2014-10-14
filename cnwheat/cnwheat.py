@@ -11,6 +11,8 @@
 
 from __future__ import division # use "//" to do integer division
 
+import sys
+
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
@@ -63,9 +65,12 @@ class CNWheat(object):
             else:
                 self.organs_without_phloem.append(organ_)
                 self.initial_conditions.extend(organ_.get_initial_conditions())
+        
+        self.progressbar = ProgressBar(title='Solver progress') #: progress bar to show the progress of the solver 
+        self.show_progressbar = False #: True: show the progress bar ; False: DO NOT show the progress bar 
                 
                 
-    def run(self, start_time, stop_time, number_of_output_steps, photosynthesis_computation_interval=0, odeint_mxstep=5000):
+    def run(self, start_time, stop_time, number_of_output_steps, photosynthesis_computation_interval=0, odeint_mxstep=5000, show_progressbar=False):
         """
         Compute CN exchanges between organs :attr:`organs`, using interpolated meteo data :attr:`meteo_interpolations`
         The computation is done between `start_time` and `stop_time`, for `number_of_output_steps` steps.
@@ -89,6 +94,8 @@ class CNWheat(object):
               `odeint_mxstep` is passed to :func:`scipy.integrate.odeint` as `mxstep`. If `odeint_mxstep` = 0, then `mxstep` is determined by the solver.
               The default value ( `5000` ) normally permits to solve the current model. User should increased this value if a more complex model is defined
               and if this model make the integration failed.
+              
+            - `show_progressbar` (:class:`bool`) - True: show the progress bar ; False: DO NOT show the progress bar.
     
         :Returns:
             Dataframe containing the CN exchanges between organs
@@ -108,7 +115,11 @@ class CNWheat(object):
         self._check_inputs_consistency(start_time, stop_time)
         
         t = np.linspace(start_time, stop_time, number_of_output_steps)
-    
+        
+        self.show_progressbar = show_progressbar
+        if self.show_progressbar:
+            self.progressbar.set_t_max(stop_time)
+        
         soln, infodict = odeint(self._calculate_all_derivatives, self.initial_conditions, t, (photosynthesis_computation_interval,), full_output=True, mxstep=odeint_mxstep)
     
         if not set(infodict['mused']).issubset([1,2]): # I'm not sure if this test is robust or not... Beware especially when scipy is updated.
@@ -264,6 +275,9 @@ class CNWheat(object):
     
         sucrose_phloem_derivative = self.phloem.calculate_sucrose_derivative(self.organs_without_phloem)
         y_derivatives.insert(0, sucrose_phloem_derivative)
+        
+        if self.show_progressbar:
+            self.progressbar.update(t)
     
         return y_derivatives
     
@@ -338,5 +352,51 @@ class CNWheat(object):
             result_items.extend(variables + flows + compartments)
     
         return pd.DataFrame.from_items(result_items)
+    
+    
+class ProgressBar(object):
+    """
+    Display a console progress bar.
+    """
+    
+    def __init__(self, bar_length=20, title='', block_character='#', uncomplete_character='-'):
+        if bar_length <= 0:
+            raise Exception('bar_length <= 0')
+        self.bar_length = bar_length #: the number of blocks in the progress bar. MUST BE GREATER THAN ZERO !
+        self.t_max = 1 #: the maximum t that the progress bar can display. MUST BE GREATER THAN ZERO !
+        self.block_interval = 1 #: the time interval of each block. MUST BE GREATER THAN ZERO !
+        self.last_upper_t = 0 #: the last upper t displayed by the progress bar 
+        self.progress_mapping = {} #: a mapping to optimize the refresh rate
+        self.title = title #: the title to write on the left side of the progress bar
+        self.block_character = block_character #: the character to represent a block
+        self.uncomplete_character = uncomplete_character #: the character to represent the uncompleted part of the progress bar 
         
-
+    def set_t_max(self, t_max):
+        """"Set :attr:`t_max` and update other attributes accordingly.
+        """
+        if t_max <= 0:
+            raise Exception('t_max <= 0')
+        self.t_max = t_max
+        self.block_interval = self.t_max / self.bar_length
+        self.last_upper_t = 0
+        self.progress_mapping.clear()
+        
+    def update(self, t):
+        """Update the progress bar if needed. 
+        """
+        t = min(t, self.t_max)
+        if t < self.last_upper_t:
+            return
+        else:
+            self.last_upper_t = t
+        t_inf = t // self.block_interval * self.block_interval
+        if t_inf not in self.progress_mapping:
+            progress = t / self.t_max
+            block = int(round(self.bar_length * progress))
+            text = "\r{0}: [{1}] {2:>5d}%".format(self.title, 
+                                                  self.block_character * block + self.uncomplete_character * (self.bar_length - block), 
+                                                  int(progress*100))
+            self.progress_mapping[t_inf] = text
+            sys.stdout.write(self.progress_mapping[t_inf])
+            sys.stdout.flush()
+            
