@@ -21,6 +21,9 @@ from scipy.interpolate import interp1d
 import organ
 import photosynthesis
 
+class CNWheatError(Exception): pass
+class CNWheatInputError(CNWheatError): pass
+class CNWheatRunError(CNWheatError): pass
 
 class CNWheat(object):
     """
@@ -123,7 +126,7 @@ class CNWheat(object):
         soln, infodict = odeint(self._calculate_all_derivatives, self.initial_conditions, t, (photosynthesis_computation_interval,), full_output=True, mxstep=odeint_mxstep)
     
         if not set(infodict['mused']).issubset([1,2]): # I'm not sure if this test is robust or not... Beware especially when scipy is updated.
-            raise Exception("Error: Integration failed. See the logs of lsoda or try to increase the value of 'mxstep'.")
+            raise CNWheatRunError("Integration failed. See the logs of lsoda or try to increase the value of 'mxstep'.")
     
         cnwheat_output_df = self._format_solver_output(t, soln)
         
@@ -139,12 +142,12 @@ class CNWheat(object):
         # check the consistency of meteo
         lowest_t = self.meteo.first_valid_index()
         if start_time < lowest_t:
-            raise Exception('Error: the lowest t ({}) in meteo data is greater than start_time ({}).'.format(lowest_t, start_time))
+            raise CNWheatInputError('the lowest t ({}) in meteo data is greater than start_time ({}).'.format(lowest_t, start_time))
     
         solver_upper_boundary = stop_time + 1
         highest_t = self.meteo.last_valid_index()
         if highest_t < solver_upper_boundary:
-            raise Exception("""Error: the highest t ({}) in meteo data is lower than stop_time + 1 = {}.
+            raise CNWheatInputError("""the highest t ({}) in meteo data is lower than stop_time + 1 = {}.
                             scipy.integrate.odeint requires the highest t to be equal or
                             greater than stop_time + 1""".format(highest_t, solver_upper_boundary))
     
@@ -153,10 +156,10 @@ class CNWheat(object):
             if isinstance(organ_, organ.PhotosyntheticOrgan):
                 lowest_t = organ_.PAR.first_valid_index()
                 if start_time < lowest_t:
-                    raise Exception('Error: the lowest t ({}) in the PAR of {} is greater than start_time ({}).'.format(lowest_t, organ_.name, start_time))
+                    raise CNWheatInputError('the lowest t ({}) in the PAR of {} is greater than start_time ({}).'.format(lowest_t, organ_.name, start_time))
                 highest_t = organ_.PAR.last_valid_index()
                 if highest_t < solver_upper_boundary:
-                    raise Exception("""Error: the highest t ({}) in the PAR of {} is lower than stop_time + 1 = {}.
+                    raise CNWheatInputError("""the highest t ({}) in the PAR of {} is lower than stop_time + 1 = {}.
                                     scipy.integrate.odeint requires the highest t to be equal or
                                     greater than stop_time + 1""".format(highest_t, organ_.name, solver_upper_boundary))
 
@@ -354,6 +357,8 @@ class CNWheat(object):
         return pd.DataFrame.from_items(result_items)
     
     
+class ProgressBarError(Exception): pass
+    
 class ProgressBar(object):
     """
     Display a console progress bar.
@@ -361,7 +366,7 @@ class ProgressBar(object):
     
     def __init__(self, bar_length=20, title='', block_character='#', uncomplete_character='-'):
         if bar_length <= 0:
-            raise Exception('bar_length <= 0')
+            raise ProgressBarError('bar_length <= 0')
         self.bar_length = bar_length #: the number of blocks in the progress bar. MUST BE GREATER THAN ZERO !
         self.t_max = 1 #: the maximum t that the progress bar can display. MUST BE GREATER THAN ZERO !
         self.block_interval = 1 #: the time interval of each block. MUST BE GREATER THAN ZERO !
@@ -375,7 +380,7 @@ class ProgressBar(object):
         """"Set :attr:`t_max` and update other attributes accordingly.
         """
         if t_max <= 0:
-            raise Exception('t_max <= 0')
+            raise ProgressBarError('t_max <= 0')
         self.t_max = t_max
         self.block_interval = self.t_max / self.bar_length
         self.last_upper_t = 0
