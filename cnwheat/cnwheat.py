@@ -123,6 +123,8 @@ class CNWheat(object):
         if self.show_progressbar:
             self.progressbar.set_t_max(stop_time)
         
+        self._clear_organs()
+        
         soln, infodict = odeint(self._calculate_all_derivatives, self.initial_conditions, t, (photosynthesis_computation_interval,), full_output=True, mxstep=odeint_mxstep)
     
         if not set(infodict['mused']).issubset([1,2]): # I'm not sure if this test is robust or not... Beware especially when scipy is updated.
@@ -163,6 +165,12 @@ class CNWheat(object):
                                     scipy.integrate.odeint requires the highest t to be equal or
                                     greater than stop_time + 1""".format(highest_t, organ_.name, solver_upper_boundary))
 
+
+    def _clear_organs(self):
+        for organ_ in self.organs_without_phloem:
+            if isinstance(organ_, organ.PhotosyntheticOrgan):
+                organ_.photosynthesis_mapping.clear()
+    
 
     def _calculate_all_derivatives(self, y, t, photosynthesis_computation_interval):
         """Compute the derivative of `y` at `t`.
