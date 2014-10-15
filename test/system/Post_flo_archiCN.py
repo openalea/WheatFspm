@@ -25,7 +25,7 @@ CNWHEAT_OUTPUT_FILENAME = 'cnwheat_output.csv'
 
 def read_t_data(curr_data_dirpath, data_filename):
     data_filepath = os.path.join(curr_data_dirpath, data_filename)
-    return pd.read_csv(data_filepath)
+    return pd.read_csv(data_filepath, sep=None, index_col='t')
 
 organs = []
 # create the chaff
@@ -111,14 +111,15 @@ organs.append(phloem)
 # get meteo data
 meteo_df = read_t_data(DATA_DIRPATH, 'meteo.csv')
 
+# initialize the simulator
+cnwheat_ = cnwheat.CNWheat(organs=organs, meteo=meteo_df)
+
 # run the model
-cnwheat_output_df = cnwheat.run(start_time=0, stop_time=960, number_of_output_steps=241,
-                                organs=organs,
-                                meteo=meteo_df,
-                                photosynthesis_computation_interval=2)
+cnwheat_output_df = cnwheat_.run(start_time=0, stop_time=960, number_of_output_steps=241,
+                                photosynthesis_computation_interval=2, show_progressbar=True)
 
 cnwheat_output_df.to_csv(CNWHEAT_OUTPUT_FILENAME, na_rep='NA', index=False)
-print 'Model executed in ', int(time.time()-t0), ' seconds'
+print '\n', 'Model executed in ', int(time.time()-t0), ' seconds'
 
 #### POST-PROCESSING####
 import imp
@@ -134,6 +135,8 @@ for organ_ in organs:
         total_An = cnwheat_output_df['Photosynthesis_%s' % organ_.name]
         new_header = ('Photosynthesis_Surfacic_rate_%s' % organ_.name)
         cnwheat_output_df[new_header] = total_An / (3600 * organ_.area)
+        out_An = cnwheat_output_df[['t',new_header]]
+        out_An.to_csv(DATA_DIRPATH + '\\' + 'Assimilation_%s.csv' %organ_.name, sep=';',na_rep='NA', index=False)
 
 graph_variables = {'Photosynthesis_Surfacic_rate_': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Conc_TriosesP_': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Storage_':u'[Storage] (µmol g$^{-1}$ mstruct)',
                    'Conc_Sucrose_':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan_':u'[Fructan] (µmol g$^{-1}$ mstruct)', 'Dry_Mass_grains':'Dry mass grains (g)',
@@ -164,3 +167,4 @@ for var in graph_variables.keys():
         header = var + chaff.name
         kwargs_peduncle_chaff[header]={'label':chaff.name}
         plot_columns.plot_dataframe(cnwheat_output_df, y_label= graph_variables[var], column_to_matplotlib_kwargs = kwargs_peduncle_chaff, plot_filepath = path_graphs + '\\' + var + 'peduncle_chaff.PNG')
+
