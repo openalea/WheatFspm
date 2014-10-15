@@ -25,23 +25,8 @@ class Organ(object):
         if name is None:
             name = self.__class__.__name__
         self.name = name #: the name of the organ
-        self._initial_conditions_names = () #: the name of each compartment of the organ, in the same order as :attr:`_initial_conditions_values`.
-        self._initial_conditions_values = [] #: the initial condition of each compartment of the organ, in the same order as :attr:`_initial_conditions_names`.
+        self.initial_conditions = {} #: the initial value of each compartment of the organ
         
-    def get_initial_conditions(self):
-        """Get a list which contains the initial value of each compartment.
-        """
-        return self._initial_conditions_values
-    
-    def get_compartments_values(self, y_iter):
-        """Get a dictionary which contains the value of each compartment, iterating on `y_iter`. 
-        """
-        compartments_values = dict.fromkeys(self._initial_conditions_names)
-        for key in self._initial_conditions_names:
-            compartments_values[key] = y_iter.next()
-        return compartments_values
-    
-
 class PhotosyntheticOrgan(Organ):
     """
     Base class for any photosynthetic organ. DO NOT INSTANTIATE IT TO USE IT DIRECTLY.
@@ -85,8 +70,7 @@ class PhotosyntheticOrgan(Organ):
         self.loading_sucrose = 0 #: current rate of sucrose loading to phloem
 
         # initialize the compartments
-        self._initial_conditions_names = ('storage', 'sucrose', 'triosesP', 'fructan', )
-        self._initial_conditions_values = [storage_0, sucrose_0, triosesP_0, fructan_0]
+        self.initial_conditions = {'storage':storage_0 , 'sucrose':sucrose_0 , 'triosesP':triosesP_0 , 'fructan':fructan_0}
         
     # VARIABLES
     
@@ -260,8 +244,7 @@ class Phloem(Organ):
         super(Phloem, self).__init__(name)
 
         # initialize the compartment
-        self._initial_conditions_names = ('sucrose', )
-        self._initial_conditions_values = [sucrose_0]
+        self.initial_conditions = {'sucrose': sucrose_0}
         
     # VARIABLES
 
@@ -318,8 +301,7 @@ class Grains(Organ):
         self.structure = 0# TODO: utlisation valeur init??
 
         # initialize the compartments
-        self._initial_conditions_names = ('storage', 'structure', )
-        self._initial_conditions_values = [storage_0, structure_0]
+        self.initial_conditions = {'storage': storage_0, 'structure': structure_0}
 
     # VARIABLES
 
@@ -385,8 +367,7 @@ class Roots(Organ):
         self.unloading_sucrose = 0 #: current unloading of sucrose from phloem to roots
 
         # initialize the compartment
-        self._initial_conditions_names = ('sucrose', )
-        self._initial_conditions_values = [sucrose_0]
+        self.initial_conditions = {'sucrose': sucrose_0}
 
     # VARIABLES
 
