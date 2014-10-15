@@ -24,8 +24,23 @@ class Organ(object):
     def __init__(self, name):
         if name is None:
             name = self.__class__.__name__
-        self.name = name
-
+        self.name = name #: the name of the organ
+        self._initial_conditions_names = () #: the name of each compartment of the organ, in the same order as :attr:`_initial_conditions_values`.
+        self._initial_conditions_values = [] #: the initial condition of each compartment of the organ, in the same order as :attr:`_initial_conditions_names`.
+        
+    def get_initial_conditions(self):
+        """Get a list which contains the initial value of each compartment.
+        """
+        return self._initial_conditions_values
+    
+    def get_compartments_values(self, y_iter):
+        """Get a dictionary which contains the value of each compartment, iterating on `y_iter`. 
+        """
+        compartments_values = dict.fromkeys(self._initial_conditions_names)
+        for key in self._initial_conditions_names:
+            compartments_values[key] = y_iter.next()
+        return compartments_values
+    
 
 class PhotosyntheticOrgan(Organ):
     """
@@ -70,16 +85,11 @@ class PhotosyntheticOrgan(Organ):
         self.loading_sucrose = 0 #: current rate of sucrose loading to phloem
 
         # initialize the compartments
-        self.triosesP_0 = triosesP_0 #: initial value of compartment triosesP
-        self.storage_0 = storage_0 #: initial value of compartment storage
-        self.sucrose_0 = sucrose_0 #: initial value of compartment sucrose
-        self.fructan_0 = fructan_0 #: initial value of compartment fructan
-
-    def get_initial_conditions(self):
-        return [self.storage_0, self.sucrose_0, self.triosesP_0, self.fructan_0] # keep this order ! TODO: pas le plus "logique" mais ok si trop complique a modifier
-
+        self._initial_conditions_names = ('storage', 'sucrose', 'triosesP', 'fructan', )
+        self._initial_conditions_values = [storage_0, sucrose_0, triosesP_0, fructan_0]
+        
     # VARIABLES
-
+    
     def calculate_photosynthesis(self, t, An):
         """Total photosynthesis of an organ integrated over DELTA_T (µmol CO2 on organ area integrated over delat_t)
         """
@@ -249,12 +259,10 @@ class Phloem(Organ):
     def __init__(self, sucrose_0, name=None):
         super(Phloem, self).__init__(name)
 
-        # intialize the compartment
-        self.sucrose_0 = sucrose_0  #: initial value of compartment sucrose
-
-    def get_initial_conditions(self):
-        return [self.sucrose_0]
-
+        # initialize the compartment
+        self._initial_conditions_names = ('sucrose', )
+        self._initial_conditions_values = [sucrose_0]
+        
     # VARIABLES
 
     def calculate_conc_sucrose(self, sucrose):
@@ -310,11 +318,8 @@ class Grains(Organ):
         self.structure = 0# TODO: utlisation valeur init??
 
         # initialize the compartments
-        self.storage_0 = storage_0 #: Initial value of grain storage (µmol of C)
-        self.structure_0 = structure_0 #: Initial value of structural mass of grains (µmol of C sucrose)
-
-    def get_initial_conditions(self):
-        return [self.storage_0, self.structure_0]
+        self._initial_conditions_names = ('storage', 'structure', )
+        self._initial_conditions_values = [storage_0, structure_0]
 
     # VARIABLES
 
@@ -380,10 +385,8 @@ class Roots(Organ):
         self.unloading_sucrose = 0 #: current unloading of sucrose from phloem to roots
 
         # initialize the compartment
-        self.sucrose_0 = sucrose_0 #: initial value of compartment sucrose
-
-    def get_initial_conditions(self):
-        return [self.sucrose_0] # keep this order !
+        self._initial_conditions_names = ('sucrose', )
+        self._initial_conditions_values = [sucrose_0]
 
     # VARIABLES
 

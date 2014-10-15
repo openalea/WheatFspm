@@ -224,15 +224,17 @@ class CNWheat(object):
         y_iter = iter(y)
         y_derivatives = []
     
-        sucrose_phloem = y_iter.next()
+        sucrose_phloem = self.phloem.get_compartments_values(y_iter)['sucrose']
     
         for organ_ in self.organs_without_phloem:
+            
+            compartments_values = organ_.get_compartments_values(y_iter)
     
             if isinstance(organ_, organ.PhotosyntheticOrgan):
-                storage = y_iter.next()
-                sucrose = y_iter.next()
-                triosesP = y_iter.next()
-                fructan = y_iter.next()
+                storage = compartments_values['storage']
+                sucrose = compartments_values['sucrose']
+                triosesP = compartments_values['triosesP']
+                fructan = compartments_values['fructan']
                 # calculate the time step at which we want to compute the photosynthesis
                 if photosynthesis_computation_interval == 0: # i.e. we want to compute the photosynthesis for each time step demanded by the solver
                     t_inf = t
@@ -263,8 +265,7 @@ class CNWheat(object):
                 y_derivatives.extend([storage_derivative, sucrose_derivative, triosesP_derivative, fructan_derivative])
     
             elif isinstance(organ_, organ.Grains):
-                storage = y_iter.next()
-                structure = y_iter.next()
+                structure = compartments_values['structure']
                 # needed variables
                 RGR_structure = organ_.calculate_RGR_structure(sucrose_phloem)
                 # flows
@@ -277,7 +278,6 @@ class CNWheat(object):
                 y_derivatives.extend([storage_derivative, structure_derivative])
     
             elif isinstance(organ_, organ.Roots):
-                sucrose = y_iter.next()
                 # flows
                 organ_.unloading_sucrose = organ_.calculate_unloading_sucrose(sucrose_phloem)
                 # compartments derivatives
@@ -306,18 +306,21 @@ class CNWheat(object):
     
         result_items = [('t', t)]
     
-        sucrose_phloem = solver_output_iter.next()
+        sucrose_phloem = self.phloem.get_compartments_values(solver_output_iter)['sucrose']
         variables = [('Conc_Sucrose_{}'.format(self.phloem.name).rstrip('_'), self.phloem.calculate_conc_sucrose(sucrose_phloem)),
                      ('Conc_C_Sucrose_{}'.format(self.phloem.name).rstrip('_'), self.phloem.calculate_conc_c_sucrose(sucrose_phloem))]
         compartments = [('Sucrose_{}'.format(self.phloem.name).rstrip('_'), sucrose_phloem)]
         result_items.extend(variables + compartments)
     
         for organ_ in self.organs_without_phloem:
+            
+            compartments_values = organ_.get_compartments_values(solver_output_iter)
+            
             if isinstance(organ_, organ.PhotosyntheticOrgan):
-                storage = solver_output_iter.next()
-                sucrose = solver_output_iter.next()
-                triosesP = solver_output_iter.next()
-                fructan = solver_output_iter.next()
+                storage = compartments_values['storage']
+                sucrose = compartments_values['sucrose']
+                triosesP = compartments_values['triosesP']
+                fructan = compartments_values['fructan']
                 loading_sucrose = map(organ_.calculate_loading_sucrose, sucrose, sucrose_phloem)
                 regul_s_fructan = map(organ_.calculate_regul_s_fructan, loading_sucrose)
     
@@ -346,8 +349,8 @@ class CNWheat(object):
                                 ('TriosesP_{}'.format(organ_.name).rstrip('_'), triosesP),
                                 ('Fructan_{}'.format(organ_.name).rstrip('_'), fructan)]
             elif isinstance(organ_, organ.Grains):
-                storage = solver_output_iter.next()
-                structure = solver_output_iter.next()
+                storage = compartments_values['storage']
+                structure = compartments_values['structure']
                 RGR_structure = map(organ_.calculate_RGR_structure, sucrose_phloem)
                 variables = [('Dry_Mass_{}'.format(organ_.name).rstrip('_'), organ_.calculate_dry_mass(structure, storage)),
                              ('RGR_Structure_{}'.format(organ_.name).rstrip('_'), RGR_structure)]
@@ -356,7 +359,7 @@ class CNWheat(object):
                 compartments = [('Storage_{}'.format(organ_.name).rstrip('_'), storage),
                                 ('Structure_{}'.format(organ_.name).rstrip('_'), structure)]
             elif isinstance(organ_, organ.Roots):
-                sucrose = solver_output_iter.next()
+                sucrose = compartments_values['sucrose']
                 variables = [('Dry_Mass_{}'.format(organ_.name).rstrip('_'), organ_.calculate_dry_mass(sucrose))]
                 flows = [('Unloading_Sucrose_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_unloading_sucrose, sucrose_phloem))]
                 compartments = [('Sucrose_{}'.format(organ_.name).rstrip('_'), sucrose)]
