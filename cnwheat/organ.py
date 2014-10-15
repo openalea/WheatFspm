@@ -134,38 +134,38 @@ class PhotosyntheticOrgan(Organ):
         """Rate of sucrose synthesis from triosesP (µmol C sucrose s-1 g-1 MS * DELTA_T).
         This is a flow (expressed in amount of C substance g-1 MS integrated over DELTA_T).
         """
-        return (((max(0,triosesP)/(self.mstruct*self.ALPHA)) * PhotosyntheticOrgan.VMAX_SUCROSE) / ((max(0, triosesP)/(self.mstruct*self.ALPHA)) + PhotosyntheticOrgan.K_SUCROSE)) * Organ.DELTA_T
+        return (((max(0,triosesP)/(self.mstruct*self.__class__.ALPHA)) * PhotosyntheticOrgan.VMAX_SUCROSE) / ((max(0, triosesP)/(self.mstruct*self.__class__.ALPHA)) + PhotosyntheticOrgan.K_SUCROSE)) * Organ.DELTA_T
 
     def calculate_s_storage(self, triosesP):
         """Rate of storage synthesis from triosesP (µmol C storage s-1 g-1 MS * DELTA_T).
         This is a flow (expressed in amount of C substance g-1 MS integrated over DELTA_T).
         """
-        return (((max(0, triosesP)/(self.mstruct*self.ALPHA)) * PhotosyntheticOrgan.VMAX_STORAGE) / ((max(0, triosesP)/(self.mstruct*self.ALPHA)) + PhotosyntheticOrgan.K_STORAGE)) * Organ.DELTA_T
+        return (((max(0, triosesP)/(self.mstruct*self.__class__.ALPHA)) * PhotosyntheticOrgan.VMAX_STORAGE) / ((max(0, triosesP)/(self.mstruct*self.__class__.ALPHA)) + PhotosyntheticOrgan.K_STORAGE)) * Organ.DELTA_T
 
     def calculate_d_storage(self, storage):
         """Rate of storage degradation from triosesP (µmol C storage s-1 g-1 MS * DELTA_T).
         This is a flow (expressed in amount of C substance g-1 MS integrated over DELTA_T).
         """
-        return max(0, PhotosyntheticOrgan.DELTA_DSTORAGE * (storage/(self.mstruct*self.ALPHA))) * Organ.DELTA_T
+        return max(0, PhotosyntheticOrgan.DELTA_DSTORAGE * (storage/(self.mstruct*self.__class__.ALPHA))) * Organ.DELTA_T
 
     def calculate_loading_sucrose(self, sucrose, sucrose_phloem):
         """Rate of sucrose loading to phloem (µmol C sucrose s-1 g-1 MS * DELTA_T).
         This is a flow (expressed in amount of C substance g-1 MS integrated over DELTA_T).
         """
-        driving_sucrose_compartment = max(sucrose / (self.mstruct*self.ALPHA), sucrose_phloem/(Organ.MSTRUCT_AXIS*self.ALPHA_AXIS))
-        diff_sucrose = sucrose/(self.mstruct*self.ALPHA) - sucrose_phloem/(Organ.MSTRUCT_AXIS*self.ALPHA_AXIS)
+        driving_sucrose_compartment = max(sucrose / (self.mstruct*self.__class__.ALPHA), sucrose_phloem/(Organ.MSTRUCT_AXIS*self.__class__.ALPHA_AXIS))
+        diff_sucrose = sucrose/(self.mstruct*self.__class__.ALPHA) - sucrose_phloem/(Organ.MSTRUCT_AXIS*self.__class__.ALPHA_AXIS)
         conductance = PhotosyntheticOrgan.SIGMA * self.mstruct**(2/3)
         return driving_sucrose_compartment * diff_sucrose * conductance * Organ.DELTA_T
 
     def calculate_s_fructan(self, sucrose, regul_s_fructan):
         """Rate of fructan synthesis (µmol C fructan s-1 g-1 MS * DELTA_T)
         """
-        return (((max(0, sucrose)/(self.mstruct*self.ALPHA))**(PhotosyntheticOrgan.N_SFRUCTAN) * PhotosyntheticOrgan.VMAX_SFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.ALPHA))**(PhotosyntheticOrgan.N_SFRUCTAN) + PhotosyntheticOrgan.K_SFRUCTAN**(PhotosyntheticOrgan.N_SFRUCTAN))) * regul_s_fructan * Organ.DELTA_T
+        return (((max(0, sucrose)/(self.mstruct*self.__class__.ALPHA))**(PhotosyntheticOrgan.N_SFRUCTAN) * PhotosyntheticOrgan.VMAX_SFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.__class__.ALPHA))**(PhotosyntheticOrgan.N_SFRUCTAN) + PhotosyntheticOrgan.K_SFRUCTAN**(PhotosyntheticOrgan.N_SFRUCTAN))) * regul_s_fructan * Organ.DELTA_T
 
     def calculate_d_fructan(self, sucrose, fructan):
         """Rate of fructan degradation (µmol C fructan s-1 g-1 MS)
         """
-        return min((PhotosyntheticOrgan.K_DFRUCTAN * PhotosyntheticOrgan.VMAX_DFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.ALPHA)) + PhotosyntheticOrgan.K_DFRUCTAN) , max(0, fructan)) * Organ.DELTA_T
+        return min((PhotosyntheticOrgan.K_DFRUCTAN * PhotosyntheticOrgan.VMAX_DFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.__class__.ALPHA)) + PhotosyntheticOrgan.K_DFRUCTAN) , max(0, fructan)) * Organ.DELTA_T
 
     # COMPARTMENTS
 
@@ -173,23 +173,23 @@ class PhotosyntheticOrgan(Organ):
         """delta storage of organ integrated over delta-1 (µmol C storage).
         This is a differential equation of compartment expressed as a variation of the total amount of C substance in an organ per DELTA_T.
         """
-        return (s_storage - d_storage) * (self.mstruct*self.ALPHA)
+        return (s_storage - d_storage) * (self.mstruct*self.__class__.ALPHA)
 
     def calculate_sucrose_derivative(self, s_sucrose, d_storage, loading_sucrose, s_fructan, d_fructan):
         """delta sucrose of organ integrated over delta-1 (µmol C sucrose)
         """
-        return (s_sucrose + d_storage + d_fructan - s_fructan - loading_sucrose) * (self.mstruct*self.ALPHA)
+        return (s_sucrose + d_storage + d_fructan - s_fructan - loading_sucrose) * (self.mstruct*self.__class__.ALPHA)
 
     def calculate_triosesP_derivative(self, photosynthesis, s_sucrose, s_storage):
         """ delta triosesP of organ integrated over delta-1 (µmol C triosesP).
         This is a differential equation of compartment expressed as a variation of the total amount of C substance in an organ per DELTA_T.
         """
-        return max(0, photosynthesis) - (s_sucrose + s_storage) * (self.mstruct*self.ALPHA)
+        return max(0, photosynthesis) - (s_sucrose + s_storage) * (self.mstruct*self.__class__.ALPHA)
 
     def calculate_fructan_derivative(self, s_fructan, d_fructan):
         """delta fructan integrated over delta-1 (µmol C fructan)
         """
-        return (s_fructan - d_fructan)* (self.mstruct*self.ALPHA)
+        return (s_fructan - d_fructan)* (self.mstruct*self.__class__.ALPHA)
 
 
 class Chaff(PhotosyntheticOrgan):
@@ -283,7 +283,7 @@ class Phloem(Organ):
         sucrose_derivative = 0
         for organ_ in organs:
             if isinstance(organ_, PhotosyntheticOrgan):
-                sucrose_derivative += organ_.loading_sucrose*organ_.mstruct*organ_.ALPHA
+                sucrose_derivative += organ_.loading_sucrose*organ_.mstruct*organ_.__class__.ALPHA
             elif isinstance(organ_, Grains):
                 sucrose_derivative -= (organ_.unloading_sucrose_structure + (organ_.unloading_sucrose_storage * ((organ_.structure/1E6)*12)))
             elif isinstance(organ_, Roots):
