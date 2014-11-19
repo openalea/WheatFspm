@@ -11,6 +11,15 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+"""
+    Information about this versioned file:
+        $LastChangedBy$
+        $LastChangedDate$
+        $LastChangedRevision$
+        $URL$
+        $Id$
+"""
+
 import sys, os
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -241,11 +250,11 @@ texinfo_documents = [
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2', None), 
+intersphinx_mapping = {'python': ('http://docs.python.org/2', None),
                        'pandas': ('http://pandas.pydata.org/pandas-docs/stable/', None),
                        'numpy': ('http://docs.scipy.org/doc/numpy/', None),
                        'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
-                        'matplotlib': ('http://matplotlib.sourceforge.net/', None) 
+                        'matplotlib': ('http://matplotlib.sourceforge.net/', None)
                        }
 
 autodoc_member_order = 'bysource'

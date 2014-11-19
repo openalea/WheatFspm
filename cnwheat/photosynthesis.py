@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
+
+from __future__ import division # use '//' to do integer division
+
 """
     cnwheat.photosynthesis
     ~~~~~~~~~~~~~~~~~~~~~~
@@ -10,7 +13,14 @@
     :license: TODO, see LICENSE for details.
 """
 
-from __future__ import division # use '//' to do integer division
+"""
+    Information about this versioned file:
+        $LastChangedBy$
+        $LastChangedDate$
+        $LastChangedRevision$
+        $URL$
+        $Id$
+"""
 
 from math import sqrt, log,  exp
 
@@ -257,5 +267,5 @@ class PhotosynthesisModel(object):
                 Tleaf, E = cls.leaf_temperature(cls.LEAF_WIDTH, cls.H_ORGAN, cls.H_CANOPY, wind0, PAR, gs, Ta, Tleaf, RH)
                 count +=1
 
-        return An
+        return An, E
 
