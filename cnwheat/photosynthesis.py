@@ -124,7 +124,7 @@ class PhotosynthesisModel(object):
         gsw = (1.6*gs * cls.R * (Tleaf+273.15)) / cls.PATM  # Stomatal conductance to water (m s-1). 1.6 convert gs_CO2 in gs_water. Relation given by A. Tuzet (2003)
         rswp = 1/gsw                                        # Stomatal resistance for water (s m-1)
 
-        Ep = (s * Rn + (cls.RHOCP * VPDa)/(rbh + rt)) / (cls.LAMBDA * (s + cls.GAMMA*((rbw + rt + rswp)/(rbh + rt))))
+        Ep = max(0, (s * Rn + (cls.RHOCP * VPDa)/(rbh + rt)) / (cls.LAMBDA * (s + cls.GAMMA*((rbw + rt + rswp)/(rbh + rt)))))
 
         # Leaf temperature
         Tleaf = Ta + ((rbh + rt) * (Rn - cls.LAMBDA*Ep)) / cls.RHOCP
