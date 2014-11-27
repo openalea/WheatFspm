@@ -54,9 +54,8 @@ class PhotosynthesisModel(object):
     R = 8.3144              #: Physical parameter: Gas constant (J mol-1 K-1)
     PATM = 1.01325E5        #: Physical parameter: Atmospheric pressure (Pa)
 
-    #TODO: trouver des bonnes valeurs de FR, FT
-    FR = 0.15               #: Physical parameter: Leaf radiation reflectance
-    FT = 0.15               #: Physical parameter: Leaf radiation transmittance
+    FR = 0.1                #: Physical parameter: Leaf radiation reflectance
+    FT = 0.1                #: Physical parameter: Leaf radiation transmittance
 
     #: Temperature dependance of photosynthetic parameters
     #:
@@ -69,11 +68,6 @@ class PhotosynthesisModel(object):
                   'deltaHd': {'Vc_max': 149.3, 'Jmax': 152.3, 'TPU': 152.3},
                   'deltaS': {'Vc_max': 0.486, 'Jmax': 0.495, 'TPU': 0.495},
                   'Tref': 298.15, 'R': 8.3145E-03}
-
-    LEAF_WIDTH = 0.01 #: m
-    H_CANOPY = 1      #: m
-    H_ORGAN = 0.5     #: m
-    NA_INIT = 2.5     #: g m-2
 
     @classmethod
     def leaf_temperature(cls, leaf_width, z, H, wind0, PAR, gs, Ta, Tleaf, RH):
@@ -220,13 +214,13 @@ class PhotosynthesisModel(object):
 
 
     @classmethod
-    def calculate_An(cls, t, PAR, Ta, Ca, RH):
+    def calculate_An(cls, t, organ, Ta, Ca, RH, wind0):
         """
         Compute CO2 assimilation following Farquhar's model and estimate internal CO2 and organ temperature numerically.
 
         :Parameters:
 
-            - `PAR` (:class:`float`) - PAR
+            - `organ` (:class:`object`)
 
             - `Ta` (:class:`float`) - Air temperature (degree Celsius)
 
@@ -234,16 +228,21 @@ class PhotosynthesisModel(object):
 
             - `RH` (:class:`float`) - Relative humidity (decimal fraction)
 
+            - `wind0` (:class:`float`) - Wind speed at the top of the canopy (m s-1)
+
         :Returns:
-            An
+            Net assimilation (µmol m-2 s-1) and Tr (mm s-1)
 
         :Returns Type:
             :class:`float`
 
         """
-
-        ### Physical parameters ###
-        wind0 = 5 #: Wind speed at the top of the canopy (m s-1)
+        #: Organ parameters
+        PAR = organ.PAR_linear_interpolation(t)     #: µmol m-2 s-1
+        LEAF_WIDTH = organ.width                    #: m
+        H_CANOPY = 0.8                              #: m
+        H_ORGAN = organ.height                      #: m
+        NA_INIT = 2.5                               #: g m-2
 
         ### Iterations to find leaf temperature and Ci ###
         Ci, Tleaf = 0.7*Ca, Ta # Initial values
@@ -258,13 +257,13 @@ class PhotosynthesisModel(object):
                 break
             else:
                 prec_Ci, prec_Tleaf = Ci, Tleaf
-                An, Ag, Rd = cls.photosynthesis(PAR, cls.NA_INIT, Tleaf, Ci)
+                An, Ag, Rd = cls.photosynthesis(PAR, NA_INIT, Tleaf, Ci)
                 # Stomatal conductance
-                gs = cls.stomatal_conductance(Ag, An, cls.NA_INIT, Ca, RH)
+                gs = cls.stomatal_conductance(Ag, An, NA_INIT, Ca, RH)
                 # New value of Ci
                 Ci = Ca - An * ((1.6/gs) + (1.37/cls.GB)) # gs and GB in mol m-2 s-1
                 # New value of Tleaf
-                Tleaf, E = cls.leaf_temperature(cls.LEAF_WIDTH, cls.H_ORGAN, cls.H_CANOPY, wind0, PAR, gs, Ta, Tleaf, RH)
+                Tleaf, E = cls.leaf_temperature(LEAF_WIDTH, H_ORGAN, H_CANOPY, wind0, PAR, gs, Ta, Tleaf, RH)
                 count +=1
 
         return An, E
