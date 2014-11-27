@@ -39,9 +39,9 @@ RELATIVE_TOLERANCE = 10**-PRECISION
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
 
-def read_t_data(DATA_DIRPATH, data_filename):
-    data_filepath = os.path.join(DATA_DIRPATH, data_filename)
-    return pd.read_csv(data_filepath, index_col='t')
+def read_t_data(curr_data_dirpath, data_filename):
+    data_filepath = os.path.join(curr_data_dirpath, data_filename)
+    return pd.read_csv(data_filepath, sep=None, index_col='t', engine = 'python')
 
 
 def compare_actual_to_desired(DATA_DIRPATH, actual_output_df, save_actual_output=False):
@@ -65,53 +65,49 @@ def test_run():
     organs = []
     # create the chaff
     name='Chaff'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
-    chaff = organ.Chaff(area=0.00075, mstruct=0.21, PAR=PAR_df.PAR, starch_0=0,
-                        sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    chaff = organ.Chaff(area=0.00075, mstruct=0.21, width=0.02, height= 0.7, PAR=PAR_df.PAR,
+                        starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
     organs.append(chaff)
 
-    # create the internode
+    # create the internodes
     name='Internode'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
-    internode = organ.Internode(area=0.0004, mstruct=0.18, PAR=PAR_df.PAR,
-                                starch_0=0, sucrose_0=0, triosesP_0=0,
-                                fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    internode = organ.Internode(area=0.0012, mstruct=0.148, width=0.042, height=0.4, PAR=PAR_df.PAR,
+                                      starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
     organs.append(internode)
 
-    # create the lamina
-    name = 'Lamina'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
-    lamina = organ.Lamina(area=0.0034, mstruct=0.09, PAR=PAR_df.PAR,
-                          starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0,nitrates_0=0, amino_acids_0=0, proteins_0=0,
-                          name=name)
+    # create the laminae
+    name='Lamina'
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    lamina = organ.Lamina(area=0.00346, mstruct=0.14, width= 0.018, height=0.6, PAR=PAR_df.PAR,
+                                    starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
     organs.append(lamina)
 
-    # create the peduncle
+    # create the peduncles
     name = 'Peduncle'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
-    peduncle = organ.Peduncle(area=0.00155, mstruct=0.168, PAR=PAR_df.PAR,
-                              starch_0=0, sucrose_0=0, triosesP_0=0,
-                              fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0,name=name)
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    peduncle = organ.Peduncle(area=0.00155, mstruct=0.168, width= 0.031, height=0.65, PAR=PAR_df.PAR,
+                                        starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
     organs.append(peduncle)
 
-    # create the sheath
+    # create the sheaths
     name = 'Sheath'
-    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_{}.csv'.format(name))
-    sheath = organ.Sheath(area=0.0005, mstruct=0.069, PAR=PAR_df.PAR,
-                          starch_0=0, sucrose_0=0, triosesP_0=0,
-                          fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0,name=name)
+    PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
+    sheath = organ.Sheath(area=0.0006, mstruct=0.103, width=0.042, height=0.5, PAR=PAR_df.PAR,
+                                    starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0 , amino_acids_0=0, proteins_0=0, name=name)
     organs.append(sheath)
 
     # create the grains
-    grains = organ.Grains(starch_0=0, structure_0=10850, proteins_0=0, name='Grains')
+    grains = organ.Grains(starch_0=0, structure_0=10850, proteins_0=0, name='grains')
     organs.append(grains)
 
     # create the roots
-    roots = organ.Roots(mstruct=0.504, sucrose_0=0, nitrates_0=0, amino_acids_0=0, name='Roots')
+    roots = organ.Roots(mstruct=0.504, sucrose_0=0, nitrates_0=250, amino_acids_0=0, name='roots')
     organs.append(roots)
 
     # create the phloem
-    phloem = organ.Phloem(sucrose_0=0, amino_acids_0=0, name='Phloem')
+    phloem = organ.Phloem(sucrose_0=0, amino_acids_0=0, name='phloem')
     organs.append(phloem)
 
     # get meteo data
@@ -120,9 +116,10 @@ def test_run():
     # initialize the simulator
     cnwheat_ = cnwheat.CNWheat(organs=organs, meteo=meteo_df)
 
+
     # run the model
     actual_output_df = cnwheat_.run(start_time=0, stop_time=48, number_of_output_steps=7,
-                                    photosynthesis_computation_interval=4)
+                                    photosynthesis_computation_interval=4,show_progressbar=True)
 
     compare_actual_to_desired(DATA_DIRPATH, actual_output_df, True)
 
