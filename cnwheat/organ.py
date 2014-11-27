@@ -27,11 +27,15 @@ class Organ(object):
     Base class for any organ. DO NOT INSTANTIATE IT TO USE IT DIRECTLY.
     """
 
-    MSTRUCT_AXIS = 2.08             #: Structural mass  of a plant (g) (Bertheloot, 2011)
-    ALPHA_AXIS = 1                  #: Proportion of the structural mass containing the substrates
-    DELTA_T = 3600                  #: Timestep of the model (s)
-    AMINO_ACIDS_CN_RATIO = 3.25     #: Mean ratio C:N in the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    MOLAR_MASS_N = 14               #: Molar mass of nitrogen (g mol-1)
+    MSTRUCT_AXIS = 2.08                     #: Structural mass  of a plant (g) (Bertheloot, 2011)
+    ALPHA_AXIS = 1                          #: Proportion of the structural mass containing the substrates
+    DELTA_T = 3600                          #: Timestep of the model (s)
+
+    AMINO_ACIDS_C_RATIO = 3.67              #: Mean ratio C:N in the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
+    N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
+    RATIO_EXPORT_NITRATES_ROOTS = 0.75      #: Proportion of uptaked nitrates actually exported from roots to shoot (1-RATIO_EXPORT_NITRATES_ROOTS = part of nitrates staying in roots)
 
 
     def __init__(self, name):
@@ -70,17 +74,17 @@ class PhotosyntheticOrgan(Organ):
     BETA = 1                        #: Kind of volumetric mass density at power -2/3 ((g m-3)**(-2/3)) ; used to compute the sucrose loaded to the phloem
 
     # Amino acids
-    VMAX_AMINO_ACIDS = 1            #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
+    VMAX_AMINO_ACIDS = 0.001        #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
     K_AMINO_ACIDS_NITRATES = 5      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
-    K_AMINO_ACIDS_TRIOSESP = 0.01   #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
+    K_AMINO_ACIDS_TRIOSESP = 0.1    #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
 
     # Proteins
-    VMAX_SPROTEINS = 0.0025         #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
-    K_SPROTEINS = 10                #: Affinity coefficient of protein synthesis (µmol N g-1 MS)
+    VMAX_SPROTEINS = 1.E-12         #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
+    K_SPROTEINS = 20                #: Affinity coefficient of protein synthesis (µmol N g-1 MS)
     DELTA_DPROTEINS = 1.85E-6       #: Relative rate of protein degradation (s-1)
 
 
-    def __init__(self, area, mstruct, PAR, triosesP_0, starch_0, sucrose_0, fructan_0,
+    def __init__(self, area, mstruct, width, height, PAR, triosesP_0, starch_0, sucrose_0, fructan_0,
                  nitrates_0, amino_acids_0, proteins_0, name=None):
 
         super(PhotosyntheticOrgan, self).__init__(name)
@@ -88,7 +92,9 @@ class PhotosyntheticOrgan(Organ):
         # parameters
         self.area = area                     #: area (m-2)
         self.mstruct = mstruct               #: Structural mass (g)
-        self.PAR = PAR                       #: the PAR. Must be a :class:`pandas.Series` which index is time in hours
+        self.width = width                   #: Width (or diameter for stem organs) (m)
+        self.height = height                 #: Height of organ from soil (m)
+        self.PAR = PAR                       #: PAR. Must be a :class:`pandas.Series` which index is time in hours
 
         self.PAR_linear_interpolation = None #: linear interpolation of PAR
 
@@ -152,14 +158,16 @@ class PhotosyntheticOrgan(Organ):
         return (nitrates/self.mstruct)
 
     def calculate_conc_amino_acids(self, amino_acids):
-        """Amino_acid concentration (µmol amino_acids g-1 MS)
+        """Amino_acid concentration (µmol amino acids g-1 MS)
         """
-        return (amino_acids * (1+Organ.AMINO_ACIDS_CN_RATIO)/self.mstruct)
+        return (amino_acids/Organ.AMINO_ACIDS_N_RATIO) / self.mstruct
 
     def calculate_conc_proteins(self, proteins):
-        """Protein concentration (mg proteins g-1 MS) # TODO: quel rapport C:N??
+        """Protein concentration (g proteins g-1 MS)
         """
-        return (proteins/self.mstruct) * (1+Organ.AMINO_ACIDS_CN_RATIO) * Organ.MOLAR_MASS_N
+        mass_N_proteins = proteins*1E6 * Organ.N_MOLAR_MASS                         #: Mass of nitrogen in proteins (g)
+        mass_proteins = mass_N_proteins / Organ.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
+        return (mass_proteins / self.mstruct)
 
     # FLOWS
 
@@ -196,36 +204,58 @@ class PhotosyntheticOrgan(Organ):
         """
         return min((PhotosyntheticOrgan.K_DFRUCTAN * PhotosyntheticOrgan.VMAX_DFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.__class__.ALPHA)) + PhotosyntheticOrgan.K_DFRUCTAN) , max(0, fructan)) * Organ.DELTA_T
 
+    def calculate_nitrates_import(self, roots_uptake_nitrate, organ_transpiration, total_transpiration):
+        """Total nitrates imported from roots (through xylem) distributed relatively to organ transpiration (µmol N nitrates integrated over delta_t [already accounted in transpiration])
+        """
+        if total_transpiration>0:
+            nitrates_import = roots_uptake_nitrate * (organ_transpiration/total_transpiration)* Organ.RATIO_EXPORT_NITRATES_ROOTS # Proportion of uptaked nitrates exported from roots to shoot
+        else:
+            nitrates_import = 0
+        #print self.name, 'Ratio transpiration', nitrates_import
+        return nitrates_import
+
+    def calculate_amino_acids_import(self, roots_exported_amino_acids, organ_transpiration, total_transpiration):
+        """Total Amino acids imported from roots (through xylem) distributed relatively to organ transpiration (µmol N Amino acids integrated over delta_t [already accounted in transpiration)
+        """
+        if total_transpiration>0:
+            amino_acids_import = roots_exported_amino_acids * (organ_transpiration/total_transpiration)
+        else:
+            amino_acids_import = 0
+        return amino_acids_import
+
     def calculate_s_amino_acids(self, nitrates, triosesP):
-        """Rate of amino acid synthesis (µmol N amino acids s-1 g-1 MS)
+        """Rate of amino acid synthesis (µmol N amino acids s-1 g-1 MS * DELTA_T)
         """
         calculate_s_amino_acids = PhotosyntheticOrgan.VMAX_AMINO_ACIDS / ((1 + PhotosyntheticOrgan.K_AMINO_ACIDS_NITRATES/(nitrates/(self.mstruct*self.__class__.ALPHA))) * (1 + PhotosyntheticOrgan.K_AMINO_ACIDS_TRIOSESP/(triosesP/(self.mstruct*self.__class__.ALPHA)))) * Organ.DELTA_T
         #print calculate_s_amino_acids
         return calculate_s_amino_acids
 
     def calculate_s_proteins(self, amino_acids):
-        """Rate of protein synthesis (µmol N proteins s-1 g-1 MS)
+        """Rate of protein synthesis (µmol N proteins s-1 g-1 MS * DELTA_T)
         """
         calculate_s_proteins = (((max(0,amino_acids)/(self.mstruct*self.__class__.ALPHA)) * PhotosyntheticOrgan.VMAX_SPROTEINS) / ((max(0, amino_acids)/(self.mstruct*self.__class__.ALPHA)) + PhotosyntheticOrgan.K_SPROTEINS)) * Organ.DELTA_T
         #print calculate_s_proteins
         return calculate_s_proteins
 
     def calculate_d_proteins(self, proteins):
-        """Rate of protein degradation (µmol N proteins s-1 g-1 MS)
+        """Rate of protein degradation (µmol N proteins s-1 g-1 MS * DELTA_T)
         """
         return max(0, PhotosyntheticOrgan.DELTA_DPROTEINS * (proteins/(self.mstruct*self.__class__.ALPHA))) * Organ.DELTA_T
 
-    def calculate_loading_amino_acids(self, loading_sucrose):
-        """Rate of amino acids loading to phloem (µmol N amino acids s-1 g-1 MS * DELTA_T)
+    def calculate_loading_amino_acids(self, amino_acids, amino_acids_phloem):
+        """Rate of amino acids loading to phloem (µmol N amino acids s-1 g-1 MS * DELTA_T) # TODO: formalism to be tested
         """
-        return loading_sucrose * 0.8 * Organ.DELTA_T # Temporary equation, will be replaced in next version
+        driving_amino_acids_compartment = max(amino_acids / (self.mstruct*self.__class__.ALPHA), amino_acids_phloem/(Organ.MSTRUCT_AXIS*self.__class__.ALPHA_AXIS))
+        diff_amino_acids = amino_acids/(self.mstruct*self.__class__.ALPHA) - amino_acids_phloem/(Organ.MSTRUCT_AXIS*self.__class__.ALPHA_AXIS)
+        conductance = PhotosyntheticOrgan.SIGMA * PhotosyntheticOrgan.BETA * self.mstruct**(2/3)
+        return driving_amino_acids_compartment * diff_amino_acids * conductance * Organ.DELTA_T
 
     # COMPARTMENTS
 
     def calculate_triosesP_derivative(self, photosynthesis, s_sucrose, s_starch, s_amino_acids):
         """ delta triosesP of organ integrated over delat_t (µmol C triosesP).
         """
-        triosesP_consumption_AA = s_amino_acids / ((Organ.AMINO_ACIDS_CN_RATIO + 1)/ Organ.AMINO_ACIDS_CN_RATIO) #: Contribution of triosesP to the synthesis of amino_acids
+        triosesP_consumption_AA = (s_amino_acids / Organ.AMINO_ACIDS_N_RATIO) * Organ.AMINO_ACIDS_C_RATIO #: Contribution of triosesP to the synthesis of amino_acids
         return max(0, photosynthesis) - (s_sucrose + s_starch + triosesP_consumption_AA) * (self.mstruct*self.__class__.ALPHA)
 
     def calculate_starch_derivative(self, s_starch, d_starch):
@@ -243,18 +273,18 @@ class PhotosyntheticOrgan(Organ):
         """
         return (s_fructan - d_fructan)* (self.mstruct*self.__class__.ALPHA)
 
-    def calculate_nitrates_derivative(self, roots_uptake_nitrate, organ_transpiration, total_transpiration, s_amino_acids):
+    def calculate_nitrates_derivative(self, nitrates_import, s_amino_acids):
         """delta nitrates integrated over delat_t (µmol N nitrates)
         """
-        imported_nitrates = roots_uptake_nitrate * (organ_transpiration/total_transpiration)*0.9           #: Nitrate imported from roots (through xylem) distributed relatively to organ transpiration
-        nitrate_reduction_AA = s_amino_acids / (1 + Organ.AMINO_ACIDS_CN_RATIO)                            #: Contribution of nitrates to the synthesis of amino_acids
-        return imported_nitrates - (nitrate_reduction_AA*self.mstruct*self.__class__.ALPHA)
+        nitrate_reduction_AA = s_amino_acids  #: Contribution of nitrates to the synthesis of amino_acids
+        return nitrates_import - (nitrate_reduction_AA*self.mstruct*self.__class__.ALPHA)
 
-    def calculate_amino_acids_derivative(self, roots_exported_amino_acids, organ_transpiration, total_transpiration, s_amino_acids, s_proteins, d_proteins, loading_amino_acids):
+    def calculate_amino_acids_derivative(self, amino_acids_import, s_amino_acids, s_proteins, d_proteins, loading_amino_acids):
         """delta amino acids integrated over delat_t (µmol N amino acids)
         """
-        imported_amino_acids = roots_exported_amino_acids * (organ_transpiration/total_transpiration)   #: Amino acids imported from roots (through xylem) distributed relatively to organ transpiration
-        return imported_amino_acids + (s_amino_acids + d_proteins - s_proteins - loading_amino_acids) * (self.mstruct*self.__class__.ALPHA)
+##        if self. name == 'lamina1':
+##            print 'AA deriv+', amino_acids_import, s_amino_acids, d_proteins,'AA deriv-',s_proteins, loading_amino_acids
+        return amino_acids_import + (s_amino_acids + d_proteins - s_proteins - loading_amino_acids) * (self.mstruct*self.__class__.ALPHA)
 
     def calculate_proteins_derivative(self, s_proteins, d_proteins):
         """delta proteins integrated over delat_t (µmol N proteins)
@@ -347,12 +377,7 @@ class Phloem(Organ):
     def calculate_conc_amino_acids(self, amino_acids):
         """Amino_acid concentration (µmol amino_acids g-1 MS)
         """
-        return (amino_acids * (1+Organ.AMINO_ACIDS_CN_RATIO)/Organ.MSTRUCT_AXIS)
-
-    def calculate_conc_proteins(self, proteins):
-        """Protein concentration (mg proteins g-1 MS) # TODO: quel rapport C:N??
-        """
-        return (proteins/self.mstruct) * (1+Organ.AMINO_ACIDS_CN_RATIO) * Organ.MOLAR_MASS_N
+        return (amino_acids/Organ.AMINO_ACIDS_N_RATIO) / Organ.MSTRUCT_AXIS
 
     # COMPARTMENTS
 
@@ -420,10 +445,12 @@ class Grains(Organ):
         """
         return ((structure + starch)/1000000)*12
 
-    def calculate_protein_mass(self, proteins):
-        """Grain total protein mass
+    def calculate_protein_mass(self, proteins, structure):
+        """Grain total protein mass                                                 # TODO trouver stoechiometrie proteines grains
         """
-        return proteins * (1+Organ.AMINO_ACIDS_CN_RATIO) * Organ.MOLAR_MASS_N # TODO trouver stoechiometrie proteines grains
+        mass_N_proteins = proteins*1E6 * Organ.N_MOLAR_MASS                         #: Mass of nitrogen in proteins (g)
+        mass_proteins = mass_N_proteins / Organ.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
+        return (mass_proteins / structure)
 
     def calculate_RGR_structure(self, sucrose_phloem):
         """Relative Growth Rate of grain structure, regulated by phloem concentrations
@@ -497,8 +524,8 @@ class Roots(Organ):
     LAMBDA_VMAX_HATS = 0.0025       #: Parameter for estimating the maximal rate of nitrates uptake at saturating soil N concentration;HATS (s-1)
     A_K_HATS = 211812               #: Parameter for estimating the affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (dimsensionless)
     LAMBDA_K_HATS = 0.0018          #: Parameter for estimating the affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (g m-3)
-    A_LATS = 5E-09                  #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (dimensionless)
-    LAMBDA_LATS = 0.0017            #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (m3 µmol-1 s-1)
+    A_LATS = 4.614E-09              #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (dimensionless)
+    LAMBDA_LATS = 1.6517E-03        #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (m3 µmol-1 s-1)
 
     # Amino acids
     VMAX_AMINO_ACIDS = 1            #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
@@ -527,19 +554,19 @@ class Roots(Organ):
         return (sucrose*12)/1000000
 
     def calculate_conc_nitrates_soil(self, t):
-        """Nitrate concetration in soil (µmol N nitrates m-3)
+        """Nitrate concetration in soil (µmol nitrates m-3)
         """
         return -52083*t + 5E+07 # TODO: Temporary
 
     def calculate_conc_nitrates(self, nitrates):
-        """Nitrate concentration (µmol N nitrates g-1 MS)
+        """Nitrate concentration (µmol nitrates g-1 MS)
         """
         return (nitrates/self.mstruct)
 
     def calculate_conc_amino_acids(self, amino_acids):
-        """Amino_acid concentration (µmol N amino_acids g-1 MS)
+        """Amino_acid concentration (µmol amino_acids g-1 MS)
         """
-        return (amino_acids/self.mstruct)
+        return (amino_acids/Organ.AMINO_ACIDS_N_RATIO)/self.mstruct
 
     # FLOWS
 
@@ -560,26 +587,26 @@ class Roots(Organ):
         #print 'VMAX_HATS_MAX', VMAX_HATS_MAX
         K_HATS = Roots.A_K_HATS * np.exp(-Roots.LAMBDA_K_HATS*(nitrates_roots/self.mstruct))                     #: Affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (µmol m-3)
         #print 'K_HATS', K_HATS
-        HATS = (VMAX_HATS_MAX * conc_nitrates_soil)/ (K_HATS + conc_nitrates_soil)                            #: High Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
+        HATS = (VMAX_HATS_MAX * conc_nitrates_soil)/ (K_HATS + conc_nitrates_soil)                               #: High Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
         #print 'HATS', HATS
         #print 'conc_nitrates_soil', conc_nitrates_soil
         K_LATS = Roots.A_LATS * np.exp(-Roots.LAMBDA_LATS*(nitrates_roots/self.mstruct))                         #: Rate of nitrates uptake at low soil N concentration; LATS (m3 g-1 s-1)
-        LATS = (K_LATS * conc_nitrates_soil)                                                                  #: Low Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
+        LATS = (K_LATS * conc_nitrates_soil)                                                                     #: Low Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
 
-        potential_uptake = (HATS + LATS) * self.mstruct                                                       #: Potential nitrate uptake
+        potential_uptake = (HATS + LATS) * self.mstruct * Organ.DELTA_T                                          #: Potential nitrate uptake (µmol N nitrates uptaked by roots integrated over delta_t)
         #print 'potential_uptake', potential_uptake
         #print 'Tr', total_transpiration
         #print 'f(Tr)', total_transpiration/(total_transpiration + Roots.K_TR_UPTAKE_NITRATES)
-        actual_uptake = potential_uptake * (total_transpiration/(total_transpiration + Roots.K_TR_UPTAKE_NITRATES)) * Organ.DELTA_T # Nitrate uptake regumated by plant transpiration (µmol N nitrates uptaked by roots integrated over delta_t)
+        actual_uptake = potential_uptake * (total_transpiration/(total_transpiration + Roots.K_TR_UPTAKE_NITRATES)) #: Nitrate uptake regulated by plant transpiration (µmol N nitrates uptaked by roots)
         #print 'actual_uptake',actual_uptake
-        return actual_uptake
+        return actual_uptake, potential_uptake
 
     def calculate_s_amino_acids(self, nitrates, sucrose):
         """Rate of amino acid synthesis in roots(µmol N amino acids s-1 g-1 MS * DELTA_T)
         """
         return Roots.VMAX_AMINO_ACIDS / ((1 + Roots.K_AMINO_ACIDS_NITRATES/(nitrates/(self.mstruct*Roots.ALPHA))) * (1 + Roots.K_AMINO_ACIDS_SUCROSE/(sucrose/(self.mstruct*Roots.ALPHA)))) * Organ.DELTA_T
 
-    def calculate_export_amino_acids(self, amino_acids, total_transpiration): # TODO: calcul niveau plante ou axe?
+    def calculate_export_amino_acids(self, amino_acids, total_transpiration):
         """Total export of amino acids from roots to shoot organs (abstraction of the xylem compartment) (µmol N amino acids exported during DELTA_T (already accounted in Transpiration))
         """
         return (amino_acids/(self.mstruct * Roots.ALPHA)) * (total_transpiration/(total_transpiration + Roots.K_TR_EXPORT_AMINO_ACIDS))
@@ -589,14 +616,15 @@ class Roots(Organ):
     def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids):
         """delta root sucrose integrated over delat_t (µmol C sucrose)
         """
-        sucrose_consumption_AA = s_amino_acids / ((Organ.AMINO_ACIDS_CN_RATIO + 1)/ Organ.AMINO_ACIDS_CN_RATIO) #: Contribution of sucrose to the synthesis of amino_acids
+        sucrose_consumption_AA = (s_amino_acids / Organ.AMINO_ACIDS_N_RATIO) * Organ.AMINO_ACIDS_C_RATIO        #: Contribution of sucrose to the synthesis of amino_acids
+
         return (unloading_sucrose - sucrose_consumption_AA) * self.mstruct
 
     def calculate_nitrates_derivative(self, uptake_nitrates, s_amino_acids):
         """delta root nitrates integrated over delat_t (µmol N nitrates)
         """
-        import_nitrates_roots = uptake_nitrates*0.1
-        nitrate_reduction_AA = s_amino_acids / (1 + Organ.AMINO_ACIDS_CN_RATIO)                                 #: Contribution of nitrates to the synthesis of amino_acids
+        import_nitrates_roots = uptake_nitrates * (1-Organ.RATIO_EXPORT_NITRATES_ROOTS)                         #: Proportion of uptaked nitrates staying in roots
+        nitrate_reduction_AA = s_amino_acids                                                                    #: Contribution of nitrates to the synthesis of amino_acids
         return import_nitrates_roots - (nitrate_reduction_AA*self.mstruct)
 
     def calculate_amino_acids_derivative(self, unloading_amino_acids, s_amino_acids, export_amino_acids):

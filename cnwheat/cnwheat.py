@@ -45,7 +45,7 @@ class CNWheat(object):
         - `organs` (:class:`list`) - List of :class:`cnwheat.organ.Organ`.
 
         - `meteo` (:class:`pandas.DataFrame`) - a :class:`pandas.DataFrame` which index
-          is time in hours and which columns are "Tac", "hs" and "Ca". Due to the
+          is time in hours and which columns are "Tac", "hs", "Ca" and "Wind". Due to the
           solver of :func:`scipy.integrate.odeint`, `meteo` must provide data for t = `stop_time` + 1.
 
     """
@@ -257,7 +257,7 @@ class CNWheat(object):
         amino_acids_roots = y[self.initial_conditions_mapping[self.roots]['amino_acids']]
 
         # calculate the time step at which we want to compute the photosynthesis
-        if photosynthesis_computation_interval == 0: # i.e. we want to compute the photosynthesis for each time step demanded by the solver
+        if photosynthesis_computation_interval == 0: # i.e. we want to compute the photosynthesis for each time step required by the solver
             t_inf = t
         else:
             t_inf  = t // photosynthesis_computation_interval * photosynthesis_computation_interval
@@ -268,12 +268,12 @@ class CNWheat(object):
             # calculate the photosynthesis of organ_ only if it has not been already calculated at t_inf
             if t_inf not in organ_.photosynthesis_mapping:
                 organ_.photosynthesis_mapping[t_inf] = {}
-                PAR_t_inf = organ_.PAR_linear_interpolation(t_inf)
                 Tac_t_inf = self.meteo_interpolations['Tac'](t_inf)
                 hs_t_inf = self.meteo_interpolations['hs'](t_inf)
                 Ca_t_inf = self.meteo_interpolations['Ca'](t_inf)
-                An, Tr = photosynthesis.PhotosynthesisModel.calculate_An(t_inf, PAR_t_inf, Tac_t_inf, Ca_t_inf, hs_t_inf) # TODO: add dependancy to nitrogen
-                #print'An, Tr', An, Tr
+                Wind_top_canopy_inf = self.meteo_interpolations['Wind'](t_inf)
+                An, Tr = photosynthesis.PhotosynthesisModel.calculate_An(t_inf, organ_, Tac_t_inf, Ca_t_inf, hs_t_inf, Wind_top_canopy_inf) # TODO: add dependancy to nitrogen
+                #print 't=', t, 'PAR=', organ_.PAR_linear_interpolation(t_inf), 'Tr_{} = '.format(organ_.name), Tr
                 organ_.photosynthesis_mapping[t_inf]['photosynthesis'] = organ_.calculate_photosynthesis(t_inf, An)
                 organ_.photosynthesis_mapping[t_inf]['transpiration'] = organ_.calculate_transpiration(t_inf, Tr)
             organ_transpiration = organ_.photosynthesis_mapping[t_inf]['transpiration']
@@ -281,7 +281,7 @@ class CNWheat(object):
         #print 'total_transpiration', total_transpiration
 
         conc_nitrates_soil = self.roots.calculate_conc_nitrates_soil(t)
-        roots_uptake_nitrate = self.roots.calculate_uptake_nitrates(conc_nitrates_soil, nitrates_roots, total_transpiration)
+        roots_uptake_nitrate, potential_roots_uptake_nitrates = self.roots.calculate_uptake_nitrates(conc_nitrates_soil, nitrates_roots, total_transpiration)
         roots_export_amino_acids = self.roots.calculate_export_amino_acids(amino_acids_roots, total_transpiration)
         #print 'roots_export_amino_acids',roots_export_amino_acids
 
@@ -306,20 +306,22 @@ class CNWheat(object):
             regul_s_fructan = organ_.calculate_regul_s_fructan(organ_.loading_sucrose)
             d_fructan = organ_.calculate_d_fructan(sucrose, fructan)
             s_fructan = organ_.calculate_s_fructan(sucrose, regul_s_fructan)
+            nitrates_import = organ_.calculate_nitrates_import(roots_uptake_nitrate, organ_transpiration, total_transpiration)
+            amino_acids_import = organ_.calculate_amino_acids_import(roots_export_amino_acids, organ_transpiration, total_transpiration)
             s_amino_acids = organ_.calculate_s_amino_acids(nitrates, triosesP)
             #print 'Organ SAA=', organ_.name , s_amino_acids, nitrates
             s_proteins = organ_.calculate_s_proteins(amino_acids)
             d_proteins = organ_.calculate_d_proteins(proteins)
-            organ_.loading_amino_acids = organ_.calculate_loading_amino_acids(organ_.loading_sucrose)
+            organ_.loading_amino_acids = organ_.calculate_loading_amino_acids(amino_acids, amino_acids_phloem)
 
             # compartments derivatives
             starch_derivative = organ_.calculate_starch_derivative(s_starch, d_starch)
             sucrose_derivative = organ_.calculate_sucrose_derivative(s_sucrose, d_starch, organ_.loading_sucrose, s_fructan, d_fructan)
             triosesP_derivative = organ_.calculate_triosesP_derivative(photosynthesis_, s_sucrose, s_starch, s_amino_acids)
             fructan_derivative = organ_.calculate_fructan_derivative(s_fructan, d_fructan)
-            nitrates_derivative = organ_.calculate_nitrates_derivative(roots_uptake_nitrate, organ_transpiration, total_transpiration, s_amino_acids)
+            nitrates_derivative = organ_.calculate_nitrates_derivative(nitrates_import, s_amino_acids)
             #print 'Organ:', organ_.name, 'nitrates_derivative:',nitrates_derivative
-            amino_acids_derivative = organ_.calculate_amino_acids_derivative(roots_export_amino_acids, organ_transpiration, total_transpiration, s_amino_acids, s_proteins, d_proteins, organ_.loading_amino_acids)
+            amino_acids_derivative = organ_.calculate_amino_acids_derivative(amino_acids_import, s_amino_acids, s_proteins, d_proteins, organ_.loading_amino_acids)
             #print 'Organ:', organ_.name, 'amino_acids_derivative:',amino_acids_derivative
             proteins_derivative = organ_.calculate_proteins_derivative(s_proteins, d_proteins)
             y_derivatives[self.initial_conditions_mapping[organ_]['starch']] = starch_derivative
@@ -412,39 +414,48 @@ class CNWheat(object):
         organs_transpiration = []
         organs_transpiration_DF = pd.DataFrame()
         for organ_ in self.photosynthetic_organs:
-            An_Tr = np.array(map(photosynthesis.PhotosynthesisModel.calculate_An,
-                                  t,
-                                  organ_.PAR_linear_interpolation(t),
-                                  self.meteo_interpolations['Tac'](t),
-                                  self.meteo_interpolations['Ca'](t),
-                                  self.meteo_interpolations['hs'](t)))
+            An_Tr_list = []
+            for t_ in t:
+                An_Tr_list.append(photosynthesis.PhotosynthesisModel.calculate_An(t_,
+                                      organ_,
+                                      self.meteo_interpolations['Tac'](t_),
+                                      self.meteo_interpolations['Ca'](t_),
+                                      self.meteo_interpolations['hs'](t_),
+                                      self.meteo_interpolations['Wind'](t_)))
+            An_Tr = np.array(An_Tr_list)
 
+            # Photosynthesis
             photosynthesis_ = map(organ_.calculate_photosynthesis, t, An_Tr[:,0])
-            organ_transpiration = map(organ_.calculate_transpiration, t, An_Tr[:,1])
-            organs_transpiration_DF[organ_.name] = organ_transpiration
             organs_An.append(('Photosynthesis_Surfacic_Rate_{}'.format(organ_.name).rstrip('_'), An_Tr[:,0]))
             organs_photosynthesis.append(('Photosynthesis_{}'.format(organ_.name).rstrip('_'), photosynthesis_))
+            # Transpiration
+            organ_transpiration = map(organ_.calculate_transpiration, t, An_Tr[:,1])
+            organs_transpiration_DF[organ_.name] = organ_transpiration
             organs_transpiration.append(('Transpiration_{}'.format(organ_.name).rstrip('_'), organ_transpiration))
+
         total_transpiration = organs_transpiration_DF.sum(axis=1)
+        total_transpiration_out = [('Total_transpiration', total_transpiration)]
+        result_items.extend(organs_An + organs_photosynthesis + organs_transpiration + total_transpiration_out)
 
         # Roots
         sucrose_roots = solver_output[self.initial_conditions_mapping[self.roots]['sucrose']]
         unloading_sucrose = map(self.roots.calculate_unloading_sucrose, sucrose_phloem)
         nitrates_roots = solver_output[self.initial_conditions_mapping[self.roots]['nitrates']]
         conc_nitrates_soil = map(self.roots.calculate_conc_nitrates_soil,t)
-        uptake_nitrates = self.roots.calculate_uptake_nitrates(conc_nitrates_soil, nitrates_roots, total_transpiration)
+        uptake_nitrates, potential_roots_uptake_nitrates = self.roots.calculate_uptake_nitrates(conc_nitrates_soil, nitrates_roots, total_transpiration)
         amino_acids_roots = solver_output[self.initial_conditions_mapping[self.roots]['amino_acids']]
-
+        roots_export_amino_acids =  map(self.roots.calculate_export_amino_acids, amino_acids_roots, total_transpiration)
 
         variables = [('Dry_Mass_{}'.format(self.roots.name).rstrip('_'), self.roots.calculate_dry_mass(sucrose_roots)),
                      ('Conc_Nitrates_{}'.format(self.roots.name).rstrip('_'), self.roots.calculate_conc_nitrates(nitrates_roots)),
                      ('Conc_Amino_Acids_{}'.format(self.roots.name).rstrip('_'), self.roots.calculate_conc_amino_acids(amino_acids_roots)),
-                     ('Conc_Nitrates_Soil{}'.format(self.roots.name).rstrip('_'), conc_nitrates_soil)]
+                     ('Conc_Nitrates_Soil_{}'.format(self.roots.name).rstrip('_'), conc_nitrates_soil)]
 
         flows = [('Unloading_Sucrose_{}'.format(self.roots.name).rstrip('_'), unloading_sucrose),
                  ('Unloading_Amino_Acids_{}'.format(self.roots.name).rstrip('_'), map(self.roots.calculate_unloading_amino_acids, amino_acids_phloem)),
                  ('Uptake_Nitrates_{}'.format(self.roots.name).rstrip('_'), uptake_nitrates),
-                 ('Export_Amino_Acids_{}'.format(self.roots.name).rstrip('_'), map(self.roots.calculate_export_amino_acids, amino_acids_roots, total_transpiration)),
+                 ('Potential_Uptake_Nitrates_{}'.format(self.roots.name).rstrip('_'), potential_roots_uptake_nitrates),
+                 ('Export_Amino_Acids_{}'.format(self.roots.name).rstrip('_'),roots_export_amino_acids),
                  ('S_Amino_Acids_{}'.format(self.roots.name).rstrip('_'), map(self.roots.calculate_s_amino_acids, nitrates_roots, sucrose_roots))]
 
         compartments = [('Sucrose_{}'.format(self.roots.name).rstrip('_'), sucrose_roots),
@@ -468,7 +479,7 @@ class CNWheat(object):
             proteins = solver_output[self.initial_conditions_mapping[organ_]['proteins']]
 
             variables = [('Conc_TriosesP_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_triosesP(triosesP)),
-                         ('Conc_starch_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_starch(starch)),
+                         ('Conc_Starch_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_starch(starch)),
                          ('Conc_Sucrose_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_sucrose(sucrose)),
                          ('Conc_Fructan_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_fructan(fructan)),
                          ('Regul_S_Fructan_{}'.format(organ_.name).rstrip('_'), regul_s_fructan),
@@ -477,18 +488,18 @@ class CNWheat(object):
                          ('Conc_Proteins_{}'.format(organ_.name).rstrip('_'), organ_.calculate_conc_proteins(proteins))]
 
 
-            loading_amino_acids = map(organ_.calculate_loading_amino_acids, sucrose_phloem)
-
-            flows = [('S_starch_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_starch, triosesP)),
-                     ('D_starch_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_d_starch, starch)),
+            flows = [('S_Starch_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_starch, triosesP)),
+                     ('D_Starch_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_d_starch, starch)),
                      ('S_Sucrose_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_sucrose, triosesP)),
                      ('Loading_Sucrose_{}'.format(organ_.name).rstrip('_'), loading_sucrose),
                      ('S_Fructan_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_fructan, sucrose, regul_s_fructan)),
                      ('D_Fructan_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_d_fructan, sucrose, fructan)),
+                     ('Nitrates_import_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_nitrates_import, uptake_nitrates, organs_transpiration_DF[organ_.name], total_transpiration)),
+                     ('Amino_Acids_import_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_amino_acids_import, roots_export_amino_acids, organ_transpiration, total_transpiration)),
                      ('S_Amino_Acids_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_amino_acids, nitrates, triosesP)),
                      ('S_Proteins_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_proteins, amino_acids)),
                      ('D_Proteins_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_d_proteins, proteins)),
-                     ('Loading_Amino_Acids_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_loading_amino_acids, loading_sucrose))]
+                     ('Loading_Amino_Acids_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_loading_amino_acids, amino_acids, amino_acids_phloem))]
 
             compartments = [('TriosesP_{}'.format(organ_.name).rstrip('_'), triosesP),
                             ('Starch_{}'.format(organ_.name).rstrip('_'), starch),
@@ -500,10 +511,6 @@ class CNWheat(object):
 
             result_items.extend(variables + flows + compartments)
 
-        variables.extend(organs_An)
-        variables.extend(organs_photosynthesis)
-        variables.extend(organs_transpiration)
-
         # Grains
         structure_grains = solver_output[self.initial_conditions_mapping[self.grains]['structure']]
         starch_grains = solver_output[self.initial_conditions_mapping[self.grains]['starch']]
@@ -513,7 +520,7 @@ class CNWheat(object):
 
         variables = [('Dry_Mass_{}'.format(self.grains.name).rstrip('_'), self.grains.calculate_dry_mass(structure_grains, starch_grains)),
                      ('RGR_Structure_{}'.format(self.grains.name).rstrip('_'), RGR_structure_grains),
-                     ('Proteins_Mass_{}'.format(self.grains.name).rstrip('_'), self.grains.calculate_protein_mass(proteins_grains))]
+                     ('Proteins_Mass_{}'.format(self.grains.name).rstrip('_'), self.grains.calculate_protein_mass(proteins_grains, structure_grains))]
 
         s_grain_structure = map(self.grains.calculate_s_grain_structure, t, structure_grains, RGR_structure_grains)
         s_grain_starch = map(self.grains.calculate_s_grain_starch, t, sucrose_phloem)
@@ -523,7 +530,7 @@ class CNWheat(object):
                  ('S_Proteins_{}'.format(self.grains.name).rstrip('_'), map(self.grains.calculate_s_proteins, s_grain_structure, s_grain_starch, amino_acids_phloem, sucrose_phloem, structure_grains))]
 
         compartments = [('Structure_{}'.format(self.grains.name).rstrip('_'), structure_grains),
-                        ('starch_{}'.format(self.grains.name).rstrip('_'), starch_grains),
+                        ('Starch_{}'.format(self.grains.name).rstrip('_'), starch_grains),
                         ('Proteins_{}'.format(self.grains.name).rstrip('_'), proteins_grains)]
 
         result_items.extend(variables + flows + compartments)
