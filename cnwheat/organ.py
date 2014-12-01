@@ -34,7 +34,13 @@ class Organ(object):
         if name is None:
             name = self.__class__.__name__
         self.name = name #: the name of the organ
-        self.initial_conditions = {} #: the initial value of each compartment of the organ
+        self._initial_conditions = {} #: the initial value of each compartment of the organ
+    
+    @property
+    def initial_conditions(self):
+        """Get the initial value of each compartment of the organ.
+        """
+        return self._initial_conditions
 
 
 class PhotosyntheticOrgan(Organ):
@@ -44,8 +50,8 @@ class PhotosyntheticOrgan(Organ):
     
     PARAMETERS = parameters.PhotosyntheticOrganParameters #: the parameters of the organ
 
-    def __init__(self, area, mstruct, width, height, PAR, triosesP_0, starch_0, sucrose_0, fructan_0,
-                 nitrates_0, amino_acids_0, proteins_0, name=None):
+    def __init__(self, area, mstruct, width, height, PAR, triosesP_0, starch_0, 
+                 sucrose_0, fructan_0, nitrates_0, amino_acids_0, proteins_0, name=None):
 
         super(PhotosyntheticOrgan, self).__init__(name)
 
@@ -60,8 +66,8 @@ class PhotosyntheticOrgan(Organ):
         self.loading_amino_acids = 0         #: current rate of amino acids loading to phloem
 
         # initialize the compartments
-        self.initial_conditions = {'triosesP':triosesP_0, 'starch':starch_0, 'sucrose':sucrose_0 , 'fructan':fructan_0,
-                                   'nitrates':nitrates_0 , 'amino_acids':amino_acids_0, 'proteins':proteins_0}
+        self._initial_conditions = {'triosesP':triosesP_0, 'starch':starch_0, 'sucrose':sucrose_0 , 'fructan':fructan_0,
+                                    'nitrates':nitrates_0 , 'amino_acids':amino_acids_0, 'proteins':proteins_0}
 
     # VARIABLES
 
@@ -311,7 +317,7 @@ class Phloem(Organ):
         super(Phloem, self).__init__(name)
 
         # initialize the compartment
-        self.initial_conditions = {'sucrose': sucrose_0, 'amino_acids': amino_acids_0}
+        self._initial_conditions = {'sucrose': sucrose_0, 'amino_acids': amino_acids_0}
 
     # VARIABLES
 
@@ -376,7 +382,7 @@ class Grains(Organ):
         self.structure = 0
 
         # initialize the compartments
-        self.initial_conditions = {'starch': starch_0, 'structure': structure_0, 'proteins': proteins_0}
+        self._initial_conditions = {'starch': starch_0, 'structure': structure_0, 'proteins': proteins_0}
 
     # VARIABLES
 
@@ -461,7 +467,7 @@ class Roots(Organ):
         self.unloading_amino_acids = 0      #: current unloading of amino acids from phloem to roots
 
         # initialize the compartment
-        self.initial_conditions = {'sucrose': sucrose_0, 'nitrates': nitrates_0, 'amino_acids': amino_acids_0}
+        self._initial_conditions = {'sucrose': sucrose_0, 'nitrates': nitrates_0, 'amino_acids': amino_acids_0}
 
     # VARIABLES
 
