@@ -96,8 +96,6 @@ class PhotosyntheticOrgan(Organ):
         self.height = height                 #: Height of organ from soil (m)
         self.PAR = PAR                       #: PAR. Must be a :class:`pandas.Series` which index is time in hours
 
-        self.PAR_linear_interpolation = None #: linear interpolation of PAR
-
         self.photosynthesis_mapping = {}     #: mapping to store the computed photosynthesis and transpiration
 
         self.loading_sucrose = 0             #: current rate of sucrose loading to phloem

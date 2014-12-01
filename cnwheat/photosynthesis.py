@@ -214,14 +214,21 @@ class PhotosynthesisModel(object):
 
 
     @classmethod
-    def calculate_An(cls, t, organ, Ta, Ca, RH, wind0):
+    def calculate_An(cls, t, organ_, PAR_linear_interpolation, Ta, Ca, RH, wind0):
         """
-        Compute CO2 assimilation following Farquhar's model and estimate internal CO2 and organ temperature numerically.
+        For an organ:
+            * compute CO2 assimilation following Farquhar's model, 
+            * estimate internal CO2 and organ temperature numerically.
 
         :Parameters:
+        
+            - `t` (:class:`float`) - the time at which we want to calculate An
+            
+            - `organ_` (:class:`cnwheat.organ.Organ`) - the organ for which we want to do the computation. 
 
-            - `organ` (:class:`object`)
-
+            - `PAR_linear_interpolation` (:func:`scipy.interpolate.interpolate.interp1d`) - a function 
+              whose call method uses interpolation to find the value of PAR (µmol m-2 s-1).
+            
             - `Ta` (:class:`float`) - Air temperature (degree Celsius)
 
             - `Ca` (:class:`float`) - Air CO2 (umol mol-1)
@@ -238,10 +245,10 @@ class PhotosynthesisModel(object):
 
         """
         #: Organ parameters
-        PAR = organ.PAR_linear_interpolation(t)     #: µmol m-2 s-1
-        LEAF_WIDTH = organ.width                    #: m
+        PAR = PAR_linear_interpolation(t)     #: µmol m-2 s-1
+        LEAF_WIDTH = organ_.width                    #: m
         H_CANOPY = 0.8                              #: m
-        H_ORGAN = organ.height                      #: m
+        H_ORGAN = organ_.height                      #: m
         NA_INIT = 2.5                               #: g m-2
 
         ### Iterations to find leaf temperature and Ci ###
