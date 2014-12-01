@@ -1,4 +1,4 @@
-t;Tac;hs;Ca;Wind
+t;air_temperature;humidity;ambient_CO2;Wind
 0;15.2;0.79;360;3.318
 1;13.5;0.87;360;1.209
 2;11.9;0.91;360;0.615

@@ -125,17 +125,17 @@ class PhotosynthesisModel(object):
         return Tleaf, Ep
 
     @classmethod
-    def stomatal_conductance(cls, Ag, An, Na, Ca, RH):
+    def stomatal_conductance(cls, Ag, An, Na, ambient_CO2, RH):
         """
         BWB model of stomatal conductance
             - Ag: global assimilation (umol m-2 s-1)
             - An: net assimilation (umol m-2 s-1)
             - Na: nitrogen content of leaf (g m-2)
-            - Ca: Air CO2 (umol mol-1)
+            - ambient_CO2: Air CO2 (umol mol-1)
             - RH: Relative humidity (decimal fraction)
         """
 
-        Cs = Ca - An *(1.37/(cls.GB))                            # CO2 concentration at leaf surface (umol mol-1 or Pa). From Prieto et al. (2012). GB in mol m-2 s-1
+        Cs = ambient_CO2 - An *(1.37/(cls.GB))                            # CO2 concentration at leaf surface (umol mol-1 or Pa). From Prieto et al. (2012). GB in mol m-2 s-1
         m = cls.PARAM_N['delta1'] * Na**cls.PARAM_N['delta2']    # Scaling factor dependance to Na (dimensionless). This focntion is maintained although I'm not sure that it should be taken into account
         gs = (cls.GSMIN + m*((Ag*RH)/(Cs)))                      # Stomatal conductance (mol m-2 s-1), from Braune et al. (2009), Muller et al. (2005): using Ag rather than An. Would be better with a function of VPD and with (Ci-GAMMA) instead of Cs.
         return gs
@@ -214,7 +214,7 @@ class PhotosynthesisModel(object):
 
 
     @classmethod
-    def calculate_An(cls, t, organ_, PAR_linear_interpolation, Ta, Ca, RH, wind0):
+    def calculate_An(cls, t, organ_, PAR_linear_interpolation, Ta, ambient_CO2, RH, wind0):
         """
         For an organ:
             * compute CO2 assimilation following Farquhar's model, 
@@ -231,7 +231,7 @@ class PhotosynthesisModel(object):
             
             - `Ta` (:class:`float`) - Air temperature (degree Celsius)
 
-            - `Ca` (:class:`float`) - Air CO2 (umol mol-1)
+            - `ambient_CO2` (:class:`float`) - Air CO2 (umol mol-1)
 
             - `RH` (:class:`float`) - Relative humidity (decimal fraction)
 
@@ -252,7 +252,7 @@ class PhotosynthesisModel(object):
         NA_INIT = 2.5                               #: g m-2
 
         ### Iterations to find leaf temperature and Ci ###
-        Ci, Tleaf = 0.7*Ca, Ta # Initial values
+        Ci, Tleaf = 0.7*ambient_CO2, Ta # Initial values
         prec_Ci, prec_Tleaf = 0.1, 0.1
         count = 0
         while abs((Ci - prec_Ci)/prec_Ci) >= 0.01 or abs((Tleaf - prec_Tleaf)/prec_Tleaf) >= 0.01:
@@ -266,9 +266,9 @@ class PhotosynthesisModel(object):
                 prec_Ci, prec_Tleaf = Ci, Tleaf
                 An, Ag, Rd = cls.photosynthesis(PAR, NA_INIT, Tleaf, Ci)
                 # Stomatal conductance
-                gs = cls.stomatal_conductance(Ag, An, NA_INIT, Ca, RH)
+                gs = cls.stomatal_conductance(Ag, An, NA_INIT, ambient_CO2, RH)
                 # New value of Ci
-                Ci = Ca - An * ((1.6/gs) + (1.37/cls.GB)) # gs and GB in mol m-2 s-1
+                Ci = ambient_CO2 - An * ((1.6/gs) + (1.37/cls.GB)) # gs and GB in mol m-2 s-1
                 # New value of Tleaf
                 Tleaf, E = cls.leaf_temperature(LEAF_WIDTH, H_ORGAN, H_CANOPY, wind0, PAR, gs, Ta, Tleaf, RH)
                 count +=1

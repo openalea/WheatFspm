@@ -45,7 +45,7 @@ class CNWheat(object):
         - `organs` (:class:`list`) - List of :class:`cnwheat.organ.Organ`.
 
         - `meteo` (:class:`pandas.DataFrame`) - a :class:`pandas.DataFrame` which index
-          is time in hours and which columns are "Tac", "hs", "Ca" and "Wind". Due to the
+          is time in hours and which columns are "air_temperature", "humidity", "ambient_CO2" and "Wind". Due to the
           solver of :func:`scipy.integrate.odeint`, `meteo` must provide data for t = `stop_time` + 1.
 
     """
@@ -270,12 +270,12 @@ class CNWheat(object):
             # calculate the photosynthesis of organ_ only if it has not been already calculated at t_inf
             if t_inf not in organ_photosynthesis_mapping:
                 organ_photosynthesis_mapping[t_inf] = {}
-                Tac_t_inf = self.meteo_interpolations['Tac'](t_inf)
-                hs_t_inf = self.meteo_interpolations['hs'](t_inf)
-                Ca_t_inf = self.meteo_interpolations['Ca'](t_inf)
+                air_temperature_t_inf = self.meteo_interpolations['air_temperature'](t_inf)
+                humidity_t_inf = self.meteo_interpolations['humidity'](t_inf)
+                ambient_CO2_t_inf = self.meteo_interpolations['ambient_CO2'](t_inf)
                 Wind_top_canopy_inf = self.meteo_interpolations['Wind'](t_inf)
                 An, Tr = photosynthesis.PhotosynthesisModel.calculate_An(t_inf, organ_, PAR_linear_interpolation, 
-                                                                         Tac_t_inf, Ca_t_inf, hs_t_inf, Wind_top_canopy_inf) # TODO: add dependancy to nitrogen
+                                                                         air_temperature_t_inf, ambient_CO2_t_inf, humidity_t_inf, Wind_top_canopy_inf) # TODO: add dependancy to nitrogen
                 #print 't=', t, 'PAR=', PAR_linear_interpolation(t_inf), 'Tr_{} = '.format(organ_.name), Tr
                 organ_photosynthesis_mapping[t_inf]['photosynthesis'] = organ_.calculate_photosynthesis(t_inf, An)
                 organ_photosynthesis_mapping[t_inf]['transpiration'] = organ_.calculate_transpiration(t_inf, Tr)
@@ -423,9 +423,9 @@ class CNWheat(object):
                                       t_,
                                       organ_,
                                       PAR_linear_interpolation,
-                                      self.meteo_interpolations['Tac'](t_),
-                                      self.meteo_interpolations['Ca'](t_),
-                                      self.meteo_interpolations['hs'](t_),
+                                      self.meteo_interpolations['air_temperature'](t_),
+                                      self.meteo_interpolations['ambient_CO2'](t_),
+                                      self.meteo_interpolations['humidity'](t_),
                                       self.meteo_interpolations['Wind'](t_)))
             An_Tr = np.array(An_Tr_list)
 
