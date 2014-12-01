@@ -69,11 +69,13 @@ class CNWheat(object):
         self.initial_conditions = [] #: the initial conditions of the compartments in the organs
         self.initial_conditions_mapping = {} #: dictionary to map the compartments of each organ to their indexes in :attr:`initial_conditions`
         self.PAR_linear_interpolation = {} # the linear interpolation of PAR for each photosynthetic organ
+        self.photosynthesis_mapping = {} # mapping to store the computed photosynthesis and transpiration for each photosynthetic organ
 
         i = 0
         for organ_ in organs:
             if isinstance(organ_, organ.PhotosyntheticOrgan):
                 self.PAR_linear_interpolation[organ_] = interp1d(organ_.PAR.index, organ_.PAR)
+                self.photosynthesis_mapping[organ_] = {}
             elif isinstance(organ_, organ.Phloem):
                 self.phloem = organ_ # the phloem
             elif isinstance(organ_, organ.Roots):
@@ -183,8 +185,8 @@ class CNWheat(object):
 
 
     def _clear_organs(self):
-        for organ_ in self.PAR_linear_interpolation.iterkeys():
-            organ_.photosynthesis_mapping.clear()
+        for organ_photosynthesis_mapping in self.photosynthesis_mapping.itervalues():
+            organ_photosynthesis_mapping.clear()
 
 
     def _calculate_all_derivatives(self, y, t, photosynthesis_computation_interval):
@@ -264,9 +266,10 @@ class CNWheat(object):
         total_transpiration = 0.0
 
         for organ_, PAR_linear_interpolation in self.PAR_linear_interpolation.iteritems():
+            organ_photosynthesis_mapping = self.photosynthesis_mapping[organ_]
             # calculate the photosynthesis of organ_ only if it has not been already calculated at t_inf
-            if t_inf not in organ_.photosynthesis_mapping:
-                organ_.photosynthesis_mapping[t_inf] = {}
+            if t_inf not in organ_photosynthesis_mapping:
+                organ_photosynthesis_mapping[t_inf] = {}
                 Tac_t_inf = self.meteo_interpolations['Tac'](t_inf)
                 hs_t_inf = self.meteo_interpolations['hs'](t_inf)
                 Ca_t_inf = self.meteo_interpolations['Ca'](t_inf)
@@ -274,9 +277,9 @@ class CNWheat(object):
                 An, Tr = photosynthesis.PhotosynthesisModel.calculate_An(t_inf, organ_, PAR_linear_interpolation, 
                                                                          Tac_t_inf, Ca_t_inf, hs_t_inf, Wind_top_canopy_inf) # TODO: add dependancy to nitrogen
                 #print 't=', t, 'PAR=', PAR_linear_interpolation(t_inf), 'Tr_{} = '.format(organ_.name), Tr
-                organ_.photosynthesis_mapping[t_inf]['photosynthesis'] = organ_.calculate_photosynthesis(t_inf, An)
-                organ_.photosynthesis_mapping[t_inf]['transpiration'] = organ_.calculate_transpiration(t_inf, Tr)
-            organ_transpiration = organ_.photosynthesis_mapping[t_inf]['transpiration']
+                organ_photosynthesis_mapping[t_inf]['photosynthesis'] = organ_.calculate_photosynthesis(t_inf, An)
+                organ_photosynthesis_mapping[t_inf]['transpiration'] = organ_.calculate_transpiration(t_inf, Tr)
+            organ_transpiration = organ_photosynthesis_mapping[t_inf]['transpiration']
             total_transpiration += organ_transpiration
         #print 'total_transpiration', total_transpiration
 
@@ -295,8 +298,8 @@ class CNWheat(object):
             proteins = y[self.initial_conditions_mapping[organ_]['proteins']]
 
             # intermediate variables
-            photosynthesis_ = organ_.photosynthesis_mapping[t_inf]['photosynthesis']
-            organ_transpiration = organ_.photosynthesis_mapping[t_inf]['transpiration']
+            photosynthesis_ = self.photosynthesis_mapping[organ_][t_inf]['photosynthesis']
+            organ_transpiration = self.photosynthesis_mapping[organ_][t_inf]['transpiration']
 
             # flows
             s_starch = organ_.calculate_s_starch(triosesP)
