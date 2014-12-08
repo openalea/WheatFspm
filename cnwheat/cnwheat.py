@@ -500,7 +500,7 @@ class CNWheat(object):
                      ('S_Fructan_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_fructan, sucrose, regul_s_fructan)),
                      ('D_Fructan_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_d_fructan, sucrose, fructan)),
                      ('Nitrates_import_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_nitrates_import, uptake_nitrates, organs_transpiration_DF[organ_.name], total_transpiration)),
-                     ('Amino_Acids_import_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_amino_acids_import, roots_export_amino_acids, organ_transpiration, total_transpiration)),
+                     ('Amino_Acids_import_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_amino_acids_import, roots_export_amino_acids, organs_transpiration_DF[organ_.name], total_transpiration)),
                      ('S_Amino_Acids_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_amino_acids, nitrates, triosesP)),
                      ('S_Proteins_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_s_proteins, amino_acids)),
                      ('D_Proteins_{}'.format(organ_.name).rstrip('_'), map(organ_.calculate_d_proteins, proteins)),
