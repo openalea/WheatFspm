@@ -137,7 +137,7 @@ meteo_df = read_t_data(DATA_DIRPATH, 'meteo.csv')
 cnwheat_ = cnwheat.CNWheat(organs=organs, meteo=meteo_df)
 
 # run the model
-cnwheat_output_df = cnwheat_.run(start_time=0, stop_time=600, number_of_output_steps=241,
+cnwheat_output_df = cnwheat_.run(start_time=0, stop_time=100, number_of_output_steps=241,
                                 photosynthesis_computation_interval=2, show_progressbar=True)
 ##cnwheat_output_df = cnwheat_.run(start_time=0, stop_time=10, number_of_output_steps=10,
 ##                                photosynthesis_computation_interval=2, show_progressbar=True)
