@@ -123,7 +123,7 @@ grains = organ.Grains(starch_0=0, structure_0=10850, proteins_0=0, name='grains'
 organs.append(grains)
 
 # create the roots
-roots = organ.Roots(mstruct=0.504, sucrose_0=0, nitrates_0=250, amino_acids_0=0, name='roots')
+roots = organ.Roots(mstruct=0.504, sucrose_0=0, nitrates_0=0, amino_acids_0=0, name='roots')
 organs.append(roots)
 
 # create the phloem
@@ -139,7 +139,7 @@ cnwheat_ = cnwheat.CNWheat(organs=organs, meteo=meteo_df)
 # run the model
 cnwheat_output_df = cnwheat_.run(start_time=0, stop_time=100, number_of_output_steps=241,
                                 photosynthesis_computation_interval=2, show_progressbar=True)
-##cnwheat_output_df = cnwheat_.run(start_time=0, stop_time=10, number_of_output_steps=10,
+##cnwheat_output_df = cnwheat_.run(start_time=0, stop_time=960, number_of_output_steps=241,
 ##                                photosynthesis_computation_interval=2, show_progressbar=True)
 
 cnwheat_output_df.to_csv(CNWHEAT_OUTPUT_FILENAME, na_rep='NA', index=False)

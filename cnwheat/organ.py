@@ -27,7 +27,7 @@ class Organ(object):
     """
     Base class for any organ. DO NOT INSTANTIATE IT TO USE IT DIRECTLY.
     """
-    
+
     PARAMETERS = parameters.OrganParameters #: the parameters of the organ
 
     def __init__(self, name):
@@ -35,7 +35,7 @@ class Organ(object):
             name = self.__class__.__name__
         self.name = name #: the name of the organ
         self._initial_conditions = {} #: the initial value of each compartment of the organ
-    
+
     @property
     def initial_conditions(self):
         """Get the initial value of each compartment of the organ.
@@ -47,10 +47,10 @@ class PhotosyntheticOrgan(Organ):
     """
     Base class for any photosynthetic organ. DO NOT INSTANTIATE IT TO USE IT DIRECTLY.
     """
-    
+
     PARAMETERS = parameters.PhotosyntheticOrganParameters #: the parameters of the organ
 
-    def __init__(self, area, mstruct, width, height, PAR, triosesP_0, starch_0, 
+    def __init__(self, area, mstruct, width, height, PAR, triosesP_0, starch_0,
                  sucrose_0, fructan_0, nitrates_0, amino_acids_0, proteins_0, name=None):
 
         super(PhotosyntheticOrgan, self).__init__(name)
@@ -127,7 +127,7 @@ class PhotosyntheticOrgan(Organ):
     def calculate_conc_proteins(self, proteins):
         """Protein concentration (g proteins g-1 MS)
         """
-        mass_N_proteins = proteins*1E6 * Organ.PARAMETERS.N_MOLAR_MASS                         #: Mass of nitrogen in proteins (g)
+        mass_N_proteins = proteins*1E-6 * Organ.PARAMETERS.N_MOLAR_MASS                         #: Mass of nitrogen in proteins (g)
         mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
 
@@ -266,7 +266,7 @@ class Lamina(PhotosyntheticOrgan):
     """
     Class for organ lamina.
     """
-    
+
     PARAMETERS = parameters.LaminaParameters #: the parameters of the organ
 
     # VARIABLES
@@ -286,7 +286,7 @@ class Internode(PhotosyntheticOrgan):
     """
     Class for organ internode.
     """
-    
+
     PARAMETERS = parameters.InternodeParameters #: the parameters of the organ
 
 
@@ -294,7 +294,7 @@ class Peduncle(PhotosyntheticOrgan):
     """
     Class for organ peduncle.
     """
-    
+
     PARAMETERS = parameters.PeduncleParameters #: the parameters of the organ
 
 
@@ -302,7 +302,7 @@ class Sheath(PhotosyntheticOrgan):
     """
     Class for organ sheath.
     """
-    
+
     PARAMETERS = parameters.SheathParameters #: the parameters of the organ
 
 
@@ -368,7 +368,7 @@ class Grains(Organ):
     """
     Class for organ grains.
     """
-    
+
     PARAMETERS = parameters.GrainsParameters #: the parameters of the organ
 
     def __init__(self, starch_0, structure_0, proteins_0, name=None):
@@ -507,21 +507,13 @@ class Roots(Organ):
         """Uptake of nitrates by roots (µmol N nitrates imported s-1 * DELTA_T)
         """
         VMAX_HATS_MAX = Roots.PARAMETERS.A_VMAX_HATS * np.exp(-Roots.PARAMETERS.LAMBDA_VMAX_HATS*(nitrates_roots/self.mstruct))        #: Maximal rate of nitrates uptake at saturating soil N concentration;HATS (µmol N nitrates g-1 s-1)
-        #print 'VMAX_HATS_MAX', VMAX_HATS_MAX
         K_HATS = Roots.PARAMETERS.A_K_HATS * np.exp(-Roots.PARAMETERS.LAMBDA_K_HATS*(nitrates_roots/self.mstruct))                     #: Affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (µmol m-3)
-        #print 'K_HATS', K_HATS
-        HATS = (VMAX_HATS_MAX * conc_nitrates_soil)/ (K_HATS + conc_nitrates_soil)                               #: High Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
-        #print 'HATS', HATS
-        #print 'conc_nitrates_soil', conc_nitrates_soil
+        HATS = (VMAX_HATS_MAX * conc_nitrates_soil)/ (K_HATS + conc_nitrates_soil)                                                     #: High Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
         K_LATS = Roots.PARAMETERS.A_LATS * np.exp(-Roots.PARAMETERS.LAMBDA_LATS*(nitrates_roots/self.mstruct))                         #: Rate of nitrates uptake at low soil N concentration; LATS (m3 g-1 s-1)
-        LATS = (K_LATS * conc_nitrates_soil)                                                                     #: Low Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
+        LATS = (K_LATS * conc_nitrates_soil)                                                                                           #: Low Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
 
         potential_uptake = (HATS + LATS) * self.mstruct * Organ.PARAMETERS.DELTA_T                                          #: Potential nitrate uptake (µmol N nitrates uptaked by roots integrated over delta_t)
-        #print 'potential_uptake', potential_uptake
-        #print 'Tr', total_transpiration
-        #print 'f(Tr)', total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_UPTAKE_NITRATES)
         actual_uptake = potential_uptake * (total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_UPTAKE_NITRATES)) #: Nitrate uptake regulated by plant transpiration (µmol N nitrates uptaked by roots)
-        #print 'actual_uptake',actual_uptake
         return actual_uptake, potential_uptake
 
     def calculate_s_amino_acids(self, nitrates, sucrose):

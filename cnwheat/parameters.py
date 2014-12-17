@@ -31,8 +31,8 @@ class OrganParameters:
     AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
     N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
-    RATIO_EXPORT_NITRATES_ROOTS = 0.75      #: Proportion of uptaked nitrates actually exported from roots to shoot (1-RATIO_EXPORT_NITRATES_ROOTS = part of nitrates staying in roots)
-    
+    RATIO_EXPORT_NITRATES_ROOTS = 0.1       #: Proportion of uptaked nitrates actually exported from roots to shoot (1-RATIO_EXPORT_NITRATES_ROOTS = part of nitrates staying in roots)
+
 
 class PhotosyntheticOrganParameters(OrganParameters):
     """
@@ -67,17 +67,17 @@ class PhotosyntheticOrganParameters(OrganParameters):
     K_AMINO_ACIDS_TRIOSESP = 0.1    #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
 
     # Proteins
-    VMAX_SPROTEINS = 1.E-12         #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
+    VMAX_SPROTEINS = 1.E-02         #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
     K_SPROTEINS = 20                #: Affinity coefficient of protein synthesis (µmol N g-1 MS)
     DELTA_DPROTEINS = 1.85E-6       #: Relative rate of protein degradation (s-1)
-    
-    
+
+
 class ChaffParameters(PhotosyntheticOrganParameters):
     """
     Constants of chaffs.
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
-    
+
 
 class LaminaParameters(PhotosyntheticOrganParameters):
     """
@@ -89,34 +89,34 @@ class LaminaParameters(PhotosyntheticOrganParameters):
     INFLEXION_POINTS = {'lamina1': (600, 78.75),
                                 'lamina2': (480, 68.61),
                                 'lamina3': (360, 48.76)}
-    
+
 
 class InternodeParameters(PhotosyntheticOrganParameters):
     """
     Constants of internodes.
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
-    
+
 
 class PeduncleParameters(PhotosyntheticOrganParameters):
     """
     Constants of peduncles.
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
-    
-    
+
+
 class SheathParameters(PhotosyntheticOrganParameters):
     """
     Constants of sheaths.
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
-    
+
 
 class PhloemParameters(OrganParameters):
     """
     Constants of phloems.
     """
-    ALPHA = 1 #: Proportion of structural mass containing substrate 
+    ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
 class GrainsParameters(OrganParameters):
@@ -162,6 +162,5 @@ class RootsParameters(OrganParameters):
     K_AMINO_ACIDS_NITRATES = 5      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
     K_AMINO_ACIDS_SUCROSE = 0.01    #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
     K_TR_EXPORT_AMINO_ACIDS = 1E-2  #: Affinity coefficient of amino acids export from roots to shoot (mm H20)
-    
-    
-    
+
+
