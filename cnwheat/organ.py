@@ -211,7 +211,17 @@ class PhotosyntheticOrgan(Organ):
         diff_amino_acids = amino_acids/(self.mstruct*self.__class__.PARAMETERS.ALPHA) - amino_acids_phloem/(Organ.PARAMETERS.MSTRUCT_AXIS*self.__class__.PARAMETERS.ALPHA_AXIS)
         conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
         return driving_amino_acids_compartment * diff_amino_acids * conductance * Organ.PARAMETERS.DELTA_T
-
+    
+    def calculate_total_sucrose_flow_to_phloem(self):
+        """Calculate the total contribution of sucrose from self to phloem.
+        """
+        return self.loading_sucrose * self.mstruct * self.__class__.PARAMETERS.ALPHA
+    
+    def calculate_total_amino_acids_flow_to_phloem(self):
+        """Calculate the total contribution of amino acids from self to phloem.
+        """
+        return self.loading_amino_acids * self.mstruct * self.__class__.PARAMETERS.ALPHA
+    
     # COMPARTMENTS
 
     def calculate_triosesP_derivative(self, photosynthesis, s_sucrose, s_starch, s_amino_acids):
@@ -342,26 +352,20 @@ class Phloem(Organ):
         """delta sucrose of phloem integrated over delat_t (µmol C sucrose)
         """
         sucrose_derivative = 0
+        # compute the sucrose contribution of each organ except the phloem  
         for organ_ in organs:
-            if isinstance(organ_, PhotosyntheticOrgan):
-                sucrose_derivative += organ_.loading_sucrose * organ_.mstruct * organ_.__class__.PARAMETERS.ALPHA
-            elif isinstance(organ_, Grains):
-                sucrose_derivative -= (organ_.s_grain_structure + (organ_.s_grain_starch * ((organ_.structure/1E6)*12))) #: Conversion of structure from umol of C to g of C
-            elif isinstance(organ_, Roots):
-                sucrose_derivative -= organ_.unloading_sucrose * organ_.mstruct * organ_.__class__.PARAMETERS.ALPHA
+            if not isinstance(organ_, Phloem): # the phloem does not contribute to itself.
+                sucrose_derivative += organ_.calculate_total_sucrose_flow_to_phloem()
         return sucrose_derivative
 
     def calculate_amino_acids_derivative(self, organs):
         """delta amino acids of phloem integrated over delat_t (µmol N amino acids)
         """
         amino_acids_derivative = 0
+        # compute the amino acids contribution of each organ except the phloem  
         for organ_ in organs:
-            if isinstance(organ_, PhotosyntheticOrgan):
-                amino_acids_derivative += organ_.loading_amino_acids * organ_.mstruct * organ_.__class__.PARAMETERS.ALPHA
-            elif isinstance(organ_, Grains):
-                amino_acids_derivative -= (organ_.s_proteins * ((organ_.structure/1E6)*12)) #: Conversion of structure from umol of C to g of C
-            elif isinstance(organ_, Roots):
-                amino_acids_derivative -= organ_.unloading_amino_acids * organ_.mstruct * organ_.__class__.PARAMETERS.ALPHA
+            if not isinstance(organ_, Phloem): # the phloem does not contribute to itself.
+                amino_acids_derivative += organ_.calculate_total_amino_acids_flow_to_phloem()
         return amino_acids_derivative
 
 class Grains(Organ):
@@ -431,7 +435,17 @@ class Grains(Organ):
         else:
             s_proteins = 0
         return s_proteins
+    
+    def calculate_total_sucrose_flow_to_phloem(self):
+        """Calculate the total contribution of sucrose from self to phloem.
+        """
+        return -(self.s_grain_structure + (self.s_grain_starch * ((self.structure/1E6)*12))) #: Conversion of structure from umol of C to g of C
 
+    def calculate_total_amino_acids_flow_to_phloem(self):
+        """Calculate the total contribution of amino acids from self to phloem.
+        """
+        return -(self.s_proteins * ((self.structure/1E6)*12)) #: Conversion of structure from umol of C to g of C
+    
     # COMPARTMENTS
 
     def calculate_structure_derivative(self, s_grain_structure):
@@ -525,7 +539,17 @@ class Roots(Organ):
         """Total export of amino acids from roots to shoot organs (abstraction of the xylem compartment) (µmol N amino acids exported during DELTA_T (already accounted in Transpiration))
         """
         return (amino_acids/(self.mstruct * Roots.PARAMETERS.ALPHA)) * (total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_EXPORT_AMINO_ACIDS))
+    
+    def calculate_total_sucrose_flow_to_phloem(self):
+        """Calculate the total contribution of sucrose from self to phloem.
+        """
+        return -(self.unloading_sucrose * self.mstruct * self.__class__.PARAMETERS.ALPHA) #: Conversion of structure from umol of C to g of C
 
+    def calculate_total_amino_acids_flow_to_phloem(self):
+        """Calculate the total contribution of amino acids from self to phloem.
+        """
+        return -(self.unloading_amino_acids * self.mstruct * self.__class__.PARAMETERS.ALPHA)
+    
     # COMPARTMENTS
 
     def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids):
