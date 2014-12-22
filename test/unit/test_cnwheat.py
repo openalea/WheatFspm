@@ -3,7 +3,7 @@
     test_cn_wheat
     ~~~~~~~~~~~~~
 
-    Test the cnwheat.cnwheat module.
+    Test the cnwheat.simulation module.
 
     CSV files must contain only ASCII characters and ',' as separator.
 
@@ -27,8 +27,8 @@ import os
 import numpy as np
 import pandas as pd
 
-from cnwheat import cnwheat
-from cnwheat import organ
+from cnwheat import simulation
+from cnwheat import model
 
 DATA_DIRPATH = 'data'
 DESIRED_OUTPUT_FILENAME = 'desired_output.csv'
@@ -66,62 +66,62 @@ def test_run():
     # create the chaff
     name='Chaff'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    chaff = organ.Chaff(area=0.00075, mstruct=0.21, width=0.02, height= 0.7, PAR=PAR_df.PAR,
+    chaff = model.Chaff(area=0.00075, mstruct=0.21, width=0.02, height= 0.7, PAR=PAR_df.PAR,
                         starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
     organs.append(chaff)
 
     # create the internodes
     name='Internode'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    internode = organ.Internode(area=0.0012, mstruct=0.148, width=0.042, height=0.4, PAR=PAR_df.PAR,
+    internode = model.Internode(area=0.0012, mstruct=0.148, width=0.042, height=0.4, PAR=PAR_df.PAR,
                                       starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
     organs.append(internode)
 
     # create the laminae
     name='Lamina'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    lamina = organ.Lamina(area=0.00346, mstruct=0.14, width= 0.018, height=0.6, PAR=PAR_df.PAR,
+    lamina = model.Lamina(area=0.00346, mstruct=0.14, width= 0.018, height=0.6, PAR=PAR_df.PAR,
                                     starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
     organs.append(lamina)
 
     # create the peduncles
     name = 'Peduncle'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    peduncle = organ.Peduncle(area=0.00155, mstruct=0.168, width= 0.031, height=0.65, PAR=PAR_df.PAR,
+    peduncle = model.Peduncle(area=0.00155, mstruct=0.168, width= 0.031, height=0.65, PAR=PAR_df.PAR,
                                         starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=0, name=name)
     organs.append(peduncle)
 
     # create the sheaths
     name = 'Sheath'
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
-    sheath = organ.Sheath(area=0.0006, mstruct=0.103, width=0.042, height=0.5, PAR=PAR_df.PAR,
+    sheath = model.Sheath(area=0.0006, mstruct=0.103, width=0.042, height=0.5, PAR=PAR_df.PAR,
                                     starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0 , amino_acids_0=0, proteins_0=0, name=name)
     organs.append(sheath)
 
     # create the grains
-    grains = organ.Grains(starch_0=0, structure_0=10850, proteins_0=0, name='grains')
+    grains = model.Grains(starch_0=0, structure_0=10850, proteins_0=0, name='grains')
     organs.append(grains)
 
     # create the roots
-    roots = organ.Roots(mstruct=0.504, sucrose_0=0, nitrates_0=250, amino_acids_0=0, name='roots')
+    roots = model.Roots(mstruct=0.504, sucrose_0=0, nitrates_0=250, amino_acids_0=0, name='roots')
     organs.append(roots)
 
     # create the phloem
-    phloem = organ.Phloem(sucrose_0=0, amino_acids_0=0, name='phloem')
+    phloem = model.Phloem(sucrose_0=0, amino_acids_0=0, name='phloem')
     organs.append(phloem)
 
     # get meteo data
     meteo_df = read_t_data(DATA_DIRPATH, 'meteo.csv')
 
     # initialize the simulator
-    cnwheat_ = cnwheat.CNWheat(organs=organs, meteo=meteo_df)
+    cnwheat_ = simulation.CNWheat(organs=organs, meteo=meteo_df)
 
 
     # run the model
     actual_output_df = cnwheat_.run(start_time=0, stop_time=48, number_of_output_steps=7,
-                                    photosynthesis_computation_interval=4,show_progressbar=True)
+                                    photosynthesis_computation_interval=4)
 
-    compare_actual_to_desired(DATA_DIRPATH, actual_output_df, True)
+    compare_actual_to_desired(DATA_DIRPATH, actual_output_df)
 
 
 if __name__ == '__main__':

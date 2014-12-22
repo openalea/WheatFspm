@@ -28,8 +28,8 @@ import pandas as pd
 from scipy.integrate import odeint
 from scipy.interpolate import interp1d
 
-import organ
-import photosynthesis
+import model
+from farquharwheat import model as photosynthesis_model
 
 class CNWheatError(Exception): pass
 class CNWheatInputError(CNWheatError): pass
@@ -42,7 +42,7 @@ class CNWheat(object):
 
     :Parameters:
 
-        - `organs` (:class:`list`) - List of :class:`cnwheat.organ.Organ`.
+        - `organs` (:class:`list`) - List of :class:`cnwheat.model.Organ`.
 
         - `meteo` (:class:`pandas.DataFrame`) - a :class:`pandas.DataFrame` which index
           is time in hours and which columns are "air_temperature", "humidity", "ambient_CO2" and "Wind". Due to the
@@ -73,14 +73,14 @@ class CNWheat(object):
 
         i = 0
         for organ_ in organs:
-            if isinstance(organ_, organ.PhotosyntheticOrgan):
+            if isinstance(organ_, model.PhotosyntheticOrgan):
                 self.PAR_linear_interpolation[organ_] = interp1d(organ_.PAR.index, organ_.PAR)
                 self.photosynthesis_mapping[organ_] = {}
-            elif isinstance(organ_, organ.Phloem):
+            elif isinstance(organ_, model.Phloem):
                 self.phloem = organ_ # the phloem
-            elif isinstance(organ_, organ.Roots):
+            elif isinstance(organ_, model.Roots):
                 self.roots = organ_ # the roots
-            elif isinstance(organ_, organ.Grains):
+            elif isinstance(organ_, model.Grains):
                 self.grains = organ_ # the grains
             self.initial_conditions_mapping[organ_] = {}
             for compartment_name, compartment_initial_value in organ_.initial_conditions.iteritems():
@@ -274,7 +274,7 @@ class CNWheat(object):
                 humidity_t_inf = self.meteo_interpolations['humidity'](t_inf)
                 ambient_CO2_t_inf = self.meteo_interpolations['ambient_CO2'](t_inf)
                 Wind_top_canopy_inf = self.meteo_interpolations['Wind'](t_inf)
-                An, Tr = photosynthesis.PhotosynthesisModel.calculate_An(t_inf, organ_, PAR_linear_interpolation, 
+                An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(t_inf, organ_, PAR_linear_interpolation, 
                                                                          air_temperature_t_inf, ambient_CO2_t_inf, humidity_t_inf, Wind_top_canopy_inf) # TODO: add dependancy to nitrogen
                 #print 't=', t, 'PAR=', PAR_linear_interpolation(t_inf), 'Tr_{} = '.format(organ_.name), Tr
                 organ_photosynthesis_mapping[t_inf]['photosynthesis'] = organ_.calculate_photosynthesis(t_inf, An)
@@ -419,7 +419,7 @@ class CNWheat(object):
         for organ_, PAR_linear_interpolation in self.PAR_linear_interpolation.iteritems():
             An_Tr_list = []
             for t_ in t:
-                An_Tr_list.append(photosynthesis.PhotosynthesisModel.calculate_An(
+                An_Tr_list.append(photosynthesis_model.PhotosynthesisModel.calculate_An(
                                       t_,
                                       organ_,
                                       PAR_linear_interpolation,
