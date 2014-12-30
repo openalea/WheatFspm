@@ -12,6 +12,8 @@ import parameters
 
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
+    
+    .. seealso:: Barillot et al. 2014.
 """
 
 """
@@ -25,7 +27,9 @@ import parameters
 
 class Organ(object):
     """
-    Base class for any organ. DO NOT INSTANTIATE IT TO USE IT DIRECTLY.
+    The Organ class defines the CN exchanges in an organ. 
+    
+    The Organ class is the base class of all organs. DO NOT INSTANTIATE IT.
     """
 
     PARAMETERS = parameters.OrganParameters #: the parameters of the organ
@@ -45,7 +49,9 @@ class Organ(object):
 
 class PhotosyntheticOrgan(Organ):
     """
-    Base class for any photosynthetic organ. DO NOT INSTANTIATE IT TO USE IT DIRECTLY.
+    The PhotosyntheticOrgan class defines the CN exchanges in a photosynthetic organ. 
+    
+    The PhotosyntheticOrgan class is the base class of all photosynthetic organs. DO NOT INSTANTIATE IT.
     """
 
     PARAMETERS = parameters.PhotosyntheticOrganParameters #: the parameters of the organ
@@ -256,7 +262,7 @@ class PhotosyntheticOrgan(Organ):
 
 class Chaff(PhotosyntheticOrgan):
     """
-    Class for organ chaff.
+    The Chaff class defines the CN exchanges in a chaff. 
     """
 
     PARAMETERS = parameters.ChaffParameters #: the parameters of the organ
@@ -264,7 +270,7 @@ class Chaff(PhotosyntheticOrgan):
 
 class Lamina(PhotosyntheticOrgan):
     """
-    Class for organ lamina.
+    The Lamina class defines the CN exchanges in a lamina. 
     """
 
     PARAMETERS = parameters.LaminaParameters #: the parameters of the organ
@@ -284,7 +290,7 @@ class Lamina(PhotosyntheticOrgan):
 
 class Internode(PhotosyntheticOrgan):
     """
-    Class for organ internode.
+    The Internode class defines the CN exchanges in an internode. 
     """
 
     PARAMETERS = parameters.InternodeParameters #: the parameters of the organ
@@ -292,7 +298,7 @@ class Internode(PhotosyntheticOrgan):
 
 class Peduncle(PhotosyntheticOrgan):
     """
-    Class for organ peduncle.
+    The Peduncle class defines the CN exchanges in a peduncle. 
     """
 
     PARAMETERS = parameters.PeduncleParameters #: the parameters of the organ
@@ -300,7 +306,7 @@ class Peduncle(PhotosyntheticOrgan):
 
 class Sheath(PhotosyntheticOrgan):
     """
-    Class for organ sheath.
+    The Sheath class defines the CN exchanges in a sheath. 
     """
 
     PARAMETERS = parameters.SheathParameters #: the parameters of the organ
@@ -308,7 +314,7 @@ class Sheath(PhotosyntheticOrgan):
 
 class Phloem(Organ):
     """
-    Class for organ phloem.
+    The Phloem class defines the CN exchanges in a phloem. 
     """
 
     PARAMETERS = parameters.PhloemParameters #: the parameters of the organ
@@ -368,7 +374,7 @@ class Phloem(Organ):
 
 class Grains(Organ):
     """
-    Class for organ grains.
+    The Grains class defines the CN exchanges in grains. 
     """
 
     PARAMETERS = parameters.GrainsParameters #: the parameters of the organ
@@ -454,7 +460,7 @@ class Grains(Organ):
 
 class Roots(Organ):
     """
-    Class for organ roots.
+    The Roots class defines the CN exchanges in roots. 
     """
 
     PARAMETERS = parameters.RootsParameters #: the parameters of the organ

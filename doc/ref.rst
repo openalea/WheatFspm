@@ -23,30 +23,30 @@ describing what they are and what they do.
     :synopsis:
     
 
-:mod:`cnwheat.cnwheat` module
+:mod:`cnwheat.simulation` module
 *********************************************************
 
-.. automodule:: cnwheat.cnwheat
+.. automodule:: cnwheat.simulation
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
     
-:mod:`cnwheat.organ` module
+:mod:`cnwheat.model` module
 *********************************************************
 
-.. automodule:: cnwheat.organ
+.. automodule:: cnwheat.model
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
 
-:mod:`cnwheat.photosynthesis` module
+:mod:`cnwheat.farquharwheat.model` module
 *********************************************************
 
-.. automodule:: cnwheat.photosynthesis
+.. automodule:: cnwheat.farquharwheat.model
     :members:
     :undoc-members:
     :show-inheritance:

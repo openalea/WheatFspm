@@ -8,6 +8,8 @@
 
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
+    
+    .. seealso:: Barillot et al. 2014.
 """
 
 """

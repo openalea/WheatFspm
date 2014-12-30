@@ -3,13 +3,15 @@
 from __future__ import division # use "//" to do integer division
 
 """
-    cnwheat.cnwheat
-    ~~~~~~~~~~~~~~~
+    cnwheat.simulation
+    ~~~~~~~~~~~~~~~~~~
 
     Front-end to run the model.
 
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
+    
+    .. seealso:: Barillot et al. 2014.
 """
 
 """
@@ -37,12 +39,19 @@ class CNWheatRunError(CNWheatError): pass
 
 class CNWheat(object):
     """
-    Compute CN exchanges in wheat architecture defined by lamina, sheaths, internodes, peduncles, a chaff, a phloem, roots and grains.
-    This class permits to initialize and run the model.
-
+    The CNWheat class permits to initialize and run the model. 
+    
+    Use :meth:`run` to run the model.   
+    
     :Parameters:
 
-        - `organs` (:class:`list`) - List of :class:`cnwheat.model.Organ`.
+        - `organs` (:class:`list`) - List of :class:`cnwheat.model.Organ`. 
+          Must contain at least : 
+          
+              * a :obj:`photosynthetic organ <cnwheat.model.PhotosyntheticOrgan>`,
+              * a :obj:`phloem <cnwheat.model.Phloem>`,
+              * a :obj:`roots <cnwheat.model.Roots>`,
+              * a :obj:`grains <cnwheat.model.Grains>`.
 
         - `meteo` (:class:`pandas.DataFrame`) - a :class:`pandas.DataFrame` which index
           is time in hours and which columns are "air_temperature", "humidity", "ambient_CO2" and "Wind". Due to the
@@ -109,7 +118,7 @@ class CNWheat(object):
               at which photosynthesis is computed. For example, if `photosynthesis_computation_interval` = 4,
               then photosynthesis is computed at t=0, t=4, t=8, ...
               This permits to save computation time for large simulation.
-              If `photosynthesis_computation_interval`=0 (the default), then photosynthesis
+              If `photosynthesis_computation_interval` = 0 (the default), then photosynthesis
               is computed for each time step demanded by the solver.
 
             - `odeint_mxstep` (:class:`int`) - Maximum number of (internally defined) steps allowed for each integration point in time grid.
@@ -117,11 +126,10 @@ class CNWheat(object):
               The default value ( `5000` ) normally permits to solve the current model. User should increased this value if a more complex model is defined
               and if this model make the integration failed.
 
-            - `show_progressbar` (:class:`bool`) - True: show the progress bar ; False: DO NOT show the progress bar.
+            - `show_progressbar` (:class:`bool`) - True: show the progress bar ; False: do not show the progress bar.
 
         :Returns:
-            Dataframe containing the CN exchanges between organs
-            for each desired time.
+            Dataframe containing the CN exchanges between organs for each desired time step.
 
         :Returns Type:
             :class:`pandas.DataFrame`
@@ -129,8 +137,6 @@ class CNWheat(object):
         .. warning:: due to the solver of :func:`scipy.integrate.odeint`, `meteo` must provide data for t = `stop_time` + 1.
                      For the same reason, the attribute `PAR` of each organ of `organs` must also provide data for t = `stop_time` + 1.
                      This is automatically checked by the current function.
-
-        .. seealso:: Barillot et al. 2014.
 
         """
 
@@ -392,7 +398,7 @@ class CNWheat(object):
 
             * the time grid `t`,
             * the output of the solver `solver_output`,
-            * and intermediate and post-processed variables usefull for debug and validation
+            * and intermediate and post-processed variables useful for debug and validation.
         """
         solver_output = solver_output.T
 
