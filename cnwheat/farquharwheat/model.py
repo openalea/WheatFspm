@@ -227,7 +227,7 @@ class PhotosynthesisModel(object):
             - `organ_` (:class:`cnwheat.organ.Organ`) - the organ for which we want to do the computation. 
 
             - `PAR_linear_interpolation` (:func:`scipy.interpolate.interpolate.interp1d`) - a function 
-              whose call method uses interpolation to find the value of PAR (ï¿½mol m-2 s-1).
+              whose call method uses interpolation to find the value of PAR (µmol m-2 s-1).
             
             - `Ta` (:class:`float`) - Air temperature (degree Celsius)
 
@@ -238,14 +238,14 @@ class PhotosynthesisModel(object):
             - `wind0` (:class:`float`) - Wind speed at the top of the canopy (m s-1)
 
         :Returns:
-            Net assimilation (ï¿½mol m-2 s-1) and Tr (mm s-1)
+            Net assimilation (µmol m-2 s-1) and Tr (mm s-1)
 
         :Returns Type:
             :class:`float`
 
         """
         #: Organ parameters
-        PAR = PAR_linear_interpolation(t)     #: ï¿½mol m-2 s-1
+        PAR = PAR_linear_interpolation(t)     #: µmol m-2 s-1
         LEAF_WIDTH = organ_.width                    #: m
         H_CANOPY = 0.8                              #: m
         H_ORGAN = organ_.height                      #: m
