@@ -295,11 +295,12 @@ class CNWheat(object):
             # calculate the photosynthesis of organ only if it has not been already calculated at t_inf
             if t_inf not in organ_photosynthesis_mapping:
                 organ_photosynthesis_mapping[t_inf] = {}
+                PAR = PAR_linear_interpolation(t_inf)
                 air_temperature_t_inf = self.meteo_interpolations['air_temperature'](t_inf)
                 humidity_t_inf = self.meteo_interpolations['humidity'](t_inf)
                 ambient_CO2_t_inf = self.meteo_interpolations['ambient_CO2'](t_inf)
                 Wind_top_canopy_t_inf = self.meteo_interpolations['Wind'](t_inf)
-                An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(t_inf, organ.width, organ.height, PAR_linear_interpolation, 
+                An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(t_inf, organ.width, organ.height, PAR, 
                                                                                air_temperature_t_inf, ambient_CO2_t_inf, 
                                                                                humidity_t_inf, Wind_top_canopy_t_inf) # TODO: add dependancy to nitrogen
                 #print 't=', t, 'PAR=', PAR_linear_interpolation(t_inf), 'Tr_{} = '.format(organ.name), Tr
@@ -441,7 +442,7 @@ class CNWheat(object):
                                   t_,
                                   organ.width, 
                                   organ.height,
-                                  PAR_linear_interpolation,
+                                  PAR_linear_interpolation(t_),
                                   self.meteo_interpolations['air_temperature'](t_),
                                   self.meteo_interpolations['ambient_CO2'](t_),
                                   self.meteo_interpolations['humidity'](t_),
