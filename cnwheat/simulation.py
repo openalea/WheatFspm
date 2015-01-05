@@ -34,6 +34,7 @@ import model
 from farquharwheat import model as photosynthesis_model
 
 class CNWheatError(Exception): pass
+class CNWheatInitError(Exception): pass
 class CNWheatInputError(CNWheatError): pass
 class CNWheatRunError(CNWheatError): pass
 
@@ -96,7 +97,20 @@ class CNWheat(object):
                 self.initial_conditions_mapping[organ_][compartment_name] = i
                 self.initial_conditions.append(compartment_initial_value)
                 i += 1
-
+        
+        try:
+            if len(self.photosynthesis_mapping) == 0:
+                raise CNWheatInitError("No photosynthetic organ in 'organs'.")
+            if self.phloem is None:
+                raise CNWheatInitError("No phloem in 'organs'.")
+            if self.roots is None:
+                raise CNWheatInitError("No roots in 'organs'.")
+            if self.grains is None:
+                raise CNWheatInitError("No grains in 'organs'.")
+        except CNWheatInitError, e:
+            e.message += " 'organs' must contain at least: a photosynthetic organ, a phloem, a roots and a grains."
+            raise e
+        
         self.progressbar = ProgressBar(title='Solver progress') #: progress bar to show the progress of the solver
         self.show_progressbar = False #: True: show the progress bar ; False: DO NOT show the progress bar
 
