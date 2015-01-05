@@ -299,7 +299,7 @@ class CNWheat(object):
                 humidity_t_inf = self.meteo_interpolations['humidity'](t_inf)
                 ambient_CO2_t_inf = self.meteo_interpolations['ambient_CO2'](t_inf)
                 Wind_top_canopy_inf = self.meteo_interpolations['Wind'](t_inf)
-                An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(t_inf, organ, PAR_linear_interpolation, 
+                An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(t_inf, organ.width, organ.height, PAR_linear_interpolation, 
                                                                                air_temperature_t_inf, ambient_CO2_t_inf, 
                                                                                humidity_t_inf, Wind_top_canopy_inf) # TODO: add dependancy to nitrogen
                 #print 't=', t, 'PAR=', PAR_linear_interpolation(t_inf), 'Tr_{} = '.format(organ.name), Tr
@@ -439,7 +439,8 @@ class CNWheat(object):
             for t_ in t:
                 An_Tr_list.append(photosynthesis_model.PhotosynthesisModel.calculate_An(
                                   t_,
-                                  organ,
+                                  organ.width, 
+                                  organ.height,
                                   PAR_linear_interpolation,
                                   self.meteo_interpolations['air_temperature'](t_),
                                   self.meteo_interpolations['ambient_CO2'](t_),

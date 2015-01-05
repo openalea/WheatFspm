@@ -214,7 +214,7 @@ class PhotosynthesisModel(object):
 
 
     @classmethod
-    def calculate_An(cls, t, organ_, PAR_linear_interpolation, Ta, ambient_CO2, RH, wind0):
+    def calculate_An(cls, t, organ_width, organ_height, PAR_linear_interpolation, Ta, ambient_CO2, RH, wind0):
         """
         For an organ:
             * compute CO2 assimilation following Farquhar's model, 
@@ -246,9 +246,9 @@ class PhotosynthesisModel(object):
         """
         #: Organ parameters
         PAR = PAR_linear_interpolation(t)     #: µmol m-2 s-1
-        LEAF_WIDTH = organ_.width                    #: m
+        LEAF_WIDTH = organ_width                    #: m
         H_CANOPY = 0.8                              #: m
-        H_ORGAN = organ_.height                      #: m
+        H_ORGAN = organ_height                      #: m
         NA_INIT = 2.5                               #: g m-2
 
         ### Iterations to find leaf temperature and Ci ###
