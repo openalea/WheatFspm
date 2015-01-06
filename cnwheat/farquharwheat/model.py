@@ -58,7 +58,7 @@ class PhotosynthesisModel(object):
     FT = 0.1                #: Physical parameter: Leaf radiation transmittance
 
     #: Temperature dependance of photosynthetic parameters
-    #:
+    #: test svn charset µ é
     #: Parameter values derived from Braune et al. (2009) except for Kc, Ko, and Rdark (Bernacchi et al., 2001)
     #:     * deltaHa, deltaHd: enthalpie of activation and deactivation respectively (kJ mol-1)
     #:     * deltaS: entropy term (kJ mol-1 K-1)
@@ -217,17 +217,17 @@ class PhotosynthesisModel(object):
     def calculate_An(cls, t, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, wind0):
         """
         For an organ:
-            * compute CO2 assimilation following Farquhar's model, 
+            * compute CO2 assimilation following Farquhar's model,
             * estimate internal CO2 and organ temperature numerically.
 
         :Parameters:
-        
+
             - `t` (:class:`float`) - the time at which we want to calculate An
-            
-            - `organ_` (:class:`cnwheat.organ.Organ`) - the organ for which we want to do the computation. 
+
+            - `organ_` (:class:`cnwheat.organ.Organ`) - the organ for which we want to do the computation.
 
             - `PAR` (:class:`float`) - the PAR at t (µmol m-2 s-1).
-            
+
             - `Ta` (:class:`float`) - Air temperature (degree Celsius)
 
             - `ambient_CO2` (:class:`float`) - Air CO2 (umol mol-1)
