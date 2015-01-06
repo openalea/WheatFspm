@@ -58,7 +58,7 @@ class PhotosynthesisModel(object):
     FT = 0.1                #: Physical parameter: Leaf radiation transmittance
 
     #: Temperature dependance of photosynthetic parameters
-    #: test svn charset µ é
+    #:
     #: Parameter values derived from Braune et al. (2009) except for Kc, Ko, and Rdark (Bernacchi et al., 2001)
     #:     * deltaHa, deltaHd: enthalpie of activation and deactivation respectively (kJ mol-1)
     #:     * deltaS: entropy term (kJ mol-1 K-1)
