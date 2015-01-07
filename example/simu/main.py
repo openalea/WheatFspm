@@ -23,6 +23,10 @@
 
 import os
 
+import logging
+import logging.config
+import json
+
 import pandas as pd
 
 from cnwheat import simulation
@@ -34,79 +38,23 @@ OUTPUT_FILEPATH = 'cnwheat_output.csv'
 
 OUTPUT_PRECISION = 2
 
-def setup_logging():
-    '''Setup logging configuration
-    '''
-    import logging
-    import logging.config
-    ROOT_LOGGING_LEVEL = 'DEBUG'
-    LOGGING_CONFIG = \
-    {
-        'version': 1,
-        'formatters': {
-            'verbose': {
-                'format': '%(levelname)s - %(name)s - %(lineno)d - %(message)s'
-            },
-            'simple': {
-                'format': '%(message)s'
-            }
-        },
-        'handlers': {
-            'console': {
-                'level': 'WARNING',
-                'class': 'logging.StreamHandler',
-                'stream': 'ext://sys.stdout',
-                'formatter': 'verbose'
-            },
-            'file': {
-                'level': 'DEBUG',
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': 'debug.log',
-                'maxBytes': 10485760,
-                'backupCount': 100,
-                'mode': 'w',
-                'formatter': 'verbose'
-            },
-            'compartments_file': {
-                'level': 'DEBUG',
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': 'compartments.log',
-                'maxBytes': 10485760,
-                'backupCount': 100,
-                'mode': 'w',
-                'formatter': 'simple'
-            },
-            'derivatives_file': {
-                'level': 'DEBUG',
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': 'derivatives.log',
-                'maxBytes': 10485760,
-                'backupCount': 100,
-                'mode': 'w',
-                'formatter': 'simple'
-            }
-        },
-        'loggers': {
-            'cnwheat_compartments': {
-                'level': 'DEBUG',
-                'handlers': ['compartments_file'],
-                'propagate': False
-            },
-            'cnwheat_derivatives': {
-                'level': 'DEBUG',
-                'handlers': ['derivatives_file'],
-                'propagate': False
-            }
-        },
-        'root': {
-            'level': ROOT_LOGGING_LEVEL,
-            'handlers': ['console', 'file']
-        }
-    }
-    logging.config.dictConfig(LOGGING_CONFIG)
-    
-# setup logging
-setup_logging()
+LOGGING_CONFIG_FILEPATH = os.path.join('..', 'logging.json')
+
+LOGGING_LEVEL = logging.INFO # change to logging.DEBUG for debugging
+
+def setup_logging(config_filepath='logging.json', level=logging.INFO):
+    """Setup logging configuration
+    """
+    if os.path.exists(config_filepath):
+        with open(config_filepath, 'r') as f:
+            config = json.load(f)
+        logging.config.dictConfig(config)
+    else:
+        logging.basicConfig()
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+        
+setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL)
 
 def read_t_data(curr_data_dirpath, data_filename):
     data_filepath = os.path.join(curr_data_dirpath, data_filename)

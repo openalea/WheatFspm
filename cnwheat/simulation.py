@@ -64,7 +64,7 @@ class CNWheat(object):
         
         logger = logging.getLogger(__name__)
         
-        logger.info('Initialization of the simulation')
+        logger.info('Initialization of the simulation...')
         
         self.organs = organs #: the organs used in the model
         self.meteo = meteo #: the meteo data used in the model
@@ -77,7 +77,6 @@ class CNWheat(object):
         self.meteo_interpolations = {}
 
         for column in meteo.columns:
-            logger.debug('Interpolate meteo column: %s', column)
             self.meteo_interpolations[column] = interp1d(meteo.index, meteo[column])
 
         # interpolate the PAR and construct the list of initial conditions
@@ -89,22 +88,16 @@ class CNWheat(object):
         i = 0
         for organ in organs:
             if isinstance(organ, model.PhotosyntheticOrgan):
-                logger.debug('Add organ: %s', organ.name)
                 self.photosynthesis_mapping[organ] = {}
-                logger.debug('Interpolate PAR for organ: %s', organ.name)
                 self.PAR_linear_interpolation[organ] = interp1d(organ.PAR.index, organ.PAR)
             elif isinstance(organ, model.Phloem):
-                logger.debug('Set the phloem')
                 self.phloem = organ # the phloem
             elif isinstance(organ, model.Roots):
-                logger.debug('Set the roots')
                 self.roots = organ # the roots
             elif isinstance(organ, model.Grains):
-                logger.debug('Set the grains')
                 self.grains = organ # the grains
             self.initial_conditions_mapping[organ] = {}
             for compartment_name, compartment_initial_value in organ.initial_conditions.iteritems():
-                logger.debug('Map %s of %s to %d in initial conditions mapping', compartment_name, organ.name, i)
                 self.initial_conditions_mapping[organ][compartment_name] = i
                 self.initial_conditions.append(compartment_initial_value)
                 i += 1
@@ -167,11 +160,10 @@ class CNWheat(object):
 
         """
         logger = logging.getLogger(__name__)
-        logger.info('Running the simulation')
+        logger.info('Run of the simulation...')
 
         self._check_inputs_consistency(start_time, stop_time)
 
-        logger.debug('Create the time grid')
         t = np.linspace(start_time, stop_time, number_of_output_steps)
 
         self.show_progressbar = show_progressbar
@@ -180,8 +172,8 @@ class CNWheat(object):
 
         self._clear_organs()
         
-        compartments_logger = logging.getLogger('cnwheat_compartments')
-        derivatives_logger = logging.getLogger('cnwheat_derivatives')
+        compartments_logger = logging.getLogger('cnwheat.compartments')
+        derivatives_logger = logging.getLogger('cnwheat.derivatives')
         if compartments_logger.isEnabledFor(logging.DEBUG) or derivatives_logger.isEnabledFor(logging.DEBUG):
             compartment_names = []
             for organ, compartments in self.initial_conditions_mapping.iteritems():
@@ -198,7 +190,7 @@ class CNWheat(object):
                 for compartment_name, compartment_index in compartments.iteritems():
                     formatted_initial_conditions[organ.name + '.' + compartment_name] = self.initial_conditions[compartment_index]
             logger.debug(
-                """Running the solver with: 
+                """Run the solver with: 
                     - initial conditions = %s, 
                     - time grid = %s, 
                     - photosynthesis computation interval = %s, 
@@ -214,7 +206,7 @@ class CNWheat(object):
                 for compartment_name, compartment_index in compartments.iteritems():
                     formatted_calculated_compartments[organ.name + '.' + compartment_name] = calculated_compartments_at_stop_time[compartment_index]
             logger.debug(
-                """Running the solver DONE. 
+                """Run of the solver DONE: 
                     - compartments(t=%s) = %s, 
                     - infodict = %s""", 
                 stop_time, formatted_calculated_compartments, infodict)
@@ -226,7 +218,7 @@ class CNWheat(object):
 
         cnwheat_output_df = self._format_solver_output(t, soln)
         
-        logger.info('Running the simulation DONE')
+        logger.info('Run of the simulation DONE')
 
         return cnwheat_output_df
 
@@ -241,7 +233,7 @@ class CNWheat(object):
         Raise an exception if :attr:`meteo` or :attr:`PAR` is not valid.
         """
         logger = logging.getLogger(__name__)
-        logger.debug('Check inputs consistency')
+        logger.debug('Check of inputs consistency...')
         
         # check the consistency of meteo
         lowest_t = self.meteo.first_valid_index()
@@ -274,7 +266,7 @@ class CNWheat(object):
                 logger.exception(message)
                 raise CNWheatInputError(message)
             
-        logger.debug('Check inputs consistency DONE')
+        logger.debug('Check of inputs consistency DONE')
 
 
     def _clear_organs(self):
@@ -282,10 +274,12 @@ class CNWheat(object):
         Clear the computed photosynthesis and transpiration for each photosynthetic organ in :attr:`photosynthesis_mapping`.
         """
         logger = logging.getLogger(__name__)
-        logger.debug('Clear the photosynthesis and transpiration computed during the previous simulation')
+        logger.debug('Cleaning of the photosynthesis and transpiration computed during the previous simulation...')
         
         for organ_photosynthesis_mapping in self.photosynthesis_mapping.itervalues():
             organ_photosynthesis_mapping.clear()
+            
+        logger.debug('Cleaning of the photosynthesis and transpiration computed during the previous simulation DONE')
 
 
     def _calculate_all_derivatives(self, y, t, photosynthesis_computation_interval):
@@ -339,7 +333,7 @@ class CNWheat(object):
         """
         logger = logging.getLogger(__name__)
         
-        compartments_logger = logging.getLogger('cnwheat_compartments')
+        compartments_logger = logging.getLogger('cnwheat.compartments')
         if compartments_logger.isEnabledFor(logging.DEBUG):
             formatted_initial_conditions = ','.join(map(str, [t] + y.tolist()))
             compartments_logger.debug(formatted_initial_conditions)
@@ -499,7 +493,7 @@ class CNWheat(object):
         if self.show_progressbar:
             self.progressbar.update(t)
         
-        derivatives_logger = logging.getLogger('cnwheat_derivatives')
+        derivatives_logger = logging.getLogger('cnwheat.derivatives')
         if derivatives_logger.isEnabledFor(logging.DEBUG):
             formatted_derivatives = ','.join(map(str, [t] + y_derivatives.tolist()))
             derivatives_logger.debug(formatted_derivatives)
@@ -516,7 +510,7 @@ class CNWheat(object):
             * and intermediate and post-processed variables useful for debug and validation.
         """
         logger = logging.getLogger(__name__)
-        logger.debug('Format solver output')
+        logger.debug('Formatting of solver output...')
         
         solver_output = solver_output.T
 
@@ -656,7 +650,7 @@ class CNWheat(object):
 
         result_items.extend(variables + flows + compartments)
         
-        logger.debug('Format solver output DONE')
+        logger.debug('Formatting of solver output DONE')
 
         return pd.DataFrame.from_items(result_items)
 

@@ -1,0 +1,66 @@
+{
+    "version": 1,
+    "formatters": {
+        "verbose": {
+            "format": "%(levelname)s - %(name)s - %(lineno)d - %(message)s"
+        },
+        "simple": {
+            "format": "%(message)s"
+        }
+    },
+    "handlers": {
+        "console": {
+            "level": "WARNING",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": "verbose"
+        },
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "debug.log",
+            "maxBytes": 10485760,
+            "backupCount": 100,
+            "mode": "w",
+            "formatter": "verbose"
+        },
+        "compartments_file": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "compartments.log",
+            "maxBytes": 10485760,
+            "backupCount": 100,
+            "mode": "w",
+            "formatter": "simple"
+        },
+        "derivatives_file": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "derivatives.log",
+            "maxBytes": 10485760,
+            "backupCount": 100,
+            "mode": "w",
+            "formatter": "simple"
+        }
+    },
+    "loggers": {
+        "cnwheat": {
+            "handlers": [
+                "console",
+                "file"
+            ]
+        },
+        "cnwheat.compartments": {
+            "handlers": [
+                "compartments_file"
+            ],
+            "propagate": false
+        },
+        "cnwheat.derivatives": {
+            "handlers": [
+                "derivatives_file"
+            ],
+            "propagate": false
+        }
+    }
+}
