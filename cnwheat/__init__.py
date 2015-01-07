@@ -24,3 +24,7 @@
 """
 
 __version__  = '0.0.1'
+
+# Add a do-nothing handler to prevent an error message being output to sys.stderr in the absence of logging configuration
+import logging
+logging.getLogger(__name__).addHandler(logging.NullHandler())
