@@ -2,6 +2,9 @@
 
 from __future__ import division # use "//" to do integer division
 import numpy as np
+
+import logging
+
 import parameters
 
 """
@@ -12,7 +15,7 @@ import parameters
 
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
-    
+
     .. seealso:: Barillot et al. 2014.
 """
 
@@ -27,8 +30,8 @@ import parameters
 
 class Organ(object):
     """
-    The Organ class defines the CN exchanges in an organ. 
-    
+    The Organ class defines the CN exchanges in an organ.
+
     The Organ class is the base class of all organs. DO NOT INSTANTIATE IT.
     """
 
@@ -49,8 +52,8 @@ class Organ(object):
 
 class PhotosyntheticOrgan(Organ):
     """
-    The PhotosyntheticOrgan class defines the CN exchanges in a photosynthetic organ. 
-    
+    The PhotosyntheticOrgan class defines the CN exchanges in a photosynthetic organ.
+
     The PhotosyntheticOrgan class is the base class of all photosynthetic organs. DO NOT INSTANTIATE IT.
     """
 
@@ -133,7 +136,7 @@ class PhotosyntheticOrgan(Organ):
     def calculate_conc_proteins(self, proteins):
         """Protein concentration (g proteins g-1 MS)
         """
-        mass_N_proteins = proteins*1E-6 * Organ.PARAMETERS.N_MOLAR_MASS                         #: Mass of nitrogen in proteins (g)
+        mass_N_proteins = proteins*1E-6 * Organ.PARAMETERS.N_MOLAR_MASS                        #: Mass of nitrogen in proteins (g)
         mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
 
@@ -183,7 +186,7 @@ class PhotosyntheticOrgan(Organ):
         return nitrates_import
 
     def calculate_amino_acids_import(self, roots_exported_amino_acids, organ_transpiration, total_transpiration):
-        """Total Amino acids imported from roots (through xylem) distributed relatively to organ transpiration (µmol N Amino acids integrated over delta_t [already accounted in transpiration)
+        """Total Amino acids imported from roots (through xylem) distributed relatively to organ transpiration (µmol N Amino acids integrated over delta_t [already accounted in transpiration])
         """
         if total_transpiration>0:
             amino_acids_import = roots_exported_amino_acids * (organ_transpiration/total_transpiration)
@@ -217,7 +220,7 @@ class PhotosyntheticOrgan(Organ):
         diff_amino_acids = amino_acids/(self.mstruct*self.__class__.PARAMETERS.ALPHA) - amino_acids_phloem/(Organ.PARAMETERS.MSTRUCT_AXIS*self.__class__.PARAMETERS.ALPHA_AXIS)
         conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
         return driving_amino_acids_compartment * diff_amino_acids * conductance * Organ.PARAMETERS.DELTA_T
-    
+
     # COMPARTMENTS
 
     def calculate_triosesP_derivative(self, photosynthesis, s_sucrose, s_starch, s_amino_acids):
@@ -262,7 +265,7 @@ class PhotosyntheticOrgan(Organ):
 
 class Chaff(PhotosyntheticOrgan):
     """
-    The Chaff class defines the CN exchanges in a chaff. 
+    The Chaff class defines the CN exchanges in a chaff.
     """
 
     PARAMETERS = parameters.ChaffParameters #: the parameters of the organ
@@ -270,7 +273,7 @@ class Chaff(PhotosyntheticOrgan):
 
 class Lamina(PhotosyntheticOrgan):
     """
-    The Lamina class defines the CN exchanges in a lamina. 
+    The Lamina class defines the CN exchanges in a lamina.
     """
 
     PARAMETERS = parameters.LaminaParameters #: the parameters of the organ
@@ -290,7 +293,7 @@ class Lamina(PhotosyntheticOrgan):
 
 class Internode(PhotosyntheticOrgan):
     """
-    The Internode class defines the CN exchanges in an internode. 
+    The Internode class defines the CN exchanges in an internode.
     """
 
     PARAMETERS = parameters.InternodeParameters #: the parameters of the organ
@@ -298,7 +301,7 @@ class Internode(PhotosyntheticOrgan):
 
 class Peduncle(PhotosyntheticOrgan):
     """
-    The Peduncle class defines the CN exchanges in a peduncle. 
+    The Peduncle class defines the CN exchanges in a peduncle.
     """
 
     PARAMETERS = parameters.PeduncleParameters #: the parameters of the organ
@@ -306,7 +309,7 @@ class Peduncle(PhotosyntheticOrgan):
 
 class Sheath(PhotosyntheticOrgan):
     """
-    The Sheath class defines the CN exchanges in a sheath. 
+    The Sheath class defines the CN exchanges in a sheath.
     """
 
     PARAMETERS = parameters.SheathParameters #: the parameters of the organ
@@ -314,7 +317,7 @@ class Sheath(PhotosyntheticOrgan):
 
 class Phloem(Organ):
     """
-    The Phloem class defines the CN exchanges in a phloem. 
+    The Phloem class defines the CN exchanges in a phloem.
     """
 
     PARAMETERS = parameters.PhloemParameters #: the parameters of the organ
@@ -348,21 +351,30 @@ class Phloem(Organ):
         """delta sucrose of phloem integrated over delat_t (µmol C sucrose)
         """
         sucrose_derivative = 0
-        # compute the sucrose contribution of each organ  
+        # compute the sucrose contribution of each organ
+        logger = logging.getLogger(__name__)
         for organ in organs:
+            if isinstance(organ, Phloem):
+                continue
             if isinstance(organ, PhotosyntheticOrgan):
-                sucrose_derivative += organ.loading_sucrose * organ.mstruct * organ.__class__.PARAMETERS.ALPHA
+                flow = organ.loading_sucrose * organ.mstruct * organ.__class__.PARAMETERS.ALPHA
             elif isinstance(organ, Grains):
-                sucrose_derivative -= organ.s_grain_structure + (organ.s_grain_starch * ((organ.structure/1E6)*12)) #: Conversion of structure from umol of C to g of C
+                flow = - (organ.s_grain_structure + (organ.s_grain_starch * ((organ.structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS))) #: Conversion of structure from umol of C to g of C
+                logger.debug('organ name = {} ; contrib to phloem sucrose struct = {}'.format(organ.name, organ.s_grain_structure))
+                logger.debug('organ name = {} ; contrib to phloem sucrose starch = {}; mstruct={}'.format(organ.name, organ.s_grain_starch * ((organ.structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS), organ.structure))
             elif isinstance(organ, Roots):
-                sucrose_derivative -= organ.unloading_sucrose * organ.mstruct * organ.__class__.PARAMETERS.ALPHA #: Conversion of structure from umol of C to g of C
+                flow = -(organ.unloading_sucrose * organ.mstruct * organ.__class__.PARAMETERS.ALPHA)
+
+            logger.debug('organ name = {} ; contrib to phloem sucrose = {}'.format(organ.name, flow))
+            sucrose_derivative += flow
+        logger.debug('total phloem sucrose_derivative = {}'.format(sucrose_derivative))
         return sucrose_derivative
 
     def calculate_amino_acids_derivative(self, organs):
         """delta amino acids of phloem integrated over delat_t (µmol N amino acids)
         """
         amino_acids_derivative = 0
-        # compute the amino acids contribution of each organ  
+        # compute the amino acids contribution of each organ
         for organ in organs:
             if isinstance(organ, PhotosyntheticOrgan):
                 amino_acids_derivative += organ.loading_amino_acids * organ.mstruct * organ.__class__.PARAMETERS.ALPHA
@@ -374,7 +386,7 @@ class Phloem(Organ):
 
 class Grains(Organ):
     """
-    The Grains class defines the CN exchanges in grains. 
+    The Grains class defines the CN exchanges in grains.
     """
 
     PARAMETERS = parameters.GrainsParameters #: the parameters of the organ
@@ -397,19 +409,25 @@ class Grains(Organ):
     def calculate_dry_mass(self, structure, starch):
         """Grain total dry mass (g) # TODO: ajouter la masse des prot?
         """
-        return ((structure + starch)/1000000)*12
+        return ((structure + starch)*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS
 
-    def calculate_protein_mass(self, proteins, structure):
-        """Grain total protein mass                                                 # TODO trouver stoechiometrie proteines grains
+    def calculate_protein_mass(self, proteins):
+        """Grain total protein mass                                                            # TODO trouver stoechiometrie proteines grains
         """
-        mass_N_proteins = proteins*1E6 * Organ.PARAMETERS.N_MOLAR_MASS                         #: Mass of nitrogen in proteins (g)
-        mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
-        return (mass_proteins / structure)
+        mass_N_proteins = proteins*1E-6 * Organ.PARAMETERS.N_MOLAR_MASS                        #: Mass of nitrogen in proteins (g)
+        #mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO     #: Total mass of proteins (g)
+        return mass_N_proteins
 
     def calculate_RGR_structure(self, sucrose_phloem):
         """Relative Growth Rate of grain structure, regulated by phloem concentrations
         """
         return ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_RGR) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_RGR)
+
+    def calculate_unloading_sucrose(self, s_grain_structure, s_grain_starch, structure):
+        """Unloading of sucrose from phloem to grains integrated over delta_t (µmol sucrose)
+        """
+        return (s_grain_structure + s_grain_starch * (structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)/12
+
 
     # FLOWS
 
@@ -418,7 +436,7 @@ class Grains(Organ):
         """
         if t<=Grains.PARAMETERS.FILLING_INIT: #: Grain enlargment
             s_grain_structure = prec_structure * RGR_structure * Organ.PARAMETERS.DELTA_T
-        else:                      #: Grain filling
+        else:                                 #: Grain filling
             s_grain_structure = 0
         return s_grain_structure
 
@@ -427,7 +445,7 @@ class Grains(Organ):
         """
         if t<=Grains.PARAMETERS.FILLING_INIT: #: Grain enlargment
             s_grain_starch = 0
-        else:                      #: Grain filling
+        else:                                 #: Grain filling
             s_grain_starch = (((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_STARCH) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_STARCH)) * Organ.PARAMETERS.DELTA_T
         return s_grain_starch
 
@@ -435,11 +453,11 @@ class Grains(Organ):
         """Synthesis of grain proteins over delta_t (µmol N proteins). Rate regulated by phloem concentrations and unloading. Co-transported with sucrose relatively to the ratio amino acids:sucrose in phloem
         """
         if sucrose_phloem >0:
-            s_proteins = (s_grain_structure + s_grain_starch*((structure/1E6)*12)) * (amino_acids_phloem / sucrose_phloem)
+            s_proteins = (s_grain_structure + s_grain_starch*((structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)) * (amino_acids_phloem / sucrose_phloem)
         else:
             s_proteins = 0
         return s_proteins
-    
+
     # COMPARTMENTS
 
     def calculate_structure_derivative(self, s_grain_structure):
@@ -450,7 +468,7 @@ class Grains(Organ):
     def calculate_starch_derivative(self, s_grain_starch, structure):
         """delta grain starch integrated over delat_t (µmol C starch)
         """
-        return s_grain_starch * Grains.PARAMETERS.Y_GRAINS * ((structure/1E6)*12) #: Conversion of grain structure from µmol of C to g of C
+        return s_grain_starch * Grains.PARAMETERS.Y_GRAINS * ((structure*1E-6)*Organ.PARAMETERS.C_MOLAR_MASS) #: Conversion of grain structure from µmol of C to g of C
 
     def calculate_proteins_derivative(self, s_proteins):
         """delta grain proteins integrated over delat_t (µmol N proteins)
@@ -460,7 +478,7 @@ class Grains(Organ):
 
 class Roots(Organ):
     """
-    The Roots class defines the CN exchanges in roots. 
+    The Roots class defines the CN exchanges in roots.
     """
 
     PARAMETERS = parameters.RootsParameters #: the parameters of the organ
@@ -479,10 +497,11 @@ class Roots(Organ):
 
     # VARIABLES
 
-    def calculate_dry_mass(self, sucrose):
-        """Dry mass of roots (g)
+    def calculate_conc_sucrose(self, sucrose):
+        """Sucrose concentration (µmol sucrose g-1 MS).
+        This is a concentration output (expressed in amount of substance g-1 MS).
         """
-        return (sucrose*12)/1000000
+        return (sucrose/self.mstruct)/12
 
     def calculate_conc_nitrates_soil(self, t):
         """Nitrate concetration in soil (µmol nitrates m-3)
@@ -520,8 +539,8 @@ class Roots(Organ):
         K_LATS = Roots.PARAMETERS.A_LATS * np.exp(-Roots.PARAMETERS.LAMBDA_LATS*(nitrates_roots/self.mstruct))                         #: Rate of nitrates uptake at low soil N concentration; LATS (m3 g-1 s-1)
         LATS = (K_LATS * conc_nitrates_soil)                                                                                           #: Low Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
 
-        potential_uptake = (HATS + LATS) * self.mstruct * Organ.PARAMETERS.DELTA_T                                          #: Potential nitrate uptake (µmol N nitrates uptaked by roots integrated over delta_t)
-        actual_uptake = potential_uptake * (total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_UPTAKE_NITRATES)) #: Nitrate uptake regulated by plant transpiration (µmol N nitrates uptaked by roots)
+        potential_uptake = (HATS + LATS) * self.mstruct * Organ.PARAMETERS.DELTA_T                                                     #: Potential nitrate uptake (µmol N nitrates uptaked by roots integrated over delta_t)
+        actual_uptake = potential_uptake * (total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_UPTAKE_NITRATES))         #: Nitrate uptake regulated by plant transpiration (µmol N nitrates uptaked by roots)
         return actual_uptake, potential_uptake
 
     def calculate_s_amino_acids(self, nitrates, sucrose):
@@ -533,25 +552,24 @@ class Roots(Organ):
         """Total export of amino acids from roots to shoot organs (abstraction of the xylem compartment) (µmol N amino acids exported during DELTA_T (already accounted in Transpiration))
         """
         return (amino_acids/(self.mstruct * Roots.PARAMETERS.ALPHA)) * (total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_EXPORT_AMINO_ACIDS))
-    
+
     # COMPARTMENTS
 
     def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids):
         """delta root sucrose integrated over delat_t (µmol C sucrose)
         """
-        sucrose_consumption_AA = (s_amino_acids / Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) * Organ.PARAMETERS.AMINO_ACIDS_C_RATIO        #: Contribution of sucrose to the synthesis of amino_acids
+        sucrose_consumption_AA = (s_amino_acids / Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) * Organ.PARAMETERS.AMINO_ACIDS_C_RATIO      #: Contribution of sucrose to the synthesis of amino_acids
 
         return (unloading_sucrose - sucrose_consumption_AA) * self.mstruct
 
     def calculate_nitrates_derivative(self, uptake_nitrates, s_amino_acids):
         """delta root nitrates integrated over delat_t (µmol N nitrates)
         """
-        import_nitrates_roots = uptake_nitrates * (1-Organ.PARAMETERS.RATIO_EXPORT_NITRATES_ROOTS)                         #: Proportion of uptaked nitrates staying in roots
-        nitrate_reduction_AA = s_amino_acids                                                                    #: Contribution of nitrates to the synthesis of amino_acids
+        import_nitrates_roots = uptake_nitrates * (1-Organ.PARAMETERS.RATIO_EXPORT_NITRATES_ROOTS)                                  #: Proportion of uptaked nitrates staying in roots
+        nitrate_reduction_AA = s_amino_acids                                                                                        #: Contribution of nitrates to the synthesis of amino_acids
         return import_nitrates_roots - (nitrate_reduction_AA*self.mstruct)
 
     def calculate_amino_acids_derivative(self, unloading_amino_acids, s_amino_acids, export_amino_acids):
         """delta root amino acids integrated over delat_t (µmol N amino acids)
         """
-        #print 'unloading_amino_acids, s_amino_acids, export_amino_acids', unloading_amino_acids, s_amino_acids, export_amino_acids
-        return (unloading_amino_acids + s_amino_acids)*self.mstruct  - export_amino_acids # TODO: verifier apres modif
+        return (unloading_amino_acids + s_amino_acids)*self.mstruct  - export_amino_acids
