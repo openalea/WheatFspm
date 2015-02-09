@@ -40,10 +40,30 @@ OUTPUT_PRECISION = 2
 
 LOGGING_CONFIG_FILEPATH = os.path.join('..', 'logging.json')
 
-LOGGING_LEVEL = logging.INFO # change to logging.DEBUG for debugging
+LOGGING_LEVEL = logging.INFO # set to logging.DEBUG for debugging
 
-def setup_logging(config_filepath='logging.json', level=logging.INFO):
-    """Setup logging configuration
+def setup_logging(config_filepath='logging.json', level=logging.INFO, 
+                  log_compartments=False, log_derivatives=False, log_model=False):
+    """Setup logging configuration.
+    
+    :Parameters:
+
+        - `config_filepath` (:class:`str`) - the file path of the logging 
+          configuration.
+          
+        - `level` (:class:`int`) - the global level of the logging. Use either 
+          `logging.DEBUG`, `logging.INFO`, `logging.WARNING`, `logging.ERROR` or 
+          `logging.CRITICAL`.
+        
+        - `log_compartments` (:class:`bool`) - if `True`, log the values of the compartments.
+          `False` otherwise.
+        
+        - `log_derivatives` (:class:`bool`) - if `True`, log the values of the derivatives.
+          `False` otherwise.
+          
+        - `log_model` (:class:`bool`) - if `True`, log the messages from :mod:`cnwheat.model`.
+          `False` otherwise.
+         
     """
     if os.path.exists(config_filepath):
         with open(config_filepath, 'r') as f:
@@ -53,8 +73,13 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO):
         logging.basicConfig()
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
+    
+    logging.getLogger('cnwheat.compartments').disabled = not log_compartments # set to False to log the compartments
+    logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives # set to False to log the derivatives
+    logging.getLogger('cnwheat.model').disabled = not log_model # set to False to log the derivatives
         
 setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL)
+
 
 def read_t_data(curr_data_dirpath, data_filename):
     data_filepath = os.path.join(curr_data_dirpath, data_filename)
