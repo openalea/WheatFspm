@@ -43,12 +43,12 @@ describing what they are and what they do.
     :synopsis: 
     
 
-:mod:`cnwheat.farquharwheat.model` module
+:mod:`cnwheat.parameters` module
 *********************************************************
 
-.. automodule:: cnwheat.farquharwheat.model
+.. automodule:: cnwheat.parameters
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
-    
+

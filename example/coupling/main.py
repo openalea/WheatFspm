@@ -6,7 +6,7 @@
 
     An example to show how to couple CN-Wheat and Farquhar-Wheat.
     
-    You must first install :mod:`cnwheat` (and add it to your PYTHONPATH) 
+    You must first install :mod:`cnwheat` and :mod:`farquharwheat` (and add them to your PYTHONPATH) 
     before running this script with the command `python`. 
     
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
@@ -35,7 +35,7 @@ import pandas as pd
 
 from cnwheat import simulation
 from cnwheat import model as cnwheat_model
-from cnwheat.farquharwheat import model as photosynthesis_model
+from farquharwheat import model as photosynthesis_model
 
 DATA_DIRPATH = 'data'
 
