@@ -67,7 +67,7 @@ name='chaff'
 diameter = 0.02 # Approximated diamter for transpiration computations
 PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
 chaff = model.Chaff(area=0.00075, mstruct=0.21, width=diameter, height= 0.7, PAR=PAR_df.PAR,
-                    starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=1800, name=name)
+                    starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0, proteins=1800, name=name)
 organs.append(chaff)
 
 # create the internodes
@@ -76,7 +76,7 @@ areas = [(0.0012, 0.0003), 0.0004, 0.00025]
 mstructs = [(0.148, 0.04), 0.18, 0.154]
 diameters = [(0.042, 0.042), 0.043, 0.04] # Diameters of internodes, approximated from Ljutovac thesis. Diameters used as widths for transpiration computations
 heights = [(0.4, 0.3), 0.18, 0.8]
-prot_0 = [(605, 500), 140, 0]
+prot = [(605, 500), 140, 0]
 internodes = []
 for i in xrange(number_of_internodes):
     internode_index = i + 1
@@ -87,19 +87,19 @@ for i in xrange(number_of_internodes):
         current_mstructs = mstructs[i]
         current_diameters = diameters[i]
         current_heights = heights[i]
-        current_proteins = prot_0[i]
+        current_proteins = prot[i]
     else:
         current_names = (name,)
         current_areas = (areas[i],)
         current_mstructs = (mstructs[i],)
         current_diameters = (diameters[i],)
         current_heights = (heights[i],)
-        current_proteins = (prot_0[i],)
+        current_proteins = (prot[i],)
 
     for j in xrange(len(current_names)):
         PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % current_names[j])
         internode = model.Internode(area=current_areas[j], mstruct=current_mstructs[j], width=current_diameters[j], height=current_heights[j], PAR=PAR_df.PAR,
-                                          starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=current_proteins[j], name=current_names[j])
+                                          starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0, proteins=current_proteins[j], name=current_names[j])
         internodes.append(internode)
         organs.append(internode)
 
@@ -109,13 +109,13 @@ areas = [0.00346, 0.0034, 0.00228]
 mstructs = [0.14, 0.09, 0.05]
 widths = [0.018, 0.014, 0.0125]  # Widths of laminae, approximated from Ljutovac thesis. Widths used for transpiration computations
 heights = [0.6, 0.38, 0.24]
-prot_0 = [2600, 1420, 590]
+prot = [2600, 1420, 590]
 laminae = []
 for i in xrange(number_of_laminae):
     name = 'lamina%d' % (i + 1)
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
     lamina = model.Lamina(area=areas[i], mstruct=mstructs[i], width= widths[i], height=heights[i], PAR=PAR_df.PAR,
-                                starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=prot_0[i], name=name)
+                                starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0, proteins=prot[i], name=name)
     laminae.append(lamina)
     organs.append(lamina)
 
@@ -126,11 +126,11 @@ areas = [0.00155, 0.00085]
 mstructs = [0.168, 0.089]
 diameters = [0.031, 0.031] # Diameters of peduncles, approximated from Ljutovac thesis. Diameters used as widths for transpiration computations
 heights = [0.65, 0.5]
-prot_0 = [1240, 1000]
+prot = [1240, 1000]
 for i in xrange(len(names)):
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % names[i])
     peduncle = model.Peduncle(area=areas[i], mstruct=mstructs[i], width= diameters[i], height=heights[i], PAR=PAR_df.PAR,
-                                    starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0, amino_acids_0=0, proteins_0=prot_0[i], name=names[i])
+                                    starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0, proteins=prot[i], name=names[i])
     peduncles.append(peduncle)
     organs.append(peduncle)
 
@@ -141,25 +141,25 @@ areas = [0.0006, 0.0005, 0.0004]
 mstructs = [0.103, 0.069, 0.043]
 diameters = [0.042, 0.043, 0.04] # Same as diameters of internodes, approximated from Ljutovac thesis. Diameters used as widths for transpiration computations
 heights =[0.5, 0.3, 0.18]
-prot_0 = [325, 90, 10]
+prot = [325, 90, 10]
 for i in xrange(number_of_sheaths):
     name = 'sheath%d' % (i + 1)
     PAR_df = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name)
     sheath = model.Sheath(area=areas[i], mstruct=mstructs[i], width=diameters[i], height=heights[i], PAR=PAR_df.PAR,
-                                starch_0=0, sucrose_0=0, triosesP_0=0, fructan_0=0, nitrates_0=0 , amino_acids_0=0, proteins_0=prot_0[i], name=name)
+                                starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0 , amino_acids=0, proteins=prot[i], name=name)
     sheaths.append(sheath)
     organs.append(sheath)
 
 # create the grains
-grains = model.Grains(starch_0=0, structure_0=10850, proteins_0=1180, name='grains')
+grains = model.Grains(starch=0, structure=10850, proteins=1180, name='grains')
 organs.append(grains)
 
 # create the roots
-roots = model.Roots(mstruct=0.504, sucrose_0=0, nitrates_0=0, amino_acids_0=0, name='roots')
+roots = model.Roots(mstruct=0.504, sucrose=0, nitrates=0, amino_acids=0, name='roots')
 organs.append(roots)
 
 # create the phloem
-phloem = model.Phloem(sucrose_0=0, amino_acids_0=0, name='phloem')
+phloem = model.Phloem(sucrose=0, amino_acids=0, name='phloem')
 organs.append(phloem)
 
 # get meteo data
@@ -188,7 +188,7 @@ cnwheat_output_df = pd.read_csv(r'C:\Users\rbarillot\Documents\PostDoc_Grignon\M
 # Computes Surfacic rate of photosynthesis
 path_graphs = r'C:\Users\rbarillot\Documents\PostDoc_Grignon\Modeles\Distribution_CN\CN-Wheat_Python\trunk\test\system\Graphs'
 
-graph_variables = {'Photosynthesis_Surfacic_Rate_': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Conc_TriosesP_': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch_':u'[Starch] (µmol g$^{-1}$ mstruct)',
+graph_variables = {'An_': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Conc_TriosesP_': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch_':u'[Starch] (µmol g$^{-1}$ mstruct)',
                    'Conc_Sucrose_':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan_':u'[Fructan] (µmol g$^{-1}$ mstruct)', 'Loading_Sucrose_': u'Loading Sucrose (µmol C sucrose g$^{-1}$ mstruct over delta_t)', 'Loading_Amino_Acids_': u'Loading Amino acids (µmol N amino acids g$^{-1}$ mstruct over delta_t)',
                    'Conc_Nitrates_': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids_': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins_': u'[Proteins] (g g$^{-1}$ mstruct)', 'S_Proteins_': u'[Rate of protein synthesis] (µmol N g$^{-1}$ mstruct h$^{-1}$)',
                    'Nitrates_import_': u'Total nitrates imported (µmol h$^{-1}$)', 'Transpiration_':u'Organ transpiration (mm H$_{2}$0 h$^{-1}$)', 'Amino_Acids_import_': u'Total amino acids imported (µmol N over delta_t)',

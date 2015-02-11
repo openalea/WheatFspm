@@ -28,11 +28,9 @@ import sys
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
-from scipy.interpolate import interp1d
 import logging
 
 import model
-from farquharwheat import model as photosynthesis_model
 
 class CNWheatError(Exception): pass
 class CNWheatInitError(Exception): pass
@@ -55,55 +53,51 @@ class CNWheat(object):
               * a :obj:`roots <cnwheat.model.Roots>`,
               * a :obj:`grains <cnwheat.model.Grains>`.
 
-        - `meteo` (:class:`pandas.DataFrame`) - a :class:`pandas.DataFrame` which index
-          is time in hours and which columns are "air_temperature", "humidity", "ambient_CO2" and "Wind".
-
     """
 
-    def __init__(self, organs, meteo):
+    #: the name of the compartments attributes in the organs. 
+    MODEL_COMPARTMENTS_NAMES = {model.PhotosyntheticOrgan: ['triosesP', 'starch', 'sucrose', 'fructan', 'nitrates', 'amino_acids', 'proteins'], 
+                                model.Phloem: ['sucrose', 'amino_acids'], 
+                                model.Grains: ['starch', 'structure', 'proteins'], 
+                                model.Roots: ['sucrose', 'nitrates', 'amino_acids']}
+
+    def __init__(self, organs):
 
         logger = logging.getLogger(__name__)
 
         logger.info('Initialization of the simulation...')
 
         self.organs = organs #: the organs used in the model
-        self.meteo = meteo #: the meteo data used in the model
 
-        # interpolate meteo data
-
-        #: A dictionary which contains, for each data of meteo data, a function which
-        #: permits to find the value of new points using interpolation. Keys
-        #: are the name of meteo data (:class:`str`). Values are :class:`scipy.interpolate.interp1d`.
-        self.meteo_interpolations = {}
-
-        for column in meteo.columns:
-            self.meteo_interpolations[column] = interp1d(meteo.index, meteo[column])
-
-        # interpolate the PAR and construct the list of initial conditions
+        # construct the list of initial conditions
         self.initial_conditions = [] #: the initial conditions of the compartments in the organs
         self.initial_conditions_mapping = {} #: dictionary to map the compartments of each organ to their indexes in :attr:`initial_conditions`
-        self.PAR_linear_interpolation = {} # the linear interpolation of PAR for each photosynthetic organ
-        self.photosynthesis_mapping = {} # mapping to store the computed photosynthesis and transpiration for each photosynthetic organ
-
+        self.compartments_absolute_names = [] #: list of the compartments absolute names. The absolute name is the concatenation of the organ name and the compartment name. 
+        self.photosynthetic_organs = [] #: the photosynthetic_organs
+        
         i = 0
         for organ in organs:
             if isinstance(organ, model.PhotosyntheticOrgan):
-                self.photosynthesis_mapping[organ] = {}
-                self.PAR_linear_interpolation[organ] = interp1d(organ.PAR.index, organ.PAR)
+                self.photosynthetic_organs.append(organ)
+                compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrgan]
             elif isinstance(organ, model.Phloem):
                 self.phloem = organ # the phloem
+                compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[model.Phloem]
             elif isinstance(organ, model.Roots):
                 self.roots = organ # the roots
+                compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[model.Roots]
             elif isinstance(organ, model.Grains):
                 self.grains = organ # the grains
+                compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[model.Grains]
             self.initial_conditions_mapping[organ] = {}
-            for compartment_name, compartment_initial_value in organ.initial_conditions.iteritems():
+            for compartment_name in compartments_names:
                 self.initial_conditions_mapping[organ][compartment_name] = i
-                self.initial_conditions.append(compartment_initial_value)
+                self.compartments_absolute_names.append('.'.join([organ.name, compartment_name]))
+                self.initial_conditions.append(0)
                 i += 1
-
+                
         try:
-            if len(self.photosynthesis_mapping) == 0:
+            if len(self.photosynthetic_organs) == 0:
                 raise CNWheatInitError("No photosynthetic organ in 'organs'.")
             if self.phloem is None:
                 raise CNWheatInitError("No phloem in 'organs'.")
@@ -121,9 +115,9 @@ class CNWheat(object):
         logger.info('Initialization of the simulation DONE')
 
 
-    def run(self, start_time, stop_time, number_of_output_steps, photosynthesis_computation_interval=0, odeint_mxstep=5000, show_progressbar=False):
+    def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=5000, show_progressbar=False):
         """
-        Compute CN exchanges between organs :attr:`organs`, using interpolated meteo data :attr:`meteo_interpolations`
+        Compute CN exchanges between organs :attr:`organs`.
         The computation is done between `start_time` and `stop_time`, for `number_of_output_steps` steps.
 
         :Parameters:
@@ -133,13 +127,6 @@ class CNWheat(object):
             - `stop_time` (:class:`int`) - The end of the time grid.
 
             - `number_of_output_steps` (:class:`int`) - Number of time points for which to compute the CN exchanges in the system.
-
-            - `photosynthesis_computation_interval` (:class:`int`) - The interval which defined the time steps
-              at which photosynthesis is computed. For example, if `photosynthesis_computation_interval` = 4,
-              then photosynthesis is computed at t=0, t=4, t=8, ...
-              This permits to save computation time for large simulation.
-              If `photosynthesis_computation_interval` = 0 (the default), then photosynthesis
-              is computed for each time step demanded by the solver.
 
             - `odeint_mxstep` (:class:`int`) - Maximum number of (internally defined) steps allowed for each integration point in time grid.
               `odeint_mxstep` is passed to :func:`scipy.integrate.odeint` as `mxstep`. If `odeint_mxstep` = 0, then `mxstep` is determined by the solver.
@@ -154,15 +141,9 @@ class CNWheat(object):
         :Returns Type:
             :class:`pandas.DataFrame`
 
-        .. warning:: due to the solver of :func:`scipy.integrate.odeint`, :attr:`meteo` must provide data for t = `stop_time` + 1.
-                     For the same reason, the :attr:`PAR` of each organ of :attr:`organs` must also provide data for t = `stop_time` + 1.
-                     This is automatically checked by the current function.
-
         """
         logger = logging.getLogger(__name__)
         logger.info('Run of the simulation...')
-
-        self._check_inputs_consistency(start_time, stop_time)
 
         t = np.linspace(start_time, stop_time, number_of_output_steps)
 
@@ -170,119 +151,60 @@ class CNWheat(object):
         if self.show_progressbar:
             self.progressbar.set_t_max(stop_time)
 
-        self._clear_organs()
-
         compartments_logger = logging.getLogger('cnwheat.compartments')
         derivatives_logger = logging.getLogger('cnwheat.derivatives')
         if compartments_logger.isEnabledFor(logging.DEBUG) or derivatives_logger.isEnabledFor(logging.DEBUG):
-            compartment_names = []
-            for organ, compartments in self.initial_conditions_mapping.iteritems():
-                compartment_names.extend(compartments.keys())
-            formatted_compartment_names = ','.join(['t'] + compartment_names)
+            formatted_compartment_names = ','.join(['t'] + self.compartments_absolute_names)
             if compartments_logger.isEnabledFor(logging.DEBUG):
                 compartments_logger.debug(formatted_compartment_names)
             if derivatives_logger.isEnabledFor(logging.DEBUG):
                 derivatives_logger.debug(formatted_compartment_names)
-
+        
+        self._update_initial_conditions() 
+            
         if logger.isEnabledFor(logging.DEBUG):
-            formatted_initial_conditions = {}
-            for organ, compartments in self.initial_conditions_mapping.iteritems():
-                for compartment_name, compartment_index in compartments.iteritems():
-                    formatted_initial_conditions[organ.name + '.' + compartment_name] = self.initial_conditions[compartment_index]
+            initial_conditions = dict(zip(self.compartments_absolute_names, self.initial_conditions))
             logger.debug(
                 """Run the solver with:
                     - initial conditions = %s,
                     - time grid = %s,
-                    - photosynthesis computation interval = %s,
                     - odeint mxstep = %s""",
-                formatted_initial_conditions, t, photosynthesis_computation_interval, odeint_mxstep)
+                initial_conditions, t, odeint_mxstep)
 
-        soln, infodict = odeint(self._calculate_all_derivatives, self.initial_conditions, t, (photosynthesis_computation_interval,), full_output=True, mxstep=odeint_mxstep)
-
-        if logger.isEnabledFor(logging.DEBUG):
-            calculated_compartments_at_stop_time = soln[len(soln)-1]
-            formatted_calculated_compartments = {}
-            for organ, compartments in self.initial_conditions_mapping.iteritems():
-                for compartment_name, compartment_index in compartments.iteritems():
-                    formatted_calculated_compartments[organ.name + '.' + compartment_name] = calculated_compartments_at_stop_time[compartment_index]
-            logger.debug(
-                """Run of the solver DONE:
-                    - compartments(t=%s) = %s,
-                    - infodict = %s""",
-                stop_time, formatted_calculated_compartments, infodict)
+        soln, infodict = odeint(self._calculate_all_derivatives, self.initial_conditions, t, full_output=True, mxstep=odeint_mxstep)
 
         if not set(infodict['mused']).issubset([1,2]): # I'm not sure if this test is robust or not... Beware especially when scipy is updated.
             message = "Integration failed. See the logs of lsoda or try to increase the value of 'mxstep'."
             logger.exception(message)
             raise CNWheatRunError(message)
-
+        
+        last_compartments_values = soln[len(soln)-1]
+        self._update_organs(last_compartments_values)
+        
+        if logger.isEnabledFor(logging.DEBUG):
+            compartments = dict(zip(self.compartments_absolute_names, soln[len(soln)-1]))
+            logger.debug(
+                """Run of the solver DONE:
+                    - compartments(t=%s) = %s,
+                    - infodict = %s""",
+                stop_time, compartments, infodict)
+        
         cnwheat_output_df = self._format_solver_output(t, soln)
-
+        
         logger.info('Run of the simulation DONE')
 
         return cnwheat_output_df
-
-
-    def _check_inputs_consistency(self, start_time, stop_time):
+    
+    
+    def _update_initial_conditions(self):
+        """Update the compartments values in :attr:`initial_conditions` from the compartments values of :attr:`organs`.
         """
-        Check the consistency between:
-
-            * `start_time`, `stop_time` and :attr:`meteo`,
-            * `start_time`, `stop_time` and the :attr:`PAR` of each organ of :attr:`organs`.
-
-        Raise an exception if :attr:`meteo` or :attr:`PAR` is not valid.
-        """
-        logger = logging.getLogger(__name__)
-        logger.debug('Check of inputs consistency...')
-
-        # check the consistency of meteo
-        lowest_t = self.meteo.first_valid_index()
-        if start_time < lowest_t:
-            message = 'the lowest t ({}) in meteo data is greater than start_time ({}).'.format(lowest_t, start_time)
-            logger.exception(message)
-            raise CNWheatInputError(message)
-
-        solver_upper_boundary = stop_time + 1
-        highest_t = self.meteo.last_valid_index()
-        if highest_t < solver_upper_boundary:
-            message = """the highest t ({}) in meteo data is lower than stop_time + 1 = {}.
-                        scipy.integrate.odeint requires the highest t to be equal or
-                        greater than stop_time + 1""".format(highest_t, solver_upper_boundary)
-            logger.exception(message)
-            raise CNWheatInputError(message)
-
-        # check the consistency of the PAR
-        for organ in self.PAR_linear_interpolation.iterkeys():
-            lowest_t = organ.PAR.first_valid_index()
-            if start_time < lowest_t:
-                message = 'the lowest t ({}) in the PAR of {} is greater than start_time ({}).'.format(lowest_t, organ.name, start_time)
-                logger.exception(message)
-                raise CNWheatInputError(logger.exception(message))
-            highest_t = organ.PAR.last_valid_index()
-            if highest_t < solver_upper_boundary:
-                message = """the highest t ({}) in the PAR of {} is lower than stop_time + 1 = {}.
-                            scipy.integrate.odeint requires the highest t to be equal or
-                            greater than stop_time + 1""".format(highest_t, organ.name, solver_upper_boundary)
-                logger.exception(message)
-                raise CNWheatInputError(message)
-
-        logger.debug('Check of inputs consistency DONE')
+        for organ, compartments in self.initial_conditions_mapping.iteritems():
+            for compartment_name, compartment_index in compartments.iteritems():
+                self.initial_conditions[compartment_index] = getattr(organ, compartment_name)
 
 
-    def _clear_organs(self):
-        """
-        Clear the computed photosynthesis and transpiration for each photosynthetic organ in :attr:`photosynthesis_mapping`.
-        """
-        logger = logging.getLogger(__name__)
-        logger.debug('Cleaning of the photosynthesis and transpiration computed during the previous simulation...')
-
-        for organ_photosynthesis_mapping in self.photosynthesis_mapping.itervalues():
-            organ_photosynthesis_mapping.clear()
-
-        logger.debug('Cleaning of the photosynthesis and transpiration computed during the previous simulation DONE')
-
-
-    def _calculate_all_derivatives(self, y, t, photosynthesis_computation_interval):
+    def _calculate_all_derivatives(self, y, t):
         """Compute the derivative of `y` at `t`.
 
         :meth:`_calculate_all_derivatives` is passed as **func** argument to
@@ -316,13 +238,6 @@ class CNWheat(object):
               to the interval [min( **t** ), max( **t** ) + 1], where **t** is an
               argument passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
 
-            - `photosynthesis_computation_interval` (:class:`int`) - The interval which defined the time steps
-              at which photosynthesis is computed. For example, if `photosynthesis_computation_interval` = 4,
-              then photosynthesis is computed at t=0, t=4, t=8, ...
-              This permits to save computation time for large simulation.
-              If `photosynthesis_computation_interval` = 0 (the default), then photosynthesis is computed
-              for each time step demanded by the solver.
-
         :Returns:
             The derivatives of `y` at `t`.
 
@@ -355,78 +270,54 @@ class CNWheat(object):
 
         y_derivatives = np.zeros_like(y)
 
-        sucrose_phloem = y[self.initial_conditions_mapping[self.phloem]['sucrose']]
-        amino_acids_phloem = y[self.initial_conditions_mapping[self.phloem]['amino_acids']]
+        self.phloem.sucrose = y[self.initial_conditions_mapping[self.phloem]['sucrose']]
+        self.phloem.amino_acids = y[self.initial_conditions_mapping[self.phloem]['amino_acids']]
 
-        nitrates_roots = y[self.initial_conditions_mapping[self.roots]['nitrates']]
-        amino_acids_roots = y[self.initial_conditions_mapping[self.roots]['amino_acids']]
-
-        # calculate the time step at which we want to compute the photosynthesis
-        if photosynthesis_computation_interval == 0: # i.e. we want to compute the photosynthesis for each time step required by the solver
-            t_inf = t
-        else:
-            t_inf  = t // photosynthesis_computation_interval * photosynthesis_computation_interval
-
-        # call the photosynthesis model
-        for organ, PAR_linear_interpolation in self.PAR_linear_interpolation.iteritems():
-            organ_photosynthesis_mapping = self.photosynthesis_mapping[organ]
-            # calculate the photosynthesis of organ only if it has not been already calculated at t_inf
-            if t_inf not in organ_photosynthesis_mapping:
-                organ_photosynthesis_mapping[t_inf] = {}
-                PAR = PAR_linear_interpolation(t_inf)
-                air_temperature_t_inf = self.meteo_interpolations['air_temperature'](t_inf)
-                humidity_t_inf = self.meteo_interpolations['humidity'](t_inf)
-                ambient_CO2_t_inf = self.meteo_interpolations['ambient_CO2'](t_inf)
-                Wind_top_canopy_t_inf = self.meteo_interpolations['Wind'](t_inf)
-                An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(t_inf, organ.width, organ.height, PAR,
-                                                                               air_temperature_t_inf, ambient_CO2_t_inf,
-                                                                               humidity_t_inf, Wind_top_canopy_t_inf) # TODO: add dependancy to nitrogen
-                #print 't=', t, 'PAR=', PAR_linear_interpolation(t_inf), 'Tr_{} = '.format(organ.name), Tr
-                organ_photosynthesis_mapping[t_inf]['An'] = An
-                organ_photosynthesis_mapping[t_inf]['Tr'] = Tr
+        self.roots.nitrates = y[self.initial_conditions_mapping[self.roots]['nitrates']]
+        self.roots.amino_acids = y[self.initial_conditions_mapping[self.roots]['amino_acids']]
 
         # compute the total transpiration at t_inf
         total_transpiration = 0.0
-        transpiration_mapping = dict.fromkeys(self.photosynthesis_mapping)
-        for organ, mapping in self.photosynthesis_mapping.iteritems():
-            transpiration_mapping[organ] = organ.calculate_transpiration(t_inf, mapping[t_inf]['Tr'])
+        transpiration_mapping = dict.fromkeys(self.photosynthetic_organs)
+        for organ in self.photosynthetic_organs:
+            transpiration_mapping[organ] = organ.calculate_transpiration(t, organ.Tr)
             total_transpiration += transpiration_mapping[organ]
         #print 'total_transpiration', total_transpiration
 
         # compute the flows from/to the roots to/from photosynthetic organs
         conc_nitrates_soil = self.roots.calculate_conc_nitrates_soil(t)
-        roots_uptake_nitrate, potential_roots_uptake_nitrates = self.roots.calculate_uptake_nitrates(conc_nitrates_soil, nitrates_roots, total_transpiration)
-        roots_export_amino_acids = self.roots.calculate_export_amino_acids(amino_acids_roots, total_transpiration)
+        roots_uptake_nitrate, potential_roots_uptake_nitrates = self.roots.calculate_uptake_nitrates(conc_nitrates_soil, self.roots.nitrates, total_transpiration)
+        roots_export_amino_acids = self.roots.calculate_export_amino_acids(self.roots.amino_acids, total_transpiration)
         #print 'roots_export_amino_acids',roots_export_amino_acids
 
         # compute the derivative of each photosynthetic organ compartment
-        for organ in self.PAR_linear_interpolation.iterkeys():
-            starch = y[self.initial_conditions_mapping[organ]['starch']]
-            sucrose = y[self.initial_conditions_mapping[organ]['sucrose']]
-            triosesP = y[self.initial_conditions_mapping[organ]['triosesP']]
-            fructan = y[self.initial_conditions_mapping[organ]['fructan']]
-            nitrates = y[self.initial_conditions_mapping[organ]['nitrates']]
-            amino_acids = y[self.initial_conditions_mapping[organ]['amino_acids']]
-            proteins = y[self.initial_conditions_mapping[organ]['proteins']]
+        for organ in self.photosynthetic_organs:
+            organ.starch = y[self.initial_conditions_mapping[organ]['starch']]
+            organ.sucrose = y[self.initial_conditions_mapping[organ]['sucrose']]
+            organ.triosesP = y[self.initial_conditions_mapping[organ]['triosesP']]
+            organ.fructan = y[self.initial_conditions_mapping[organ]['fructan']]
+            organ.nitrates = y[self.initial_conditions_mapping[organ]['nitrates']]
+            organ.amino_acids = y[self.initial_conditions_mapping[organ]['amino_acids']]
+            organ.proteins = y[self.initial_conditions_mapping[organ]['proteins']]
 
             # intermediate variables
-            photosynthesis = organ.calculate_photosynthesis(t_inf, self.photosynthesis_mapping[organ][t_inf]['An'])
+            photosynthesis = organ.calculate_photosynthesis(t, organ.An)
             organ_transpiration = transpiration_mapping[organ]
 
             # flows
-            s_starch = organ.calculate_s_starch(triosesP)
-            d_starch = organ.calculate_d_starch(starch)
-            s_sucrose = organ.calculate_s_sucrose(triosesP)
-            organ.loading_sucrose = organ.calculate_loading_sucrose(sucrose, sucrose_phloem)
+            s_starch = organ.calculate_s_starch(organ.triosesP)
+            d_starch = organ.calculate_d_starch(organ.starch)
+            s_sucrose = organ.calculate_s_sucrose(organ.triosesP)
+            organ.loading_sucrose = organ.calculate_loading_sucrose(organ.sucrose, self.phloem.sucrose)
             regul_s_fructan = organ.calculate_regul_s_fructan(organ.loading_sucrose)
-            d_fructan = organ.calculate_d_fructan(sucrose, fructan)
-            s_fructan = organ.calculate_s_fructan(sucrose, regul_s_fructan)
+            d_fructan = organ.calculate_d_fructan(organ.sucrose, organ.fructan)
+            s_fructan = organ.calculate_s_fructan(organ.sucrose, regul_s_fructan)
             nitrates_import = organ.calculate_nitrates_import(roots_uptake_nitrate, organ_transpiration, total_transpiration)
             amino_acids_import = organ.calculate_amino_acids_import(roots_export_amino_acids, organ_transpiration, total_transpiration)
-            s_amino_acids = organ.calculate_s_amino_acids(nitrates, triosesP)
-            s_proteins = organ.calculate_s_proteins(amino_acids)
-            d_proteins = organ.calculate_d_proteins(proteins)
-            organ.loading_amino_acids = organ.calculate_loading_amino_acids(amino_acids, amino_acids_phloem)
+            s_amino_acids = organ.calculate_s_amino_acids(organ.nitrates, organ.triosesP)
+            s_proteins = organ.calculate_s_proteins(organ.amino_acids)
+            d_proteins = organ.calculate_d_proteins(organ.proteins)
+            organ.loading_amino_acids = organ.calculate_loading_amino_acids(organ.amino_acids, self.phloem.amino_acids)
 
             # compartments derivatives
             starch_derivative = organ.calculate_starch_derivative(s_starch, d_starch)
@@ -448,16 +339,16 @@ class CNWheat(object):
 
         # compute the derivative of each compartment of grains
         self.grains.structure = y[self.initial_conditions_mapping[self.grains]['structure']]
-        grains_starch = y[self.initial_conditions_mapping[self.grains]['starch']]
-        grains_proteins = y[self.initial_conditions_mapping[self.grains]['proteins']]
+        self.grains.starch = y[self.initial_conditions_mapping[self.grains]['starch']]
+        self.grains.proteins = y[self.initial_conditions_mapping[self.grains]['proteins']]
 
         # intermediate variables
-        RGR_structure = self.grains.calculate_RGR_structure(sucrose_phloem)
+        RGR_structure = self.grains.calculate_RGR_structure(self.phloem.sucrose)
 
         # flows
         self.grains.s_grain_structure = self.grains.calculate_s_grain_structure(t, self.grains.structure, RGR_structure)
-        self.grains.s_grain_starch = self.grains.calculate_s_grain_starch(t, sucrose_phloem)
-        self.grains.s_proteins = self.grains.calculate_s_proteins(self.grains.s_grain_structure, self.grains.s_grain_starch, amino_acids_phloem, sucrose_phloem, self.grains.structure)
+        self.grains.s_grain_starch = self.grains.calculate_s_grain_starch(t, self.phloem.sucrose)
+        self.grains.s_proteins = self.grains.calculate_s_proteins(self.grains.s_grain_structure, self.grains.s_grain_starch, self.phloem.amino_acids, self.phloem.sucrose, self.grains.structure)
 
         # compartments derivatives
         structure_derivative = self.grains.calculate_structure_derivative(self.grains.s_grain_structure)
@@ -468,11 +359,11 @@ class CNWheat(object):
         y_derivatives[self.initial_conditions_mapping[self.grains]['proteins']] = proteins_derivative
 
         # compute the derivative of each compartment of roots
-        sucrose_roots = y[self.initial_conditions_mapping[self.roots]['sucrose']]
+        self.roots.sucrose = y[self.initial_conditions_mapping[self.roots]['sucrose']]
         # flows
-        self.roots.unloading_sucrose = self.roots.calculate_unloading_sucrose(sucrose_phloem)
-        self.roots.unloading_amino_acids = self.roots.calculate_unloading_amino_acids(amino_acids_phloem)
-        self.roots.s_amino_acids = self.roots.calculate_s_amino_acids(nitrates_roots, sucrose_roots)
+        self.roots.unloading_sucrose = self.roots.calculate_unloading_sucrose(self.phloem.sucrose)
+        self.roots.unloading_amino_acids = self.roots.calculate_unloading_amino_acids(self.phloem.amino_acids)
+        self.roots.s_amino_acids = self.roots.calculate_s_amino_acids(self.roots.nitrates, self.roots.sucrose)
 
         # compartments derivatives
         sucrose_derivative = self.roots.calculate_sucrose_derivative(self.roots.unloading_sucrose, self.roots.s_amino_acids)
@@ -498,6 +389,17 @@ class CNWheat(object):
 
         return y_derivatives
 
+    
+    def _update_organs(self, compartments_values):
+        """Update the organs in :attr:`organs` from the values in `compartments`.
+        """
+        logger = logging.getLogger(__name__)
+        logger.debug('Updating of organs compartments...')
+        for organ, compartments in self.initial_conditions_mapping.iteritems():
+            for compartment_name, compartment_index in compartments.iteritems():
+                setattr(organ, compartment_name, compartments_values[compartment_index])
+        logger.debug('Updating of organs compartments DONE')
+        
 
     def _format_solver_output(self, t, solver_output):
         """
@@ -506,6 +408,8 @@ class CNWheat(object):
             * the time grid `t`,
             * the output of the solver `solver_output`,
             * and intermediate and post-processed variables useful for debug and validation.
+            
+        This is mainly use for debugging.
         """
         logger = logging.getLogger(__name__)
         logger.debug('Formatting of solver output...')
@@ -513,31 +417,12 @@ class CNWheat(object):
         solver_output = solver_output.T
 
         result_items = [('t', t)]
-
-        # call the photosynthesis model
-        organs_An = dict.fromkeys(self.PAR_linear_interpolation)
-        organs_Tr = dict.fromkeys(self.PAR_linear_interpolation)
-        for organ, PAR_linear_interpolation in self.PAR_linear_interpolation.iteritems():
-            An_Tr_list = []
-            for t_ in t:
-                An_Tr_list.append(photosynthesis_model.PhotosynthesisModel.calculate_An(
-                                  t_,
-                                  organ.width,
-                                  organ.height,
-                                  PAR_linear_interpolation(t_),
-                                  self.meteo_interpolations['air_temperature'](t_),
-                                  self.meteo_interpolations['ambient_CO2'](t_),
-                                  self.meteo_interpolations['humidity'](t_),
-                                  self.meteo_interpolations['Wind'](t_)))
-            An_Tr = np.array(An_Tr_list)
-            organs_An[organ] = An_Tr[:,0]
-            organs_Tr[organ] = An_Tr[:,1]
-
+        
         # compute the total transpiration
         total_transpiration = np.zeros_like(t)
-        transpiration_mapping = dict.fromkeys(self.photosynthesis_mapping)
-        for organ in self.photosynthesis_mapping.iterkeys():
-            transpiration_mapping[organ] = map(organ.calculate_transpiration, t, organs_Tr[organ])
+        transpiration_mapping = dict.fromkeys(self.photosynthetic_organs)
+        for organ in self.photosynthetic_organs:
+            transpiration_mapping[organ] = map(organ.calculate_transpiration, t, [organ.Tr] * len(t))
             total_transpiration += transpiration_mapping[organ]
         result_items.append(('Total_transpiration', total_transpiration))
 
@@ -575,7 +460,7 @@ class CNWheat(object):
         result_items.extend(variables + flows + compartments)
 
         # format photosynthetic organs outputs
-        for organ in self.PAR_linear_interpolation.iterkeys():
+        for organ in self.photosynthetic_organs:
             triosesP = solver_output[self.initial_conditions_mapping[organ]['triosesP']]
             starch = solver_output[self.initial_conditions_mapping[organ]['starch']]
             sucrose = solver_output[self.initial_conditions_mapping[organ]['sucrose']]
@@ -587,9 +472,9 @@ class CNWheat(object):
             amino_acids = solver_output[self.initial_conditions_mapping[organ]['amino_acids']]
             proteins = solver_output[self.initial_conditions_mapping[organ]['proteins']]
 
-            variables = [('Photosynthesis_Surfacic_Rate_{}'.format(organ.name), organs_An[organ]),
-                         ('Tr_{}'.format(organ.name), organs_Tr[organ]),
-                         ('Photosynthesis_{}'.format(organ.name), map(organ.calculate_photosynthesis, t, organs_An[organ])),
+            variables = [('An_{}'.format(organ.name), organ.An),
+                         ('Tr_{}'.format(organ.name), organ.Tr),
+                         ('Photosynthesis_{}'.format(organ.name), map(organ.calculate_photosynthesis, t, [organ.An] * len(t))),
                          ('Transpiration_{}'.format(organ.name), transpiration_mapping[organ]),
                          ('Conc_TriosesP_{}'.format(organ.name), organ.calculate_conc_triosesP(triosesP)),
                          ('Conc_Starch_{}'.format(organ.name), organ.calculate_conc_starch(starch)),

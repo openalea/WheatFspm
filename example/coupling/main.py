@@ -4,11 +4,11 @@
     main
     ~~~~
 
-    An example to show how to initialize and run a simulation using CN-Wheat.
+    An example to show how to couple CN-Wheat and Farquhar-Wheat.
     
     You must first install :mod:`cnwheat` (and add it to your PYTHONPATH) 
     before running this script with the command `python`. 
-
+    
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
     
@@ -30,10 +30,12 @@ import logging
 import logging.config
 import json
 
+import numpy as np
 import pandas as pd
 
 from cnwheat import simulation
-from cnwheat import model
+from cnwheat import model as cnwheat_model
+from cnwheat.farquharwheat import model as photosynthesis_model
 
 DATA_DIRPATH = 'data'
 
@@ -92,81 +94,91 @@ def read_t_data(curr_data_dirpath, data_filename):
 if __name__ == '__main__':
     organs = []
     t = 0
-    An_Tr_dict = {}
+    PAR_dict = {}
     # create the chaff
     name='Chaff'
-    An_Tr_dict[name] = read_t_data(DATA_DIRPATH, 'An_Tr_%s.csv' % name)
-    chaff = model.Chaff(t=t, area=0.00075, mstruct=0.21, width=0.02, height= 0.7, starch=0, 
-                        sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0, 
-                        proteins=0, name=name)
+    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
+    chaff = cnwheat_model.Chaff(t=t, area=0.00075, mstruct=0.21, width=0.02, height= 0.7, 
+                                starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
+                                amino_acids=0, proteins=0, name=name)
     organs.append(chaff)
 
-    # create the internode
+    # create the internodes
     name='Internode'
-    An_Tr_dict[name] = read_t_data(DATA_DIRPATH, 'An_Tr_%s.csv' % name)
-    internode = model.Internode(t=t, area=0.0012, mstruct=0.148, width=0.042, height=0.4, 
-                                starch=0, sucrose=0, triosesP=0, fructan=0, 
-                                nitrates=0, amino_acids=0, proteins=0, name=name)
+    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
+    internode = cnwheat_model.Internode(t=t, area=0.0012, mstruct=0.148, width=0.042, height=0.4, 
+                                        starch=0, sucrose=0, triosesP=0, fructan=0, 
+                                        nitrates=0, amino_acids=0, proteins=0, name=name)
     organs.append(internode)
 
-    # create the lamina
+    # create the laminae
     name='Lamina'
-    An_Tr_dict[name] = read_t_data(DATA_DIRPATH, 'An_Tr_%s.csv' % name)
-    lamina = model.Lamina(t=t, area=0.00346, mstruct=0.14, width= 0.018, height=0.6, 
-                          starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
-                          amino_acids=0, proteins=0, name=name)
+    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
+    lamina = cnwheat_model.Lamina(t=t, area=0.00346, mstruct=0.14, width= 0.018, height=0.6, 
+                                  starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
+                                  amino_acids=0, proteins=0, name=name)
     organs.append(lamina)
 
-    # create the peduncle
+    # create the peduncles
     name = 'Peduncle'
-    An_Tr_dict[name] = read_t_data(DATA_DIRPATH, 'An_Tr_%s.csv' % name)
-    peduncle = model.Peduncle(t=t, area=0.00155, mstruct=0.168, width= 0.031, height=0.65, 
-                              starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
-                              amino_acids=0, proteins=0, name=name)
+    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
+    peduncle = cnwheat_model.Peduncle(t=t, area=0.00155, mstruct=0.168, width= 0.031, height=0.65, 
+                                      starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
+                                      amino_acids=0, proteins=0, name=name)
     organs.append(peduncle)
 
-    # create the sheath
+    # create the sheaths
     name = 'Sheath'
-    An_Tr_dict[name] = read_t_data(DATA_DIRPATH, 'An_Tr_%s.csv' % name)
-    sheath = model.Sheath(t=t, area=0.0006, mstruct=0.103, width=0.042, height=0.5, 
-                          starch=0, sucrose=0, triosesP=0, fructan=0, 
-                          nitrates=0 , amino_acids=0, proteins=0, name=name)
+    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
+    sheath = cnwheat_model.Sheath(t=t, area=0.0006, mstruct=0.103, width=0.042, height=0.5, 
+                                  starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
+                                  amino_acids=0, proteins=0, name=name)
     organs.append(sheath)
 
     # create the grains
-    grains = model.Grains(t=t, starch=0, structure=10850, proteins=0, name='Grains')
+    grains = cnwheat_model.Grains(t=t, starch=0, structure=10850, proteins=0, name='Grains')
     organs.append(grains)
 
     # create the roots
-    roots = model.Roots(t=t, mstruct=0.504, sucrose=0, nitrates=250, amino_acids=0, name='Roots')
+    roots = cnwheat_model.Roots(t=t, mstruct=0.504, sucrose=0, nitrates=250, amino_acids=0, name='Roots')
     organs.append(roots)
 
     # create the phloem
-    phloem = model.Phloem(t=t, sucrose=0, amino_acids=0, name='Phloem')
+    phloem = cnwheat_model.Phloem(t=t, sucrose=0, amino_acids=0, name='Phloem')
     organs.append(phloem)
 
-    # initialize the model
+    # get meteo data
+    meteo_df = read_t_data(DATA_DIRPATH, 'meteo.csv')
+    
+    # initialize the model of CN exchanges
     cnwheat_ = simulation.CNWheat(organs=organs)
 
-    # run the model
+    # run the models
     start_time = 0
     stop_time = 48
     time_step = 4
-     
+    
     output_df_list = []
-     
+    
     for t in xrange(start_time, stop_time, time_step):
-        # update the organs
+        # run the model of photosynthesis
         for organ in organs:
             organ.t = t
-            if isinstance(organ, model.PhotosyntheticOrgan):
-                organ.An = An_Tr_dict[organ.name]['An'][t]
-                organ.Tr = An_Tr_dict[organ.name]['Tr'][t]
+            if isinstance(organ, cnwheat_model.PhotosyntheticOrgan):
+                PAR = PAR_dict[organ.name][t]
+                An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(t, organ.width, 
+                    organ.height, PAR, meteo_df['air_temperature'][t],
+                    meteo_df['ambient_CO2'][t], meteo_df['humidity'][t],
+                    meteo_df['Wind'][t])
+                organ.An = An
+                organ.Tr = Tr
+        # run the model of CN exchanges
         output_df = cnwheat_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
         output_df_list.append(output_df)
-             
+            
     global_output_df = pd.concat(output_df_list, ignore_index=True)
     global_output_df.drop_duplicates(subset='t', inplace=True)
- 
+
     global_output_df.to_csv(OUTPUT_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    
 

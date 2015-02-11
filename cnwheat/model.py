@@ -37,17 +37,9 @@ class Organ(object):
 
     PARAMETERS = parameters.OrganParameters #: the parameters of the organ
 
-    def __init__(self, name):
-        if name is None:
-            name = self.__class__.__name__
+    def __init__(self, t, name):
+        self.t = t #: the thermal time
         self.name = name #: the name of the organ
-        self._initial_conditions = {} #: the initial value of each compartment of the organ
-
-    @property
-    def initial_conditions(self):
-        """Get the initial value of each compartment of the organ.
-        """
-        return self._initial_conditions
 
 
 class PhotosyntheticOrgan(Organ):
@@ -59,24 +51,32 @@ class PhotosyntheticOrgan(Organ):
 
     PARAMETERS = parameters.PhotosyntheticOrganParameters #: the parameters of the organ
 
-    def __init__(self, area, mstruct, width, height, PAR, triosesP_0, starch_0,
-                 sucrose_0, fructan_0, nitrates_0, amino_acids_0, proteins_0, name=None):
+    def __init__(self, t, area, mstruct, width, height, triosesP, starch,
+                 sucrose, fructan, nitrates, amino_acids, proteins,  
+                 An=None, Tr=None, name=''):
 
-        super(PhotosyntheticOrgan, self).__init__(name)
+        super(PhotosyntheticOrgan, self).__init__(t, name)
 
-        # parameters
+        # variables
         self.area = area                     #: area (m-2)
         self.mstruct = mstruct               #: Structural mass (g)
         self.width = width                   #: Width (or diameter for stem organs) (m)
         self.height = height                 #: Height of organ from soil (m)
-        self.PAR = PAR                       #: PAR. Must be a :class:`pandas.Series` which index is time in hours
+        self.An = An                         #: Net assimilation (µmol m-2 s-1)
+        self.Tr = Tr                         #: Transpiration (mm s-1)
 
-        self.loading_sucrose = 0             #: current rate of sucrose loading to phloem
-        self.loading_amino_acids = 0         #: current rate of amino acids loading to phloem
-
-        # initialize the compartments
-        self._initial_conditions = {'triosesP':triosesP_0, 'starch':starch_0, 'sucrose':sucrose_0 , 'fructan':fructan_0,
-                                    'nitrates':nitrates_0 , 'amino_acids':amino_acids_0, 'proteins':proteins_0}
+        self.triosesP = triosesP
+        self.starch = starch
+        self.sucrose = sucrose
+        self.fructan = fructan
+        self.nitrates = nitrates
+        self.amino_acids = amino_acids
+        self.proteins = proteins
+        
+        # fluxes to phloem
+        self.loading_sucrose = None           #: current rate of sucrose loading to phloem
+        self.loading_amino_acids = None       #: current rate of amino acids loading to phloem
+        
 
     # VARIABLES
 
@@ -140,7 +140,7 @@ class PhotosyntheticOrgan(Organ):
         mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
 
-    # FLOWS
+    # FLUXES
 
     def calculate_s_starch(self, triosesP):
         """Rate of starch synthesis from triosesP (µmol C starch s-1 g-1 MS * DELTA_T).
@@ -322,11 +322,13 @@ class Phloem(Organ):
 
     PARAMETERS = parameters.PhloemParameters #: the parameters of the organ
 
-    def __init__(self, sucrose_0, amino_acids_0, name=None):
-        super(Phloem, self).__init__(name)
+    def __init__(self, t, sucrose, amino_acids, name=''):
+        super(Phloem, self).__init__(t, name)
 
-        # initialize the compartment
-        self._initial_conditions = {'sucrose': sucrose_0, 'amino_acids': amino_acids_0}
+        # variables
+        self.sucrose = sucrose
+        self.amino_acids = amino_acids
+        
 
     # VARIABLES
 
@@ -391,18 +393,19 @@ class Grains(Organ):
 
     PARAMETERS = parameters.GrainsParameters #: the parameters of the organ
 
-    def __init__(self, starch_0, structure_0, proteins_0, name=None):
-        super(Grains, self).__init__(name)
+    def __init__(self, t, starch, structure, proteins, name=''):
+        super(Grains, self).__init__(t, name)
 
-        # flow from phloem
-        self.s_grain_structure = 0            #: current rate of grain structure synthesis
-        self.s_grain_starch_0 = 0             #: current rate of grain starch C synthesis
-        self.s_proteins = 0                   #: current rate of grain protein synthesis
-
-        self.structure = 0
-
-        # initialize the compartments
-        self._initial_conditions = {'starch': starch_0, 'structure': structure_0, 'proteins': proteins_0}
+        # variables
+        self.starch = starch
+        self.structure = structure
+        self.proteins = proteins
+        
+        # fluxes from phloem
+        self.s_grain_structure = None            #: current rate of grain structure synthesis
+        self.s_grain_starch = None             #: current rate of grain starch C synthesis
+        self.s_proteins = None                   #: current rate of grain protein synthesis
+        
 
     # VARIABLES
 
@@ -429,7 +432,7 @@ class Grains(Organ):
         return (s_grain_structure + s_grain_starch * (structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)/12
 
 
-    # FLOWS
+    # FLUXES
 
     def calculate_s_grain_structure(self, t, prec_structure, RGR_structure):
         """Synthesis of grain structure integrated over delta_t (µmol C structure s-1 * DELTA_T). Rate regulated by phloem concentrations
@@ -483,17 +486,19 @@ class Roots(Organ):
 
     PARAMETERS = parameters.RootsParameters #: the parameters of the organ
 
-    def __init__(self, mstruct, sucrose_0, nitrates_0, amino_acids_0, name=None):
-        super(Roots, self).__init__(name)
+    def __init__(self, t, mstruct, sucrose, nitrates, amino_acids, name=''):
+        super(Roots, self).__init__(t, name)
 
-        # parameters
+        # variables
         self.mstruct = mstruct  #: Structural mass (g)
+        self.sucrose = sucrose
+        self.nitrates = nitrates
+        self.amino_acids = amino_acids
 
-        self.unloading_sucrose = 0          #: current unloading of sucrose from phloem to roots
-        self.unloading_amino_acids = 0      #: current unloading of amino acids from phloem to roots
-
-        # initialize the compartment
-        self._initial_conditions = {'sucrose': sucrose_0, 'nitrates': nitrates_0, 'amino_acids': amino_acids_0}
+        # fluxes from phloem
+        self.unloading_sucrose = None          #: current unloading of sucrose from phloem to roots
+        self.unloading_amino_acids = None      #: current unloading of amino acids from phloem to roots
+        
 
     # VARIABLES
 
@@ -518,7 +523,7 @@ class Roots(Organ):
         """
         return (amino_acids/Organ.PARAMETERS.AMINO_ACIDS_N_RATIO)/self.mstruct
 
-    # FLOWS
+    # FLUXES
 
     def calculate_unloading_sucrose(self, sucrose_phloem):
         """Unloading of sucrose from phloem to roots (µmol C sucrose unloaded s-1 g-1 MS * DELTA_T)
