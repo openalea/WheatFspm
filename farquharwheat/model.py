@@ -216,28 +216,28 @@ class PhotosynthesisModel(object):
     @classmethod
     def calculate_An(cls, t, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, wind0):
         """
-        For an organ:
-            * compute CO2 assimilation following Farquhar's model, 
-            * estimate internal CO2 and organ temperature numerically.
+        Compute An (µmol m-2 s-1) and Tr (mm s-1) at t.
 
         :Parameters:
         
-            - `t` (:class:`float`) - the time at which we want to calculate An
+            - `t` (:class:`float`) - time at which we want to calculate An and Tr (thermal time)
             
-            - `organ_` (:class:`cnwheat.organ.Organ`) - the organ for which we want to do the computation. 
-
-            - `PAR` (:class:`float`) - the PAR at t (µmol m-2 s-1).
+            - `organ_width` (:class:`float`) - width of the organ (or diameter for stem organ) at t (m)
             
-            - `Ta` (:class:`float`) - Air temperature (degree Celsius)
+            - `organ_height` (:class:`float`) - height of the organ from soil at t (m)
+            
+            - `PAR` (:class:`float`) - PAR at t (µmol m-2 s-1)
+            
+            - `Ta` (:class:`float`) - air temperature at t (degree Celsius)
 
-            - `ambient_CO2` (:class:`float`) - Air CO2 (umol mol-1)
+            - `ambient_CO2` (:class:`float`) - air CO2 at t (umol mol-1)
 
-            - `RH` (:class:`float`) - Relative humidity (decimal fraction)
+            - `RH` (:class:`float`) - relative humidity at t (decimal fraction)
 
-            - `wind0` (:class:`float`) - Wind speed at the top of the canopy (m s-1)
+            - `wind0` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
 
         :Returns:
-            Net assimilation (µmol m-2 s-1) and Tr (mm s-1)
+            An (µmol m-2 s-1) and Tr (mm s-1) at t.
 
         :Returns Type:
             :class:`float`
