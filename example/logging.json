@@ -22,17 +22,59 @@
             "mode": "w",
             "formatter": "verbose"
         },
-        "compartments_file": {
+        "plants_compartments_file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
-            "filename": "compartments.log",
+            "filename": "plants_compartments.log",
             "mode": "w",
             "formatter": "simple"
         },
-        "derivatives_file": {
+        "axes_compartments_file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
-            "filename": "derivatives.log",
+            "filename": "axes_compartments.log",
+            "mode": "w",
+            "formatter": "simple"
+        },
+        "phytomers_compartments_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "phytomers_compartments.log",
+            "mode": "w",
+            "formatter": "simple"
+        },
+        "organs_compartments_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "organs_compartments.log",
+            "mode": "w",
+            "formatter": "simple"
+        },
+        "plants_derivatives_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "plants_derivatives.log",
+            "mode": "w",
+            "formatter": "simple"
+        },
+        "axes_derivatives_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "axes_derivatives.log",
+            "mode": "w",
+            "formatter": "simple"
+        },
+        "phytomers_derivatives_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "phytomers_derivatives.log",
+            "mode": "w",
+            "formatter": "simple"
+        },
+        "organs_derivatives_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "organs_derivatives.log",
             "mode": "w",
             "formatter": "simple"
         }
@@ -52,16 +94,50 @@
             "propagate": false
         },
         "cnwheat.compartments": {
-            "handlers": [
-                "compartments_file"
-            ],
             "propagate": false
         },
-        "cnwheat.derivatives": {
+        "cnwheat.compartments.plants": {
             "handlers": [
-                "derivatives_file"
-            ],
+                "plants_compartments_file"
+            ]
+        },
+        "cnwheat.compartments.axes": {
+            "handlers": [
+                "axes_compartments_file"
+            ]
+        },
+        "cnwheat.compartments.phytomers": {
+            "handlers": [
+                "phytomers_compartments_file"
+            ]
+        },
+        "cnwheat.compartments.organs": {
+            "handlers": [
+                "organs_compartments_file"
+            ]
+        },
+        "cnwheat.derivatives": {
             "propagate": false
+        },
+        "cnwheat.derivatives.plants": {
+            "handlers": [
+                "plants_derivatives_file"
+            ]
+        },
+        "cnwheat.derivatives.axes": {
+            "handlers": [
+                "axes_derivatives_file"
+            ]
+        },
+        "cnwheat.derivatives.phytomers": {
+            "handlers": [
+                "phytomers_derivatives_file"
+            ]
+        },
+        "cnwheat.derivatives.organs": {
+            "handlers": [
+                "organs_derivatives_file"
+            ]
         }
     }
 }

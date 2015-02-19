@@ -4,8 +4,8 @@
     cnwheat.parameters
     ~~~~~~~~~~~~~~~~~~
 
-    The parameters of the organs.
-
+    The module :mod:`cnwheat.parameters` defines the constant parameters in a population of plants.
+    
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -20,6 +20,34 @@
         $URL$
         $Id$
 """
+
+class PopulationParameters:
+    """
+    Constants of populations.
+    """
+    pass
+
+
+class PlantParameters:
+    """
+    Constants of plants.
+    """
+    pass
+
+
+class AxisParameters:
+    """
+    Constants of axes.
+    """
+    pass
+
+
+class PhytomerParameters:
+    """
+    Constants of phytomers.
+    """
+    pass
+
 
 class OrganParameters:
     """
@@ -88,10 +116,10 @@ class LaminaParameters(PhotosyntheticOrganParameters):
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
-    #: Temporary estimation of lamina senescence ({'lamina_order': (time of senescence beginning (h), offset of the linear regression)})
-    INFLEXION_POINTS = {'lamina1': (600, 78.75),
-                                'lamina2': (480, 68.61),
-                                'lamina3': (360, 48.76)}
+    #: Temporary estimation of lamina senescence ({lamina_index: (time of senescence beginning (h), offset of the linear regression)})
+    INFLEXION_POINTS = {1: (600, 78.75),
+                        2: (480, 68.61),
+                        3: (360, 48.76)}
 
 
 class InternodeParameters(PhotosyntheticOrganParameters):

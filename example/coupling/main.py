@@ -39,7 +39,10 @@ from farquharwheat import model as photosynthesis_model
 
 DATA_DIRPATH = 'data'
 
-OUTPUT_FILEPATH = 'cnwheat_output.csv'
+PLANTS_OUTPUTS_FILENAME = 'plants_outputs.csv'
+AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
+PHYTOMERS_OUTPUTS_FILENAME = 'phytomers_outputs.csv'
+ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
 
 OUTPUT_PRECISION = 2
 
@@ -92,93 +95,112 @@ def read_t_data(curr_data_dirpath, data_filename):
 
 
 if __name__ == '__main__':
-    organs = []
-    t = 0
+    
+    t_0 = 0
+    
+    population = cnwheat_model.Population(t_0)
+    
+    plant = cnwheat_model.Plant()
+    population.plants.append(plant)
+    
+    axis = cnwheat_model.Axis()
+    plant.axes.append(axis)
+    
+    axis.grains = cnwheat_model.Grains(starch=0, structure=10850, proteins=0)
+
+    axis.roots = cnwheat_model.Roots(mstruct=0.504, sucrose=0, nitrates=250, amino_acids=0)
+
+    axis.phloem = cnwheat_model.Phloem(sucrose=0, amino_acids=0)
+    
+    phytomer1 = cnwheat_model.Phytomer(index=1)
+    
+    phytomer1.lamina = cnwheat_model.Lamina(area=0.00346, mstruct=0.14, width= 0.018, height=0.6, 
+                                    starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
+                                    amino_acids=0, proteins=0)
+    
+    phytomer1.internode = cnwheat_model.Internode(area=0.0012, mstruct=0.148, width=0.042, height=0.4, 
+                                          starch=0, sucrose=0, triosesP=0, fructan=0, 
+                                          nitrates=0, amino_acids=0, proteins=0)
+    
+    phytomer1.sheath = cnwheat_model.Sheath(area=0.0006, mstruct=0.103, width=0.042, height=0.5, 
+                                    starch=0, sucrose=0, triosesP=0, fructan=0, 
+                                    nitrates=0 , amino_acids=0, proteins=0)
+    axis.phytomers.append(phytomer1)
+    
+    phytomer2 = cnwheat_model.Phytomer(index=2)
+    
+    phytomer2.peduncle = cnwheat_model.Peduncle(area=0.00155, mstruct=0.168, width= 0.031, height=0.65, 
+                                        starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
+                                        amino_acids=0, proteins=0)
+    axis.phytomers.append(phytomer2)
+    
+    phytomer3 = cnwheat_model.Phytomer(index=3)
+    
+    phytomer3.chaff = cnwheat_model.Chaff(area=0.00075, mstruct=0.21, width=0.02, height= 0.7, starch=0, 
+                                  sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0, 
+                                  proteins=0)
+    axis.phytomers.append(phytomer3)
+    
     PAR_dict = {}
-    # create the chaff
-    name='Chaff'
-    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
-    chaff = cnwheat_model.Chaff(t=t, area=0.00075, mstruct=0.21, width=0.02, height= 0.7, 
-                                starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
-                                amino_acids=0, proteins=0, name=name)
-    organs.append(chaff)
-
-    # create the internodes
-    name='Internode'
-    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
-    internode = cnwheat_model.Internode(t=t, area=0.0012, mstruct=0.148, width=0.042, height=0.4, 
-                                        starch=0, sucrose=0, triosesP=0, fructan=0, 
-                                        nitrates=0, amino_acids=0, proteins=0, name=name)
-    organs.append(internode)
-
-    # create the laminae
-    name='Lamina'
-    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
-    lamina = cnwheat_model.Lamina(t=t, area=0.00346, mstruct=0.14, width= 0.018, height=0.6, 
-                                  starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
-                                  amino_acids=0, proteins=0, name=name)
-    organs.append(lamina)
-
-    # create the peduncles
-    name = 'Peduncle'
-    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
-    peduncle = cnwheat_model.Peduncle(t=t, area=0.00155, mstruct=0.168, width= 0.031, height=0.65, 
-                                      starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
-                                      amino_acids=0, proteins=0, name=name)
-    organs.append(peduncle)
-
-    # create the sheaths
-    name = 'Sheath'
-    PAR_dict[name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % name).PAR
-    sheath = cnwheat_model.Sheath(t=t, area=0.0006, mstruct=0.103, width=0.042, height=0.5, 
-                                  starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
-                                  amino_acids=0, proteins=0, name=name)
-    organs.append(sheath)
-
-    # create the grains
-    grains = cnwheat_model.Grains(t=t, starch=0, structure=10850, proteins=0, name='Grains')
-    organs.append(grains)
-
-    # create the roots
-    roots = cnwheat_model.Roots(t=t, mstruct=0.504, sucrose=0, nitrates=250, amino_acids=0, name='Roots')
-    organs.append(roots)
-
-    # create the phloem
-    phloem = cnwheat_model.Phloem(t=t, sucrose=0, amino_acids=0, name='Phloem')
-    organs.append(phloem)
-
+    for organ_name in ('Chaff', 'Internode', 'Lamina', 'Peduncle', 'Sheath'):
+        PAR_dict[organ_name] = read_t_data(DATA_DIRPATH, 'PAR_%s.csv' % organ_name).PAR
+    
     # get meteo data
     meteo_df = read_t_data(DATA_DIRPATH, 'meteo.csv')
     
     # initialize the model of CN exchanges
-    cnwheat_ = simulation.CNWheat(organs=organs)
+    cnwheat_ = simulation.CNWheat(population=population)
 
     # run the models
     start_time = 0
     stop_time = 48
-    time_step = 4
+    photosynthesis_model_ts = 4
+    cn_model_ts = 1
     
-    output_df_list = []
+    all_plants_df_list = []
+    all_axes_df_list = []
+    all_phytomers_df_list = []
+    all_organs_df_list = []
     
-    for t in xrange(start_time, stop_time, time_step):
-        # run the model of photosynthesis
-        for organ in organs:
-            organ.t = t
-            if isinstance(organ, cnwheat_model.PhotosyntheticOrgan):
-                PAR = PAR_dict[organ.name][t]
-                An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(t, organ.width, 
-                    organ.height, PAR, meteo_df['air_temperature'][t],
-                    meteo_df['ambient_CO2'][t], meteo_df['humidity'][t],
-                    meteo_df['Wind'][t])
-                organ.An = An
-                organ.Tr = Tr
-        # run the model of CN exchanges
-        output_df = cnwheat_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
-        output_df_list.append(output_df)
-            
-    global_output_df = pd.concat(output_df_list, ignore_index=True)
-    global_output_df.drop_duplicates(subset='t', inplace=True)
+    for t_photosynthesis_model in xrange(start_time, stop_time, photosynthesis_model_ts):
+        # update the population
+        population.t = t_photosynthesis_model
+        # run the model of photosynthesis and update the population
+        for plant in population.plants:
+            for axis in plant.axes:
+                for phytomer in axis.phytomers:
+                    for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
+                        if organ is not None: 
+                            PAR = PAR_dict[organ.__class__.__name__][t_photosynthesis_model]
+                            An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(t_photosynthesis_model, organ.width, 
+                                organ.height, PAR, meteo_df['air_temperature'][t_photosynthesis_model],
+                                meteo_df['ambient_CO2'][t_photosynthesis_model], meteo_df['humidity'][t_photosynthesis_model],
+                                meteo_df['Wind'][t_photosynthesis_model])
+                            organ.An = An
+                            organ.Tr = Tr
+        for t_cn_model in xrange(t_photosynthesis_model, t_photosynthesis_model + photosynthesis_model_ts, cn_model_ts):
+            # update the population
+            population.t = t_cn_model
+            # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
+            all_plants_df, all_axes_df, all_phytomers_df, all_organs_df = cnwheat_.run(start_time=t_cn_model, stop_time=t_cn_model+cn_model_ts, number_of_output_steps=cn_model_ts+1)
+            all_plants_df_list.append(all_plants_df)
+            all_axes_df_list.append(all_axes_df)
+            all_phytomers_df_list.append(all_phytomers_df)
+            all_organs_df_list.append(all_organs_df)
 
-    global_output_df.to_csv(OUTPUT_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
+    global_plants_df.drop_duplicates(subset=simulation.CNWheat.PLANTS_INDEXES, inplace=True)
+    global_plants_df.to_csv(PLANTS_OUTPUTS_FILENAME, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
     
-
+    global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
+    global_axes_df.drop_duplicates(subset=simulation.CNWheat.AXES_INDEXES, inplace=True)
+    global_axes_df.to_csv(AXES_OUTPUTS_FILENAME, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    
+    global_phytomers_df = pd.concat(all_phytomers_df_list, ignore_index=True)
+    global_phytomers_df.drop_duplicates(subset=simulation.CNWheat.PHYTOMERS_INDEXES, inplace=True)
+    global_phytomers_df.to_csv(PHYTOMERS_OUTPUTS_FILENAME, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    
+    global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
+    global_organs_df.drop_duplicates(subset=simulation.CNWheat.ORGANS_INDEXES, inplace=True)
+    global_organs_df.to_csv(ORGANS_OUTPUTS_FILENAME, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    

@@ -11,8 +11,8 @@ import parameters
     cnwheat.model
     ~~~~~~~~~~~~~
 
-    The classes of the organs.
-
+    The module :mod:`cnwheat.model` defines the equations of the CN exchanges in a population of plants.
+    
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -28,35 +28,102 @@ import parameters
         $Id$
 """
 
+class Population(object):
+    """
+    The class :class:`Population` defines the CN exchanges at the population scale. 
+    
+    A :class:`population <Population>` must have one or several :class:`plants <Plant>`.
+    """
+    
+    PARAMETERS = parameters.PopulationParameters #: the parameters of the population
+    
+    def __init__(self, t, plants=[]):
+        self.t = t #: the thermal time
+        self.plants = plants #: the list of plants
+        
+
+class Plant(object):
+    """
+    The class :class:`Plant` defines the CN exchanges at the plants scale.
+    
+    A :class:`plant <Plant>` must have one or several :class:`axes <Axis>`.
+    """
+    
+    PARAMETERS = parameters.PlantParameters #: the parameters of the plant
+    
+    def __init__(self, axes=[], index=1):
+        self.axes = axes #: the list of axes
+        self.index = index #: the index of the plant, from 1 to n.
+        
+
+class Axis(object):
+    """
+    The class :class:`Axis` defines the CN exchanges at the axes scale.
+    
+    An :class:`axis <Axis>` must have:
+        * one :class:`set of roots <Roots>`,
+        * one :class:`phloem <Phloem>`,
+        * zero or one :class:`set of grains <Grains>`,
+        * one or several :class:`phytomer<Phytomer>.
+    """
+    
+    PARAMETERS = parameters.AxisParameters #: the parameters of the axis
+    
+    def __init__(self, roots=None, phloem=None, grains=None, phytomers=[], axis_type='MS', index=0):
+        self.roots = roots #: the roots
+        self.phloem = phloem #: the phloem
+        self.grains = grains #: the grains
+        self.phytomers = phytomers #: the list of phytomers
+        self.type = axis_type #: the type of the axis ; 'MS': main stem, 'T': tiller
+        self.index = index #: the index of the axis ; 0: MS, 1..n: tiller
+        self.id = axis_type #: the id of the axis ; the id is built from axis_type and index
+        if axis_type != 'MS':
+            self.id += str(index)
+        
+class Phytomer(object):
+    """
+    The class :class:`Phytomer` defines the CN exchanges at the phytomers scale.
+    
+    A :class:`phytomer <Phytomer>` must have either:
+        * one :class:`chaff <Chaff>`,
+        * OR one :class:`peduncle <Peduncle>`,
+        * OR one :class:`lamina <Lamina>`, one :class:`internode <Internode>` and one :class:`sheath <Sheath>`.
+    """
+    
+    PARAMETERS = parameters.PhytomerParameters #: the parameters of the phytomer
+    
+    def __init__(self, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None, index=1):
+        self.chaff = chaff #: the chaff
+        self.peduncle = peduncle #: the peduncle
+        self.lamina = lamina #: the lamina
+        self.internode = internode #: the internode
+        self.sheath = sheath #: the sheath
+        self.index = index #: the index of the phytomer, from 1 to n.
+        
+    
 class Organ(object):
     """
-    The Organ class defines the CN exchanges in an organ.
+    The class :class:`Organ` defines the CN exchanges at the organs scale.
 
-    The Organ class is the base class of all organs. DO NOT INSTANTIATE IT.
+    :class:`Organ` is the base class of all organs. DO NOT INSTANTIATE IT.
     """
 
     PARAMETERS = parameters.OrganParameters #: the parameters of the organ
-
-    def __init__(self, t, name):
-        self.t = t #: the thermal time
-        self.name = name #: the name of the organ
-
+    
 
 class PhotosyntheticOrgan(Organ):
     """
-    The PhotosyntheticOrgan class defines the CN exchanges in a photosynthetic organ.
+    The class :class:`PhotosyntheticOrgan defines the CN exchanges in a photosynthetic organ.
 
-    The PhotosyntheticOrgan class is the base class of all photosynthetic organs. DO NOT INSTANTIATE IT.
+    :class:`PhotosyntheticOrgan` is the base class of all photosynthetic organs. DO NOT INSTANTIATE IT.
     """
 
-    PARAMETERS = parameters.PhotosyntheticOrganParameters #: the parameters of the organ
+    PARAMETERS = parameters.PhotosyntheticOrganParameters #: the parameters of the photosynthetic organ
 
-    def __init__(self, t, area, mstruct, width, height, triosesP, starch,
+    def __init__(self, area, mstruct, width, height, triosesP, starch,
                  sucrose, fructan, nitrates, amino_acids, proteins,  
-                 An=None, Tr=None, name=''):
-
-        super(PhotosyntheticOrgan, self).__init__(t, name)
-
+                 An=None, Tr=None):
+        
         # variables
         self.area = area                     #: area (m-2)
         self.mstruct = mstruct               #: Structural mass (g)
@@ -76,21 +143,20 @@ class PhotosyntheticOrgan(Organ):
         # fluxes to phloem
         self.loading_sucrose = None           #: current rate of sucrose loading to phloem
         self.loading_amino_acids = None       #: current rate of amino acids loading to phloem
-        
-
+    
     # VARIABLES
 
-    def calculate_photosynthesis(self, t, An):
+    def calculate_photosynthesis(self, t, An, phytomer_index):
         """Total photosynthesis of an organ integrated over DELTA_T (µmol CO2 on organ area integrated over delat_t)
         """
-        return An * self._calculate_green_area(t) * Organ.PARAMETERS.DELTA_T
+        return An * self._calculate_green_area(t, phytomer_index) * Organ.PARAMETERS.DELTA_T
 
-    def calculate_transpiration(self, t, Tr):
+    def calculate_transpiration(self, t, Tr, phytomer_index):
         """Total transpiration of an organ integrated over DELTA_T (mm of H2O on organ area integrated over delat_t)
         """
-        return Tr * self._calculate_green_area(t) * Organ.PARAMETERS.DELTA_T
+        return Tr * self._calculate_green_area(t, phytomer_index) * Organ.PARAMETERS.DELTA_T
 
-    def _calculate_green_area(self, t):
+    def _calculate_green_area(self, t, phytomer_index):
         """Compute green area of the organ.
         """
         return self.area
@@ -182,7 +248,6 @@ class PhotosyntheticOrgan(Organ):
             nitrates_import = roots_uptake_nitrate * (organ_transpiration/total_transpiration)* Organ.PARAMETERS.RATIO_EXPORT_NITRATES_ROOTS # Proportion of uptaked nitrates exported from roots to shoot
         else:
             nitrates_import = 0
-        #print self.name, 'Ratio transpiration', nitrates_import
         return nitrates_import
 
     def calculate_amino_acids_import(self, roots_exported_amino_acids, organ_transpiration, total_transpiration):
@@ -198,14 +263,12 @@ class PhotosyntheticOrgan(Organ):
         """Rate of amino acid synthesis (µmol N amino acids s-1 g-1 MS * DELTA_T)
         """
         calculate_s_amino_acids = PhotosyntheticOrgan.PARAMETERS.VMAX_AMINO_ACIDS / ((1 + PhotosyntheticOrgan.PARAMETERS.K_AMINO_ACIDS_NITRATES/(nitrates/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * (1 + PhotosyntheticOrgan.PARAMETERS.K_AMINO_ACIDS_TRIOSESP/(triosesP/(self.mstruct*self.__class__.PARAMETERS.ALPHA)))) * Organ.PARAMETERS.DELTA_T
-        #print calculate_s_amino_acids
         return calculate_s_amino_acids
 
     def calculate_s_proteins(self, amino_acids):
         """Rate of protein synthesis (µmol N proteins s-1 g-1 MS * DELTA_T)
         """
         calculate_s_proteins = (((max(0,amino_acids)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * PhotosyntheticOrgan.PARAMETERS.VMAX_SPROTEINS) / ((max(0, amino_acids)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SPROTEINS)) * Organ.PARAMETERS.DELTA_T
-        #print calculate_s_proteins
         return calculate_s_proteins
 
     def calculate_d_proteins(self, proteins):
@@ -253,8 +316,6 @@ class PhotosyntheticOrgan(Organ):
     def calculate_amino_acids_derivative(self, amino_acids_import, s_amino_acids, s_proteins, d_proteins, loading_amino_acids):
         """delta amino acids integrated over delat_t (µmol N amino acids)
         """
-##        if self. name == 'lamina1':
-##            print 'AA deriv+', amino_acids_import, s_amino_acids, d_proteins,'AA deriv-',s_proteins, loading_amino_acids
         return amino_acids_import + (s_amino_acids + d_proteins - s_proteins - loading_amino_acids) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
     def calculate_proteins_derivative(self, s_proteins, d_proteins):
@@ -265,25 +326,25 @@ class PhotosyntheticOrgan(Organ):
 
 class Chaff(PhotosyntheticOrgan):
     """
-    The Chaff class defines the CN exchanges in a chaff.
+    The class :class:`Chaff` defines the CN exchanges in a chaff.
     """
 
-    PARAMETERS = parameters.ChaffParameters #: the parameters of the organ
+    PARAMETERS = parameters.ChaffParameters #: the parameters of the chaff
 
 
 class Lamina(PhotosyntheticOrgan):
     """
-    The Lamina class defines the CN exchanges in a lamina.
+    The class :class:`Lamina` defines the CN exchanges in a lamina.
     """
 
-    PARAMETERS = parameters.LaminaParameters #: the parameters of the organ
+    PARAMETERS = parameters.LaminaParameters #: the parameters of the lamina
 
     # VARIABLES
 
-    def _calculate_green_area(self, t):
+    def _calculate_green_area(self, t, phytomer_index):
         """Compute green area of the organ.
         """
-        t_inflexion, value_inflexion = Lamina.PARAMETERS.INFLEXION_POINTS.get(self.name, (float("inf"), None))
+        t_inflexion, value_inflexion = Lamina.PARAMETERS.INFLEXION_POINTS.get(phytomer_index, (float("inf"), None))
         if t <= t_inflexion: # Non-senescent lamina
             green_area = self.area
         else: # Senescent lamina
@@ -293,38 +354,37 @@ class Lamina(PhotosyntheticOrgan):
 
 class Internode(PhotosyntheticOrgan):
     """
-    The Internode class defines the CN exchanges in an internode.
+    The class :class:`Internode` defines the CN exchanges in an internode.
     """
 
-    PARAMETERS = parameters.InternodeParameters #: the parameters of the organ
+    PARAMETERS = parameters.InternodeParameters #: the parameters of the internode
 
 
 class Peduncle(PhotosyntheticOrgan):
     """
-    The Peduncle class defines the CN exchanges in a peduncle.
+    The class :class:`Peduncle` defines the CN exchanges in a peduncle.
     """
 
-    PARAMETERS = parameters.PeduncleParameters #: the parameters of the organ
+    PARAMETERS = parameters.PeduncleParameters #: the parameters of the peduncle
 
 
 class Sheath(PhotosyntheticOrgan):
     """
-    The Sheath class defines the CN exchanges in a sheath.
+    The class :class:`Sheath` defines the CN exchanges in a sheath.
     """
 
-    PARAMETERS = parameters.SheathParameters #: the parameters of the organ
+    PARAMETERS = parameters.SheathParameters #: the parameters of the sheath
 
 
 class Phloem(Organ):
     """
-    The Phloem class defines the CN exchanges in a phloem.
+    The class :class:`Phloem` defines the CN exchanges in a phloem.
     """
 
-    PARAMETERS = parameters.PhloemParameters #: the parameters of the organ
+    PARAMETERS = parameters.PhloemParameters #: the parameters of the phloem
 
-    def __init__(self, t, sucrose, amino_acids, name=''):
-        super(Phloem, self).__init__(t, name)
-
+    def __init__(self, sucrose, amino_acids):
+        
         # variables
         self.sucrose = sucrose
         self.amino_acids = amino_acids
@@ -350,11 +410,11 @@ class Phloem(Organ):
     # COMPARTMENTS
 
     def calculate_sucrose_derivative(self, organs):
-        """delta sucrose of phloem integrated over delat_t (µmol C sucrose)
+        """delta sucrose of phloem integrated over delta_t (µmol C sucrose)
         """
         sucrose_derivative = 0
         # compute the sucrose contribution of each organ
-        logger = logging.getLogger(__name__)
+        
         for organ in organs:
             if isinstance(organ, Phloem):
                 continue
@@ -362,14 +422,15 @@ class Phloem(Organ):
                 flow = organ.loading_sucrose * organ.mstruct * organ.__class__.PARAMETERS.ALPHA
             elif isinstance(organ, Grains):
                 flow = - (organ.s_grain_structure + (organ.s_grain_starch * ((organ.structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS))) #: Conversion of structure from umol of C to g of C
-                logger.debug('organ name = {} ; contrib to phloem sucrose struct = {}'.format(organ.name, organ.s_grain_structure))
-                logger.debug('organ name = {} ; contrib to phloem sucrose starch = {}; mstruct={}'.format(organ.name, organ.s_grain_starch * ((organ.structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS), organ.structure))
             elif isinstance(organ, Roots):
                 flow = -(organ.unloading_sucrose * organ.mstruct * organ.__class__.PARAMETERS.ALPHA)
-
-            logger.debug('organ name = {} ; contrib to phloem sucrose = {}'.format(organ.name, flow))
+            
             sucrose_derivative += flow
-        logger.debug('total phloem sucrose_derivative = {}'.format(sucrose_derivative))
+        
+        logger = logging.getLogger(__name__)
+        if logger.isEnabledFor(logging.DEBUG):    
+            logger.debug('total phloem sucrose_derivative = {}'.format(sucrose_derivative))
+            
         return sucrose_derivative
 
     def calculate_amino_acids_derivative(self, organs):
@@ -388,14 +449,13 @@ class Phloem(Organ):
 
 class Grains(Organ):
     """
-    The Grains class defines the CN exchanges in grains.
+    The class :class:`Grains` defines the CN exchanges in a set of grains.
     """
 
-    PARAMETERS = parameters.GrainsParameters #: the parameters of the organ
+    PARAMETERS = parameters.GrainsParameters #: the parameters of the grains
 
-    def __init__(self, t, starch, structure, proteins, name=''):
-        super(Grains, self).__init__(t, name)
-
+    def __init__(self, starch, structure, proteins):
+        
         # variables
         self.starch = starch
         self.structure = structure
@@ -481,14 +541,13 @@ class Grains(Organ):
 
 class Roots(Organ):
     """
-    The Roots class defines the CN exchanges in roots.
+    The class :class:`Roots` defines the CN exchanges in a set of roots.
     """
 
-    PARAMETERS = parameters.RootsParameters #: the parameters of the organ
+    PARAMETERS = parameters.RootsParameters #: the parameters of the roots
 
-    def __init__(self, t, mstruct, sucrose, nitrates, amino_acids, name=''):
-        super(Roots, self).__init__(t, name)
-
+    def __init__(self, mstruct, sucrose, nitrates, amino_acids):
+        
         # variables
         self.mstruct = mstruct  #: Structural mass (g)
         self.sucrose = sucrose

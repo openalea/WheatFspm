@@ -5,9 +5,12 @@
 
     The model CN-Wheat.
     
-    CN-Wheat computes CN exchanges in wheat architecture defined by laminae, 
-    sheaths, internodes, a peduncle, a chaff, a phloem, roots and grains.
-
+    CN-Wheat computes the CN exchanges in a wheat architecture. See:
+    
+        * :mod:`cnwheat.simulation` for the front-end of the model,
+        * :mod:`cnwheat.model` for the equations of the model,
+        * :mod:`cnwheat.parameters` for the parameters of the model.
+         
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
     
