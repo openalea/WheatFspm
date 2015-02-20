@@ -37,11 +37,13 @@ DESIRED_PLANTS_OUTPUTS_FILENAME = 'desired_plants_outputs.csv'
 DESIRED_AXES_OUTPUTS_FILENAME = 'desired_axes_outputs.csv'
 DESIRED_PHYTOMERS_OUTPUTS_FILENAME = 'desired_phytomers_outputs.csv'
 DESIRED_ORGANS_OUTPUTS_FILENAME = 'desired_organs_outputs.csv'
+DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
 
 ACTUAL_PLANTS_OUTPUTS_FILENAME = 'actual_plants_outputs.csv'
 ACTUAL_AXES_OUTPUTS_FILENAME = 'actual_axes_outputs.csv'
 ACTUAL_PHYTOMERS_OUTPUTS_FILENAME = 'actual_phytomers_outputs.csv'
 ACTUAL_ORGANS_OUTPUTS_FILENAME = 'actual_organs_outputs.csv'
+ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
 
 PRECISION = 2
 RELATIVE_TOLERANCE = 10**-PRECISION
@@ -96,31 +98,54 @@ def test_run():
     
     phytomer1 = model.Phytomer(index=1)
     
-    phytomer1.lamina = model.Lamina(area=0.00346, mstruct=0.14, width= 0.018, height=0.6, 
-                                    starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
-                                    amino_acids=0, proteins=0)
+    phytomer1.lamina = model.Lamina()
     
-    phytomer1.internode = model.Internode(area=0.0012, mstruct=0.148, width=0.042, height=0.4, 
-                                          starch=0, sucrose=0, triosesP=0, fructan=0, 
-                                          nitrates=0, amino_acids=0, proteins=0)
+    lamina_element = model.LaminaElement(area=0.00346, mstruct=0.14, width= 0.018, 
+                                    height=0.6, starch=0, sucrose=0, triosesP=0, 
+                                    fructan=0, nitrates=0, amino_acids=0, proteins=0)
     
-    phytomer1.sheath = model.Sheath(area=0.0006, mstruct=0.103, width=0.042, height=0.5, 
-                                    starch=0, sucrose=0, triosesP=0, fructan=0, 
-                                    nitrates=0 , amino_acids=0, proteins=0)
+    phytomer1.lamina.elements.append(lamina_element)
+    
+    phytomer1.internode = model.Internode()
+    
+    internode_element = model.InternodeElement(area=0.0012, mstruct=0.148, width=0.042, 
+                                        height=0.4, starch=0, sucrose=0, triosesP=0, 
+                                        fructan=0, nitrates=0, amino_acids=0, proteins=0)
+    
+    phytomer1.internode.elements.append(internode_element)
+    
+    phytomer1.sheath = model.Sheath()
+    
+    sheath_element = model.SheathElement(area=0.0006, mstruct=0.103, width=0.042, 
+                                    height=0.5, starch=0, sucrose=0, triosesP=0, 
+                                    fructan=0, nitrates=0 , amino_acids=0, proteins=0)
+    
+    phytomer1.sheath.elements.append(sheath_element)
+    
     axis.phytomers.append(phytomer1)
     
     phytomer2 = model.Phytomer(index=2)
     
-    phytomer2.peduncle = model.Peduncle(area=0.00155, mstruct=0.168, width= 0.031, height=0.65, 
-                                        starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0, 
-                                        amino_acids=0, proteins=0)
+    phytomer2.peduncle = model.Peduncle()
+    
+    peduncle_element = model.PeduncleElement(area=0.00155, mstruct=0.168, width= 0.031, 
+                                        height=0.65, starch=0, sucrose=0, triosesP=0, 
+                                        fructan=0, nitrates=0, amino_acids=0, proteins=0)
+    
+    phytomer2.peduncle.elements.append(peduncle_element)
+    
     axis.phytomers.append(phytomer2)
     
     phytomer3 = model.Phytomer(index=3)
     
-    phytomer3.chaff = model.Chaff(area=0.00075, mstruct=0.21, width=0.02, height= 0.7, starch=0, 
-                                  sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0, 
-                                  proteins=0)
+    phytomer3.chaff = model.Chaff()
+    
+    chaff_element = model.ChaffElement(area=0.00075, mstruct=0.21, width=0.02, 
+                                       height= 0.7, starch=0, sucrose=0, triosesP=0, 
+                                       fructan=0, nitrates=0, amino_acids=0, proteins=0)
+    
+    phytomer3.chaff.elements.append(chaff_element)
+    
     axis.phytomers.append(phytomer3)
     
     An_Tr_dict = {}
@@ -138,6 +163,7 @@ def test_run():
     all_axes_df_list = []
     all_phytomers_df_list = []
     all_organs_df_list = []
+    all_elements_df_list = []
      
     for t in xrange(start_time, stop_time, time_step):
         # update the population
@@ -146,14 +172,16 @@ def test_run():
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is not None: 
-                            organ.An = An_Tr_dict[organ.__class__.__name__]['An'][t]
-                            organ.Tr = An_Tr_dict[organ.__class__.__name__]['Tr'][t]
+                            for photosynthetic_organ_element in organ.elements:
+                                photosynthetic_organ_element.An = An_Tr_dict[organ.__class__.__name__]['An'][t]
+                                photosynthetic_organ_element.Tr = An_Tr_dict[organ.__class__.__name__]['Tr'][t]
         # run the model
-        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df = cnwheat_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
+        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = cnwheat_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
         all_plants_df_list.append(all_plants_df)
         all_axes_df_list.append(all_axes_df)
         all_phytomers_df_list.append(all_phytomers_df)
         all_organs_df_list.append(all_organs_df)
+        all_elements_df_list.append(all_elements_df)
     
     global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
     global_plants_df.drop_duplicates(subset=simulation.CNWheat.PLANTS_INDEXES, inplace=True)
@@ -170,6 +198,10 @@ def test_run():
     global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
     global_organs_df.drop_duplicates(subset=simulation.CNWheat.ORGANS_INDEXES, inplace=True)
     compare_actual_to_desired(DATA_DIRPATH, global_organs_df, DESIRED_ORGANS_OUTPUTS_FILENAME, ACTUAL_ORGANS_OUTPUTS_FILENAME, True)
+    
+    global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
+    global_elements_df.drop_duplicates(subset=simulation.CNWheat.ELEMENTS_INDEXES, inplace=True)
+    compare_actual_to_desired(DATA_DIRPATH, global_elements_df, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME, True)
 
 
 if __name__ == '__main__':

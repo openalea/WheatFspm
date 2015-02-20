@@ -53,8 +53,9 @@ class CNWheat(object):
     MODEL_COMPARTMENTS_NAMES = {model.Plant: [],
                                 model.Axis: [],
                                 model.Phytomer: [],
-                                model.Organ: ['nitrates', 'starch', 'amino_acids', 'proteins',
-                                              'sucrose', 'triosesP', 'fructan', 'structure']}
+                                model.Organ: ['sucrose', 'amino_acids', 'nitrates', 'structure', 'starch', 'proteins'],
+                                model.PhotosyntheticOrganElement: ['nitrates', 'starch', 'amino_acids', 'proteins', 
+                                                                   'sucrose', 'triosesP', 'fructan']}
     
     PLANTS_INDEXES = ['t', 'plant']
     PLANTS_OUTPUTS = PLANTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Plant, [])
@@ -65,21 +66,31 @@ class CNWheat(object):
     PHYTOMERS_INDEXES = ['t', 'plant', 'axis', 'phytomer']
     PHYTOMERS_OUTPUTS = PHYTOMERS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Phytomer, [])
     
-    ORGANS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ']
-    ORGANS_OUTPUTS = ORGANS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Organ, []) + ['Amino_Acids_import', 'Conc_C_Sucrose', 'Unloading_Sucrose', 'D_Starch', 'Tr', 
-                      'Potential_Uptake_Nitrates', 'S_Proteins', 'S_Amino_Acids', 'S_Sucrose', 'Uptake_Nitrates', 'S_grain_structure', 'S_Fructan', 'Conc_TriosesP', 
-                      'Conc_Nitrates', 'Conc_Proteins', 'Loading_Sucrose', 'D_Proteins', 'S_Starch', 'Conc_Starch', 'Nitrates_import', 'Unloading_Amino_Acids', 
-                      'Conc_Nitrates_Soil', 'S_grain_starch', 'Loading_Amino_Acids', 'Photosynthesis', 'D_Fructan', 'Transpiration', 'Conc_Fructan', 
-                      'Export_Amino_Acids', 'Conc_Amino_Acids', 'An', 'RGR_Structure', 'Conc_Sucrose', 'Regul_S_Fructan', 'Proteins_N_Mass', 'Dry_Mass']
+    ORGANS_INDEXES = ['t', 'plant', 'axis', 'organ']
+    ORGANS_OUTPUTS = ORGANS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Organ, []) + ['Conc_C_Sucrose', 'Unloading_Sucrose', 'Export_Amino_Acids', 'Conc_Nitrates_Soil',
+                                                                                       'Potential_Uptake_Nitrates', 'S_Proteins', 'Conc_Nitrates', 'S_Amino_Acids',
+                                                                                       'Conc_Amino_Acids', 'Dry_Mass', 'Unloading_Amino_Acids', 'S_grain_starch',
+                                                                                       'Conc_Sucrose', 'Uptake_Nitrates', 'S_grain_structure', 'Proteins_N_Mass',
+                                                                                       'RGR_Structure']
+    
+    ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element']
+    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['Loading_Sucrose', 'Regul_S_Fructan', 'An', 'Tr', 'Photosynthesis', 
+                                                                                                                'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose', 
+                                                                                                                'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 
+                                                                                                                'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan', 
+                                                                                                                'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids', 
+                                                                                                                'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids']
     
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
                                       model.Axis: 'cnwheat.compartments.axes',
                                       model.Phytomer: 'cnwheat.compartments.phytomers',
-                                      model.Organ: 'cnwheat.compartments.organs'},
+                                      model.Organ: 'cnwheat.compartments.organs',
+                                      model.PhotosyntheticOrganElement: 'cnwheat.compartments.elements'},
                      'derivatives': {model.Plant: 'cnwheat.derivatives.plants',
                                      model.Axis: 'cnwheat.derivatives.axes',
                                      model.Phytomer: 'cnwheat.derivatives.phytomers',
-                                     model.Organ: 'cnwheat.derivatives.organs'}}
+                                     model.Organ: 'cnwheat.derivatives.organs',
+                                     model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements'}}
     
     def __init__(self, population):
 
@@ -94,17 +105,18 @@ class CNWheat(object):
         self.initial_conditions_mapping = {} #: dictionary to map the compartments to their indexes in :attr:`initial_conditions`
         
         def _init_initial_conditions(model_object, i):
-            if model_object is not None:
-                class_ = model_object.__class__
-                if issubclass(model_object.__class__, model.Organ):
-                    class_ = model.Organ
-                compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[class_]
-                self.initial_conditions_mapping[model_object] = {}
-                for compartment_name in compartments_names:
-                    if hasattr(model_object, compartment_name):
-                        self.initial_conditions_mapping[model_object][compartment_name] = i
-                        self.initial_conditions.append(0)
-                        i += 1
+            class_ = model_object.__class__
+            if issubclass(model_object.__class__, model.Organ):
+                class_ = model.Organ
+            elif issubclass(model_object.__class__, model.PhotosyntheticOrganElement):
+                class_ = model.PhotosyntheticOrganElement
+            compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[class_]
+            self.initial_conditions_mapping[model_object] = {}
+            for compartment_name in compartments_names:
+                if hasattr(model_object, compartment_name):
+                    self.initial_conditions_mapping[model_object][compartment_name] = i
+                    self.initial_conditions.append(0)
+                    i += 1
             return i
         
         i = 0
@@ -114,11 +126,17 @@ class CNWheat(object):
             for axis in plant.axes:
                 i = _init_initial_conditions(axis, i)
                 for organ in (axis.roots, axis.phloem, axis.grains):
+                    if organ is None:
+                        continue
                     i = _init_initial_conditions(organ, i)
                 for phytomer in axis.phytomers:
                     i = _init_initial_conditions(phytomer, i)
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
+                        if organ is None:
+                            continue
                         i = _init_initial_conditions(organ, i)
+                        for element in organ.elements:
+                            i = _init_initial_conditions(element, i)
         
         #TODO: check the validity of the population         
 
@@ -129,8 +147,7 @@ class CNWheat(object):
 
     def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=5000, show_progressbar=False):
         """
-        Compute CN exchanges between organs in :attr:`population`.
-        The computation is done between `start_time` and `stop_time`, for `number_of_output_steps` steps.
+        Compute CN exchanges in :attr:`population` from `start_time` to `stop_time`, for `number_of_output_steps` steps.
 
         :Parameters:
 
@@ -153,7 +170,8 @@ class CNWheat(object):
                 * plant: t, plant index, outputs of plant,
                 * axis: t, plant index, axis index, outputs of axis,
                 * phytomer: t, plant index, axis index, phytomer index, outputs of phytomer,
-                * and organ: t, plant index, axis index, phytomer index, organ name, outputs of organ.
+                * organ: t, plant index, axis index, organ name, outputs of organ,
+                * and element: t, plant index, axis index, phytomer index, organ name, element index, outputs of element.
         
         :Returns Type:
             :class:`tuple` of :class:`pandas.DataFrame`
@@ -181,6 +199,8 @@ class CNWheat(object):
                 phytomers_compartments_logger.debug(sep.join(CNWheat.PHYTOMERS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
                 organs_compartments_logger = logging.getLogger('cnwheat.compartments.organs')
                 organs_compartments_logger.debug(sep.join(CNWheat.ORGANS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Organ]))
+                elements_compartments_logger = logging.getLogger('cnwheat.compartments.elements')
+                elements_compartments_logger.debug(sep.join(CNWheat.ELEMENTS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
             if derivatives_logger.isEnabledFor(logging.DEBUG):
                 plants_derivatives_logger = logging.getLogger('cnwheat.derivatives.plants')
                 plants_derivatives_logger.debug(sep.join(CNWheat.PLANTS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Plant]))
@@ -190,6 +210,8 @@ class CNWheat(object):
                 phytomers_derivatives_logger.debug(sep.join(CNWheat.PHYTOMERS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
                 organs_derivatives_logger = logging.getLogger('cnwheat.derivatives.organs')
                 organs_derivatives_logger.debug(sep.join(CNWheat.ORGANS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Organ]))
+                elements_derivatives_logger = logging.getLogger('cnwheat.derivatives.elements')
+                elements_derivatives_logger.debug(sep.join(CNWheat.ELEMENTS_INDEXES + CNWheat.MODEL_DERIVATIVES_NAMES[model.PhotosyntheticOrganElement]))
         
         self._update_initial_conditions() 
             
@@ -215,11 +237,11 @@ class CNWheat(object):
                 """Run of the solver DONE: infodict = %s""",
                 infodict)
         
-        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df = self._format_solver_output(t, soln)
+        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = self._format_solver_output(t, soln)
         
         logger.info('Run of CN-Wheat from {} to {} DONE'.format(start_time, stop_time))
         
-        return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df
+        return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df
     
     
     def _update_initial_conditions(self):
@@ -234,19 +256,20 @@ class CNWheat(object):
         """Log the values in `y` to the loggers in `loggers_names`.
         """
         def update_rows(model_object, indexes, rows, i):
-            if model_object is not None:
-                row = []
-                class_ = model_object.__class__
-                if issubclass(model_object.__class__, model.Organ):
-                    class_ = model.Organ
-                compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[class_]
-                for compartment_name in compartments_names:
-                    if hasattr(model_object, compartment_name):
-                        row.append(str(y[i]))
-                        i += 1
-                    else:
-                        row.append('NA')
-                rows.append([str(index) for index in indexes] + row) 
+            row = []
+            class_ = model_object.__class__
+            if issubclass(model_object.__class__, model.Organ):
+                class_ = model.Organ
+            if issubclass(model_object.__class__, model.PhotosyntheticOrganElement):
+                class_ = model.PhotosyntheticOrganElement
+            compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[class_]
+            for compartment_name in compartments_names:
+                if hasattr(model_object, compartment_name):
+                    row.append(str(y[i]))
+                    i += 1
+                else:
+                    row.append('NA')
+            rows.append([str(index) for index in indexes] + row) 
             return i
         
         i = 0
@@ -256,11 +279,17 @@ class CNWheat(object):
             for axis in plant.axes:
                 i = update_rows(axis, [t, plant.index, axis.index], all_rows[model.Axis], i)
                 for organ in (axis.roots, axis.phloem, axis.grains):
-                    i = update_rows(organ, [t, plant.index, axis.index, None, organ.__class__.__name__], all_rows[model.Organ], i)
+                    if organ is None:
+                        continue
+                    i = update_rows(organ, [t, plant.index, axis.index, organ.__class__.__name__], all_rows[model.Organ], i)
                 for phytomer in axis.phytomers:
                     i = update_rows(phytomer, [t, plant.index, axis.index, phytomer.index], all_rows[model.Phytomer], i)
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
-                        i = update_rows(organ, [t, plant.index, axis.index, phytomer.index, organ.__class__.__name__], all_rows[model.Organ], i)
+                        if organ is None:
+                            continue
+                        i = update_rows(organ, [t, plant.index, axis.index, organ.__class__.__name__], all_rows[model.Organ], i)
+                        for element in organ.elements:
+                            i = update_rows(element, [t, plant.index, axis.index, phytomer.index, organ.__class__.__name__, element.index], all_rows[model.PhotosyntheticOrganElement], i)
         
         row_sep = '\n'
         column_sep = ','
@@ -314,7 +343,7 @@ class CNWheat(object):
         logger = logging.getLogger(__name__)
 
         logger.debug('t = {}'.format(t))
-
+        
         compartments_logger = logging.getLogger('cnwheat.compartments')
         if compartments_logger.isEnabledFor(logging.DEBUG):
             self._log_compartments(t, y, CNWheat.LOGGERS_NAMES['compartments'])
@@ -331,7 +360,7 @@ class CNWheat(object):
         for plant in self.population.plants:
             for axis in plant.axes:
                 
-                axis_photosynthetic_organs = []
+                phloem_contributors = []
                 
                 axis.phloem.sucrose = y[self.initial_conditions_mapping[axis.phloem]['sucrose']]
                 
@@ -339,77 +368,79 @@ class CNWheat(object):
                 
                 axis.roots.nitrates = y[self.initial_conditions_mapping[axis.roots]['nitrates']]
                 axis.roots.amino_acids = y[self.initial_conditions_mapping[axis.roots]['amino_acids']]
-                axis_photosynthetic_organs.append(axis.roots)
+                phloem_contributors.append(axis.roots)
                 
                 # compute the total transpiration at t_inf
                 total_transpiration = 0.0
                 transpiration_mapping = {}
                 for phytomer in axis.phytomers:
-                    phytomer_photosynthetic_organs = (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath)
-                    for organ in phytomer_photosynthetic_organs:
+                    for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is not None:
-                            transpiration_mapping[organ] = organ.calculate_transpiration(t, organ.Tr, phytomer.index)
-                            total_transpiration += transpiration_mapping[organ]
-                            axis_photosynthetic_organs.append(organ)
+                            for element in organ.elements:
+                                transpiration_mapping[element] = element.calculate_transpiration(t, element.Tr, phytomer.index)
+                                total_transpiration += transpiration_mapping[element]
+                                phloem_contributors.append(element)
 
                 # compute the flows from/to the roots to/from photosynthetic organs
                 conc_nitrates_soil = axis.roots.calculate_conc_nitrates_soil(t)
                 roots_uptake_nitrate, potential_roots_uptake_nitrates = axis.roots.calculate_uptake_nitrates(conc_nitrates_soil, axis.roots.nitrates, total_transpiration)
                 roots_export_amino_acids = axis.roots.calculate_export_amino_acids(axis.roots.amino_acids, total_transpiration)
 
-                # compute the derivative of each photosynthetic organ compartment
+                # compute the derivative of each photosynthetic organ element compartment
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         
                         if organ is None:
                             continue
                         
-                        organ.starch = y[self.initial_conditions_mapping[organ]['starch']]
-                        organ.sucrose = y[self.initial_conditions_mapping[organ]['sucrose']]
-                        organ.triosesP = y[self.initial_conditions_mapping[organ]['triosesP']]
-                        organ.fructan = y[self.initial_conditions_mapping[organ]['fructan']]
-                        organ.nitrates = y[self.initial_conditions_mapping[organ]['nitrates']]
-                        organ.amino_acids = y[self.initial_conditions_mapping[organ]['amino_acids']]
-                        organ.proteins = y[self.initial_conditions_mapping[organ]['proteins']]
-            
-                        # intermediate variables
-                        photosynthesis = organ.calculate_photosynthesis(t, organ.An, phytomer.index)
-                        organ_transpiration = transpiration_mapping[organ]
-            
-                        # flows
-                        s_starch = organ.calculate_s_starch(organ.triosesP)
-                        d_starch = organ.calculate_d_starch(organ.starch)
-                        s_sucrose = organ.calculate_s_sucrose(organ.triosesP)
-                        organ.loading_sucrose = organ.calculate_loading_sucrose(organ.sucrose, axis.phloem.sucrose)
-                        regul_s_fructan = organ.calculate_regul_s_fructan(organ.loading_sucrose)
-                        d_fructan = organ.calculate_d_fructan(organ.sucrose, organ.fructan)
-                        s_fructan = organ.calculate_s_fructan(organ.sucrose, regul_s_fructan)
-                        nitrates_import = organ.calculate_nitrates_import(roots_uptake_nitrate, organ_transpiration, total_transpiration)
-                        amino_acids_import = organ.calculate_amino_acids_import(roots_export_amino_acids, organ_transpiration, total_transpiration)
-                        s_amino_acids = organ.calculate_s_amino_acids(organ.nitrates, organ.triosesP)
-                        s_proteins = organ.calculate_s_proteins(organ.amino_acids)
-                        d_proteins = organ.calculate_d_proteins(organ.proteins)
-                        organ.loading_amino_acids = organ.calculate_loading_amino_acids(organ.amino_acids, axis.phloem.amino_acids)
-            
-                        # compartments derivatives
-                        starch_derivative = organ.calculate_starch_derivative(s_starch, d_starch)
-                        sucrose_derivative = organ.calculate_sucrose_derivative(s_sucrose, d_starch, organ.loading_sucrose, s_fructan, d_fructan)
-                        triosesP_derivative = organ.calculate_triosesP_derivative(photosynthesis, s_sucrose, s_starch, s_amino_acids)
-                        fructan_derivative = organ.calculate_fructan_derivative(s_fructan, d_fructan)
-                        nitrates_derivative = organ.calculate_nitrates_derivative(nitrates_import, s_amino_acids)
-                        amino_acids_derivative = organ.calculate_amino_acids_derivative(amino_acids_import, s_amino_acids, s_proteins, d_proteins, organ.loading_amino_acids)
-                        proteins_derivative = organ.calculate_proteins_derivative(s_proteins, d_proteins)
-            
-                        y_derivatives[self.initial_conditions_mapping[organ]['starch']] = starch_derivative
-                        y_derivatives[self.initial_conditions_mapping[organ]['sucrose']] = sucrose_derivative
-                        y_derivatives[self.initial_conditions_mapping[organ]['triosesP']] = triosesP_derivative
-                        y_derivatives[self.initial_conditions_mapping[organ]['fructan']] = fructan_derivative
-                        y_derivatives[self.initial_conditions_mapping[organ]['nitrates']] = nitrates_derivative
-                        y_derivatives[self.initial_conditions_mapping[organ]['amino_acids']] = amino_acids_derivative
-                        y_derivatives[self.initial_conditions_mapping[organ]['proteins']] = proteins_derivative
+                        for element in organ.elements:
+                        
+                            element.starch = y[self.initial_conditions_mapping[element]['starch']]
+                            element.sucrose = y[self.initial_conditions_mapping[element]['sucrose']]
+                            element.triosesP = y[self.initial_conditions_mapping[element]['triosesP']]
+                            element.fructan = y[self.initial_conditions_mapping[element]['fructan']]
+                            element.nitrates = y[self.initial_conditions_mapping[element]['nitrates']]
+                            element.amino_acids = y[self.initial_conditions_mapping[element]['amino_acids']]
+                            element.proteins = y[self.initial_conditions_mapping[element]['proteins']]
+                
+                            # intermediate variables
+                            photosynthesis = element.calculate_photosynthesis(t, element.An, phytomer.index)
+                            element_transpiration = transpiration_mapping[element]
+                
+                            # flows
+                            s_starch = element.calculate_s_starch(element.triosesP)
+                            d_starch = element.calculate_d_starch(element.starch)
+                            s_sucrose = element.calculate_s_sucrose(element.triosesP)
+                            element.loading_sucrose = element.calculate_loading_sucrose(element.sucrose, axis.phloem.sucrose)
+                            regul_s_fructan = element.calculate_regul_s_fructan(element.loading_sucrose)
+                            d_fructan = element.calculate_d_fructan(element.sucrose, element.fructan)
+                            s_fructan = element.calculate_s_fructan(element.sucrose, regul_s_fructan)
+                            nitrates_import = element.calculate_nitrates_import(roots_uptake_nitrate, element_transpiration, total_transpiration)
+                            amino_acids_import = element.calculate_amino_acids_import(roots_export_amino_acids, element_transpiration, total_transpiration)
+                            s_amino_acids = element.calculate_s_amino_acids(element.nitrates, element.triosesP)
+                            s_proteins = element.calculate_s_proteins(element.amino_acids)
+                            d_proteins = element.calculate_d_proteins(element.proteins)
+                            element.loading_amino_acids = element.calculate_loading_amino_acids(element.amino_acids, axis.phloem.amino_acids)
+                
+                            # compartments derivatives
+                            starch_derivative = element.calculate_starch_derivative(s_starch, d_starch)
+                            sucrose_derivative = element.calculate_sucrose_derivative(s_sucrose, d_starch, element.loading_sucrose, s_fructan, d_fructan)
+                            triosesP_derivative = element.calculate_triosesP_derivative(photosynthesis, s_sucrose, s_starch, s_amino_acids)
+                            fructan_derivative = element.calculate_fructan_derivative(s_fructan, d_fructan)
+                            nitrates_derivative = element.calculate_nitrates_derivative(nitrates_import, s_amino_acids)
+                            amino_acids_derivative = element.calculate_amino_acids_derivative(amino_acids_import, s_amino_acids, s_proteins, d_proteins, element.loading_amino_acids)
+                            proteins_derivative = element.calculate_proteins_derivative(s_proteins, d_proteins)
+                
+                            y_derivatives[self.initial_conditions_mapping[element]['starch']] = starch_derivative
+                            y_derivatives[self.initial_conditions_mapping[element]['sucrose']] = sucrose_derivative
+                            y_derivatives[self.initial_conditions_mapping[element]['triosesP']] = triosesP_derivative
+                            y_derivatives[self.initial_conditions_mapping[element]['fructan']] = fructan_derivative
+                            y_derivatives[self.initial_conditions_mapping[element]['nitrates']] = nitrates_derivative
+                            y_derivatives[self.initial_conditions_mapping[element]['amino_acids']] = amino_acids_derivative
+                            y_derivatives[self.initial_conditions_mapping[element]['proteins']] = proteins_derivative
 
                 if axis.grains is not None:
-                    axis_photosynthetic_organs.append(axis.grains)
+                    phloem_contributors.append(axis.grains)
                     # compute the derivative of each compartment of grains
                     axis.grains.structure = y[self.initial_conditions_mapping[axis.grains]['structure']]
                     axis.grains.starch = y[self.initial_conditions_mapping[axis.grains]['starch']]
@@ -447,8 +478,8 @@ class CNWheat(object):
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['amino_acids']] = amino_acids_derivative
         
                 # compute the derivative of each compartment of phloem
-                sucrose_phloem_derivative = axis.phloem.calculate_sucrose_derivative(axis_photosynthetic_organs)
-                amino_acids_phloem_derivative = axis.phloem.calculate_amino_acids_derivative(axis_photosynthetic_organs)
+                sucrose_phloem_derivative = axis.phloem.calculate_sucrose_derivative(phloem_contributors)
+                amino_acids_phloem_derivative = axis.phloem.calculate_amino_acids_derivative(phloem_contributors)
                 y_derivatives[self.initial_conditions_mapping[axis.phloem]['sucrose']] = sucrose_phloem_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.phloem]['amino_acids']] = amino_acids_phloem_derivative
 
@@ -467,9 +498,9 @@ class CNWheat(object):
         """
         logger = logging.getLogger(__name__)
         logger.debug('Updating the state of the population...')
-        for organ, compartments in self.initial_conditions_mapping.iteritems():
+        for model_object, compartments in self.initial_conditions_mapping.iteritems():
             for compartment_name, compartment_index in compartments.iteritems():
-                setattr(organ, compartment_name, compartments_values[compartment_index])
+                setattr(model_object, compartment_name, compartments_values[compartment_index])
         logger.debug('Updating the state of the population DONE')
         
 
@@ -480,7 +511,8 @@ class CNWheat(object):
             * plant: t, plant index, outputs of plant,
             * axis: t, plant index, axis index, outputs of axis,
             * phytomer: t, plant index, axis index, phytomer index, outputs of phytomer,
-            * and organ: t, plant index, axis index, phytomer index, organ name, outputs of organ.
+            * organ: t, plant index, axis index, organ name, outputs of organ.
+            * and element: t, plant index, axis index, phytomer index, organ name, element index, outputs of organ.
         """
         logger = logging.getLogger(__name__)
         logger.debug('Formatting of solver output...')
@@ -491,6 +523,7 @@ class CNWheat(object):
         all_axes_df = pd.DataFrame(columns=CNWheat.AXES_OUTPUTS)
         all_phytomers_df = pd.DataFrame(columns=CNWheat.PHYTOMERS_OUTPUTS)
         all_organs_df = pd.DataFrame(columns=CNWheat.ORGANS_OUTPUTS)
+        all_elements_df = pd.DataFrame(columns=CNWheat.ELEMENTS_OUTPUTS)
         
         for plant in self.population.plants:
             
@@ -512,8 +545,9 @@ class CNWheat(object):
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is not None:
-                            transpiration_mapping[organ] = map(organ.calculate_transpiration, t, [organ.Tr] * len(t), [phytomer.index] * len(t))
-                            total_transpiration += transpiration_mapping[organ]
+                            for element in organ.elements:
+                                transpiration_mapping[element] = map(element.calculate_transpiration, t, [element.Tr] * len(t), [phytomer.index] * len(t))
+                                total_transpiration += transpiration_mapping[element]
                 
                 axes_df['Total_transpiration'] = total_transpiration
           
@@ -555,7 +589,7 @@ class CNWheat(object):
                 organs_df['S_Amino_Acids'] = map(axis.roots.calculate_s_amino_acids, organs_df['nitrates'], organs_df['sucrose'])
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
         
-                # format photosynthetic organs outputs
+                # format photosynthetic organs elements outputs
                 for phytomer in axis.phytomers:
                     phytomers_df = pd.DataFrame(columns=all_phytomers_df.columns)
                     phytomers_df['t'] = t
@@ -566,44 +600,46 @@ class CNWheat(object):
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
-                        organs_df = pd.DataFrame(columns=all_organs_df.columns)
-                        organs_df['t'] = t
-                        organs_df['plant'] = plant.index
-                        organs_df['axis'] = axis.id
-                        organs_df['phytomer'] = phytomer.index
-                        organs_df['organ'] = organ.__class__.__name__
-                        organs_df['triosesP'] = solver_output[self.initial_conditions_mapping[organ]['triosesP']]
-                        organs_df['starch'] = solver_output[self.initial_conditions_mapping[organ]['starch']]
-                        organs_df['sucrose'] = solver_output[self.initial_conditions_mapping[organ]['sucrose']]
-                        organs_df['fructan'] = solver_output[self.initial_conditions_mapping[organ]['fructan']]
-                        organs_df['nitrates'] = solver_output[self.initial_conditions_mapping[organ]['nitrates']]
-                        organs_df['amino_acids'] = solver_output[self.initial_conditions_mapping[organ]['amino_acids']]
-                        organs_df['proteins'] = solver_output[self.initial_conditions_mapping[organ]['proteins']]
-                        organs_df['Loading_Sucrose'] = map(organ.calculate_loading_sucrose, organs_df['sucrose'], phloem_sucrose)
-                        organs_df['Regul_S_Fructan'] = map(organ.calculate_regul_s_fructan, organs_df['Loading_Sucrose'])
-                        organs_df['An'] = organ.An
-                        organs_df['Tr'] = organ.Tr
-                        organs_df['Photosynthesis'] = map(organ.calculate_photosynthesis, t, [organ.An] * len(t), [phytomer.index] * len(t))
-                        organs_df['Transpiration'] = transpiration_mapping[organ]
-                        organs_df['Conc_TriosesP'] = organ.calculate_conc_triosesP(organs_df['triosesP'])
-                        organs_df['Conc_Starch'] = organ.calculate_conc_starch(organs_df['starch'])
-                        organs_df['Conc_Sucrose'] = organ.calculate_conc_sucrose(organs_df['sucrose'])
-                        organs_df['Conc_Fructan'] = organ.calculate_conc_fructan(organs_df['fructan'])
-                        organs_df['Conc_Nitrates'] = organ.calculate_conc_nitrates(organs_df['nitrates'])
-                        organs_df['Conc_Amino_Acids'] = organ.calculate_conc_amino_acids(organs_df['amino_acids'])
-                        organs_df['Conc_Proteins'] = organ.calculate_conc_proteins(organs_df['proteins'])
-                        organs_df['S_Starch'] = map(organ.calculate_s_starch, organs_df['triosesP'])
-                        organs_df['D_Starch'] = map(organ.calculate_d_starch, organs_df['starch'])
-                        organs_df['S_Sucrose'] = map(organ.calculate_s_sucrose, organs_df['triosesP'])
-                        organs_df['S_Fructan'] = map(organ.calculate_s_fructan, organs_df['sucrose'], organs_df['Regul_S_Fructan'])
-                        organs_df['D_Fructan'] = map(organ.calculate_d_fructan, organs_df['sucrose'], organs_df['fructan'])
-                        organs_df['Nitrates_import'] = map(organ.calculate_nitrates_import, roots_uptake_nitrates, transpiration_mapping[organ], total_transpiration)
-                        organs_df['Amino_Acids_import'] = map(organ.calculate_amino_acids_import, roots_export_amino_acids, transpiration_mapping[organ], total_transpiration)
-                        organs_df['S_Amino_Acids'] = map(organ.calculate_s_amino_acids, organs_df['nitrates'], organs_df['triosesP'])
-                        organs_df['S_Proteins'] = map(organ.calculate_s_proteins, organs_df['amino_acids'])
-                        organs_df['D_Proteins'] = map(organ.calculate_d_proteins, organs_df['proteins'])
-                        organs_df['Loading_Amino_Acids_'] = map(organ.calculate_loading_amino_acids, organs_df['amino_acids'], phloem_amino_acids)
-                        all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
+                        for element in organ.elements: 
+                            elements_df = pd.DataFrame(columns=all_elements_df.columns)
+                            elements_df['t'] = t
+                            elements_df['plant'] = plant.index
+                            elements_df['axis'] = axis.id
+                            elements_df['phytomer'] = phytomer.index
+                            elements_df['organ'] = organ.__class__.__name__
+                            elements_df['element'] = element.index
+                            elements_df['triosesP'] = solver_output[self.initial_conditions_mapping[element]['triosesP']]
+                            elements_df['starch'] = solver_output[self.initial_conditions_mapping[element]['starch']]
+                            elements_df['sucrose'] = solver_output[self.initial_conditions_mapping[element]['sucrose']]
+                            elements_df['fructan'] = solver_output[self.initial_conditions_mapping[element]['fructan']]
+                            elements_df['nitrates'] = solver_output[self.initial_conditions_mapping[element]['nitrates']]
+                            elements_df['amino_acids'] = solver_output[self.initial_conditions_mapping[element]['amino_acids']]
+                            elements_df['proteins'] = solver_output[self.initial_conditions_mapping[element]['proteins']]
+                            elements_df['Loading_Sucrose'] = map(element.calculate_loading_sucrose, elements_df['sucrose'], phloem_sucrose)
+                            elements_df['Regul_S_Fructan'] = map(element.calculate_regul_s_fructan, elements_df['Loading_Sucrose'])
+                            elements_df['An'] = element.An
+                            elements_df['Tr'] = element.Tr
+                            elements_df['Photosynthesis'] = map(element.calculate_photosynthesis, t, [element.An] * len(t), [phytomer.index] * len(t))
+                            elements_df['Transpiration'] = transpiration_mapping[element]
+                            elements_df['Conc_TriosesP'] = element.calculate_conc_triosesP(elements_df['triosesP'])
+                            elements_df['Conc_Starch'] = element.calculate_conc_starch(elements_df['starch'])
+                            elements_df['Conc_Sucrose'] = element.calculate_conc_sucrose(elements_df['sucrose'])
+                            elements_df['Conc_Fructan'] = element.calculate_conc_fructan(elements_df['fructan'])
+                            elements_df['Conc_Nitrates'] = element.calculate_conc_nitrates(elements_df['nitrates'])
+                            elements_df['Conc_Amino_Acids'] = element.calculate_conc_amino_acids(elements_df['amino_acids'])
+                            elements_df['Conc_Proteins'] = element.calculate_conc_proteins(elements_df['proteins'])
+                            elements_df['S_Starch'] = map(element.calculate_s_starch, elements_df['triosesP'])
+                            elements_df['D_Starch'] = map(element.calculate_d_starch, elements_df['starch'])
+                            elements_df['S_Sucrose'] = map(element.calculate_s_sucrose, elements_df['triosesP'])
+                            elements_df['S_Fructan'] = map(element.calculate_s_fructan, elements_df['sucrose'], elements_df['Regul_S_Fructan'])
+                            elements_df['D_Fructan'] = map(element.calculate_d_fructan, elements_df['sucrose'], elements_df['fructan'])
+                            elements_df['Nitrates_import'] = map(element.calculate_nitrates_import, roots_uptake_nitrates, transpiration_mapping[element], total_transpiration)
+                            elements_df['Amino_Acids_import'] = map(element.calculate_amino_acids_import, roots_export_amino_acids, transpiration_mapping[element], total_transpiration)
+                            elements_df['S_Amino_Acids'] = map(element.calculate_s_amino_acids, elements_df['nitrates'], elements_df['triosesP'])
+                            elements_df['S_Proteins'] = map(element.calculate_s_proteins, elements_df['amino_acids'])
+                            elements_df['D_Proteins'] = map(element.calculate_d_proteins, elements_df['proteins'])
+                            elements_df['Loading_Amino_Acids'] = map(element.calculate_loading_amino_acids, elements_df['amino_acids'], phloem_amino_acids)
+                            all_elements_df = all_elements_df.append(elements_df, ignore_index=True)
                         
                     all_phytomers_df = all_phytomers_df.append(phytomers_df, ignore_index=True)
         
@@ -624,7 +660,7 @@ class CNWheat(object):
                 organs_df['S_grain_starch'] = map(axis.grains.calculate_s_grain_starch, t, phloem_sucrose)
                 organs_df['Dry_Mass'] = axis.grains.calculate_dry_mass(organs_df['structure'], organs_df['starch'])
                 organs_df['Proteins_N_Mass'] = axis.grains.calculate_protein_mass(organs_df['proteins'])
-                organs_df['Unloading_Sucrose_'] = map(axis.grains.calculate_unloading_sucrose, organs_df['S_grain_structure'], organs_df['S_grain_starch'], organs_df['structure'])
+                organs_df['Unloading_Sucrose'] = map(axis.grains.calculate_unloading_sucrose, organs_df['S_grain_structure'], organs_df['S_grain_starch'], organs_df['structure'])
                 organs_df['S_Proteins'] = map(axis.grains.calculate_s_proteins, organs_df['S_grain_structure'], organs_df['S_grain_starch'], phloem_amino_acids, phloem_sucrose, organs_df['structure'])
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
                 
@@ -637,21 +673,25 @@ class CNWheat(object):
         all_axes_df = all_axes_df.reindex_axis(CNWheat.AXES_OUTPUTS, axis=1, copy=False)
         all_phytomers_df = all_phytomers_df.reindex_axis(CNWheat.PHYTOMERS_OUTPUTS, axis=1, copy=False)
         all_organs_df = all_organs_df.reindex_axis(CNWheat.ORGANS_OUTPUTS, axis=1, copy=False)
+        all_elements_df = all_elements_df.reindex_axis(CNWheat.ELEMENTS_OUTPUTS, axis=1, copy=False)
         
         # sort the rows by the columns
         all_plants_df.sort_index(by=CNWheat.PLANTS_INDEXES, inplace=True)
         all_axes_df.sort_index(by=CNWheat.AXES_INDEXES, inplace=True)
         all_phytomers_df.sort_index(by=CNWheat.PHYTOMERS_INDEXES, inplace=True)
         all_organs_df.sort_index(by=CNWheat.ORGANS_INDEXES, inplace=True)
+        all_elements_df.sort_index(by=CNWheat.ELEMENTS_INDEXES, inplace=True)
         
+        # infer the right types of the columns
         all_plants_df = all_plants_df.convert_objects(copy=False)
         all_axes_df = all_axes_df.convert_objects(copy=False)
         all_phytomers_df = all_phytomers_df.convert_objects(copy=False)
         all_organs_df = all_organs_df.convert_objects(copy=False)
+        all_elements_df = all_elements_df.convert_objects(copy=False)
         
         logger.debug('Formatting of solver output DONE')
         
-        return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df
+        return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df
 
 
 class ProgressBarError(Exception): pass

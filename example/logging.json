@@ -50,6 +50,13 @@
             "mode": "w",
             "formatter": "simple"
         },
+        "elements_compartments_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "elements_compartments.log",
+            "mode": "w",
+            "formatter": "simple"
+        },
         "plants_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
@@ -75,6 +82,13 @@
             "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": "organs_derivatives.log",
+            "mode": "w",
+            "formatter": "simple"
+        },
+        "elements_derivatives_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "elements_derivatives.log",
             "mode": "w",
             "formatter": "simple"
         }
@@ -116,6 +130,11 @@
                 "organs_compartments_file"
             ]
         },
+        "cnwheat.compartments.elements": {
+            "handlers": [
+                "elements_compartments_file"
+            ]
+        },
         "cnwheat.derivatives": {
             "propagate": false
         },
@@ -137,6 +156,11 @@
         "cnwheat.derivatives.organs": {
             "handlers": [
                 "organs_derivatives_file"
+            ]
+        },
+        "cnwheat.derivatives.elements": {
+            "handlers": [
+                "elements_derivatives_file"
             ]
         }
     }

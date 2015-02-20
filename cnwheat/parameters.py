@@ -23,35 +23,35 @@
 
 class PopulationParameters:
     """
-    Constants of populations.
+    Internal parameters of populations.
     """
     pass
 
 
 class PlantParameters:
     """
-    Constants of plants.
+    Internal parameters of plants.
     """
     pass
 
 
 class AxisParameters:
     """
-    Constants of axes.
+    Internal parameters of axes.
     """
     pass
 
 
 class PhytomerParameters:
     """
-    Constants of phytomers.
+    Internal parameters of phytomers.
     """
     pass
 
 
 class OrganParameters:
     """
-    Constants common to all the organs.
+    Internal parameters common to all the organs.
     """
     MSTRUCT_AXIS = 2.08                     #: Structural mass  of a plant (g) (Bertheloot, 2011)
     ALPHA_AXIS = 1                          #: Proportion of the structural mass containing the substrates
@@ -65,9 +65,61 @@ class OrganParameters:
     RATIO_EXPORT_NITRATES_ROOTS = 0.1       #: Proportion of uptaked nitrates actually exported from roots to shoot (1-RATIO_EXPORT_NITRATES_ROOTS = part of nitrates staying in roots)
 
 
+class PhloemParameters(OrganParameters):
+    """
+    Internal parameters of phloems.
+    """
+    ALPHA = 1 #: Proportion of structural mass containing substrate
+
+
+class GrainsParameters(OrganParameters):
+    """
+    Internal parameters of grains.
+    """
+    ALPHA = 1 #: Proportion of structural mass containing substrate
+
+    # Structure parameters
+    VMAX_RGR = 1.9e-06      #: Maximal value of the Relative Growth Rate of grain structure (dimensionless)
+    K_RGR = 300             #: Affinity coefficient of the Relative Growth Rate of grain structure (dimensionless)
+
+    # Starch parameters
+    VMAX_STARCH = 0.75      #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
+    K_STARCH = 100          #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
+
+    Y_GRAINS = 0.75         #: Proportion of C loaded from phloem actually used for grain structure and starch (1 - Y_GRAINS is a kind of growth respiration)
+    FILLING_INIT = 360      #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
+
+
+class RootsParameters(OrganParameters):
+    """
+    Internal parameters of roots.
+    """
+    ALPHA = 1                                 #: Proportion of structural mass containing substrate
+
+    VMAX_SUCROSE_UNLOADING = 0.02             #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
+    K_SUCROSE_UNLOADING = 100                 #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C sucrose g-1 MS)
+    VMAX_AMINO_ACIDS_UNLOADING = 0.001        #: Maximal rate of amino acids unloading from phloem to roots (µmol N amino acids s-1 g-1 MS)
+    K_AMINO_ACIDS_UNLOADING = 100             #: Affinity coefficient of amino acids unloading from phloem to roots (µmol N amino acids g-1 MS)
+
+    # Nitrate uptake
+    K_TR_UPTAKE_NITRATES = 1E-2     #: Affinity coefficient of nitrate uptake by roots (mm H20)
+    A_VMAX_HATS = 0.1333            #: Parameter for estimating the maximal rate of nitrates uptake at saturating soil N concentration;HATS (dimsensionless)
+    LAMBDA_VMAX_HATS = 0.0025       #: Parameter for estimating the maximal rate of nitrates uptake at saturating soil N concentration;HATS (s-1)
+    A_K_HATS = 211812               #: Parameter for estimating the affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (dimsensionless)
+    LAMBDA_K_HATS = 0.0018          #: Parameter for estimating the affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (g m-3)
+    A_LATS = 4.614E-09              #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (dimensionless)
+    LAMBDA_LATS = 1.6517E-03        #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (m3 µmol-1 s-1)
+
+    # Amino acids
+    VMAX_AMINO_ACIDS = 0.005        #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
+    K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
+    K_AMINO_ACIDS_SUCROSE = 3       #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
+    K_TR_EXPORT_AMINO_ACIDS = 1E-8  #: Affinity coefficient of amino acids export from roots to shoot (mm H20)
+
+
 class PhotosyntheticOrganParameters(OrganParameters):
     """
-    Constants of photosynthetic organs.
+    Internal parameters of photosynthetic organs.
     """
     # Sucrose
     VMAX_SUCROSE = 1                #: Maximal rate of sucrose synthesis (µmol C s-1 g-1 MS)
@@ -106,14 +158,56 @@ class PhotosyntheticOrganParameters(OrganParameters):
 
 class ChaffParameters(PhotosyntheticOrganParameters):
     """
-    Constants of chaffs.
+    Internal parameters of chaffs.
     """
-    ALPHA = 1 #: Proportion of structural mass containing substrate
+    pass
 
 
 class LaminaParameters(PhotosyntheticOrganParameters):
     """
-    Constants of laminae.
+    Internal parameters of laminae.
+    """
+    pass
+
+
+class InternodeParameters(PhotosyntheticOrganParameters):
+    """
+    Internal parameters of internodes.
+    """
+    pass
+
+
+class PeduncleParameters(PhotosyntheticOrganParameters):
+    """
+    Internal parameters of peduncles.
+    """
+    pass
+
+
+class SheathParameters(PhotosyntheticOrganParameters):
+    """
+    Internal parameters of sheaths.
+    """
+    pass
+    
+    
+class PhotosyntheticOrganElementParameters:
+    """
+    Internal parameters of photosynthetic organs elements
+    """
+    pass
+
+
+class ChaffElementParameters(PhotosyntheticOrganElementParameters):
+    """
+    Internal parameters of chaffs elements.
+    """
+    ALPHA = 1 #: Proportion of structural mass containing substrate
+
+
+class LaminaElementParameters(PhotosyntheticOrganElementParameters):
+    """
+    Internal parameters of laminae elements.
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
@@ -123,76 +217,27 @@ class LaminaParameters(PhotosyntheticOrganParameters):
                         3: (360, 48.76)}
 
 
-class InternodeParameters(PhotosyntheticOrganParameters):
+class InternodeElementParameters(PhotosyntheticOrganElementParameters):
     """
-    Constants of internodes.
-    """
-    ALPHA = 1 #: Proportion of structural mass containing substrate
-
-
-class PeduncleParameters(PhotosyntheticOrganParameters):
-    """
-    Constants of peduncles.
+    Internal parameters of internodes elements.
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
-class SheathParameters(PhotosyntheticOrganParameters):
+class PeduncleElementParameters(PhotosyntheticOrganElementParameters):
     """
-    Constants of sheaths.
-    """
-    ALPHA = 1 #: Proportion of structural mass containing substrate
-
-
-class PhloemParameters(OrganParameters):
-    """
-    Constants of phloems.
+    Internal parameters of peduncles elements.
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
-class GrainsParameters(OrganParameters):
+class SheathElementParameters(PhotosyntheticOrganElementParameters):
     """
-    Constants of grains.
+    Internal parameters of sheaths elements.
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
-    # Structure parameters
-    VMAX_RGR = 1.9e-06      #: Maximal value of the Relative Growth Rate of grain structure (dimensionless)
-    K_RGR = 300             #: Affinity coefficient of the Relative Growth Rate of grain structure (dimensionless)
-
-    # Starch parameters
-    VMAX_STARCH = 0.75      #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
-    K_STARCH = 100          #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
-
-    Y_GRAINS = 0.75         #: Proportion of C loaded from phloem actually used for grain structure and starch (1 - Y_GRAINS is a kind of growth respiration)
-    FILLING_INIT = 360      #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
 
 
-class RootsParameters(OrganParameters):
-    """
-    Constants of roots.
-    """
-    ALPHA = 1                                 #: Proportion of structural mass containing substrate
-
-    VMAX_SUCROSE_UNLOADING = 0.02             #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
-    K_SUCROSE_UNLOADING = 100                 #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C sucrose g-1 MS)
-    VMAX_AMINO_ACIDS_UNLOADING = 0.001        #: Maximal rate of amino acids unloading from phloem to roots (µmol N amino acids s-1 g-1 MS)
-    K_AMINO_ACIDS_UNLOADING = 100             #: Affinity coefficient of amino acids unloading from phloem to roots (µmol N amino acids g-1 MS)
-
-    # Nitrate uptake
-    K_TR_UPTAKE_NITRATES = 1E-2     #: Affinity coefficient of nitrate uptake by roots (mm H20)
-    A_VMAX_HATS = 0.1333            #: Parameter for estimating the maximal rate of nitrates uptake at saturating soil N concentration;HATS (dimsensionless)
-    LAMBDA_VMAX_HATS = 0.0025       #: Parameter for estimating the maximal rate of nitrates uptake at saturating soil N concentration;HATS (s-1)
-    A_K_HATS = 211812               #: Parameter for estimating the affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (dimsensionless)
-    LAMBDA_K_HATS = 0.0018          #: Parameter for estimating the affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (g m-3)
-    A_LATS = 4.614E-09              #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (dimensionless)
-    LAMBDA_LATS = 1.6517E-03        #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (m3 µmol-1 s-1)
-
-    # Amino acids
-    VMAX_AMINO_ACIDS = 0.005        #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
-    K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
-    K_AMINO_ACIDS_SUCROSE = 3       #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
-    K_TR_EXPORT_AMINO_ACIDS = 1E-8  #: Affinity coefficient of amino acids export from roots to shoot (mm H20)
 
 
