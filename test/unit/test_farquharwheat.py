@@ -39,7 +39,7 @@ def test_calculate_An():
     humidity = 0.96
     Wind = 3.032
     
-    actual_An, actual_Tr = model.PhotosynthesisModel.calculate_An(t, organ_width, organ_height, 
+    actual_An, actual_Tr = model.PhotosynthesisModel.calculate_An(organ_width, organ_height, 
         PAR, air_temperature, ambient_CO2, humidity, Wind)
     
     desired_An = 1.22

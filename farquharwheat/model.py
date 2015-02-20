@@ -70,7 +70,7 @@ class PhotosynthesisModel(object):
                   'Tref': 298.15, 'R': 8.3145E-03}
 
     @classmethod
-    def leaf_temperature(cls, leaf_width, z, H, wind0, PAR, gs, Ta, Tleaf, RH):
+    def _leaf_temperature(cls, leaf_width, z, H, wind0, PAR, gs, Ta, Tleaf, RH):
         """
         Energy balance for the estimation of leaf temperature
             - leaf_width (m)
@@ -82,6 +82,8 @@ class PhotosynthesisModel(object):
             - Ta: air temperature (degree C)
             - Tleaf: leaf temperature (degree C). Tleaf = Ta at the first iteration of the numeric resolution
             - RH: Relative humidity (decimal fraction)
+
+        :class:`_leaf_temperature` should NOT be INSTANTIATE directly.
         """
 
         # Wind speed (m s-1)
@@ -118,14 +120,14 @@ class PhotosynthesisModel(object):
         gsw = (1.6*gs * cls.R * (Tleaf+273.15)) / cls.PATM  # Stomatal conductance to water (m s-1). 1.6 convert gs_CO2 in gs_water. Relation given by A. Tuzet (2003)
         rswp = 1/gsw                                        # Stomatal resistance for water (s m-1)
 
-        Ep = max(0, (s * Rn + (cls.RHOCP * VPDa)/(rbh + rt)) / (cls.LAMBDA * (s + cls.GAMMA*((rbw + rt + rswp)/(rbh + rt)))))
+        Tr = max(0, (s * Rn + (cls.RHOCP * VPDa)/(rbh + rt)) / (cls.LAMBDA * (s + cls.GAMMA*((rbw + rt + rswp)/(rbh + rt)))))
 
         # Leaf temperature
-        Tleaf = Ta + ((rbh + rt) * (Rn - cls.LAMBDA*Ep)) / cls.RHOCP
-        return Tleaf, Ep
+        Tleaf = Ta + ((rbh + rt) * (Rn - cls.LAMBDA*Tr)) / cls.RHOCP
+        return Tleaf, Tr
 
     @classmethod
-    def stomatal_conductance(cls, Ag, An, Na, ambient_CO2, RH):
+    def _stomatal_conductance(cls, Ag, An, Na, ambient_CO2, RH):
         """
         BWB model of stomatal conductance
             - Ag: global assimilation (umol m-2 s-1)
@@ -133,20 +135,22 @@ class PhotosynthesisModel(object):
             - Na: nitrogen content of leaf (g m-2)
             - ambient_CO2: Air CO2 (umol mol-1)
             - RH: Relative humidity (decimal fraction)
+        :class:`_stomatal_conductance` should NOT be INSTANTIATE directly.
         """
 
-        Cs = ambient_CO2 - An *(1.37/(cls.GB))                            # CO2 concentration at leaf surface (umol mol-1 or Pa). From Prieto et al. (2012). GB in mol m-2 s-1
+        Cs = ambient_CO2 - An *(1.37/(cls.GB))                   # CO2 concentration at leaf surface (umol mol-1 or Pa). From Prieto et al. (2012). GB in mol m-2 s-1
         m = cls.PARAM_N['delta1'] * Na**cls.PARAM_N['delta2']    # Scaling factor dependance to Na (dimensionless). This focntion is maintained although I'm not sure that it should be taken into account
         gs = (cls.GSMIN + m*((Ag*RH)/(Cs)))                      # Stomatal conductance (mol m-2 s-1), from Braune et al. (2009), Muller et al. (2005): using Ag rather than An. Would be better with a function of VPD and with (Ci-GAMMA) instead of Cs.
         return gs
 
     @classmethod
-    def f_temperature(cls, pname, p25, T):
+    def _f_temperature(cls, pname, p25, T):
         """
         Photosynthetic parameters relation to temperature
             - pname: name of parameter
             - p25: parameter value at 25 degree C
             - T: leaf temperature (degree C)
+        :class:`_f_temperature` should NOT be INSTANTIATE directly.
         """
         Tk = T + 273.15
         deltaHa = cls.PARAM_TEMP['deltaHa'][pname]
@@ -167,36 +171,37 @@ class PhotosynthesisModel(object):
         return p
 
     @classmethod
-    def photosynthesis(cls, PAR, Na, Tleaf, Ci):
+    def _photosynthesis(cls, PAR, Na, Tleaf, Ci):
         """
         Estimation of C02 assimilation. In this version, most of parameters are derived from Braune et al. (2009) on barley
             - PAR: PAR intercepted by leaf (umol m-2 s-1)
             - Na: nitrogen content of leaf (g m-2)
             - Tleaf: leaf temperature (degree C)
             - Ci: internal CO2 (umol mol-1), by default = 0.7*CO2air
+        :class:`_photosynthesis` should NOT be INSTANTIATE directly.
         """
 
         ### # RuBisCO-limited carboxylation rate ###
         # RuBisCO parameters dependance to temperature
-        Kc = cls.f_temperature('Kc', cls.KC25, Tleaf)
-        Ko = cls.f_temperature('Ko', cls.KO25, Tleaf)
-        Gamma = cls.f_temperature('Gamma', cls.GAMMA25, Tleaf)
+        Kc = cls._f_temperature('Kc', cls.KC25, Tleaf)
+        Ko = cls._f_temperature('Ko', cls.KO25, Tleaf)
+        Gamma = cls._f_temperature('Gamma', cls.GAMMA25, Tleaf)
 
         # Vcmax
         Vc_max25 = 84.965 * (Na - 0.17)                                                     # Relation between Vc_max25 and Na
-        Vc_max = cls.f_temperature ('Vc_max', Vc_max25, Tleaf)                              # Relation between Vc_max and temperature
+        Vc_max = cls._f_temperature ('Vc_max', Vc_max25, Tleaf)                             # Relation between Vc_max and temperature
         Ac = (Vc_max * (Ci-Gamma)) / (Ci + Kc * (1 + cls.O/Ko))                             # Rate of assimilation under Vc_max limitation
         ### RuBP regeneration-limited carboxylation rate via electron transport ###
         ALPHA = 0.0413 * Na + 0.2101                                                        # Relation between ALPHA and Na
         Jmax25 = 117.6 * (Na - 0.17)                                                        # Relation between Jmax25 and Na
-        Jmax = cls.f_temperature('Jmax', Jmax25, Tleaf)                                     # Relation between Jmax and temperature
+        Jmax = cls._f_temperature('Jmax', Jmax25, Tleaf)                                    # Relation between Jmax and temperature
 
         # Electron transport rate
         J = ((Jmax+ALPHA*PAR) - sqrt((Jmax+ALPHA*PAR)**2 - 4*cls.THETA*ALPHA*PAR*Jmax))/(2*cls.THETA) # Muller et al. (2005), Evers et al. (2010)
         Aj = (J * (Ci-Gamma)) / (4*Ci + 8*Gamma)                                            # Rate of assimilation under RuBP regeneration limitation
         ### Triose phosphate utilisation-limited carboxylation rate ###
         TPU25 = cls.PARAM_N['S_Na']['TPU25'] * (Na - cls.PARAM_N['Na_min']['TPU25'])        # Relation between TPU25 and Na
-        TPU = cls.f_temperature('TPU', TPU25, Tleaf)                                        # Relation between TPU and temperature
+        TPU = cls._f_temperature('TPU', TPU25, Tleaf)                                       # Relation between TPU and temperature
         Vomax = (Vc_max*Ko*Gamma)/(0.5*Kc*cls.O)                                            # Maximum rate of Vo (umol m-2 s-1)
         Vo = (Vomax * cls.O) / (cls.O + Ko*(1+Ci/Kc))                                       # Rate of oxygenation of RuBP (umol m-2 s-1)
         Ap = (1-Gamma/Ci)*(3*TPU) + Vo                                                      # Rate of assimilation under TPU limitation
@@ -206,7 +211,7 @@ class PhotosynthesisModel(object):
 
         # Mitochondrial respiration rate of leaf in light Rd (processes other than photorespiration)
         Rdark25 = cls.PARAM_N['S_Na']['Rdark25'] * (Na - cls.PARAM_N['Na_min']['Rdark25'])  # Relation between Rdark25 (respiration in obscurity at 25 degree C) and Na
-        Rdark = cls.f_temperature('Rdark', Rdark25, Tleaf)                                  # Relation between Rdark and temperature
+        Rdark = cls._f_temperature('Rdark', Rdark25, Tleaf)                                 # Relation between Rdark and temperature
         Rd = Rdark * (0.33 + (1-0.33)*(0.5)**(PAR/15))                                      # Found in Muller et al. (2005), eq. 19
         # Net C assimilation
         An = Ag - Rd
@@ -214,30 +219,28 @@ class PhotosynthesisModel(object):
 
 
     @classmethod
-    def calculate_An(cls, t, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, wind0):
+    def calculate_An(cls, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, wind0):
         """
-        Compute An (µmol m-2 s-1) and Tr (mm s-1) at t.
+        Compute An (µmol m-2 s-1) and Tr (mm s-1).
 
         :Parameters:
-        
-            - `t` (:class:`float`) - time at which we want to calculate An and Tr (thermal time)
-            
-            - `organ_width` (:class:`float`) - width of the organ (or diameter for stem organ) at t (m)
-            
-            - `organ_height` (:class:`float`) - height of the organ from soil at t (m)
-            
-            - `PAR` (:class:`float`) - PAR at t (µmol m-2 s-1)
-            
-            - `Ta` (:class:`float`) - air temperature at t (degree Celsius)
 
-            - `ambient_CO2` (:class:`float`) - air CO2 at t (umol mol-1)
+            - `organ_width` (:class:`float`) - width of the organ (or diameter for stem organ) (m)
 
-            - `RH` (:class:`float`) - relative humidity at t (decimal fraction)
+            - `organ_height` (:class:`float`) - height of the organ from soil (m)
 
-            - `wind0` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
+            - `PAR` (:class:`float`) - PAR (µmol m-2 s-1)
+
+            - `Ta` (:class:`float`) - air temperature (degree Celsius)
+
+            - `ambient_CO2` (:class:`float`) - air CO2 (umol mol-1)
+
+            - `RH` (:class:`float`) - relative humidity (decimal fraction)
+
+            - `wind0` (:class:`float`) - wind speed at the top of the canopy (m s-1)
 
         :Returns:
-            An (µmol m-2 s-1) and Tr (mm s-1) at t.
+            An (µmol m-2 s-1) and Tr (mm s-1).
 
         :Returns Type:
             :class:`float`
@@ -256,20 +259,20 @@ class PhotosynthesisModel(object):
         while abs((Ci - prec_Ci)/prec_Ci) >= 0.01 or abs((Tleaf - prec_Tleaf)/prec_Tleaf) >= 0.01:
             if count >=30: # TODO: test a faire? Semble prendre du tps de calcul
                 if abs((Ci - prec_Ci)/prec_Ci) >= 0.01:
-                    print 'Ci cannot converge at t= {}, prec_Ci= {}, Ci= {}'.format(t, prec_Ci, Ci)
+                    print 'Ci cannot converge, prec_Ci= {}, Ci= {}'.format(prec_Ci, Ci)
                 else:
-                    print 'Tleaf cannot converge at t= {}, prec_Tleaf= {}, Tleaf= {}'.format(t, prec_Tleaf, Tleaf)
+                    print 'Tleaf cannot converge, prec_Tleaf= {}, Tleaf= {}'.format(prec_Tleaf, Tleaf)
                 break
             else:
                 prec_Ci, prec_Tleaf = Ci, Tleaf
-                An, Ag, Rd = cls.photosynthesis(PAR, NA_INIT, Tleaf, Ci)
+                An, Ag, Rd = cls._photosynthesis(PAR, NA_INIT, Tleaf, Ci)
                 # Stomatal conductance
-                gs = cls.stomatal_conductance(Ag, An, NA_INIT, ambient_CO2, RH)
+                gs = cls._stomatal_conductance(Ag, An, NA_INIT, ambient_CO2, RH)
                 # New value of Ci
                 Ci = ambient_CO2 - An * ((1.6/gs) + (1.37/cls.GB)) # gs and GB in mol m-2 s-1
                 # New value of Tleaf
-                Tleaf, E = cls.leaf_temperature(LEAF_WIDTH, H_ORGAN, H_CANOPY, wind0, PAR, gs, Ta, Tleaf, RH)
+                Tleaf, Tr = cls._leaf_temperature(LEAF_WIDTH, H_ORGAN, H_CANOPY, wind0, PAR, gs, Ta, Tleaf, RH)
                 count +=1
 
-        return An, E
+        return An, Tr
 
