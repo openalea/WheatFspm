@@ -1,7 +1,7 @@
 organ,mstruct
-Axis,Valeur initiale r+AOk-cup+AOk-r+AOk-e par CN+AC0-Wheat dans fichier d'initialisation (actuel MSTRUCT+AF8-AXIS)+AKA-?
-Lamina,Valeur initiale r+AOk-cup+AOk-r+AOk-e par CN+AC0-Wheat dans fichier d'initialisation+AKA-?
-Sheath,Valeur initiale r+AOk-cup+AOk-r+AOk-e par CN+AC0-Wheat dans fichier d'initialisation+AKA-?
-Internode,Valeur initiale r+AOk-cup+AOk-r+AOk-e par CN+AC0-Wheat dans fichier d'initialisation+AKA-?
-Chaff,Valeur initiale r+AOk-cup+AOk-r+AOk-e par CN+AC0-Wheat dans fichier d'initialisation+AKA-?
-Peduncle,Valeur initiale r+AOk-cup+AOk-r+AOk-e par CN+AC0-Wheat dans fichier d'initialisation+AKA-?
+Axis,Valeur initiale récupérée par CN-Wheat dans fichier d'initialisation (actuel MSTRUCT_AXIS) ?
+Lamina,Valeur initiale récupérée par CN-Wheat dans fichier d'initialisation ?
+Sheath,Valeur initiale récupérée par CN-Wheat dans fichier d'initialisation ?
+Internode,Valeur initiale récupérée par CN-Wheat dans fichier d'initialisation ?
+Chaff,Valeur initiale récupérée par CN-Wheat dans fichier d'initialisation ?
+Peduncle,Valeur initiale récupérée par CN-Wheat dans fichier d'initialisation ?
