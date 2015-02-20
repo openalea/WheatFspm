@@ -207,7 +207,7 @@ class CNWheat(object):
             logger.exception(message)
             raise CNWheatRunError(message)
         
-        last_compartments_values = soln[len(soln)-1]
+        last_compartments_values = soln[-1]
         self._update_population(last_compartments_values)
         
         if logger.isEnabledFor(logging.DEBUG):

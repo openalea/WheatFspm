@@ -37,8 +37,7 @@ class Population(object):
     
     PARAMETERS = parameters.PopulationParameters #: the parameters of the population
     
-    def __init__(self, t, plants=[]):
-        self.t = t #: the thermal time
+    def __init__(self, plants=[]):
         self.plants = plants #: the list of plants
         
 

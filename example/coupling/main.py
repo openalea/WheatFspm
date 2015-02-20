@@ -96,9 +96,7 @@ def read_t_data(curr_data_dirpath, data_filename):
 
 if __name__ == '__main__':
     
-    t_0 = 0
-    
-    population = cnwheat_model.Population(t_0)
+    population = cnwheat_model.Population()
     
     plant = cnwheat_model.Plant()
     population.plants.append(plant)
@@ -164,7 +162,6 @@ if __name__ == '__main__':
     
     for t_photosynthesis_model in xrange(start_time, stop_time, photosynthesis_model_ts):
         # update the population
-        population.t = t_photosynthesis_model
         # run the model of photosynthesis and update the population
         for plant in population.plants:
             for axis in plant.axes:
@@ -180,7 +177,6 @@ if __name__ == '__main__':
                             organ.Tr = Tr
         for t_cn_model in xrange(t_photosynthesis_model, t_photosynthesis_model + photosynthesis_model_ts, cn_model_ts):
             # update the population
-            population.t = t_cn_model
             # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
             all_plants_df, all_axes_df, all_phytomers_df, all_organs_df = cnwheat_.run(start_time=t_cn_model, stop_time=t_cn_model+cn_model_ts, number_of_output_steps=cn_model_ts+1)
             all_plants_df_list.append(all_plants_df)

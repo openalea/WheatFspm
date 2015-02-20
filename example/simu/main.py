@@ -93,9 +93,8 @@ def read_t_data(curr_data_dirpath, data_filename):
 
 
 if __name__ == '__main__':
-    t = 0
     
-    population = model.Population(t)
+    population = model.Population()
     
     plant = model.Plant()
     population.plants.append(plant)
@@ -156,7 +155,6 @@ if __name__ == '__main__':
      
     for t in xrange(start_time, stop_time, time_step):
         # update the population
-        population.t = t
         for plant in population.plants:
             for axis in plant.axes:
                 for phytomer in axis.phytomers:

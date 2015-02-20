@@ -80,9 +80,7 @@ def compare_actual_to_desired(DATA_DIRPATH, actual_output_df, desired_output_fil
 
 def test_run():
 
-    t = 0
-    
-    population = model.Population(t)
+    population = model.Population()
     
     plant = model.Plant()
     population.plants.append(plant)
@@ -143,7 +141,6 @@ def test_run():
      
     for t in xrange(start_time, stop_time, time_step):
         # update the population
-        population.t = t
         for plant in population.plants:
             for axis in plant.axes:
                 for phytomer in axis.phytomers:
