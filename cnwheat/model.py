@@ -12,7 +12,7 @@ import parameters
     ~~~~~~~~~~~~~
 
     The module :mod:`cnwheat.model` defines the equations of the CN exchanges in a population of plants.
-    
+
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -30,44 +30,44 @@ import parameters
 
 class Population(object):
     """
-    The class :class:`Population` defines the CN exchanges at the population scale. 
-    
+    The class :class:`Population` defines the CN exchanges at the population scale.
+
     A :class:`population <Population>` must have one or several :class:`plants <Plant>`.
     """
-    
+
     PARAMETERS = parameters.PopulationParameters #: the parameters of the population
-    
+
     def __init__(self, plants=[]):
         self.plants = plants #: the list of plants
-        
+
 
 class Plant(object):
     """
     The class :class:`Plant` defines the CN exchanges at the plants scale.
-    
+
     A :class:`plant <Plant>` must have one or several :class:`axes <Axis>`.
     """
-    
+
     PARAMETERS = parameters.PlantParameters #: the parameters of the plant
-    
+
     def __init__(self, axes=[], index=1):
         self.axes = axes #: the list of axes
         self.index = index #: the index of the plant, from 1 to n.
-        
+
 
 class Axis(object):
     """
     The class :class:`Axis` defines the CN exchanges at the axes scale.
-    
+
     An :class:`axis <Axis>` must have:
         * one :class:`set of roots <Roots>`,
         * one :class:`phloem <Phloem>`,
         * zero or one :class:`set of grains <Grains>`,
         * one or several :class:`phytomer<Phytomer>.
     """
-    
+
     PARAMETERS = parameters.AxisParameters #: the parameters of the axis
-    
+
     def __init__(self, roots=None, phloem=None, grains=None, phytomers=[], axis_type='MS', index=0):
         self.roots = roots #: the roots
         self.phloem = phloem #: the phloem
@@ -78,19 +78,19 @@ class Axis(object):
         self.id = axis_type #: the id of the axis ; the id is built from axis_type and index
         if axis_type != 'MS':
             self.id += str(index)
-        
+
 class Phytomer(object):
     """
     The class :class:`Phytomer` defines the CN exchanges at the phytomers scale.
-    
+
     A :class:`phytomer <Phytomer>` must have either:
         * one :class:`chaff <Chaff>`,
         * OR one :class:`peduncle <Peduncle>`,
         * OR one :class:`lamina <Lamina>`, one :class:`internode <Internode>` and one :class:`sheath <Sheath>`.
     """
-    
+
     PARAMETERS = parameters.PhytomerParameters #: the parameters of the phytomer
-    
+
     def __init__(self, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None, index=1):
         self.chaff = chaff #: the chaff
         self.peduncle = peduncle #: the peduncle
@@ -98,8 +98,8 @@ class Phytomer(object):
         self.internode = internode #: the internode
         self.sheath = sheath #: the sheath
         self.index = index #: the index of the phytomer, from 1 to n.
-        
-    
+
+
 class Organ(object):
     """
     The class :class:`Organ` defines the CN exchanges at the organs scale.
@@ -108,7 +108,7 @@ class Organ(object):
     """
 
     PARAMETERS = parameters.OrganParameters #: the parameters of the organ
-    
+
 
 class PhotosyntheticOrgan(Organ):
     """
@@ -120,9 +120,9 @@ class PhotosyntheticOrgan(Organ):
     PARAMETERS = parameters.PhotosyntheticOrganParameters #: the parameters of the photosynthetic organ
 
     def __init__(self, area, mstruct, width, height, triosesP, starch,
-                 sucrose, fructan, nitrates, amino_acids, proteins,  
+                 sucrose, fructan, nitrates, amino_acids, proteins,
                  An=None, Tr=None):
-        
+
         # variables
         self.area = area                     #: area (m-2)
         self.mstruct = mstruct               #: Structural mass (g)
@@ -138,11 +138,11 @@ class PhotosyntheticOrgan(Organ):
         self.nitrates = nitrates
         self.amino_acids = amino_acids
         self.proteins = proteins
-        
+
         # fluxes to phloem
         self.loading_sucrose = None           #: current rate of sucrose loading to phloem
         self.loading_amino_acids = None       #: current rate of amino acids loading to phloem
-    
+
     # VARIABLES
 
     def calculate_photosynthesis(self, t, An, phytomer_index):
@@ -227,7 +227,7 @@ class PhotosyntheticOrgan(Organ):
         """
         driving_sucrose_compartment = max(sucrose / (self.mstruct*self.__class__.PARAMETERS.ALPHA), sucrose_phloem/(Organ.PARAMETERS.MSTRUCT_AXIS*self.__class__.PARAMETERS.ALPHA_AXIS))
         diff_sucrose = sucrose/(self.mstruct*self.__class__.PARAMETERS.ALPHA) - sucrose_phloem/(Organ.PARAMETERS.MSTRUCT_AXIS*self.__class__.PARAMETERS.ALPHA_AXIS)
-        conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
+        conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_SUCROSE * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
         return driving_sucrose_compartment * diff_sucrose * conductance * Organ.PARAMETERS.DELTA_T
 
     def calculate_s_fructan(self, sucrose, regul_s_fructan):
@@ -280,7 +280,7 @@ class PhotosyntheticOrgan(Organ):
         """
         driving_amino_acids_compartment = max(amino_acids / (self.mstruct*self.__class__.PARAMETERS.ALPHA), amino_acids_phloem/(Organ.PARAMETERS.MSTRUCT_AXIS*self.__class__.PARAMETERS.ALPHA_AXIS))
         diff_amino_acids = amino_acids/(self.mstruct*self.__class__.PARAMETERS.ALPHA) - amino_acids_phloem/(Organ.PARAMETERS.MSTRUCT_AXIS*self.__class__.PARAMETERS.ALPHA_AXIS)
-        conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
+        conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_AMINO_ACIDS * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
         return driving_amino_acids_compartment * diff_amino_acids * conductance * Organ.PARAMETERS.DELTA_T
 
     # COMPARTMENTS
@@ -383,11 +383,11 @@ class Phloem(Organ):
     PARAMETERS = parameters.PhloemParameters #: the parameters of the phloem
 
     def __init__(self, sucrose, amino_acids):
-        
+
         # variables
         self.sucrose = sucrose
         self.amino_acids = amino_acids
-        
+
 
     # VARIABLES
 
@@ -413,7 +413,7 @@ class Phloem(Organ):
         """
         sucrose_derivative = 0
         # compute the sucrose contribution of each organ
-        
+
         for organ in organs:
             if isinstance(organ, Phloem):
                 continue
@@ -423,13 +423,13 @@ class Phloem(Organ):
                 flow = - (organ.s_grain_structure + (organ.s_grain_starch * ((organ.structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS))) #: Conversion of structure from umol of C to g of C
             elif isinstance(organ, Roots):
                 flow = -(organ.unloading_sucrose * organ.mstruct * organ.__class__.PARAMETERS.ALPHA)
-            
+
             sucrose_derivative += flow
-        
+
         logger = logging.getLogger(__name__)
-        if logger.isEnabledFor(logging.DEBUG):    
+        if logger.isEnabledFor(logging.DEBUG):
             logger.debug('total phloem sucrose_derivative = {}'.format(sucrose_derivative))
-            
+
         return sucrose_derivative
 
     def calculate_amino_acids_derivative(self, organs):
@@ -454,17 +454,17 @@ class Grains(Organ):
     PARAMETERS = parameters.GrainsParameters #: the parameters of the grains
 
     def __init__(self, starch, structure, proteins):
-        
+
         # variables
         self.starch = starch
         self.structure = structure
         self.proteins = proteins
-        
+
         # fluxes from phloem
         self.s_grain_structure = None            #: current rate of grain structure synthesis
         self.s_grain_starch = None             #: current rate of grain starch C synthesis
         self.s_proteins = None                   #: current rate of grain protein synthesis
-        
+
 
     # VARIABLES
 
@@ -546,7 +546,7 @@ class Roots(Organ):
     PARAMETERS = parameters.RootsParameters #: the parameters of the roots
 
     def __init__(self, mstruct, sucrose, nitrates, amino_acids):
-        
+
         # variables
         self.mstruct = mstruct  #: Structural mass (g)
         self.sucrose = sucrose
@@ -556,7 +556,7 @@ class Roots(Organ):
         # fluxes from phloem
         self.unloading_sucrose = None          #: current unloading of sucrose from phloem to roots
         self.unloading_amino_acids = None      #: current unloading of amino acids from phloem to roots
-        
+
 
     # VARIABLES
 

@@ -58,7 +58,7 @@ class OrganParameters:
     DELTA_T = 3600                          #: Timestep of the model (s)
 
     C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
-    AMINO_ACIDS_C_RATIO = 3.67              #: Mean ratio C:N in the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_C_RATIO = 3.67              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
     N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
@@ -89,16 +89,17 @@ class PhotosyntheticOrganParameters(OrganParameters):
     K_DFRUCTAN = 100                #: Affinity coefficient of fructan degradation (µmol C g-1 MS)
 
     # Loading sucrose
-    SIGMA = 1.85e-07                #: Conductivity of an organ-phloem pathway (g mol-1 m-2 s-1) ; used to compute the sucrose loaded to the phloem
-    BETA = 1                        #: Kind of volumetric mass density at power -2/3 ((g m-3)**(-2/3)) ; used to compute the sucrose loaded to the phloem
+    SIGMA_SUCROSE = 1.85e-07        #: Conductivity of an organ-phloem pathway (g mol-1 m-2 s-1) ; used to compute the sucrose loaded to the phloem
+    SIGMA_AMINO_ACIDS = 1e-06       #: Conductivity of an organ-phloem pathway (g mol-1 m-2 s-1) ; used to compute the amino acids loaded to the phloem
+    BETA = 1                        #: Kind of volumetric mass density at power -2/3 ((g m-3)**(-2/3))
 
     # Amino acids
-    VMAX_AMINO_ACIDS = 0.05          #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
+    VMAX_AMINO_ACIDS = 1            #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
     K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
     K_AMINO_ACIDS_TRIOSESP = 0.1    #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
 
     # Proteins
-    VMAX_SPROTEINS = 0.03      #0.04 trop de synthese    #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
+    VMAX_SPROTEINS = 0.03           #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
     K_SPROTEINS = 20                #: Affinity coefficient of protein synthesis (µmol N g-1 MS)
     DELTA_DPROTEINS = 1.85E-6       #: Relative rate of protein degradation (s-1)
 
@@ -176,7 +177,7 @@ class RootsParameters(OrganParameters):
 
     VMAX_SUCROSE_UNLOADING = 0.02             #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
     K_SUCROSE_UNLOADING = 100                 #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C sucrose g-1 MS)
-    VMAX_AMINO_ACIDS_UNLOADING = 0.01         #: Maximal rate of amino acids unloading from phloem to roots (µmol N amino acids s-1 g-1 MS)
+    VMAX_AMINO_ACIDS_UNLOADING = 0.001        #: Maximal rate of amino acids unloading from phloem to roots (µmol N amino acids s-1 g-1 MS)
     K_AMINO_ACIDS_UNLOADING = 100             #: Affinity coefficient of amino acids unloading from phloem to roots (µmol N amino acids g-1 MS)
 
     # Nitrate uptake
