@@ -441,7 +441,7 @@ class PhotosyntheticOrganElement(object):
     
     def __init__(self, area, mstruct, width, height, triosesP, starch,
                  sucrose, fructan, nitrates, amino_acids, proteins,
-                 An=None, Tr=None, index=1):
+                 An=None, Tr=None, index=1, enclosed=True):
         
         self.area = area                     #: area (m-2)
         self.mstruct = mstruct               #: Structural mass (g)
@@ -450,6 +450,7 @@ class PhotosyntheticOrganElement(object):
         self.An = An                         #: Net assimilation (µmol m-2 s-1)
         self.Tr = Tr                         #: Transpiration (mm s-1)
         self.index = index #: the index of the element, from 1 to n.
+        self.enclosed = enclosed #: True: the element is enclosed ; False: the element is exposed
 
         self.triosesP = triosesP
         self.starch = starch
