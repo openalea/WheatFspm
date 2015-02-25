@@ -35,7 +35,9 @@ class Population(object):
 
     PARAMETERS = parameters.PopulationParameters #: the internal parameters of the population
 
-    def __init__(self, plants=[]):
+    def __init__(self, plants=None):
+        if plants is None: 
+            plants = []
         self.plants = plants #: the list of plants
 
 
@@ -48,7 +50,9 @@ class Plant(object):
 
     PARAMETERS = parameters.PlantParameters #: the internal parameters of the plants
 
-    def __init__(self, axes=[], index=1):
+    def __init__(self, axes=None, index=1):
+        if axes is None: 
+            axes = []
         self.axes = axes #: the list of axes
         self.index = index #: the index of the plant, from 1 to n.
 
@@ -66,10 +70,12 @@ class Axis(object):
 
     PARAMETERS = parameters.AxisParameters #: the internal parameters of the axes
 
-    def __init__(self, roots=None, phloem=None, grains=None, phytomers=[], axis_type='MS', index=0):
+    def __init__(self, roots=None, phloem=None, grains=None, phytomers=None, axis_type='MS', index=0):
         self.roots = roots #: the roots
         self.phloem = phloem #: the phloem
         self.grains = grains #: the grains
+        if phytomers is None: 
+            phytomers = []
         self.phytomers = phytomers #: the list of phytomers
         self.type = axis_type #: the type of the axis ; 'MS': main stem, 'T': tiller
         self.index = index #: the index of the axis ; 0: MS, 1..n: tiller
@@ -372,6 +378,8 @@ class PhotosyntheticOrgan(Organ):
     def __init__(self, elements):
 
         # variables
+        if elements is None: 
+            elements = []
         self.elements = elements #: the elements of the photosynthetic organ
 
 
@@ -382,7 +390,7 @@ class Chaff(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.ChaffParameters #: the internal parameters of the chaffs
     
-    def __init__(self, elements=[]):
+    def __init__(self, elements=None):
         super(Chaff, self).__init__(elements)
 
 
@@ -393,7 +401,7 @@ class Lamina(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.LaminaParameters #: the internal parameters of the laminae
     
-    def __init__(self, elements=[]):
+    def __init__(self, elements=None):
         super(Lamina, self).__init__(elements)
 
 
@@ -404,7 +412,7 @@ class Internode(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.InternodeParameters #: the internal parameters of the internodes
     
-    def __init__(self, elements=[]):
+    def __init__(self, elements=None):
         super(Internode, self).__init__(elements)
 
 
@@ -415,7 +423,7 @@ class Peduncle(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.PeduncleParameters #: the internal parameters of the peduncles
     
-    def __init__(self, elements=[]):
+    def __init__(self, elements=None):
         super(Peduncle, self).__init__(elements)
 
 
@@ -426,7 +434,7 @@ class Sheath(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.SheathParameters #: the internal parameters of the sheaths
     
-    def __init__(self, elements=[]):
+    def __init__(self, elements=None):
         super(Sheath, self).__init__(elements)
 
 
