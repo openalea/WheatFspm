@@ -73,7 +73,7 @@ class CNWheat(object):
                                                                                        'Conc_Sucrose', 'Uptake_Nitrates', 'S_grain_structure', 'Proteins_N_Mass',
                                                                                        'RGR_Structure']
     
-    ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element']
+    ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element', 'exposed']
     ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['Loading_Sucrose', 'Regul_S_Fructan', 'An', 'Tr', 'Photosynthesis', 
                                                                                                                 'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose', 
                                                                                                                 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 
@@ -608,6 +608,7 @@ class CNWheat(object):
                             elements_df['phytomer'] = phytomer.index
                             elements_df['organ'] = organ.__class__.__name__
                             elements_df['element'] = element.index
+                            elements_df['exposed'] = element.exposed
                             elements_df['triosesP'] = solver_output[self.initial_conditions_mapping[element]['triosesP']]
                             elements_df['starch'] = solver_output[self.initial_conditions_mapping[element]['starch']]
                             elements_df['sucrose'] = solver_output[self.initial_conditions_mapping[element]['sucrose']]
@@ -688,6 +689,13 @@ class CNWheat(object):
         all_phytomers_df = all_phytomers_df.convert_objects(copy=False)
         all_organs_df = all_organs_df.convert_objects(copy=False)
         all_elements_df = all_elements_df.convert_objects(copy=False)
+        
+        # convert the indexes of plants, phytomers and elements to integers
+        all_plants_df['plant'] = all_plants_df['plant'].astype(int)
+        all_axes_df['plant'] = all_axes_df['plant'].astype(int)
+        all_phytomers_df[['plant', 'phytomer']] = all_phytomers_df[['plant', 'phytomer']].astype(int)
+        all_organs_df['plant'] = all_organs_df['plant'].astype(int)
+        all_elements_df[['plant', 'phytomer', 'element']] = all_elements_df[['plant', 'phytomer', 'element']].astype(int)
         
         logger.debug('Formatting of solver output DONE')
         

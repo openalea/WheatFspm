@@ -71,7 +71,7 @@ def compare_actual_to_desired(DATA_DIRPATH, actual_output_df, desired_output_fil
         actual_output_df.to_csv(actual_output_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(PRECISION))
     
     # keep only numerical data
-    for column in ('axis', 'organ'):
+    for column in ('axis', 'organ', 'exposed'):
         if column in desired_output_df.columns:
             del desired_output_df[column]
             del actual_output_df[column]
