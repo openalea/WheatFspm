@@ -51,4 +51,14 @@ describing what they are and what they do.
     :undoc-members:
     :show-inheritance:
     :synopsis: 
+    
+    
+:mod:`cnwheat.tools` module
+*********************************************************
+
+.. automodule:: cnwheat.tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :synopsis: 
 
