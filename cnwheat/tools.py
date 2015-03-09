@@ -20,12 +20,20 @@
 
 import types
 from itertools import cycle
+import warnings
 
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 
 from cnwheat.simulation import CNWheat
+
+
+class NoDataWarning(UserWarning):
+    '''Warning issued when the user asks for plotting a variable for which no data are available.'''
+    pass
+
+warnings.simplefilter('always', NoDataWarning)
 
 
 def plot_linear_regression(x_array, y_array, x_label='x', y_label='y', plot_filepath=None):
@@ -94,7 +102,7 @@ def plot_linear_regression(x_array, y_array, x_label='x', y_label='y', plot_file
         plt.close()
 
 
-def plot(outputs, x_name, y_name, x_label='', y_label='', title='', filters={}, plot_filepath=None, colors=[], linestyles=[]):
+def plot(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}, plot_filepath=None, colors=[], linestyles=[], explicit_label=True):
     """Plot `outputs`, with `x=x_name` and `y=y_name`.
 
     The general algorithm is:
@@ -116,7 +124,8 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title='', filters={}, 
 
         - `y_label` (:class:`str`) - The y label of the plot. Default is ''.
 
-        - `title` (:class:`str`) - the title of the plot. Default is ''.
+        - `title` (:class:`str`) - the title of the plot. If None (default), create 
+          a title which is the concatenation of `y_name` and each scales which cardinality is one.   
 
         - `filters` (:class:`dict`) - A dictionary whose keys are the columns of
           `outputs` for which we want to apply a specific filter.
@@ -132,6 +141,9 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title='', filters={}, 
         - `plot_filepath` (:class:`str`) - The file path to save the plot.
           If `None`, do not save the plot but display it.
 
+        - `explicit_label` (:class:`bool`) - True: makes the line label from concatenation of each scale id (default).
+                                           - False: makes the line label from concatenation of scales containing several distinct elements.
+
     :Examples:
 
     >>> import pandas as pd
@@ -139,10 +151,16 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title='', filters={}, 
     >>> plot(cnwheat_output_df, x_name = 't', y_name = 'Conc_Sucrose', x_label='Time (Hour)', y_label=u'[Sucrose] (µmol g$^{-1}$ mstruct)', title='{} = f({})'.format('Conc_Sucrose', 't'), filters={'plant': 1, 'axis': 'MS', 'organ': 'Lamina', 'element': 1})
 
     """
-
+    
     # finds the scale of `outputs`
     group_keys = [key for key in CNWheat.ELEMENTS_INDEXES if key in outputs and key != x_name and key != y_name]
-
+    
+    # make a group_keys with first letter of each key in upper case  
+    group_keys_upper = [group_key[0].upper() + group_key[1:] for group_key in group_keys]
+    
+    # create a mapping to associate each key to its index in group_keys
+    group_keys_mapping = dict([(key, index) for (index, key) in enumerate(group_keys)])
+    
     # keep only the needed columns (to make the grouping faster)
     outputs = outputs[group_keys + [x_name, y_name]]
 
@@ -162,6 +180,28 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title='', filters={}, 
             # select data from outputs
             outputs = outputs[outputs[key].isin(values)]
 
+    # do not plot if there is nothing to plot
+    if outputs[y_name].isnull().all():
+        keys_outputs_tuples = [(group_keys_upper[i], outputs[group_keys[i]].unique()) for i in xrange(len(group_keys))]
+        keys_outputs_strings = ['{}: {}'.format(group_key_upper, unique_outputs.tolist()) for (group_key_upper, unique_outputs) in keys_outputs_tuples]
+        keys_outputs_strings.append(y_name)
+        warnings.warn('No data to plot for {}'.format(' - '.join(keys_outputs_strings)), NoDataWarning)
+        return
+
+    # compute the cardinality of each group keys and create the title if needed
+    subtitle_groups = []
+    labels_groups = []
+    for i in xrange(len(group_keys)):
+        group_key = group_keys[i]
+        group_cardinality = outputs[group_key].nunique()
+        if group_cardinality == 1:
+            group_value = outputs[group_key][outputs.first_valid_index()]
+            subtitle_groups.append('{}: {}'.format(group_keys_upper[i], group_value))
+        else:
+            labels_groups.append(group_key)
+    if title is None: # we need to create the title
+        title = y_name + '\n' + ' - '.join(subtitle_groups)
+
     # makes groups according to the scale
     outputs_grouped = outputs.groupby(group_keys)
 
@@ -173,23 +213,42 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title='', filters={}, 
     matplot_linestyles_cycler = cycle(linestyles)
 
     for outputs_group_name, outputs_group in outputs_grouped:
-        line_label = '_'.join([str(key) for key in outputs_group_name])
-        kwargs = {'label': line_label}
+        line_label_list = []
+        if explicit_label:
+            # concatenate the keys of the group name
+            line_label_list.extend(['{}: {}'.format(group_keys_upper[group_keys_mapping[output_group_name]], outputs_group_name) for output_group_name in outputs_group_name])
+        else:
+            # construct a label with only the essential keys of the group name ; the essential keys are those for which cardinality is non zero
+            for label_group in labels_groups:
+                label_group_index = group_keys_mapping[label_group]
+                if label_group == 'exposed':
+                    if outputs_group_name[label_group_index]:
+                        label = 'exposed'
+                    else:
+                        label = 'enclosed'
+                    line_label_list.append('{}'.format(label))
+                else:
+                    line_label_list.append('{}: {}'.format(group_keys_upper[label_group_index], outputs_group_name[label_group_index]))
+        
+        kwargs = {'label': ' - '.join(line_label_list)}
 
+        # apply user colors
         try:
             color = next(matplot_colors_cycler)
         except StopIteration:
             pass
         else:
             kwargs['color'] = color
-
+        
+        # apply user lines style
         try:
             linestyle = next(matplot_linestyles_cycler)
         except StopIteration:
             pass
         else:
             kwargs['linestyle'] = linestyle
-
+        
+        # plot the line
         ax.plot(outputs_group[x_name], outputs_group[y_name], **kwargs)
 
     ax.set_xlabel(x_label)
