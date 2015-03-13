@@ -36,7 +36,7 @@ class Population(object):
     PARAMETERS = parameters.PopulationParameters #: the internal parameters of the population
 
     def __init__(self, plants=None):
-        if plants is None: 
+        if plants is None:
             plants = []
         self.plants = plants #: the list of plants
 
@@ -51,7 +51,7 @@ class Plant(object):
     PARAMETERS = parameters.PlantParameters #: the internal parameters of the plants
 
     def __init__(self, axes=None, index=1):
-        if axes is None: 
+        if axes is None:
             axes = []
         self.axes = axes #: the list of axes
         self.index = index #: the index of the plant, from 1 to n.
@@ -74,7 +74,7 @@ class Axis(object):
         self.roots = roots #: the roots
         self.phloem = phloem #: the phloem
         self.grains = grains #: the grains
-        if phytomers is None: 
+        if phytomers is None:
             phytomers = []
         self.phytomers = phytomers #: the list of phytomers
         self.type = axis_type #: the type of the axis ; 'MS': main stem, 'T': tiller
@@ -168,7 +168,7 @@ class Phloem(Organ):
             if isinstance(contributor, PhotosyntheticOrganElement):
                 amino_acids_derivative += contributor.loading_amino_acids * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
             elif isinstance(contributor, Grains):
-                amino_acids_derivative -= contributor.s_proteins * ((contributor.structure/1E6)*12) #: Conversion of structure from umol of C to g of C
+                amino_acids_derivative -= contributor.s_proteins * ((contributor.structure*1E-6)*Organ.PARAMETERS.C_MOLAR_MASS) #: Conversion of structure from umol of C to g of C
             elif isinstance(contributor, Roots):
                 amino_acids_derivative -= contributor.unloading_amino_acids * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
         return amino_acids_derivative
@@ -185,12 +185,12 @@ class Grains(Organ):
 
         # variables
         self.starch = starch
-        self.structure = structure
+        self.structure = structure               #: µmol of C
         self.proteins = proteins
 
         # fluxes from phloem
         self.s_grain_structure = None            #: current rate of grain structure synthesis
-        self.s_grain_starch = None             #: current rate of grain starch C synthesis
+        self.s_grain_starch = None               #: current rate of grain starch C synthesis
         self.s_proteins = None                   #: current rate of grain protein synthesis
 
 
@@ -216,13 +216,13 @@ class Grains(Organ):
     def calculate_unloading_sucrose(self, s_grain_structure, s_grain_starch, structure):
         """Unloading of sucrose from phloem to grains integrated over delta_t (µmol sucrose)
         """
-        return (s_grain_structure + s_grain_starch * (structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)/12
+        return (s_grain_structure + s_grain_starch * (structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)/Organ.PARAMETERS.N_C_SUCROSE
 
 
     # FLUXES
 
     def calculate_s_grain_structure(self, t, prec_structure, RGR_structure):
-        """Synthesis of grain structure integrated over delta_t (µmol C structure s-1 * DELTA_T). Rate regulated by phloem concentrations
+        """Synthesis of grain structure integrated over delta_t (µmol C structure s-1 * DELTA_T). RGR_structure is regulated by phloem concentrations
         """
         if t<=Grains.PARAMETERS.FILLING_INIT: #: Grain enlargment
             s_grain_structure = prec_structure * RGR_structure * Organ.PARAMETERS.DELTA_T
@@ -378,7 +378,7 @@ class PhotosyntheticOrgan(Organ):
     def __init__(self, elements):
 
         # variables
-        if elements is None: 
+        if elements is None:
             elements = []
         self.elements = elements #: the elements of the photosynthetic organ
 
@@ -389,7 +389,7 @@ class Chaff(PhotosyntheticOrgan):
     """
 
     PARAMETERS = parameters.ChaffParameters #: the internal parameters of the chaffs
-    
+
     def __init__(self, elements=None):
         super(Chaff, self).__init__(elements)
 
@@ -400,7 +400,7 @@ class Lamina(PhotosyntheticOrgan):
     """
 
     PARAMETERS = parameters.LaminaParameters #: the internal parameters of the laminae
-    
+
     def __init__(self, elements=None):
         super(Lamina, self).__init__(elements)
 
@@ -411,7 +411,7 @@ class Internode(PhotosyntheticOrgan):
     """
 
     PARAMETERS = parameters.InternodeParameters #: the internal parameters of the internodes
-    
+
     def __init__(self, elements=None):
         super(Internode, self).__init__(elements)
 
@@ -422,7 +422,7 @@ class Peduncle(PhotosyntheticOrgan):
     """
 
     PARAMETERS = parameters.PeduncleParameters #: the internal parameters of the peduncles
-    
+
     def __init__(self, elements=None):
         super(Peduncle, self).__init__(elements)
 
@@ -433,7 +433,7 @@ class Sheath(PhotosyntheticOrgan):
     """
 
     PARAMETERS = parameters.SheathParameters #: the internal parameters of the sheaths
-    
+
     def __init__(self, elements=None):
         super(Sheath, self).__init__(elements)
 
@@ -444,13 +444,13 @@ class PhotosyntheticOrganElement(object):
 
     :class:`PhotosyntheticOrganElement` is the base class of all photosynthetic organs elements. DO NOT INSTANTIATE IT.
     """
-    
+
     PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
-    
+
     def __init__(self, area, mstruct, width, height, triosesP, starch,
                  sucrose, fructan, nitrates, amino_acids, proteins,
                  An=None, Tr=None, index=1, exposed=True):
-        
+
         self.area = area                     #: area (m-2)
         self.mstruct = mstruct               #: Structural mass (g)
         self.width = width                   #: Width (or diameter for stem organ elements) (m)
@@ -591,7 +591,10 @@ class PhotosyntheticOrganElement(object):
     def calculate_s_amino_acids(self, nitrates, triosesP):
         """Rate of amino acid synthesis (µmol N amino acids s-1 g-1 MS * DELTA_T)
         """
-        calculate_s_amino_acids = PhotosyntheticOrgan.PARAMETERS.VMAX_AMINO_ACIDS / ((1 + PhotosyntheticOrgan.PARAMETERS.K_AMINO_ACIDS_NITRATES/(nitrates/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * (1 + PhotosyntheticOrgan.PARAMETERS.K_AMINO_ACIDS_TRIOSESP/(triosesP/(self.mstruct*self.__class__.PARAMETERS.ALPHA)))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+        if nitrates <=0 or triosesP <=0:
+            calculate_s_amino_acids = 0
+        else:
+            calculate_s_amino_acids = PhotosyntheticOrgan.PARAMETERS.VMAX_AMINO_ACIDS / ((1 + PhotosyntheticOrgan.PARAMETERS.K_AMINO_ACIDS_NITRATES/(nitrates/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * (1 + PhotosyntheticOrgan.PARAMETERS.K_AMINO_ACIDS_TRIOSESP/(triosesP/(self.mstruct*self.__class__.PARAMETERS.ALPHA)))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
         return calculate_s_amino_acids
 
     def calculate_s_proteins(self, amino_acids):
@@ -703,4 +706,4 @@ class SheathElement(PhotosyntheticOrganElement):
     """
 
     PARAMETERS = parameters.SheathElementParameters #: the internal parameters of the sheaths elements
-    
+
