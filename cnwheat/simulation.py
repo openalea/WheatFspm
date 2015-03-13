@@ -49,38 +49,38 @@ class CNWheat(object):
 
     """
 
-    #: the name of the compartments attributes in the model. 
+    #: the name of the compartments attributes in the model.
     MODEL_COMPARTMENTS_NAMES = {model.Plant: [],
                                 model.Axis: [],
                                 model.Phytomer: [],
                                 model.Organ: ['sucrose', 'amino_acids', 'nitrates', 'structure', 'starch', 'proteins'],
-                                model.PhotosyntheticOrganElement: ['nitrates', 'starch', 'amino_acids', 'proteins', 
+                                model.PhotosyntheticOrganElement: ['nitrates', 'starch', 'amino_acids', 'proteins',
                                                                    'sucrose', 'triosesP', 'fructan']}
-    
+
     PLANTS_INDEXES = ['t', 'plant']
     PLANTS_OUTPUTS = PLANTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Plant, [])
-    
+
     AXES_INDEXES = ['t', 'plant', 'axis']
     AXES_OUTPUTS = AXES_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Axis, []) + ['Total_transpiration']
-    
+
     PHYTOMERS_INDEXES = ['t', 'plant', 'axis', 'phytomer']
     PHYTOMERS_OUTPUTS = PHYTOMERS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Phytomer, [])
-    
+
     ORGANS_INDEXES = ['t', 'plant', 'axis', 'organ']
     ORGANS_OUTPUTS = ORGANS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Organ, []) + ['Conc_C_Sucrose', 'Unloading_Sucrose', 'Export_Amino_Acids', 'Conc_Nitrates_Soil',
                                                                                        'Potential_Uptake_Nitrates', 'S_Proteins', 'Conc_Nitrates', 'S_Amino_Acids',
                                                                                        'Conc_Amino_Acids', 'Dry_Mass', 'Unloading_Amino_Acids', 'S_grain_starch',
                                                                                        'Conc_Sucrose', 'Uptake_Nitrates', 'S_grain_structure', 'Proteins_N_Mass',
                                                                                        'RGR_Structure']
-    
+
     ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element', 'exposed']
-    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['Loading_Sucrose', 'Regul_S_Fructan', 'An', 'Tr', 'Photosynthesis', 
-                                                                                                                'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose', 
-                                                                                                                'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 
-                                                                                                                'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan', 
-                                                                                                                'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids', 
+    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['Loading_Sucrose', 'Regul_S_Fructan', 'An', 'Tr', 'Photosynthesis',
+                                                                                                                'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose',
+                                                                                                                'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins',
+                                                                                                                'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan',
+                                                                                                                'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids',
                                                                                                                 'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids']
-    
+
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
                                       model.Axis: 'cnwheat.compartments.axes',
                                       model.Phytomer: 'cnwheat.compartments.phytomers',
@@ -91,7 +91,7 @@ class CNWheat(object):
                                      model.Phytomer: 'cnwheat.derivatives.phytomers',
                                      model.Organ: 'cnwheat.derivatives.organs',
                                      model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements'}}
-    
+
     def __init__(self, population):
 
         logger = logging.getLogger(__name__)
@@ -103,7 +103,7 @@ class CNWheat(object):
         # construct the list of initial conditions
         self.initial_conditions = [] #: the initial conditions of the compartments in the population
         self.initial_conditions_mapping = {} #: dictionary to map the compartments to their indexes in :attr:`initial_conditions`
-        
+
         def _init_initial_conditions(model_object, i):
             class_ = model_object.__class__
             if issubclass(model_object.__class__, model.Organ):
@@ -118,9 +118,9 @@ class CNWheat(object):
                     self.initial_conditions.append(0)
                     i += 1
             return i
-        
+
         i = 0
-        
+
         for plant in population.plants:
             i = _init_initial_conditions(plant, i)
             for axis in plant.axes:
@@ -137,15 +137,15 @@ class CNWheat(object):
                         i = _init_initial_conditions(organ, i)
                         for element in organ.elements:
                             i = _init_initial_conditions(element, i)
-        
-        #TODO: check the validity of the population         
+
+        #TODO: check the validity of the population
 
         self.progressbar = ProgressBar(title='Solver progress') #: progress bar to show the progress of the solver
         self.show_progressbar = False #: True: show the progress bar ; False: DO NOT show the progress bar
         logger.info('Initialization of the simulation DONE')
 
 
-    def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=5000, show_progressbar=False):
+    def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=500000, show_progressbar=False):
         """
         Compute CN exchanges in :attr:`population` from `start_time` to `stop_time`, for `number_of_output_steps` steps.
 
@@ -166,13 +166,13 @@ class CNWheat(object):
 
         :Returns:
             The :class:`dataframes <pandas.DataFrame>` of CN exchanges for each desired time step at different scales:
-        
+
                 * plant: t, plant index, outputs of plant,
                 * axis: t, plant index, axis index, outputs of axis,
                 * phytomer: t, plant index, axis index, phytomer index, outputs of phytomer,
                 * organ: t, plant index, axis index, organ name, outputs of organ,
                 * and element: t, plant index, axis index, phytomer index, organ name, element index, outputs of element.
-        
+
         :Returns Type:
             :class:`tuple` of :class:`pandas.DataFrame`
 
@@ -211,10 +211,10 @@ class CNWheat(object):
                 organs_derivatives_logger = logging.getLogger('cnwheat.derivatives.organs')
                 organs_derivatives_logger.debug(sep.join(CNWheat.ORGANS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Organ]))
                 elements_derivatives_logger = logging.getLogger('cnwheat.derivatives.elements')
-                elements_derivatives_logger.debug(sep.join(CNWheat.ELEMENTS_INDEXES + CNWheat.MODEL_DERIVATIVES_NAMES[model.PhotosyntheticOrganElement]))
-        
-        self._update_initial_conditions() 
-            
+                elements_derivatives_logger.debug(sep.join(CNWheat.ELEMENTS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
+
+        self._update_initial_conditions()
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 """Run the solver with:
@@ -223,27 +223,27 @@ class CNWheat(object):
                 t, odeint_mxstep)
 
         soln, infodict = odeint(self._calculate_all_derivatives, self.initial_conditions, t, full_output=True, mxstep=odeint_mxstep)
-        
+
         if not set(infodict['mused']).issubset([1,2]):
             message = "Integration failed. See the logs of lsoda or try to increase the value of 'mxstep'."
             logger.exception(message)
             raise CNWheatRunError(message)
-        
+
         last_compartments_values = soln[-1]
         self._update_population(last_compartments_values)
-        
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 """Run of the solver DONE: infodict = %s""",
                 infodict)
-        
+
         all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = self._format_solver_output(t, soln)
-        
+
         logger.info('Run of CN-Wheat from {} to {} DONE'.format(start_time, stop_time))
-        
+
         return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df
-    
-    
+
+
     def _update_initial_conditions(self):
         """Update the compartments values in :attr:`initial_conditions` from the compartments values of :attr:`population`.
         """
@@ -269,9 +269,9 @@ class CNWheat(object):
                     i += 1
                 else:
                     row.append('NA')
-            rows.append([str(index) for index in indexes] + row) 
+            rows.append([str(index) for index in indexes] + row)
             return i
-        
+
         i = 0
         all_rows = dict([(class_, []) for class_ in loggers_names])
         for plant in self.population.plants:
@@ -290,14 +290,14 @@ class CNWheat(object):
                         i = update_rows(organ, [t, plant.index, axis.index, organ.__class__.__name__], all_rows[model.Organ], i)
                         for element in organ.elements:
                             i = update_rows(element, [t, plant.index, axis.index, phytomer.index, organ.__class__.__name__, element.index], all_rows[model.PhotosyntheticOrganElement], i)
-        
+
         row_sep = '\n'
         column_sep = ','
         for class_, logger_name in loggers_names.iteritems():
             compartments_logger = logging.getLogger(logger_name)
             formatted_initial_conditions = row_sep.join([column_sep.join(row) for row in all_rows[class_]])
             compartments_logger.debug(formatted_initial_conditions)
-            
+
 
     def _calculate_all_derivatives(self, y, t):
         """Compute the derivative of `y` at `t`.
@@ -343,7 +343,7 @@ class CNWheat(object):
         logger = logging.getLogger(__name__)
 
         logger.debug('t = {}'.format(t))
-        
+
         compartments_logger = logging.getLogger('cnwheat.compartments')
         if compartments_logger.isEnabledFor(logging.DEBUG):
             self._log_compartments(t, y, CNWheat.LOGGERS_NAMES['compartments'])
@@ -356,20 +356,20 @@ class CNWheat(object):
             raise CNWheatRunError(message)
 
         y_derivatives = np.zeros_like(y)
-        
+
         for plant in self.population.plants:
             for axis in plant.axes:
-                
+
                 phloem_contributors = []
-                
+
                 axis.phloem.sucrose = y[self.initial_conditions_mapping[axis.phloem]['sucrose']]
-                
+
                 axis.phloem.amino_acids = y[self.initial_conditions_mapping[axis.phloem]['amino_acids']]
-                
+
                 axis.roots.nitrates = y[self.initial_conditions_mapping[axis.roots]['nitrates']]
                 axis.roots.amino_acids = y[self.initial_conditions_mapping[axis.roots]['amino_acids']]
                 phloem_contributors.append(axis.roots)
-                
+
                 # compute the total transpiration at t_inf
                 total_transpiration = 0.0
                 transpiration_mapping = {}
@@ -389,12 +389,12 @@ class CNWheat(object):
                 # compute the derivative of each photosynthetic organ element compartment
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
-                        
+
                         if organ is None:
                             continue
-                        
+
                         for element in organ.elements:
-                        
+
                             element.starch = y[self.initial_conditions_mapping[element]['starch']]
                             element.sucrose = y[self.initial_conditions_mapping[element]['sucrose']]
                             element.triosesP = y[self.initial_conditions_mapping[element]['triosesP']]
@@ -402,11 +402,11 @@ class CNWheat(object):
                             element.nitrates = y[self.initial_conditions_mapping[element]['nitrates']]
                             element.amino_acids = y[self.initial_conditions_mapping[element]['amino_acids']]
                             element.proteins = y[self.initial_conditions_mapping[element]['proteins']]
-                
+
                             # intermediate variables
                             photosynthesis = element.calculate_photosynthesis(t, element.An, phytomer.index)
                             element_transpiration = transpiration_mapping[element]
-                
+
                             # flows
                             s_starch = element.calculate_s_starch(element.triosesP)
                             d_starch = element.calculate_d_starch(element.starch)
@@ -421,7 +421,7 @@ class CNWheat(object):
                             s_proteins = element.calculate_s_proteins(element.amino_acids)
                             d_proteins = element.calculate_d_proteins(element.proteins)
                             element.loading_amino_acids = element.calculate_loading_amino_acids(element.amino_acids, axis.phloem.amino_acids)
-                
+
                             # compartments derivatives
                             starch_derivative = element.calculate_starch_derivative(s_starch, d_starch)
                             sucrose_derivative = element.calculate_sucrose_derivative(s_sucrose, d_starch, element.loading_sucrose, s_fructan, d_fructan)
@@ -430,7 +430,7 @@ class CNWheat(object):
                             nitrates_derivative = element.calculate_nitrates_derivative(nitrates_import, s_amino_acids)
                             amino_acids_derivative = element.calculate_amino_acids_derivative(amino_acids_import, s_amino_acids, s_proteins, d_proteins, element.loading_amino_acids)
                             proteins_derivative = element.calculate_proteins_derivative(s_proteins, d_proteins)
-                
+
                             y_derivatives[self.initial_conditions_mapping[element]['starch']] = starch_derivative
                             y_derivatives[self.initial_conditions_mapping[element]['sucrose']] = sucrose_derivative
                             y_derivatives[self.initial_conditions_mapping[element]['triosesP']] = triosesP_derivative
@@ -445,15 +445,15 @@ class CNWheat(object):
                     axis.grains.structure = y[self.initial_conditions_mapping[axis.grains]['structure']]
                     axis.grains.starch = y[self.initial_conditions_mapping[axis.grains]['starch']]
                     axis.grains.proteins = y[self.initial_conditions_mapping[axis.grains]['proteins']]
-    
+
                     # intermediate variables
                     RGR_structure = axis.grains.calculate_RGR_structure(axis.phloem.sucrose)
-    
+
                     # flows
                     axis.grains.s_grain_structure = axis.grains.calculate_s_grain_structure(t, axis.grains.structure, RGR_structure)
                     axis.grains.s_grain_starch = axis.grains.calculate_s_grain_starch(t, axis.phloem.sucrose)
                     axis.grains.s_proteins = axis.grains.calculate_s_proteins(axis.grains.s_grain_structure, axis.grains.s_grain_starch, axis.phloem.amino_acids, axis.phloem.sucrose, axis.grains.structure)
-            
+
                     # compartments derivatives
                     structure_derivative = axis.grains.calculate_structure_derivative(axis.grains.s_grain_structure)
                     starch_derivative = axis.grains.calculate_starch_derivative(axis.grains.s_grain_starch, axis.grains.structure)
@@ -461,14 +461,14 @@ class CNWheat(object):
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['structure']] = structure_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['starch']] = starch_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['proteins']] = proteins_derivative
-        
+
                 # compute the derivative of each compartment of roots
                 axis.roots.sucrose = y[self.initial_conditions_mapping[axis.roots]['sucrose']]
                 # flows
                 axis.roots.unloading_sucrose = axis.roots.calculate_unloading_sucrose(axis.phloem.sucrose)
                 axis.roots.unloading_amino_acids = axis.roots.calculate_unloading_amino_acids(axis.phloem.amino_acids)
                 axis.roots.s_amino_acids = axis.roots.calculate_s_amino_acids(axis.roots.nitrates, axis.roots.sucrose)
-        
+
                 # compartments derivatives
                 sucrose_derivative = axis.roots.calculate_sucrose_derivative(axis.roots.unloading_sucrose, axis.roots.s_amino_acids)
                 nitrates_derivative = axis.roots.calculate_nitrates_derivative(roots_uptake_nitrate, axis.roots.s_amino_acids)
@@ -476,7 +476,7 @@ class CNWheat(object):
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['sucrose']] = sucrose_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['nitrates']] = nitrates_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['amino_acids']] = amino_acids_derivative
-        
+
                 # compute the derivative of each compartment of phloem
                 sucrose_phloem_derivative = axis.phloem.calculate_sucrose_derivative(phloem_contributors)
                 amino_acids_phloem_derivative = axis.phloem.calculate_amino_acids_derivative(phloem_contributors)
@@ -492,7 +492,7 @@ class CNWheat(object):
 
         return y_derivatives
 
-    
+
     def _update_population(self, compartments_values):
         """Update the state of :attr:`population` from the values in `compartments_values`.
         """
@@ -502,12 +502,12 @@ class CNWheat(object):
             for compartment_name, compartment_index in compartments.iteritems():
                 setattr(model_object, compartment_name, compartments_values[compartment_index])
         logger.debug('Updating the state of the population DONE')
-        
+
 
     def _format_solver_output(self, t, solver_output):
         """
         Create :class:`dataframes <pandas.DataFrame>` of outputs at different scales:
-        
+
             * plant: t, plant index, outputs of plant,
             * axis: t, plant index, axis index, outputs of axis,
             * phytomer: t, plant index, axis index, phytomer index, outputs of phytomer,
@@ -524,23 +524,23 @@ class CNWheat(object):
         all_phytomers_df = pd.DataFrame(columns=CNWheat.PHYTOMERS_OUTPUTS)
         all_organs_df = pd.DataFrame(columns=CNWheat.ORGANS_OUTPUTS)
         all_elements_df = pd.DataFrame(columns=CNWheat.ELEMENTS_OUTPUTS)
-        
+
         for plant in self.population.plants:
-            
+
             plants_df = pd.DataFrame(columns=all_plants_df.columns)
             plants_df['t'] = t
             plants_df['plant'] = plant.index
-            
+
             for axis in plant.axes:
-                
+
                 axes_df = pd.DataFrame(columns=all_axes_df.columns)
                 axes_df['t'] = t
                 axes_df['plant'] = plant.index
                 axes_df['axis'] = axis.id
-                
+
                 # compute the total transpiration
                 total_transpiration = np.zeros_like(t)
-                
+
                 transpiration_mapping = {}
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
@@ -548,9 +548,9 @@ class CNWheat(object):
                             for element in organ.elements:
                                 transpiration_mapping[element] = map(element.calculate_transpiration, t, [element.Tr] * len(t), [phytomer.index] * len(t))
                                 total_transpiration += transpiration_mapping[element]
-                
+
                 axes_df['Total_transpiration'] = total_transpiration
-          
+
                 # format phloem outputs
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = t
@@ -565,7 +565,7 @@ class CNWheat(object):
                 organs_df['Conc_C_Sucrose'] = axis.phloem.calculate_conc_c_sucrose(organs_df['sucrose'])
                 organs_df['Conc_Amino_Acids'] = axis.phloem.calculate_conc_amino_acids(organs_df['amino_acids'])
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
-        
+
                 # format roots outputs
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = t
@@ -581,14 +581,14 @@ class CNWheat(object):
                 organs_df['Conc_Nitrates_Soil'] = map(axis.roots.calculate_conc_nitrates_soil,t)
                 organs_df['Unloading_Sucrose'] = map(axis.roots.calculate_unloading_sucrose, phloem_sucrose)
                 organs_df['Unloading_Amino_Acids'] = map(axis.roots.calculate_unloading_amino_acids, phloem_amino_acids)
-                roots_uptake_nitrates, roots_potential_uptake_nitrates = axis.roots.calculate_uptake_nitrates(organs_df['Conc_Nitrates_Soil'], organs_df['nitrates'], total_transpiration) 
+                roots_uptake_nitrates, roots_potential_uptake_nitrates = axis.roots.calculate_uptake_nitrates(organs_df['Conc_Nitrates_Soil'], organs_df['nitrates'], total_transpiration)
                 organs_df['Uptake_Nitrates'] = roots_uptake_nitrates
                 organs_df['Potential_Uptake_Nitrates'] = map(axis.roots.calculate_export_amino_acids, organs_df['amino_acids'], total_transpiration)
                 roots_export_amino_acids = map(axis.roots.calculate_export_amino_acids, organs_df['amino_acids'], total_transpiration)
                 organs_df['Export_Amino_Acids'] = roots_export_amino_acids
                 organs_df['S_Amino_Acids'] = map(axis.roots.calculate_s_amino_acids, organs_df['nitrates'], organs_df['sucrose'])
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
-        
+
                 # format photosynthetic organs elements outputs
                 for phytomer in axis.phytomers:
                     phytomers_df = pd.DataFrame(columns=all_phytomers_df.columns)
@@ -596,11 +596,11 @@ class CNWheat(object):
                     phytomers_df['plant'] = plant.index
                     phytomers_df['axis'] = axis.id
                     phytomers_df['phytomer'] = phytomer.index
-                    
+
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
-                        for element in organ.elements: 
+                        for element in organ.elements:
                             elements_df = pd.DataFrame(columns=all_elements_df.columns)
                             elements_df['t'] = t
                             elements_df['plant'] = plant.index
@@ -641,13 +641,13 @@ class CNWheat(object):
                             elements_df['D_Proteins'] = map(element.calculate_d_proteins, elements_df['proteins'])
                             elements_df['Loading_Amino_Acids'] = map(element.calculate_loading_amino_acids, elements_df['amino_acids'], phloem_amino_acids)
                             all_elements_df = all_elements_df.append(elements_df, ignore_index=True)
-                        
+
                     all_phytomers_df = all_phytomers_df.append(phytomers_df, ignore_index=True)
-        
+
                 # format grains outputs
                 if axis.grains is None:
                     continue
-                
+
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = t
                 organs_df['plant'] = plant.index
@@ -664,41 +664,41 @@ class CNWheat(object):
                 organs_df['Unloading_Sucrose'] = map(axis.grains.calculate_unloading_sucrose, organs_df['S_grain_structure'], organs_df['S_grain_starch'], organs_df['structure'])
                 organs_df['S_Proteins'] = map(axis.grains.calculate_s_proteins, organs_df['S_grain_structure'], organs_df['S_grain_starch'], phloem_amino_acids, phloem_sucrose, organs_df['structure'])
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
-                
+
                 all_axes_df = all_axes_df.append(axes_df, ignore_index=True)
-            
+
             all_plants_df = all_plants_df.append(plants_df, ignore_index=True)
-            
+
         # set the order of the columns
         all_plants_df = all_plants_df.reindex_axis(CNWheat.PLANTS_OUTPUTS, axis=1, copy=False)
         all_axes_df = all_axes_df.reindex_axis(CNWheat.AXES_OUTPUTS, axis=1, copy=False)
         all_phytomers_df = all_phytomers_df.reindex_axis(CNWheat.PHYTOMERS_OUTPUTS, axis=1, copy=False)
         all_organs_df = all_organs_df.reindex_axis(CNWheat.ORGANS_OUTPUTS, axis=1, copy=False)
         all_elements_df = all_elements_df.reindex_axis(CNWheat.ELEMENTS_OUTPUTS, axis=1, copy=False)
-        
+
         # sort the rows by the columns
         all_plants_df.sort_index(by=CNWheat.PLANTS_INDEXES, inplace=True)
         all_axes_df.sort_index(by=CNWheat.AXES_INDEXES, inplace=True)
         all_phytomers_df.sort_index(by=CNWheat.PHYTOMERS_INDEXES, inplace=True)
         all_organs_df.sort_index(by=CNWheat.ORGANS_INDEXES, inplace=True)
         all_elements_df.sort_index(by=CNWheat.ELEMENTS_INDEXES, inplace=True)
-        
+
         # infer the right types of the columns
         all_plants_df = all_plants_df.convert_objects(copy=False)
         all_axes_df = all_axes_df.convert_objects(copy=False)
         all_phytomers_df = all_phytomers_df.convert_objects(copy=False)
         all_organs_df = all_organs_df.convert_objects(copy=False)
         all_elements_df = all_elements_df.convert_objects(copy=False)
-        
+
         # convert the indexes of plants, phytomers and elements to integers
         all_plants_df['plant'] = all_plants_df['plant'].astype(int)
         all_axes_df['plant'] = all_axes_df['plant'].astype(int)
         all_phytomers_df[['plant', 'phytomer']] = all_phytomers_df[['plant', 'phytomer']].astype(int)
         all_organs_df['plant'] = all_organs_df['plant'].astype(int)
         all_elements_df[['plant', 'phytomer', 'element']] = all_elements_df[['plant', 'phytomer', 'element']].astype(int)
-        
+
         logger.debug('Formatting of solver output DONE')
-        
+
         return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df
 
 
