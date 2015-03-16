@@ -5,7 +5,7 @@
     ~~~~~~~~~~~~~~~~~~
 
     The module :mod:`cnwheat.parameters` defines the constant parameters in a population of plants.
-    
+
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -58,6 +58,7 @@ class OrganParameters:
     DELTA_T = 3600                          #: Timestep of the model (s)
 
     C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
+    N_C_SUCROSE = 12                        #: Number of C in 1 mol of sucrose
     AMINO_ACIDS_C_RATIO = 3.67              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
@@ -151,8 +152,8 @@ class PhotosyntheticOrganParameters(OrganParameters):
     K_AMINO_ACIDS_TRIOSESP = 0.1    #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
 
     # Proteins
-    VMAX_SPROTEINS = 0.03           #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
-    K_SPROTEINS = 20                #: Affinity coefficient of protein synthesis (µmol N g-1 MS)
+    VMAX_SPROTEINS = 0.002          #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
+    K_SPROTEINS = 100               #: Affinity coefficient of protein synthesis (µmol N g-1 MS)
     DELTA_DPROTEINS = 1.85E-6       #: Relative rate of protein degradation (s-1)
 
 
@@ -189,8 +190,8 @@ class SheathParameters(PhotosyntheticOrganParameters):
     Internal parameters of sheaths.
     """
     pass
-    
-    
+
+
 class PhotosyntheticOrganElementParameters:
     """
     Internal parameters of photosynthetic organs elements

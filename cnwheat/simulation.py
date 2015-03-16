@@ -145,7 +145,7 @@ class CNWheat(object):
         logger.info('Initialization of the simulation DONE')
 
 
-    def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=500000, show_progressbar=False):
+    def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=0, show_progressbar=False):
         """
         Compute CN exchanges in :attr:`population` from `start_time` to `stop_time`, for `number_of_output_steps` steps.
 
