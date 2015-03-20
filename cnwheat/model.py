@@ -124,8 +124,8 @@ class Phloem(Organ):
     def __init__(self, sucrose, amino_acids):
 
         # variables
-        self.sucrose = sucrose
-        self.amino_acids = amino_acids
+        self.sucrose = sucrose          #: µmol C sucrose
+        self.amino_acids = amino_acids  #: µmol N amino acids
 
 
     # VARIABLES
@@ -133,12 +133,7 @@ class Phloem(Organ):
     def calculate_conc_sucrose(self, sucrose):
         """sucrose concentration (µmol sucrose g-1 MS)
         """
-        return (sucrose/Organ.PARAMETERS.MSTRUCT_AXIS)/12
-
-    def calculate_conc_c_sucrose(self, sucrose):
-        """sucrose concentration expressed in C (µmol C sucrose g-1 MS)
-        """
-        return sucrose/(Organ.PARAMETERS.MSTRUCT_AXIS)
+        return (sucrose/Organ.PARAMETERS.N_C_SUCROSE)/Organ.PARAMETERS.MSTRUCT_AXIS
 
     def calculate_conc_amino_acids(self, amino_acids):
         """Amino_acid concentration (µmol amino_acids g-1 MS)
@@ -168,7 +163,7 @@ class Phloem(Organ):
             if isinstance(contributor, PhotosyntheticOrganElement):
                 amino_acids_derivative += contributor.loading_amino_acids * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
             elif isinstance(contributor, Grains):
-                amino_acids_derivative -= contributor.s_proteins * ((contributor.structure*1E-6)*Organ.PARAMETERS.C_MOLAR_MASS) #: Conversion of structure from umol of C to g of C
+                amino_acids_derivative -= contributor.s_proteins
             elif isinstance(contributor, Roots):
                 amino_acids_derivative -= contributor.unloading_amino_acids * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
         return amino_acids_derivative
@@ -184,9 +179,9 @@ class Grains(Organ):
     def __init__(self, starch, structure, proteins):
 
         # variables
-        self.starch = starch
-        self.structure = structure               #: µmol of C
-        self.proteins = proteins
+        self.starch = starch                     #: µmol of C starch
+        self.structure = structure               #: µmol of C sucrose
+        self.proteins = proteins                 #: µmol of N proteins
 
         # fluxes from phloem
         self.s_grain_structure = None            #: current rate of grain structure synthesis
@@ -197,12 +192,12 @@ class Grains(Organ):
     # VARIABLES
 
     def calculate_dry_mass(self, structure, starch):
-        """Grain total dry mass (g) # TODO: ajouter la masse des prot?
+        """Grain total dry mass (g)
         """
         return ((structure + starch)*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS
 
     def calculate_protein_mass(self, proteins):
-        """Grain total protein mass                                                            # TODO trouver stoechiometrie proteines grains
+        """Grain total protein mass
         """
         mass_N_proteins = proteins*1E-6 * Organ.PARAMETERS.N_MOLAR_MASS                        #: Mass of nitrogen in proteins (g)
         #mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO     #: Total mass of proteins (g)
@@ -276,10 +271,10 @@ class Roots(Organ):
     def __init__(self, mstruct, sucrose, nitrates, amino_acids):
 
         # variables
-        self.mstruct = mstruct  #: Structural mass (g)
-        self.sucrose = sucrose
-        self.nitrates = nitrates
-        self.amino_acids = amino_acids
+        self.mstruct = mstruct                 #: Structural mass (g)
+        self.sucrose = sucrose                 #: µmol C sucrose
+        self.nitrates = nitrates               #: µmol N nitrates
+        self.amino_acids = amino_acids         #: µmol N amino acids
 
         # fluxes from phloem
         self.unloading_sucrose = None          #: current unloading of sucrose from phloem to roots
@@ -297,7 +292,7 @@ class Roots(Organ):
     def calculate_conc_nitrates_soil(self, t):
         """Nitrate concetration in soil (µmol nitrates m-3)
         """
-        return -52083*t + 5E+07 # TODO: Temporary
+        return -500*t + 5E+05 # TODO: Temporary
 
     def calculate_conc_nitrates(self, nitrates):
         """Nitrate concentration (µmol nitrates g-1 MS)
@@ -573,16 +568,16 @@ class PhotosyntheticOrganElement(object):
     def calculate_nitrates_import(self, roots_uptake_nitrate, organ_transpiration, total_transpiration):
         """Total nitrates imported from roots (through xylem) distributed relatively to element transpiration (µmol N nitrates integrated over delta_t [already accounted in transpiration])
         """
-        if total_transpiration>0:
+        if organ_transpiration>0:
             nitrates_import = roots_uptake_nitrate * (organ_transpiration/total_transpiration)* PhotosyntheticOrgan.PARAMETERS.RATIO_EXPORT_NITRATES_ROOTS # Proportion of uptaked nitrates exported from roots to shoot
-        else:
+        else: # Avoids further float division by zero error
             nitrates_import = 0
         return nitrates_import
 
     def calculate_amino_acids_import(self, roots_exported_amino_acids, organ_transpiration, total_transpiration):
         """Total Amino acids imported from roots (through xylem) distributed relatively to element transpiration (µmol N Amino acids integrated over delta_t [already accounted in transpiration])
         """
-        if total_transpiration>0:
+        if organ_transpiration>0:
             amino_acids_import = roots_exported_amino_acids * (organ_transpiration/total_transpiration)
         else:
             amino_acids_import = 0
@@ -609,7 +604,7 @@ class PhotosyntheticOrganElement(object):
         return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_DPROTEINS * (proteins/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     def calculate_loading_amino_acids(self, amino_acids, amino_acids_phloem):
-        """Rate of amino acids loading to phloem (µmol N amino acids s-1 g-1 MS * DELTA_T) # TODO: formalism to be tested
+        """Rate of amino acids loading to phloem (µmol N amino acids s-1 g-1 MS * DELTA_T)
         """
         driving_amino_acids_compartment = max(amino_acids / (self.mstruct*self.__class__.PARAMETERS.ALPHA), amino_acids_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS))
         diff_amino_acids = amino_acids/(self.mstruct*self.__class__.PARAMETERS.ALPHA) - amino_acids_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS)
@@ -680,7 +675,7 @@ class LaminaElement(PhotosyntheticOrganElement):
         if t <= t_inflexion: # Non-senescent lamina element
             green_area = self.area
         else: # Senescent lamina element
-            green_area = ((-0.0721*t + value_inflexion)/10000)
+            green_area = max(0, ((-0.0721*t + value_inflexion)/10000))
         return green_area
 
 
