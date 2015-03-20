@@ -112,7 +112,7 @@ class RootsParameters(OrganParameters):
     LAMBDA_LATS = 1.6517E-03        #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (m3 µmol-1 s-1)
 
     # Amino acids
-    VMAX_AMINO_ACIDS = 0.005        #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
+    VMAX_AMINO_ACIDS = 0.001        #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
     K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
     K_AMINO_ACIDS_SUCROSE = 3       #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
     K_TR_EXPORT_AMINO_ACIDS = 1E-8  #: Affinity coefficient of amino acids export from roots to shoot (mm H20)
@@ -149,7 +149,7 @@ class PhotosyntheticOrganParameters(OrganParameters):
     # Amino acids
     VMAX_AMINO_ACIDS = 1            #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
     K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
-    K_AMINO_ACIDS_TRIOSESP = 0.1    #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
+    K_AMINO_ACIDS_TRIOSESP = 0.2    #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
 
     # Proteins
     VMAX_SPROTEINS = 0.002          #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
