@@ -67,14 +67,14 @@ class CNWheat(object):
     PHYTOMERS_OUTPUTS = PHYTOMERS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Phytomer, [])
 
     ORGANS_INDEXES = ['t', 'plant', 'axis', 'organ']
-    ORGANS_OUTPUTS = ORGANS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Organ, []) + ['Conc_C_Sucrose', 'Unloading_Sucrose', 'Export_Amino_Acids', 'Conc_Nitrates_Soil',
+    ORGANS_OUTPUTS = ORGANS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Organ, []) + ['Unloading_Sucrose', 'Export_Amino_Acids', 'Conc_Nitrates_Soil',
                                                                                        'Potential_Uptake_Nitrates', 'S_Proteins', 'Conc_Nitrates', 'S_Amino_Acids',
                                                                                        'Conc_Amino_Acids', 'Dry_Mass', 'Unloading_Amino_Acids', 'S_grain_starch',
                                                                                        'Conc_Sucrose', 'Uptake_Nitrates', 'S_grain_structure', 'Proteins_N_Mass',
                                                                                        'RGR_Structure']
 
     ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element', 'exposed']
-    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['Loading_Sucrose', 'Regul_S_Fructan', 'An', 'Tr', 'Photosynthesis',
+    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['Loading_Sucrose', 'Regul_S_Fructan', 'An', 'Tr', 'Ts', 'gs', 'Photosynthesis',
                                                                                                                 'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose',
                                                                                                                 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins',
                                                                                                                 'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan',
@@ -562,7 +562,6 @@ class CNWheat(object):
                 phloem_amino_acids = solver_output[self.initial_conditions_mapping[axis.phloem]['amino_acids']]
                 organs_df['amino_acids'] = phloem_amino_acids
                 organs_df['Conc_Sucrose'] = axis.phloem.calculate_conc_sucrose(organs_df['sucrose'])
-                organs_df['Conc_C_Sucrose'] = axis.phloem.calculate_conc_c_sucrose(organs_df['sucrose'])
                 organs_df['Conc_Amino_Acids'] = axis.phloem.calculate_conc_amino_acids(organs_df['amino_acids'])
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
 
@@ -620,6 +619,8 @@ class CNWheat(object):
                             elements_df['Regul_S_Fructan'] = map(element.calculate_regul_s_fructan, elements_df['Loading_Sucrose'])
                             elements_df['An'] = element.An
                             elements_df['Tr'] = element.Tr
+                            elements_df['Ts'] = element.Ts
+                            elements_df['gs'] = element.gs
                             elements_df['Photosynthesis'] = map(element.calculate_photosynthesis, t, [element.An] * len(t), [phytomer.index] * len(t))
                             elements_df['Transpiration'] = transpiration_mapping[element]
                             elements_df['Conc_TriosesP'] = element.calculate_conc_triosesP(elements_df['triosesP'])
