@@ -3,7 +3,7 @@
     cnwheat.tools
     ~~~~~~~~~~~~~
 
-    This module provides tools to validate the outputs of the model CN-Wheat. 
+    This module provides tools to validate the outputs of the model CN-Wheat.
 
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
@@ -124,8 +124,8 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}
 
         - `y_label` (:class:`str`) - The y label of the plot. Default is ''.
 
-        - `title` (:class:`str`) - the title of the plot. If None (default), create 
-          a title which is the concatenation of `y_name` and each scales which cardinality is one.   
+        - `title` (:class:`str`) - the title of the plot. If None (default), create
+          a title which is the concatenation of `y_name` and each scales which cardinality is one.
 
         - `filters` (:class:`dict`) - A dictionary whose keys are the columns of
           `outputs` for which we want to apply a specific filter.
@@ -151,16 +151,16 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}
     >>> plot(cnwheat_output_df, x_name = 't', y_name = 'Conc_Sucrose', x_label='Time (Hour)', y_label=u'[Sucrose] (µmol g$^{-1}$ mstruct)', title='{} = f({})'.format('Conc_Sucrose', 't'), filters={'plant': 1, 'axis': 'MS', 'organ': 'Lamina', 'element': 1})
 
     """
-    
+
     # finds the scale of `outputs`
     group_keys = [key for key in CNWheat.ELEMENTS_INDEXES if key in outputs and key != x_name and key != y_name]
-    
-    # make a group_keys with first letter of each key in upper case  
+
+    # make a group_keys with first letter of each key in upper case
     group_keys_upper = [group_key[0].upper() + group_key[1:] for group_key in group_keys]
-    
+
     # create a mapping to associate each key to its index in group_keys
     group_keys_mapping = dict([(key, index) for (index, key) in enumerate(group_keys)])
-    
+
     # keep only the needed columns (to make the grouping faster)
     outputs = outputs[group_keys + [x_name, y_name]]
 
@@ -229,7 +229,7 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}
                     line_label_list.append('{}'.format(label))
                 else:
                     line_label_list.append('{}: {}'.format(group_keys_upper[label_group_index], outputs_group_name[label_group_index]))
-        
+
         kwargs = {'label': ' - '.join(line_label_list)}
 
         # apply user colors
@@ -239,7 +239,7 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}
             pass
         else:
             kwargs['color'] = color
-        
+
         # apply user lines style
         try:
             linestyle = next(matplot_linestyles_cycler)
@@ -247,7 +247,7 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}
             pass
         else:
             kwargs['linestyle'] = linestyle
-        
+
         # plot the line
         ax.plot(outputs_group[x_name], outputs_group[y_name], **kwargs)
 
@@ -255,6 +255,7 @@ def plot(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}
     ax.set_ylabel(y_label)
     ax.legend(prop={'size':10}, framealpha=0.5)
     ax.set_title(title)
+    plt.tight_layout()
 
     if plot_filepath is None:
         # display the plot
