@@ -106,21 +106,28 @@ def test_run():
     phytomer1.lamina.elements.append(lamina_element)
 
     phytomer1.sheath = cnwheat_model.Sheath()
-    sheath_element = cnwheat_model.SheathElement(area=0.0006, mstruct=0.103, width=0.042, height=0.5,
+    sheath_element = cnwheat_model.SheathElement(area=0.0006, mstruct=0.103, width=0.0011, height=0.5,
                                     starch=0, sucrose=0, triosesP=0, fructan=0,
                                     nitrates=0 , amino_acids=0, proteins=130)
     phytomer1.sheath.elements.append(sheath_element)
 
+    phytomer1.internode = cnwheat_model.Internode()
+    internode_element1 = cnwheat_model.InternodeElement(area=0.0012, mstruct=0.148, width=0.00257, height=0.3,
+                                          starch=0, sucrose=0, triosesP=0, fructan=0,
+                                          nitrates=0, amino_acids=0, proteins=20, index=1, exposed=False)
+    phytomer1.internode.elements.append(internode_element1)
+    axis.phytomers.append(phytomer1)
+
     # Phytomer 4
     phytomer4 = cnwheat_model.Phytomer(index=4)
     phytomer4.peduncle = cnwheat_model.Peduncle()
-    peduncle_element1 = cnwheat_model.PeduncleElement(area=0.00155, mstruct=0.168, width= 0.031, height=0.65,
+    peduncle_element1 = cnwheat_model.PeduncleElement(area=0.00155, mstruct=0.168, width= 0.00349, height=0.65,
                                         starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0,
                                         amino_acids=0, proteins=30, index=1, exposed=False)
     phytomer4.peduncle.elements.append(peduncle_element1)
 
     # Exposed peduncle
-    peduncle_element2 = cnwheat_model.PeduncleElement(area=0.00085, mstruct=0.089, width= 0.031, height=0.5,
+    peduncle_element2 = cnwheat_model.PeduncleElement(area=0.00085, mstruct=0.089, width= 0.00349, height=0.5,
                                         starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0,
                                         amino_acids=0, proteins=180, index=2)
     phytomer4.peduncle.elements.append(peduncle_element2)
@@ -129,16 +136,16 @@ def test_run():
     # Phytomer 5
     phytomer5 = cnwheat_model.Phytomer(index=5)
     phytomer5.chaff = cnwheat_model.Chaff()
-    chaff_element = cnwheat_model.ChaffElement(area=0.00075, mstruct=0.21, width=0.02, height= 0.7, starch=0,
+    chaff_element = cnwheat_model.ChaffElement(area=0.00075, mstruct=0.21, width=0.00265, height= 0.7, starch=0,
                                   sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0,
                                   proteins=260)
     phytomer5.chaff.elements.append(chaff_element)
     axis.phytomers.append(phytomer5)
 
-    # Get assimilation and transpiration data
-    data_file_path = os.path.join(DATA_DIRPATH, 'An_Tr.csv')
-    An_Tr_dF = pd.read_csv(data_file_path)
-    An_Tr_dF_grouped = An_Tr_dF.groupby(['t', 'plant', 'axis', 'phytomer', 'organ', 'element'])
+    # Get assimilation, transpiration, organ temperature and stomatal conductance data
+    data_file_path = os.path.join(DATA_DIRPATH, 'An_Tr_Ts_gs.csv')
+    An_Tr_Ts_gs_df = pd.read_csv(data_file_path)
+    An_Tr_Ts_gs_dF_grouped = An_Tr_Ts_gs_df.groupby(['t', 'plant', 'axis', 'phytomer', 'organ', 'element'])
 
     # initialize the model
     cnwheat_ = simulation.CNWheat(population=population)
@@ -166,8 +173,10 @@ def test_run():
                             orgid = organ.__class__.__name__
                             for photosynthetic_organ_element in organ.elements:
                                 eltid = photosynthetic_organ_element.index
-                                photosynthetic_organ_element.An = An_Tr_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).An.values[0]
-                                photosynthetic_organ_element.Tr = An_Tr_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).Tr.values[0]
+                                photosynthetic_organ_element.An = An_Tr_Ts_gs_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).An.values[0]
+                                photosynthetic_organ_element.Tr = An_Tr_Ts_gs_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).Tr.values[0]
+                                photosynthetic_organ_element.Ts = An_Tr_Ts_gs_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).Ts.values[0]
+                                photosynthetic_organ_element.gs = An_Tr_Ts_gs_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).gs.values[0]
 
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
         all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = cnwheat_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
