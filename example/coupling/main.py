@@ -32,6 +32,7 @@ import logging.config
 import json
 
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from cnwheat import simulation
 from cnwheat import model as cnwheat_model
@@ -124,20 +125,20 @@ if __name__ == '__main__':
     phytomer1.lamina.elements.append(lamina_element)
 
     phytomer1.sheath = cnwheat_model.Sheath()
-    sheath_element = cnwheat_model.SheathElement(area=0.0006, mstruct=0.103, width=0.042, height=0.5,
+    sheath_element = cnwheat_model.SheathElement(area=0.0006, mstruct=0.103, width=0.0011, height=0.5,
                                     starch=0, sucrose=0, triosesP=0, fructan=0,
                                     nitrates=0 , amino_acids=0, proteins=130)
     phytomer1.sheath.elements.append(sheath_element)
 
     # Internode enclosed
     phytomer1.internode = cnwheat_model.Internode()
-    internode_element1 = cnwheat_model.InternodeElement(area=0.0012, mstruct=0.148, width=0.042, height=0.3,
+    internode_element1 = cnwheat_model.InternodeElement(area=0.0012, mstruct=0.148, width=0.00257, height=0.3,
                                           starch=0, sucrose=0, triosesP=0, fructan=0,
                                           nitrates=0, amino_acids=0, proteins=20, index=1, exposed=False)
     phytomer1.internode.elements.append(internode_element1)
 
     # Internode exposed
-    internode_element2 = cnwheat_model.InternodeElement(area=0.0003, mstruct=0.04, width=0.042, height=0.4,
+    internode_element2 = cnwheat_model.InternodeElement(area=0.0003, mstruct=0.04, width=0.00257, height=0.4,
                                           starch=0, sucrose=0, triosesP=0, fructan=0,
                                           nitrates=0, amino_acids=0, proteins=90, index=2)
     phytomer1.internode.elements.append(internode_element2)
@@ -154,13 +155,13 @@ if __name__ == '__main__':
     phytomer2.lamina.elements.append(lamina_element)
 
     phytomer2.sheath = cnwheat_model.Sheath()
-    sheath_element = cnwheat_model.SheathElement(area=0.0005, mstruct=0.069, width=0.043, height=0.3,
+    sheath_element = cnwheat_model.SheathElement(area=0.0005, mstruct=0.069, width=0.00091, height=0.3,
                                     starch=0, sucrose=0, triosesP=0, fructan=0,
                                     nitrates=0 , amino_acids=0, proteins=47)
     phytomer2.sheath.elements.append(sheath_element)
 
     phytomer2.internode = cnwheat_model.Internode()
-    internode_element = cnwheat_model.InternodeElement(area=0.0004, mstruct=0.18, width=0.043, height=0.18,
+    internode_element = cnwheat_model.InternodeElement(area=0.0004, mstruct=0.18, width=0.00099, height=0.18,
                                           starch=0, sucrose=0, triosesP=0, fructan=0,
                                           nitrates=0, amino_acids=0, proteins=20)
     phytomer2.internode.elements.append(internode_element)
@@ -177,13 +178,13 @@ if __name__ == '__main__':
     phytomer3.lamina.elements.append(lamina_element)
 
     phytomer3.sheath = cnwheat_model.Sheath()
-    sheath_element = cnwheat_model.SheathElement(area=0.0004, mstruct=0.043, width=0.04, height=0.18,
+    sheath_element = cnwheat_model.SheathElement(area=0.0004, mstruct=0.043, width=0.00051, height=0.18,
                                     starch=0, sucrose=0, triosesP=0, fructan=0,
                                     nitrates=0 , amino_acids=0, proteins=13)
     phytomer3.sheath.elements.append(sheath_element)
 
     phytomer3.internode = cnwheat_model.Internode()
-    internode_element = cnwheat_model.InternodeElement(area=0.00025, mstruct=0.154, width=0.04, height=0.08,
+    internode_element = cnwheat_model.InternodeElement(area=0.00025, mstruct=0.154, width=0.00093, height=0.08,
                                           starch=0, sucrose=0, triosesP=0, fructan=0,
                                           nitrates=0, amino_acids=0, proteins=0)
     phytomer3.internode.elements.append(internode_element)
@@ -195,13 +196,13 @@ if __name__ == '__main__':
 
     # Enclosed peduncle
     phytomer4.peduncle = cnwheat_model.Peduncle()
-    peduncle_element1 = cnwheat_model.PeduncleElement(area=0.00155, mstruct=0.168, width= 0.031, height=0.65,
+    peduncle_element1 = cnwheat_model.PeduncleElement(area=0.00155, mstruct=0.168, width= 0.00349, height=0.65,
                                         starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0,
                                         amino_acids=0, proteins=30, index=1, exposed=False)
     phytomer4.peduncle.elements.append(peduncle_element1)
 
     # Exposed peduncle
-    peduncle_element2 = cnwheat_model.PeduncleElement(area=0.00085, mstruct=0.089, width= 0.031, height=0.5,
+    peduncle_element2 = cnwheat_model.PeduncleElement(area=0.00085, mstruct=0.089, width= 0.00349, height=0.5,
                                         starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0,
                                         amino_acids=0, proteins=180, index=2)
     phytomer4.peduncle.elements.append(peduncle_element2)
@@ -210,7 +211,7 @@ if __name__ == '__main__':
     # Phytomer 5 (reproductive)
     phytomer5 = cnwheat_model.Phytomer(index=5)
     phytomer5.chaff = cnwheat_model.Chaff()
-    chaff_element = cnwheat_model.ChaffElement(area=0.00075, mstruct=0.21, width=0.02, height= 0.7, starch=0,
+    chaff_element = cnwheat_model.ChaffElement(area=0.00075, mstruct=0.21, width=0.00265, height= 0.7, starch=0,
                                   sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0,
                                   proteins=260)
     phytomer5.chaff.elements.append(chaff_element)
@@ -254,12 +255,14 @@ if __name__ == '__main__':
                             for element in organ.elements:
                                 eltid = element.index
                                 PAR = PAR_dF_grouped.get_group((t_photosynthesis_model, pid, axid, phytoid, orgid, eltid)).PAR.values[0]
-                                An, Tr = photosynthesis_model.PhotosynthesisModel.calculate_An(element.width,
+                                An, Tr, Ts, gs = photosynthesis_model.PhotosynthesisModel.calculate_An(element.width,
                                     element.height, PAR, meteo_df['air_temperature'][t_photosynthesis_model],
                                     meteo_df['ambient_CO2'][t_photosynthesis_model], meteo_df['humidity'][t_photosynthesis_model],
-                                    meteo_df['Wind'][t_photosynthesis_model])
+                                    meteo_df['Wind'][t_photosynthesis_model], orgid)
                                 element.An = An
                                 element.Tr = Tr
+                                element.Ts = Ts
+                                element.gs = gs
 
         for t_cn_model in xrange(t_photosynthesis_model, t_photosynthesis_model + photosynthesis_model_ts, cn_model_ts):
             # update the population
@@ -305,7 +308,7 @@ x_label='Time (Hour)'
 # Photosynthetic organs
 ph_elements_output_df = pd.read_csv(ELEMENTS_OUTPUTS_FILENAME)
 
-graph_variables_ph_elements = {'An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration (mm H$_{2}$0 h$^{-1}$)',
+graph_variables_ph_elements = {'An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration (mm H$_{2}$0 h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
                    'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
                    'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
                    'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
@@ -331,7 +334,7 @@ organs_output_df = pd.read_csv(ORGANS_OUTPUTS_FILENAME)
 graph_variables_ph_elements = {'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Dry_Mass':'Dry mass (g)',
                     'Conc_Nitrates_Soil':u'[Nitrates] (µmol m$^{-3}$)','Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Proteins_N_Mass': u'[N Proteins] (g)',
                     'Uptake_Nitrates':u'Nitrates uptake (µmol h$^{-1}$)', 'Unloading_Sucrose': u'Unloaded_Sucrose (µmol C sucrose g$^{-1}$ mstruct h$^{-1}$)', 'Unloading_Amino_Acids':u'Unloaded Amino Acids (µmol N AA g$^{-1}$ mstruct h$^{-1}$)',
-                    'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N AA h$^{-1}$)'}
+                    'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N AA h$^{-1}$)'}
 
 for org in (['Roots'], ['Grains'], ['Phloem']):
     for variable_name, variable_label in graph_variables_ph_elements.iteritems():
@@ -344,3 +347,48 @@ for org in (['Roots'], ['Grains'], ['Phloem']):
                       filters={'organ': org},
                       plot_filepath=os.path.join(graphs_dirpath, graph_name),
                       explicit_label=False)
+
+# Integrated graphs
+import matplotlib.pyplot as plt
+fig, (ax1, ax2) = plt.subplots(2, sharex=True)
+
+N_compartments = ['nitrates', 'amino_acids', 'proteins']
+t = ph_elements_output_df['t'].unique()
+
+# Photosynthetic organs
+ph_elements_output_df_group = ph_elements_output_df.groupby('t').sum()
+ax1.plot(t, ph_elements_output_df_group[N_compartments[0]]*14*1E-3, label='Nitrates ph', color='g', linestyle ="-.", linewidth=2)
+ax1.plot(t, ph_elements_output_df_group[N_compartments[1]]*14*1E-3, label='Amino acids ph', color='g', linestyle =":", linewidth=2)
+ax1.plot(t, ph_elements_output_df_group[N_compartments[2]]*14*1E-3, label='Proteins ph', color='g', linestyle ="--", linewidth=2)
+
+# Roots
+roots_output_df_group = organs_output_df[organs_output_df['organ']=='Roots'].groupby('t').sum()
+ax1.plot(t, roots_output_df_group[N_compartments[0]]*14*1E-3, label='Nitrates roots', color='k', linestyle ="-.", linewidth=2)
+ax1.plot(t, roots_output_df_group[N_compartments[1]]*14*1E-3, label='Amino acids roots', color='k', linestyle =":", linewidth=2)
+
+# Phloem
+AA_phlo = organs_output_df[organs_output_df['organ']=='Phloem'].groupby('t').sum()[N_compartments[1]]*14*1E-3
+ax1.plot(t, AA_phlo, label='Amino acid phloem', color='b', linestyle =":", linewidth=2)
+
+# Grains
+prot_grains = organs_output_df[organs_output_df['organ']=='Grains'].groupby('t').sum()[N_compartments[2]]*14*1E-3
+ax1.plot(t, prot_grains, label='Proteins grains', color='y', linestyle ="--", linewidth=2)
+
+# Total
+N_tot = ph_elements_output_df_group[N_compartments].sum(axis=1)*14*1E-3 + roots_output_df_group[N_compartments].sum(axis=1)*14*1E-3 + AA_phlo + prot_grains
+ax1.plot(t, N_tot, label='Total', color='r', linewidth=2)
+ax2.plot(t, ph_elements_output_df_group[N_compartments].sum(axis=1)*14*1E-3, label='N ph', color='g', linewidth=2)
+ax2.plot(t, roots_output_df_group[N_compartments].sum(axis=1)*14*1E-3 , label='N roots', color='k', linewidth=2)
+ax2.plot(t, AA_phlo, label='N phloem', color='b', linewidth=2)
+ax2.plot(t, prot_grains, label='N grains', color='y', linewidth=2)
+ax2.plot(t, N_tot, label='Total', color='r', linewidth=2)
+
+# Formatting
+ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+ax1.set_ylabel('Total tiller N mass (mg)')
+ax2.set_ylabel('Total tiller N mass (mg)')
+ax2.set_xlabel(x_label)
+plt.tight_layout(rect=[0, 0, 0.65, 1])
+plt.savefig(os.path.join(graphs_dirpath, 'Cumulative_N.PNG'), dpi=200, format='PNG')
+plt.close()
