@@ -31,7 +31,11 @@ import pandas as pd
 from cnwheat import simulation
 from cnwheat import model as cnwheat_model
 
-DATA_DIRPATH = 'data'
+INPUTS_DIRPATH = 'inputs'
+
+AN_TR_TS_GS_FILENAME = 'An_Tr_Ts_gs.csv'
+
+OUTPUTS_DIRPATH = 'outputs'
 
 DESIRED_PLANTS_OUTPUTS_FILENAME = 'desired_plants_outputs.csv'
 DESIRED_AXES_OUTPUTS_FILENAME = 'desired_axes_outputs.csv'
@@ -55,9 +59,9 @@ def read_t_data(curr_data_dirpath, data_filename):
     return pd.read_csv(data_filepath, sep=None, index_col='t', engine = 'python')
 
 
-def compare_actual_to_desired(DATA_DIRPATH, actual_output_df, desired_output_filename, actual_output_filename, save_actual_output=False):
+def compare_actual_to_desired(outputs_dirpath, actual_output_df, desired_output_filename, actual_output_filename, save_actual_output=False):
     # read desired output
-    desired_output_filepath = os.path.join(DATA_DIRPATH, desired_output_filename)
+    desired_output_filepath = os.path.join(outputs_dirpath, desired_output_filename)
     desired_output_df = pd.read_csv(desired_output_filepath)
 
     # keep only the rows to test
@@ -67,7 +71,7 @@ def compare_actual_to_desired(DATA_DIRPATH, actual_output_df, desired_output_fil
     actual_output_df = actual_output_df[desired_output_df.columns]
 
     if save_actual_output:
-        actual_output_filepath = os.path.join(DATA_DIRPATH, actual_output_filename)
+        actual_output_filepath = os.path.join(outputs_dirpath, actual_output_filename)
         actual_output_df.to_csv(actual_output_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(PRECISION))
 
     # keep only numerical data
@@ -143,9 +147,9 @@ def test_run():
     axis.phytomers.append(phytomer5)
 
     # Get assimilation, transpiration, organ temperature and stomatal conductance data
-    data_file_path = os.path.join(DATA_DIRPATH, 'An_Tr_Ts_gs.csv')
-    An_Tr_Ts_gs_df = pd.read_csv(data_file_path)
-    An_Tr_Ts_gs_dF_grouped = An_Tr_Ts_gs_df.groupby(['t', 'plant', 'axis', 'phytomer', 'organ', 'element'])
+    An_Tr_Ts_gs_filepath = os.path.join(INPUTS_DIRPATH, AN_TR_TS_GS_FILENAME)
+    An_Tr_Ts_gs_df = pd.read_csv(An_Tr_Ts_gs_filepath)
+    An_Tr_Ts_gs_grouped = An_Tr_Ts_gs_df.groupby(simulation.CNWheat.ELEMENTS_INDEXES)
 
     # initialize the model
     cnwheat_ = simulation.CNWheat(population=population)
@@ -173,10 +177,13 @@ def test_run():
                             orgid = organ.__class__.__name__
                             for photosynthetic_organ_element in organ.elements:
                                 eltid = photosynthetic_organ_element.index
-                                photosynthetic_organ_element.An = An_Tr_Ts_gs_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).An.values[0]
-                                photosynthetic_organ_element.Tr = An_Tr_Ts_gs_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).Tr.values[0]
-                                photosynthetic_organ_element.Ts = An_Tr_Ts_gs_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).Ts.values[0]
-                                photosynthetic_organ_element.gs = An_Tr_Ts_gs_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).gs.values[0]
+                                exposed = photosynthetic_organ_element.exposed
+                                group = An_Tr_Ts_gs_grouped.get_group((t, pid, axid, phytoid, orgid, eltid, exposed))
+                                row_index = group.first_valid_index()
+                                photosynthetic_organ_element.An = group.An[row_index]
+                                photosynthetic_organ_element.Tr = group.Tr[row_index]
+                                photosynthetic_organ_element.Ts = group.Ts[row_index]
+                                photosynthetic_organ_element.gs = group.gs[row_index]
 
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
         all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = cnwheat_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
@@ -188,23 +195,23 @@ def test_run():
 
     global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
     global_plants_df.drop_duplicates(subset=simulation.CNWheat.PLANTS_INDEXES, inplace=True)
-    compare_actual_to_desired(DATA_DIRPATH, global_plants_df, DESIRED_PLANTS_OUTPUTS_FILENAME, ACTUAL_PLANTS_OUTPUTS_FILENAME, True)
+    compare_actual_to_desired(OUTPUTS_DIRPATH, global_plants_df, DESIRED_PLANTS_OUTPUTS_FILENAME, ACTUAL_PLANTS_OUTPUTS_FILENAME, True)
 
     global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
     global_axes_df.drop_duplicates(subset=simulation.CNWheat.AXES_INDEXES, inplace=True)
-    compare_actual_to_desired(DATA_DIRPATH, global_axes_df, DESIRED_AXES_OUTPUTS_FILENAME, ACTUAL_AXES_OUTPUTS_FILENAME, True)
+    compare_actual_to_desired(OUTPUTS_DIRPATH, global_axes_df, DESIRED_AXES_OUTPUTS_FILENAME, ACTUAL_AXES_OUTPUTS_FILENAME, True)
 
     global_phytomers_df = pd.concat(all_phytomers_df_list, ignore_index=True)
     global_phytomers_df.drop_duplicates(subset=simulation.CNWheat.PHYTOMERS_INDEXES, inplace=True)
-    compare_actual_to_desired(DATA_DIRPATH, global_phytomers_df, DESIRED_PHYTOMERS_OUTPUTS_FILENAME, ACTUAL_PHYTOMERS_OUTPUTS_FILENAME, True)
+    compare_actual_to_desired(OUTPUTS_DIRPATH, global_phytomers_df, DESIRED_PHYTOMERS_OUTPUTS_FILENAME, ACTUAL_PHYTOMERS_OUTPUTS_FILENAME, True)
 
     global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
     global_organs_df.drop_duplicates(subset=simulation.CNWheat.ORGANS_INDEXES, inplace=True)
-    compare_actual_to_desired(DATA_DIRPATH, global_organs_df, DESIRED_ORGANS_OUTPUTS_FILENAME, ACTUAL_ORGANS_OUTPUTS_FILENAME, True)
+    compare_actual_to_desired(OUTPUTS_DIRPATH, global_organs_df, DESIRED_ORGANS_OUTPUTS_FILENAME, ACTUAL_ORGANS_OUTPUTS_FILENAME, True)
 
     global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
     global_elements_df.drop_duplicates(subset=simulation.CNWheat.ELEMENTS_INDEXES, inplace=True)
-    compare_actual_to_desired(DATA_DIRPATH, global_elements_df, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME, True)
+    compare_actual_to_desired(OUTPUTS_DIRPATH, global_elements_df, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME, True)
 
 
 if __name__ == '__main__':

@@ -158,9 +158,11 @@ class CNWheat(object):
             - `number_of_output_steps` (:class:`int`) - Number of time points for which to compute the CN exchanges in :attr:`population`.
 
             - `odeint_mxstep` (:class:`int`) - Maximum number of (internally defined) steps allowed for each integration point in time grid.
-              `odeint_mxstep` is passed to :func:`scipy.integrate.odeint` as `mxstep`. If `odeint_mxstep` = 0, then `mxstep` is determined by the solver.
-              The default value ( `5000` ) normally permits to solve the current model. User should increased this value if a more complex model is defined
-              and if this model make the integration failed.
+              `odeint_mxstep` is passed to :func:`scipy.integrate.odeint` as `mxstep`. If `odeint_mxstep` = 0 (the default), then `mxstep` is determined by the solver.
+              Normally, the `mxstep` determined by the solver permits to solve the current model. User can try to increase this value if a more complex model is defined
+              and if the integration failed. However, take care that the origin of an integration failure could be a discontinuity in the RHS function used 
+              by :func:`scipy.integrate.odeint`, and that this discontinuity could be due to a bug in your model. To summary: if the integration failed, first 
+              check the logs. 
 
             - `show_progressbar` (:class:`bool`) - True: show the progress bar ; False: do not show the progress bar.
 

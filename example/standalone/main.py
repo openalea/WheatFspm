@@ -39,7 +39,11 @@ from cnwheat import tools
 
 t0 = time.time()
 
-DATA_DIRPATH = 'data'
+INPUTS_DIRPATH = 'inputs'
+
+AN_TR_TS_GS_FILENAME = 'An_Tr_Ts_gs.csv'
+
+OUTPUTS_DIRPATH = 'outputs'
 
 PLANTS_OUTPUTS_FILENAME = 'plants_outputs.csv'
 AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
@@ -47,7 +51,7 @@ PHYTOMERS_OUTPUTS_FILENAME = 'phytomers_outputs.csv'
 ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
 ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
 
-OUTPUT_PRECISION = 6
+OUTPUTS_PRECISION = 6
 
 LOGGING_CONFIG_FILEPATH = os.path.join('..', 'logging.json')
 
@@ -216,9 +220,9 @@ if __name__ == '__main__':
     axis.phytomers.append(phytomer5)
 
     # Get assimilation and transpiration data
-    data_file_path = os.path.join(DATA_DIRPATH, 'An_Tr.csv')
-    An_Tr_dF = pd.read_csv(data_file_path)
-    An_Tr_dF_grouped = An_Tr_dF.groupby(['t', 'plant', 'axis', 'phytomer', 'organ', 'element'])
+    An_Tr_Ts_gs_filepath = os.path.join(INPUTS_DIRPATH, AN_TR_TS_GS_FILENAME)
+    An_Tr_Ts_gs_df = pd.read_csv(An_Tr_Ts_gs_filepath)
+    An_Tr_Ts_gs_grouped = An_Tr_Ts_gs_df.groupby(simulation.CNWheat.ELEMENTS_INDEXES)
 
     # initialize the model
     cnwheat_ = simulation.CNWheat(population=population)
@@ -246,8 +250,13 @@ if __name__ == '__main__':
                             orgid = organ.__class__.__name__
                             for photosynthetic_organ_element in organ.elements:
                                 eltid = photosynthetic_organ_element.index
-                                photosynthetic_organ_element.An = An_Tr_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).An.values[0]
-                                photosynthetic_organ_element.Tr = An_Tr_dF_grouped.get_group((t, pid, axid, phytoid, orgid, eltid)).Tr.values[0]
+                                exposed = photosynthetic_organ_element.exposed
+                                group = An_Tr_Ts_gs_grouped.get_group((t, pid, axid, phytoid, orgid, eltid, exposed))
+                                row_index = group.first_valid_index()
+                                photosynthetic_organ_element.An = group.An[row_index]
+                                photosynthetic_organ_element.Tr = group.Tr[row_index]
+                                photosynthetic_organ_element.Ts = group.Ts[row_index]
+                                photosynthetic_organ_element.gs = group.gs[row_index]
 
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
         all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = cnwheat_.run(start_time=t, stop_time=t+timestep, number_of_output_steps=timestep+1)
@@ -259,37 +268,41 @@ if __name__ == '__main__':
 
     global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
     global_plants_df.drop_duplicates(subset=simulation.CNWheat.PLANTS_INDEXES, inplace=True)
-    global_plants_df.to_csv(PLANTS_OUTPUTS_FILENAME, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    plants_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, PLANTS_OUTPUTS_FILENAME)
+    global_plants_df.to_csv(plants_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
     global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
     global_axes_df.drop_duplicates(subset=simulation.CNWheat.AXES_INDEXES, inplace=True)
-    global_axes_df.to_csv(AXES_OUTPUTS_FILENAME, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    axes_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, AXES_OUTPUTS_FILENAME)
+    global_axes_df.to_csv(axes_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
     global_phytomers_df = pd.concat(all_phytomers_df_list, ignore_index=True)
     global_phytomers_df.drop_duplicates(subset=simulation.CNWheat.PHYTOMERS_INDEXES, inplace=True)
-    global_phytomers_df.to_csv(PHYTOMERS_OUTPUTS_FILENAME, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    phytomers_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, PHYTOMERS_OUTPUTS_FILENAME)
+    global_phytomers_df.to_csv(phytomers_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
     global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
     global_organs_df.drop_duplicates(subset=simulation.CNWheat.ORGANS_INDEXES, inplace=True)
-    global_organs_df.to_csv(ORGANS_OUTPUTS_FILENAME, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    organs_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ORGANS_OUTPUTS_FILENAME)
+    global_organs_df.to_csv(organs_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
     global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
     global_elements_df.drop_duplicates(subset=simulation.CNWheat.ELEMENTS_INDEXES, inplace=True)
-    global_elements_df.to_csv(ELEMENTS_OUTPUTS_FILENAME, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUT_PRECISION))
+    elements_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME)
+    global_elements_df.to_csv(elements_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
     execution_time = int(time.time()-t0)
     print '\n', 'Model executed in ', str(datetime.timedelta(seconds=execution_time))
 
 
 ####POST-PROCESSING##
-import os
 
-graphs_dirpath = 'Graphs'
+graphs_dirpath = 'graphs' # graphs_dirpath must be an existing directory
 x_name = 't'
 x_label='Time (Hour)'
 
 # Photosynthetic organs
-ph_elements_output_df = pd.read_csv(ELEMENTS_OUTPUTS_FILENAME)
+ph_elements_output_df = pd.read_csv(elements_outputs_filepath)
 
 graph_variables_ph_elements = {'An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration (mm H$_{2}$0 h$^{-1}$)',
                    'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
@@ -312,7 +325,7 @@ for org_ph in (['Lamina'], ['Sheath'], ['Internode'], ['Peduncle', 'Chaff']):
                       explicit_label=False)
 
 # Roots, grains and phloem
-organs_output_df = pd.read_csv(ORGANS_OUTPUTS_FILENAME)
+organs_output_df = pd.read_csv(organs_outputs_filepath)
 
 graph_variables_ph_elements = {'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Dry_Mass':'Dry mass (g)',
                     'Conc_Nitrates_Soil':u'[Nitrates] (µmol m$^{-3}$)','Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Proteins_N_Mass': u'[N Proteins] (g)',

@@ -15,7 +15,14 @@
             "stream": "ext://sys.stdout",
             "formatter": "verbose"
         },
-        "file": {
+        "file_info": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "info.log",
+            "mode": "w",
+            "formatter": "verbose"
+        },
+        "file_debug": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": "debug.log",
@@ -97,13 +104,13 @@
         "cnwheat": {
             "handlers": [
                 "console",
-                "file"
+                "file_info",
+                "file_debug"
             ]
         },
         "cnwheat.model": {
             "handlers": [
-                "console",
-                "file"
+                "file_debug"
             ],
             "propagate": false
         },
