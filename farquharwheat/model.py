@@ -7,7 +7,9 @@ from __future__ import division # use '//' to do integer division
     farquharwheat.model
     ~~~~~~~~~~~~~~~~~~~
 
-    Model of photosynthesis based on Farquhar's approach. The model includes the dependance of photosynthesis to organ temperature and nitrogen content. Internal CO2 and organ temperature are found numerically.
+    Model of photosynthesis based on Farquhar's approach. 
+    The model includes the dependence of photosynthesis to organ temperature and nitrogen content. 
+    Internal CO2 and organ temperature are found numerically.
 
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
@@ -87,7 +89,6 @@ class PhotosynthesisModel(object):
             - Torg: organ temperature (degree C). Torg = Ta at the first iteration of the numeric resolution
             - RH: Relative humidity (decimal fraction)
 
-        :class:`_org_temperature` should NOT be INSTANTIATE directly.
         """
 
         d = 0.7*Zh                                          # Zero plane displacement height (m)
@@ -147,7 +148,6 @@ class PhotosynthesisModel(object):
             - Na: nitrogen content of organ (g m-2)
             - ambient_CO2: Air CO2 (umol mol-1)
             - RH: Relative humidity (decimal fraction)
-        :class:`_stomatal_conductance` should NOT be INSTANTIATE directly.
         """
 
         Cs = ambient_CO2 - An *(1.37/(cls.GB))                   # CO2 concentration at org surface (umol mol-1 or Pa). From Prieto et al. (2012). GB in mol m-2 s-1
@@ -162,7 +162,6 @@ class PhotosynthesisModel(object):
             - pname: name of parameter
             - p25: parameter value at 25 degree C
             - T: organ temperature (degree C)
-        :class:`_f_temperature` should NOT be INSTANTIATE directly.
         """
         Tk = T + 273.15
         deltaHa = cls.PARAM_TEMP['deltaHa'][pname]
@@ -190,7 +189,6 @@ class PhotosynthesisModel(object):
             - Na: nitrogen content of organ (g m-2)
             - Torf: organ temperature (degree C)
             - Ci: internal CO2 (umol mol-1), by default = 0.7*CO2air
-        :class:`_photosynthesis` should NOT be INSTANTIATE directly.
         """
 
         ### # RuBisCO-limited carboxylation rate ###

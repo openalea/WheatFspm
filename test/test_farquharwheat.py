@@ -8,8 +8,6 @@
     You must first install :mod:`farquharwheat` (and add it to your PYTHONPATH) 
     before running this script with the command `python`. 
 
-    CSV files must contain only ASCII characters and ',' as separator.
-    
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
 """
@@ -30,7 +28,6 @@ def assert_close(actual, desired, tolerance=0.01):
 
 def test_calculate_An():
     
-    t = 36
     organ_width = 0.018
     organ_height = 0.6
     PAR = 24.64
@@ -38,12 +35,13 @@ def test_calculate_An():
     ambient_CO2 = 360
     humidity = 0.96
     Wind = 3.032
+    organ_name = 'Lamina'
     
-    actual_An, actual_Tr = model.PhotosynthesisModel.calculate_An(organ_width, organ_height, 
-        PAR, air_temperature, ambient_CO2, humidity, Wind)
+    actual_An, actual_Tr, _, _ = model.PhotosynthesisModel.calculate_An(organ_width, organ_height, 
+        PAR, air_temperature, ambient_CO2, humidity, Wind, organ_name)
     
     desired_An = 1.22
-    desired_Tr = 1.45e-6
+    desired_Tr = 1.65e-6
     
     assert_close(actual_An, desired_An, tolerance=1e-3)
     assert_close(actual_Tr, desired_Tr, tolerance=1e-8)
