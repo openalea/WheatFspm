@@ -239,6 +239,8 @@ if __name__ == '__main__':
 
     for t in xrange(start_time, stop_time, timestep):
         # update the population
+        population.t = t
+
         for plant in population.plants:
             pid = plant.index
             for axis in plant.axes:

@@ -115,7 +115,7 @@ if __name__ == '__main__':
     axis = cnwheat_model.Axis(axis_type='MS', index=0)
     plant.axes.append(axis)
 
-    axis.grains = cnwheat_model.Grains(starch=0, structure=10850, proteins=170)
+    axis.grains = cnwheat_model.Grains(starch=0, structure=4000, proteins=170)
 
     axis.roots = cnwheat_model.Roots(mstruct=0.504, sucrose=0, nitrates=0, amino_acids=0)
 
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     phytomer3.internode = cnwheat_model.Internode()
     internode_element = cnwheat_model.InternodeElement(area=0.00025, mstruct=0.154, width=0.00093, height=0.08,
                                           starch=0, sucrose=0, triosesP=0, fructan=0,
-                                          nitrates=0, amino_acids=0, proteins=0)
+                                          nitrates=0, amino_acids=0, proteins=20)
     phytomer3.internode.elements.append(internode_element)
 
     axis.phytomers.append(phytomer3)
@@ -236,7 +236,7 @@ if __name__ == '__main__':
 
     # run the models
     start_time = 0
-    stop_time = 960 # 960
+    stop_time = 10 # 960
     photosynthesis_model_ts = 2
     cn_model_ts = 1 #241
 
@@ -248,6 +248,7 @@ if __name__ == '__main__':
 
     for t_photosynthesis_model in xrange(start_time, stop_time, photosynthesis_model_ts):
         # update the population
+        population.t = t_photosynthesis_model
         # run the model of photosynthesis and update the population
         for plant in population.plants:
             pid = plant.index
@@ -262,8 +263,7 @@ if __name__ == '__main__':
                                 eltid = element.index
                                 exposed = element.exposed
                                 PAR = PAR_grouped.get_group((t_photosynthesis_model, pid, axid, phytoid, orgid, eltid, exposed)).PAR.values[0]
-                                An, Tr, Ts, gs = photosynthesis_model.PhotosynthesisModel.calculate_An(element.width,
-                                    element.height, PAR, meteo_df['air_temperature'][t_photosynthesis_model],
+                                An, Tr, Ts, gs = photosynthesis_model.PhotosynthesisModel.calculate_An(element.surfacic_nitrogen, element.width, element.height, PAR, meteo_df['air_temperature'][t_photosynthesis_model],
                                     meteo_df['ambient_CO2'][t_photosynthesis_model], meteo_df['humidity'][t_photosynthesis_model],
                                     meteo_df['Wind'][t_photosynthesis_model], orgid)
                                 element.An = An
@@ -273,6 +273,7 @@ if __name__ == '__main__':
 
         for t_cn_model in xrange(t_photosynthesis_model, t_photosynthesis_model + photosynthesis_model_ts, cn_model_ts):
             # update the population
+            population.t = t_cn_model
             # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
             all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = cnwheat_.run(start_time=t_cn_model, stop_time=t_cn_model+cn_model_ts, number_of_output_steps=cn_model_ts+1)
             all_plants_df_list.append(all_plants_df)
@@ -321,7 +322,7 @@ ph_elements_output_df = pd.read_csv(elements_outputs_filepath)
 
 graph_variables_ph_elements = {'An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration (mm H$_{2}$0 h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
                    'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
-                   'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
+                   'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)', 'SLN': u'Surfacic nitrogen content (g m$^{-2}$)',
                    'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
                    'S_Amino_Acids': u'[Rate of amino acids synthesis] (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'D_Proteins': u'Rate of protein degradation (µmol N g$^{-1}$ mstruct h$^{-1}$)',
                    'Loading_Sucrose': u'Loading Sucrose (µmol C sucrose g$^{-1}$ mstruct h$^{-1}$)', 'Loading_Amino_Acids': u'Loading Amino acids (µmol N amino acids g$^{-1}$ mstruct h$^{-1}$)'}
