@@ -166,6 +166,7 @@ def test_run():
 
     for t in xrange(start_time, stop_time, time_step):
         # update the population
+        population.t = t
         for plant in population.plants:
             pid = plant.index
             for axis in plant.axes:
