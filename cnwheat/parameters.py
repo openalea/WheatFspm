@@ -58,7 +58,9 @@ class OrganParameters:
     DELTA_T = 3600                          #: Timestep of the model (s)
 
     C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
-    N_C_SUCROSE = 12                        #: Number of C in 1 mol of sucrose
+    NB_C_SUCROSE = 12                       #: Number of C in 1 mol of sucrose
+    SUCROSE_MOLAR_MASS_C_RATIO = 0.4        #: Contribution of C in sucrose mass
+
     AMINO_ACIDS_C_RATIO = 3.67              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
@@ -77,18 +79,19 @@ class GrainsParameters(OrganParameters):
     """
     Internal parameters of grains.
     """
-    ALPHA = 1 #: Proportion of structural mass containing substrate
+    ALPHA = 1                                   #: Proportion of structural mass containing substrate
+    AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.136      #: Mean contribution of N in amino acids mass contained in gluten (Glu, Gln and Pro)
 
     # Structure parameters
-    VMAX_RGR = 1.9e-06      #: Maximal value of the Relative Growth Rate of grain structure (dimensionless)
-    K_RGR = 300             #: Affinity coefficient of the Relative Growth Rate of grain structure (dimensionless)
+    VMAX_RGR = 1.9e-06                          #: Maximal value of the Relative Growth Rate of grain structure (dimensionless)
+    K_RGR = 300                                 #: Affinity coefficient of the Relative Growth Rate of grain structure (dimensionless)
 
     # Starch parameters
-    VMAX_STARCH = 0.75      #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
-    K_STARCH = 100          #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
+    VMAX_STARCH = 0.75                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
+    K_STARCH = 100                              #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
 
-    Y_GRAINS = 0.75         #: Proportion of C loaded from phloem actually used for grain structure and starch (1 - Y_GRAINS is a kind of growth respiration)
-    FILLING_INIT = 360      #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
+    Y_GRAINS = 0.75                             #: Proportion of C loaded from phloem actually used for grain structure and starch (1 - Y_GRAINS is a kind of growth respiration)
+    FILLING_INIT = 360                          #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
 
 
 class RootsParameters(OrganParameters):
@@ -213,9 +216,9 @@ class LaminaElementParameters(PhotosyntheticOrganElementParameters):
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
     #: Temporary estimation of lamina senescence ({lamina_index: (time of senescence beginning (h), offset of the linear regression)})
-    INFLEXION_POINTS = {1: (600, 78.75),
-                        2: (480, 68.61),
-                        3: (360, 48.76)}
+    INFLEXION_POINTS = {1: (585, 8.57E-3),
+                        2: (465, 7.61E-3),
+                        3: (345, 6.64E-3)}
 
 
 class InternodeElementParameters(PhotosyntheticOrganElementParameters):

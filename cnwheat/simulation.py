@@ -76,7 +76,7 @@ class CNWheat(object):
     ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element', 'exposed']
     ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['Loading_Sucrose', 'Regul_S_Fructan', 'An', 'Tr', 'Ts', 'gs', 'Photosynthesis',
                                                                                                                 'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose',
-                                                                                                                'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins',
+                                                                                                                'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 'SLN',
                                                                                                                 'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan',
                                                                                                                 'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids',
                                                                                                                 'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids']
@@ -160,9 +160,9 @@ class CNWheat(object):
             - `odeint_mxstep` (:class:`int`) - Maximum number of (internally defined) steps allowed for each integration point in time grid.
               `odeint_mxstep` is passed to :func:`scipy.integrate.odeint` as `mxstep`. If `odeint_mxstep` = 0 (the default), then `mxstep` is determined by the solver.
               Normally, the `mxstep` determined by the solver permits to solve the current model. User can try to increase this value if a more complex model is defined
-              and if the integration failed. However, take care that the origin of an integration failure could be a discontinuity in the RHS function used 
-              by :func:`scipy.integrate.odeint`, and that this discontinuity could be due to a bug in your model. To summary: if the integration failed, first 
-              check the logs. 
+              and if the integration failed. However, take care that the origin of an integration failure could be a discontinuity in the RHS function used
+              by :func:`scipy.integrate.odeint`, and that this discontinuity could be due to a bug in your model. To summary: if the integration failed, first
+              check the logs.
 
             - `show_progressbar` (:class:`bool`) - True: show the progress bar ; False: do not show the progress bar.
 
@@ -232,7 +232,9 @@ class CNWheat(object):
             raise CNWheatRunError(message)
 
         last_compartments_values = soln[-1]
-        self._update_population(last_compartments_values)
+        self._update_population(t[-1], last_compartments_values)
+
+        self.population.calculate_integrative_variables()
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
@@ -358,6 +360,7 @@ class CNWheat(object):
             raise CNWheatRunError(message)
 
         y_derivatives = np.zeros_like(y)
+        self.population.t = t
 
         for plant in self.population.plants:
             for axis in plant.axes:
@@ -495,11 +498,12 @@ class CNWheat(object):
         return y_derivatives
 
 
-    def _update_population(self, compartments_values):
+    def _update_population(self, t, compartments_values):
         """Update the state of :attr:`population` from the values in `compartments_values`.
         """
         logger = logging.getLogger(__name__)
         logger.debug('Updating the state of the population...')
+        self.population.t = t
         for model_object, compartments in self.initial_conditions_mapping.iteritems():
             for compartment_name, compartment_index in compartments.iteritems():
                 setattr(model_object, compartment_name, compartments_values[compartment_index])
@@ -632,6 +636,7 @@ class CNWheat(object):
                             elements_df['Conc_Nitrates'] = element.calculate_conc_nitrates(elements_df['nitrates'])
                             elements_df['Conc_Amino_Acids'] = element.calculate_conc_amino_acids(elements_df['amino_acids'])
                             elements_df['Conc_Proteins'] = element.calculate_conc_proteins(elements_df['proteins'])
+                            elements_df['SLN'] = map(element.calculate_surfacic_nitrogen, t, elements_df['nitrates'], elements_df['amino_acids'], elements_df['proteins'])
                             elements_df['S_Starch'] = map(element.calculate_s_starch, elements_df['triosesP'])
                             elements_df['D_Starch'] = map(element.calculate_d_starch, elements_df['starch'])
                             elements_df['S_Sucrose'] = map(element.calculate_s_sucrose, elements_df['triosesP'])
@@ -662,7 +667,7 @@ class CNWheat(object):
                 organs_df['RGR_Structure'] = map(axis.grains.calculate_RGR_structure, phloem_sucrose)
                 organs_df['S_grain_structure'] = map(axis.grains.calculate_s_grain_structure, t, organs_df['structure'], organs_df['RGR_Structure'])
                 organs_df['S_grain_starch'] = map(axis.grains.calculate_s_grain_starch, t, phloem_sucrose)
-                organs_df['Dry_Mass'] = axis.grains.calculate_dry_mass(organs_df['structure'], organs_df['starch'])
+                organs_df['Dry_Mass'] = axis.grains.calculate_dry_mass(organs_df['structure'], organs_df['starch'], organs_df['proteins'])
                 organs_df['Proteins_N_Mass'] = axis.grains.calculate_protein_mass(organs_df['proteins'])
                 organs_df['Unloading_Sucrose'] = map(axis.grains.calculate_unloading_sucrose, organs_df['S_grain_structure'], organs_df['S_grain_starch'], organs_df['structure'])
                 organs_df['S_Proteins'] = map(axis.grains.calculate_s_proteins, organs_df['S_grain_structure'], organs_df['S_grain_starch'], phloem_amino_acids, phloem_sucrose, organs_df['structure'])
