@@ -43,7 +43,7 @@ class PhotosynthesisModel(object):
     #:     * delta1 and delta2: parameters of m (scaling factor of gs) dependance to Na (m2 g-1 and dimensionless respectively)
     PARAM_N = {'S_Na': {'Vc_max25': 63.2, 'Jmax25': 151, 'TPU25': 9.25, 'Rdark25': 0.493}, 'Na_min': {'Vc_max25': 0.198, 'Jmax25': 0.225, 'TPU25': 0.229, 'Rdark25': 0.118},
                 'Gamma_Na1': 0.437, 'Gamma_Na2': 2.29, 'delta1': 14.7, 'delta2': -0.548}
-    NA_0 = 1.5              #: Initial value of Na (g m-2), used if no Na is provided by user
+    NA_0 = 2.5              #: Initial value of Na (g m-2), used if no Na is provided by user
 
     GSMIN = 0.05            #: Stomatal conductance parameter: Minimum gs, measured in the dark (mol m-2 s-1). Braune et al. (2009).
     GB = 3.5                #: Stomatal conductance parameter: Boundary layer conductance (mol m-2 s-1). Muller et al., (2005)

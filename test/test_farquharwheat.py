@@ -36,8 +36,9 @@ def test_calculate_An():
     humidity = 0.96
     Wind = 3.032
     organ_name = 'Lamina'
+    Na = None
     
-    actual_An, actual_Tr, _, _ = model.PhotosynthesisModel.calculate_An(organ_width, organ_height, 
+    actual_An, actual_Tr, _, _ = model.PhotosynthesisModel.calculate_An(Na, organ_width, organ_height, 
         PAR, air_temperature, ambient_CO2, humidity, Wind, organ_name)
     
     desired_An = 1.22
