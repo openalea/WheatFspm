@@ -35,10 +35,15 @@ class Population(object):
 
     PARAMETERS = parameters.PopulationParameters #: the internal parameters of the population
 
-    def __init__(self, plants=None):
+    def __init__(self, t=0, plants=None):
         if plants is None:
             plants = []
         self.plants = plants #: the list of plants
+        self.t = t #: Time (h)
+
+    def calculate_integrative_variables(self):
+        for plant in self.plants:
+            plant.calculate_integrative_variables(self.t)
 
 
 class Plant(object):
@@ -56,6 +61,9 @@ class Plant(object):
         self.axes = axes #: the list of axes
         self.index = index #: the index of the plant, from 1 to n.
 
+    def calculate_integrative_variables(self, t):
+        for axis in self.axes:
+            axis.calculate_integrative_variables(t)
 
 class Axis(object):
     """
@@ -83,6 +91,16 @@ class Axis(object):
         if axis_type != 'MS':
             self.id += str(index)
 
+    def calculate_integrative_variables(self, t):
+        if self.roots is not None:
+            self.roots.calculate_integrative_variables(t)
+        if self.phloem is not None:
+            self.phloem.calculate_integrative_variables(t)
+        if self.grains is not None:
+            self.grains.calculate_integrative_variables(t)
+        for phytomer in self.phytomers:
+            phytomer.calculate_integrative_variables(t)
+
 class Phytomer(object):
     """
     The class :class:`Phytomer` defines the CN exchanges at the phytomers scale.
@@ -103,6 +121,17 @@ class Phytomer(object):
         self.sheath = sheath #: the sheath
         self.index = index #: the index of the phytomer, from 1 to n.
 
+    def calculate_integrative_variables(self, t):
+        if self.chaff is not None:
+            self.chaff.calculate_integrative_variables(t)
+        if self.peduncle is not None:
+            self.peduncle.calculate_integrative_variables(t)
+        if self.lamina is not None:
+            self.lamina.calculate_integrative_variables(t)
+        if self.internode is not None:
+            self.internode.calculate_integrative_variables(t)
+        if self.sheath is not None:
+            self.sheath.calculate_integrative_variables(t)
 
 class Organ(object):
     """
@@ -113,6 +142,8 @@ class Organ(object):
 
     PARAMETERS = parameters.OrganParameters #: the internal parameters of the organs
 
+    def calculate_integrative_variables(self, t):
+        pass
 
 class Phloem(Organ):
     """
@@ -133,7 +164,7 @@ class Phloem(Organ):
     def calculate_conc_sucrose(self, sucrose):
         """sucrose concentration (µmol sucrose g-1 MS)
         """
-        return (sucrose/Organ.PARAMETERS.N_C_SUCROSE)/Organ.PARAMETERS.MSTRUCT_AXIS
+        return (sucrose/Organ.PARAMETERS.NB_C_SUCROSE)/Organ.PARAMETERS.MSTRUCT_AXIS
 
     def calculate_conc_amino_acids(self, amino_acids):
         """Amino_acid concentration (µmol amino_acids g-1 MS)
@@ -191,13 +222,19 @@ class Grains(Organ):
 
     # VARIABLES
 
-    def calculate_dry_mass(self, structure, starch):
+    def calculate_dry_mass(self, structure, starch, proteins):
         """Grain total dry mass (g)
         """
-        return ((structure + starch)*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS
+        #: Carbohydrates mass, grain carbohydrates supposed to be mainly starch i.e. glucose polymers (C6 H12 O6)
+        C_mass = ((structure + starch)*1E-6*Organ.PARAMETERS.C_MOLAR_MASS) / Organ.PARAMETERS.SUCROSE_MOLAR_MASS_C_RATIO
+
+        #: N mass, grain proteins were supposed to be gluten mainly composed of Glu, Gln and Pro
+        N_mass = (proteins*1E-6*Organ.PARAMETERS.N_MOLAR_MASS) / Grains.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO
+
+        return  C_mass + N_mass
 
     def calculate_protein_mass(self, proteins):
-        """Grain total protein mass
+        """Grain total protein mass (g)
         """
         mass_N_proteins = proteins*1E-6 * Organ.PARAMETERS.N_MOLAR_MASS                        #: Mass of nitrogen in proteins (g)
         #mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO     #: Total mass of proteins (g)
@@ -211,7 +248,7 @@ class Grains(Organ):
     def calculate_unloading_sucrose(self, s_grain_structure, s_grain_starch, structure):
         """Unloading of sucrose from phloem to grains integrated over delta_t (µmol sucrose)
         """
-        return (s_grain_structure + s_grain_starch * (structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)/Organ.PARAMETERS.N_C_SUCROSE
+        return (s_grain_structure + s_grain_starch * (structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)/Organ.PARAMETERS.NB_C_SUCROSE
 
 
     # FLUXES
@@ -377,6 +414,10 @@ class PhotosyntheticOrgan(Organ):
             elements = []
         self.elements = elements #: the elements of the photosynthetic organ
 
+    def calculate_integrative_variables(self, t):
+        for element in self.elements:
+            element.calculate_integrative_variables(t)
+
 
 class Chaff(PhotosyntheticOrgan):
     """
@@ -467,9 +508,13 @@ class PhotosyntheticOrganElement(object):
         self.loading_sucrose = None           #: current rate of sucrose loading to phloem
         self.loading_amino_acids = None       #: current rate of amino acids loading to phloem
 
+        # Integrated variables
+        self.surfacic_nitrogen = None         #: current surfacic nitrogen (g m-2)
 
-        # VARIABLES
+    def calculate_integrative_variables(self, t):
+        self.surfacic_nitrogen = self.calculate_surfacic_nitrogen(t, self.nitrates, self.amino_acids, self.proteins)
 
+    # VARIABLES
     def calculate_photosynthesis(self, t, An, phytomer_index):
         """Total photosynthesis of an element integrated over DELTA_T (µmol CO2 on element area integrated over delat_t)
         """
@@ -529,6 +574,14 @@ class PhotosyntheticOrganElement(object):
         mass_N_proteins = proteins*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS                        #: Mass of nitrogen in proteins (g)
         mass_proteins = mass_N_proteins / PhotosyntheticOrgan.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
+
+    def calculate_surfacic_nitrogen(self, t, nitrates, amino_acids, proteins):
+        """Surfacic content of nitrogen (g m-2)
+        """
+        mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS
+        green_area = self._calculate_green_area(t, self.index)
+        return (mass_N_tot / green_area)
+
 
     # FLUXES
 
@@ -675,7 +728,7 @@ class LaminaElement(PhotosyntheticOrganElement):
         if t <= t_inflexion: # Non-senescent lamina element
             green_area = self.area
         else: # Senescent lamina element
-            green_area = max(0, ((-0.0721*t + value_inflexion)/10000))
+            green_area = max(0, -8.04E-6*t + value_inflexion)
         return green_area
 
 
