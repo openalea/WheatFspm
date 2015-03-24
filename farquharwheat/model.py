@@ -7,8 +7,8 @@ from __future__ import division # use '//' to do integer division
     farquharwheat.model
     ~~~~~~~~~~~~~~~~~~~
 
-    Model of photosynthesis based on Farquhar's approach. 
-    The model includes the dependence of photosynthesis to organ temperature and nitrogen content. 
+    Model of photosynthesis based on Farquhar's approach.
+    The model includes the dependence of photosynthesis to organ temperature and nitrogen content.
     Internal CO2 and organ temperature are found numerically.
 
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
@@ -43,6 +43,7 @@ class PhotosynthesisModel(object):
     #:     * delta1 and delta2: parameters of m (scaling factor of gs) dependance to Na (m2 g-1 and dimensionless respectively)
     PARAM_N = {'S_Na': {'Vc_max25': 63.2, 'Jmax25': 151, 'TPU25': 9.25, 'Rdark25': 0.493}, 'Na_min': {'Vc_max25': 0.198, 'Jmax25': 0.225, 'TPU25': 0.229, 'Rdark25': 0.118},
                 'Gamma_Na1': 0.437, 'Gamma_Na2': 2.29, 'delta1': 14.7, 'delta2': -0.548}
+    NA_0 = 1.5              #: Initial value of Na (g m-2), used if no Na is provided by user
 
     GSMIN = 0.05            #: Stomatal conductance parameter: Minimum gs, measured in the dark (mol m-2 s-1). Braune et al. (2009).
     GB = 3.5                #: Stomatal conductance parameter: Boundary layer conductance (mol m-2 s-1). Muller et al., (2005)
@@ -229,11 +230,17 @@ class PhotosynthesisModel(object):
 
 
     @classmethod
-    def calculate_An(cls, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, Ur, organ_name):
+    def calculate_An(cls, Na, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, Ur, organ_name):
         """
         Compute An (µmol m-2 s-1) and Tr (mm s-1).
 
         :Parameters:
+            - `Na` (:class:`float`) - total nitrogen content of organs (g m-2), obtained by the sum of nitrogen, amino acids, proteins and structural N.
+               Properly speaking, photosynthesis should be related to proteins (RubisCO), but parameters of most Farquhar models are calibrated on total N measurements (DUMAS method).
+               If None, Na = :attr:`NA_0`
+
+            - `organ_width` (:class:`float`) - width of the organ (or diameter for stem organ) (m),
+               characteristic dimension to be considered for heat transfer through forced convection (by wind).
 
             - `organ_width` (:class:`float`) - width of the organ (or diameter for stem organ) (m),
                characteristic dimension to be considered for heat transfer through forced convection (by wind).
@@ -251,16 +258,20 @@ class PhotosynthesisModel(object):
             - `Ur` (:class:`float`) - Ur: wind at the reference height (zr) (m s-1), e.g. top of the canopy + 2m
                (in the case of wheat, Ur can be approximated as the wind speed at 2m from soil)
 
+            - `organ_name` (:class:`string`) - name of organ
+
         :Returns:
-            An (µmol m-2 s-1) and Tr (mm s-1).
+            An (µmol m-2 s-1), Tr (mm s-1), Torg (°C) and  gs (mol m-2 s-1)
 
         :Returns Type:
             :class:`float`
 
         """
+        if Na is None:
+            Na = cls.NA_0
+
         #: Organ parameters
         H_CANOPY = 0.8                              #: m
-        NA_INIT = 2.5                               #: g m-2
 
         ### Iterations to find organ temperature and Ci ###
         Ci, Torg = 0.7*ambient_CO2, Ta # Initial values
@@ -269,15 +280,15 @@ class PhotosynthesisModel(object):
         while abs((Ci - prec_Ci)/prec_Ci) >= 0.01 or abs((Torg - prec_Torg)/prec_Torg) >= 0.01:
             if count >=30: # TODO: test a faire? Semble prendre du tps de calcul
                 if abs((Ci - prec_Ci)/prec_Ci) >= 0.01:
-                    print 'Ci cannot converge, prec_Ci= {}, Ci= {}'.format(prec_Ci, Ci)
+                    print '{}, Ci cannot converge, prec_Ci= {}, Ci= {}'.format(organ_name, prec_Ci, Ci)
                 else:
-                    print 'Torg cannot converge, prec_Torg= {}, Torg= {}'.format(prec_Torg, Torg)
+                    print '{}, Torg cannot converge, prec_Torg= {}, Torg= {}'.format(organ_name, prec_Torg, Torg)
                 break
             else:
                 prec_Ci, prec_Torg = Ci, Torg
-                An, Ag, Rd = cls._photosynthesis(PAR, NA_INIT, Torg, Ci)
+                An, Ag, Rd = cls._photosynthesis(PAR, Na, Torg, Ci)
                 # Stomatal conductance
-                gs = cls._stomatal_conductance(Ag, An, NA_INIT, ambient_CO2, RH)
+                gs = cls._stomatal_conductance(Ag, An, Na, ambient_CO2, RH)
                 # New value of Ci
                 Ci = ambient_CO2 - An * ((1.6/gs) + (1.37/cls.GB)) # gs and GB in mol m-2 s-1
                 # New value of Torg
