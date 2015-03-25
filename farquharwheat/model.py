@@ -74,6 +74,8 @@ class PhotosynthesisModel(object):
                   'deltaHd': {'Vc_max': 149.3, 'Jmax': 152.3, 'TPU': 152.3},
                   'deltaS': {'Vc_max': 0.486, 'Jmax': 0.495, 'TPU': 0.495},
                   'Tref': 298.15, 'R': 8.3145E-03}
+    
+    DELTA_CONVERGENCE = 0.01 #: The relative delta for Ci and Torg convergence. 
 
     @classmethod
     def _organ_temperature(cls, w, z, Zh, Ur, PAR, gs, Ta, Torg, RH, organ_name):
@@ -275,24 +277,27 @@ class PhotosynthesisModel(object):
 
         ### Iterations to find organ temperature and Ci ###
         Ci, Torg = 0.7*ambient_CO2, Ta # Initial values
-        prec_Ci, prec_Torg = 0.1, 0.1
         count = 0
-        while abs((Ci - prec_Ci)/prec_Ci) >= 0.01 or abs((Torg - prec_Torg)/prec_Torg) >= 0.01:
+        
+        while True:
+            prec_Ci, prec_Torg = Ci, Torg
+            An, Ag, Rd = cls._photosynthesis(PAR, Na, Torg, Ci)
+            # Stomatal conductance
+            gs = cls._stomatal_conductance(Ag, An, Na, ambient_CO2, RH)
+            # New value of Ci
+            Ci = ambient_CO2 - An * ((1.6/gs) + (1.37/cls.GB)) # gs and GB in mol m-2 s-1
+            # New value of Torg
+            Torg, Tr = cls._organ_temperature(organ_width, organ_height, H_CANOPY, Ur, PAR, gs, Ta, Torg, RH, organ_name)
+            count +=1
+                
             if count >=30: # TODO: test a faire? Semble prendre du tps de calcul
-                if abs((Ci - prec_Ci)/prec_Ci) >= 0.01:
+                if abs((Ci - prec_Ci)/prec_Ci) >= cls.DELTA_CONVERGENCE or abs((Torg - prec_Torg)/prec_Torg) >= cls.DELTA_CONVERGENCE:
                     print '{}, Ci cannot converge, prec_Ci= {}, Ci= {}'.format(organ_name, prec_Ci, Ci)
                 else:
                     print '{}, Torg cannot converge, prec_Torg= {}, Torg= {}'.format(organ_name, prec_Torg, Torg)
                 break
-            else:
-                prec_Ci, prec_Torg = Ci, Torg
-                An, Ag, Rd = cls._photosynthesis(PAR, Na, Torg, Ci)
-                # Stomatal conductance
-                gs = cls._stomatal_conductance(Ag, An, Na, ambient_CO2, RH)
-                # New value of Ci
-                Ci = ambient_CO2 - An * ((1.6/gs) + (1.37/cls.GB)) # gs and GB in mol m-2 s-1
-                # New value of Torg
-                Torg, Tr = cls._organ_temperature(organ_width, organ_height, H_CANOPY, Ur, PAR, gs, Ta, Torg, RH, organ_name)
-                count +=1
+                
+            if abs((Ci - prec_Ci)/prec_Ci) < cls.DELTA_CONVERGENCE and abs((Torg - prec_Torg)/prec_Torg) < cls.DELTA_CONVERGENCE:
+                break
 
         return An, Tr, Torg, gs
