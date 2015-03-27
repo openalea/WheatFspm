@@ -43,7 +43,7 @@ class PhotosynthesisModel(object):
     #:     * delta1 and delta2: parameters of m (scaling factor of gs) dependance to Na (m2 g-1 and dimensionless respectively)
     PARAM_N = {'S_Na': {'Vc_max25': 63.2, 'Jmax25': 151, 'TPU25': 9.25, 'Rdark25': 0.493}, 'Na_min': {'Vc_max25': 0.198, 'Jmax25': 0.225, 'TPU25': 0.229, 'Rdark25': 0.118},
                 'Gamma_Na1': 0.437, 'Gamma_Na2': 2.29, 'delta1': 14.7, 'delta2': -0.548}
-    NA_0 = 2.5              #: Initial value of Na (g m-2), used if no Na is provided by user
+    NA_0 = 2                #: Initial value of Na (g m-2), used if no Na is provided by user
 
     GSMIN = 0.05            #: Stomatal conductance parameter: Minimum gs, measured in the dark (mol m-2 s-1). Braune et al. (2009).
     GB = 3.5                #: Stomatal conductance parameter: Boundary layer conductance (mol m-2 s-1). Muller et al., (2005)
@@ -217,7 +217,9 @@ class PhotosynthesisModel(object):
         TPU = cls._f_temperature('TPU', TPU25, Torg)                                        # Relation between TPU and temperature
         Vomax = (Vc_max*Ko*Gamma)/(0.5*Kc*cls.O)                                            # Maximum rate of Vo (umol m-2 s-1)
         Vo = (Vomax * cls.O) / (cls.O + Ko*(1+Ci/Kc))                                       # Rate of oxygenation of RuBP (umol m-2 s-1)
-        Ap = (1-Gamma/Ci)*(3*TPU) + Vo                                                      # Rate of assimilation under TPU limitation
+        Ap = (1-Gamma/Ci)*(3*TPU + Vo)                                                      # Rate of assimilation under TPU limitation. I think there was a mistake in the paper of Braune t al. (2009) where they wrote Ap = (1-Gamma/Ci)*(3*TPU) + Vo
+        # A more recent exepression of Ap was given by S. v Caemmerer in her book (2000): AP = (3TPU * (Ci-Gamma))/(Ci-(1+3alpha)*Gamma),
+        # where 0 < alpha > 1 is the fraction of glycolate carbon not returned to the chloroplast, but I couldn't find any estimation of alpha for wheat
 
         # Gross assimilation rate
         Ag = min(Ac, Aj, Ap)
@@ -296,6 +298,7 @@ class PhotosynthesisModel(object):
                 else:
                     print '{}, Torg cannot converge, prec_Torg= {}, Torg= {}'.format(organ_name, prec_Torg, Torg)
                 break
+                Ci = max(0, ambient_CO2 - An * ((1.6/gs) + (1.37/cls.GB))) # gs and GB in mol m-2 s-1
                 
             if abs((Ci - prec_Ci)/prec_Ci) < cls.DELTA_CONVERGENCE and abs((Torg - prec_Torg)/prec_Torg) < cls.DELTA_CONVERGENCE:
                 break
