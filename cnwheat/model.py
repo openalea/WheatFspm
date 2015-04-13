@@ -1,9 +1,6 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import division # use "//" to do integer division
-import numpy as np
-
-import parameters
 
 """
     cnwheat.model
@@ -26,6 +23,21 @@ import parameters
         $Id$
 """
 
+import numpy as np
+import warnings
+
+import parameters
+
+class ModelWarning(UserWarning): pass
+class ModelInputWarning(ModelWarning): pass
+
+warnings.simplefilter('always', ModelInputWarning)
+
+
+def enum(**enums):
+    return type('Enum', (), enums)
+
+
 class Population(object):
     """
     The class :class:`Population` defines the CN exchanges at the population scale.
@@ -42,6 +54,8 @@ class Population(object):
         self.t = t #: Time (h)
 
     def calculate_integrative_variables(self):
+        """Calculate the integrative variables of the population recursively.
+        """
         for plant in self.plants:
             plant.calculate_integrative_variables(self.t)
 
@@ -62,8 +76,11 @@ class Plant(object):
         self.index = index #: the index of the plant, from 1 to n.
 
     def calculate_integrative_variables(self, t):
+        """Calculate the integrative variables of the plant recursively.
+        """
         for axis in self.axes:
             axis.calculate_integrative_variables(t)
+
 
 class Axis(object):
     """
@@ -77,21 +94,29 @@ class Axis(object):
     """
 
     PARAMETERS = parameters.AxisParameters #: the internal parameters of the axes
+    
+    Types = enum(MAIN_STEM='MS', TILLER='T') #: the types of the axes
 
-    def __init__(self, roots=None, phloem=None, grains=None, phytomers=None, axis_type='MS', index=0):
+    def __init__(self, roots=None, phloem=None, grains=None, phytomers=None, axis_type=Types.MAIN_STEM, index=0):
         self.roots = roots #: the roots
         self.phloem = phloem #: the phloem
         self.grains = grains #: the grains
         if phytomers is None:
             phytomers = []
         self.phytomers = phytomers #: the list of phytomers
-        self.type = axis_type #: the type of the axis ; 'MS': main stem, 'T': tiller
-        self.index = index #: the index of the axis ; 0: MS, 1..n: tiller
+        
+        self.type = axis_type #: the type of the axis ; can be either Axis.Types.MAIN_STEM or Axis.Types.TILLER
+        self.index = index #: the index of the axis ; 0: main stem, 1..n: tiller.
+        if axis_type == Axis.Types.MAIN_STEM and index != 0:
+            warnings.warn('non-zero index for {}'.format(Axis.Types.MAIN_STEM), ModelInputWarning)
+            
         self.id = axis_type #: the id of the axis ; the id is built from axis_type and index
-        if axis_type != 'MS':
+        if axis_type != Axis.Types.MAIN_STEM:
             self.id += str(index)
 
     def calculate_integrative_variables(self, t):
+        """Calculate the integrative variables of the axis recursively.
+        """
         if self.roots is not None:
             self.roots.calculate_integrative_variables(t)
         if self.phloem is not None:
@@ -99,7 +124,8 @@ class Axis(object):
         if self.grains is not None:
             self.grains.calculate_integrative_variables(t)
         for phytomer in self.phytomers:
-            phytomer.calculate_integrative_variables(t)
+            phytomer.calculate_integrative_variables(t, phytomer.index)
+
 
 class Phytomer(object):
     """
@@ -121,17 +147,20 @@ class Phytomer(object):
         self.sheath = sheath #: the sheath
         self.index = index #: the index of the phytomer, from 1 to n.
 
-    def calculate_integrative_variables(self, t):
+    def calculate_integrative_variables(self, t, phytomer_index):
+        """Calculate the integrative variables of the phytomer recursively.
+        """
         if self.chaff is not None:
-            self.chaff.calculate_integrative_variables(t)
+            self.chaff.calculate_integrative_variables(t, phytomer_index)
         if self.peduncle is not None:
-            self.peduncle.calculate_integrative_variables(t)
+            self.peduncle.calculate_integrative_variables(t, phytomer_index)
         if self.lamina is not None:
-            self.lamina.calculate_integrative_variables(t)
+            self.lamina.calculate_integrative_variables(t, phytomer_index)
         if self.internode is not None:
-            self.internode.calculate_integrative_variables(t)
+            self.internode.calculate_integrative_variables(t, phytomer_index)
         if self.sheath is not None:
-            self.sheath.calculate_integrative_variables(t)
+            self.sheath.calculate_integrative_variables(t, phytomer_index)
+
 
 class Organ(object):
     """
@@ -142,8 +171,11 @@ class Organ(object):
 
     PARAMETERS = parameters.OrganParameters #: the internal parameters of the organs
 
-    def calculate_integrative_variables(self, t):
+    def calculate_integrative_variables(self, t, phytomer_index=None):
+        """Calculate the integrative variables of the organ recursively.
+        """
         pass
+
 
 class Phloem(Organ):
     """
@@ -407,17 +439,16 @@ class PhotosyntheticOrgan(Organ):
 
     PARAMETERS = parameters.PhotosyntheticOrganParameters #: the internal parameters of the photosynthetic organs
 
-    def __init__(self, elements):
-
+    def __init__(self, exposed_element=None, enclosed_element=None):
         # variables
-        if elements is None:
-            elements = []
-        self.elements = elements #: the elements of the photosynthetic organ
-
-    def calculate_integrative_variables(self, t):
-        for element in self.elements:
-            element.calculate_integrative_variables(t)
-
+        self.exposed_element = exposed_element #: the exposed element
+        self.enclosed_element = enclosed_element #: the enclosed element
+        
+    def calculate_integrative_variables(self, t, phytomer_index):
+        for element in (self.exposed_element, self.enclosed_element):
+            if element is not None:
+                element.calculate_integrative_variables(t, phytomer_index)
+               
 
 class Chaff(PhotosyntheticOrgan):
     """
@@ -426,8 +457,8 @@ class Chaff(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.ChaffParameters #: the internal parameters of the chaffs
 
-    def __init__(self, elements=None):
-        super(Chaff, self).__init__(elements)
+    def __init__(self, exposed_element=None, enclosed_element=None):
+        super(Chaff, self).__init__(exposed_element, enclosed_element)
 
 
 class Lamina(PhotosyntheticOrgan):
@@ -437,8 +468,8 @@ class Lamina(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.LaminaParameters #: the internal parameters of the laminae
 
-    def __init__(self, elements=None):
-        super(Lamina, self).__init__(elements)
+    def __init__(self, exposed_element=None, enclosed_element=None):
+        super(Lamina, self).__init__(exposed_element, enclosed_element)
 
 
 class Internode(PhotosyntheticOrgan):
@@ -448,8 +479,8 @@ class Internode(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.InternodeParameters #: the internal parameters of the internodes
 
-    def __init__(self, elements=None):
-        super(Internode, self).__init__(elements)
+    def __init__(self, exposed_element=None, enclosed_element=None):
+        super(Internode, self).__init__(exposed_element, enclosed_element)
 
 
 class Peduncle(PhotosyntheticOrgan):
@@ -459,8 +490,8 @@ class Peduncle(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.PeduncleParameters #: the internal parameters of the peduncles
 
-    def __init__(self, elements=None):
-        super(Peduncle, self).__init__(elements)
+    def __init__(self, exposed_element=None, enclosed_element=None):
+        super(Peduncle, self).__init__(exposed_element, enclosed_element)
 
 
 class Sheath(PhotosyntheticOrgan):
@@ -470,8 +501,8 @@ class Sheath(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.SheathParameters #: the internal parameters of the sheaths
 
-    def __init__(self, elements=None):
-        super(Sheath, self).__init__(elements)
+    def __init__(self, exposed_element=None, enclosed_element=None):
+        super(Sheath, self).__init__(exposed_element, enclosed_element)
 
 
 class PhotosyntheticOrganElement(object):
@@ -482,10 +513,10 @@ class PhotosyntheticOrganElement(object):
     """
 
     PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
-
+    
     def __init__(self, area, mstruct, width, height, triosesP, starch,
                  sucrose, fructan, nitrates, amino_acids, proteins,
-                 An=None, Tr=None, index=1, exposed=True):
+                 An=None, Tr=None):
 
         self.area = area                     #: area (m-2)
         self.mstruct = mstruct               #: Structural mass (g)
@@ -493,9 +524,7 @@ class PhotosyntheticOrganElement(object):
         self.height = height                 #: Height of the element from soil (m)
         self.An = An                         #: Net assimilation (µmol m-2 s-1)
         self.Tr = Tr                         #: Transpiration (mm s-1)
-        self.index = index #: the index of the element, from 1 to n.
-        self.exposed = exposed #: True: the element is exposed ; False: the element is enclosed
-
+        
         self.triosesP = triosesP
         self.starch = starch
         self.sucrose = sucrose
@@ -511,8 +540,10 @@ class PhotosyntheticOrganElement(object):
         # Integrated variables
         self.surfacic_nitrogen = None         #: current surfacic nitrogen (g m-2)
 
-    def calculate_integrative_variables(self, t):
-        self.surfacic_nitrogen = self.calculate_surfacic_nitrogen(t, self.nitrates, self.amino_acids, self.proteins)
+    def calculate_integrative_variables(self, t, phytomer_index):
+        """Calculate the integrative variables of the element.
+        """
+        self.surfacic_nitrogen = self.calculate_surfacic_nitrogen(t, self.nitrates, self.amino_acids, self.proteins, phytomer_index)
 
     # VARIABLES
     def calculate_photosynthesis(self, t, An, phytomer_index):
@@ -575,11 +606,11 @@ class PhotosyntheticOrganElement(object):
         mass_proteins = mass_N_proteins / PhotosyntheticOrgan.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
 
-    def calculate_surfacic_nitrogen(self, t, nitrates, amino_acids, proteins):
+    def calculate_surfacic_nitrogen(self, t, nitrates, amino_acids, proteins, phytomer_index):
         """Surfacic content of nitrogen (g m-2)
         """
         mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS
-        green_area = self._calculate_green_area(t, self.index)
+        green_area = self._calculate_green_area(t, phytomer_index)
         return (mass_N_tot / green_area)
 
 

@@ -24,17 +24,15 @@ from __future__ import division # use "//" to do integer division
 """
 
 import sys
+import logging
 
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
-import logging
 
 import model
 
 class CNWheatError(Exception): pass
-class CNWheatInitError(Exception): pass
-class CNWheatInputError(CNWheatError): pass
 class CNWheatRunError(CNWheatError): pass
 
 class CNWheat(object):
@@ -73,7 +71,7 @@ class CNWheat(object):
                                                                                        'Conc_Sucrose', 'Uptake_Nitrates', 'S_grain_structure', 'Proteins_N_Mass',
                                                                                        'RGR_Structure']
 
-    ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element', 'exposed']
+    ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element']
     ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['Loading_Sucrose', 'Regul_S_Fructan', 'An', 'Tr', 'Ts', 'gs', 'Photosynthesis',
                                                                                                                 'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose',
                                                                                                                 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 'SLN',
@@ -106,9 +104,9 @@ class CNWheat(object):
 
         def _init_initial_conditions(model_object, i):
             class_ = model_object.__class__
-            if issubclass(model_object.__class__, model.Organ):
+            if issubclass(class_, model.Organ):
                 class_ = model.Organ
-            elif issubclass(model_object.__class__, model.PhotosyntheticOrganElement):
+            elif issubclass(class_, model.PhotosyntheticOrganElement):
                 class_ = model.PhotosyntheticOrganElement
             compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[class_]
             self.initial_conditions_mapping[model_object] = {}
@@ -135,7 +133,9 @@ class CNWheat(object):
                         if organ is None:
                             continue
                         i = _init_initial_conditions(organ, i)
-                        for element in organ.elements:
+                        for element in (organ.exposed_element, organ.enclosed_element):
+                            if element is None:
+                                continue
                             i = _init_initial_conditions(element, i)
 
         #TODO: check the validity of the population
@@ -169,11 +169,11 @@ class CNWheat(object):
         :Returns:
             The :class:`dataframes <pandas.DataFrame>` of CN exchanges for each desired time step at different scales:
 
-                * plant: t, plant index, outputs of plant,
-                * axis: t, plant index, axis index, outputs of axis,
-                * phytomer: t, plant index, axis index, phytomer index, outputs of phytomer,
-                * organ: t, plant index, axis index, organ name, outputs of organ,
-                * and element: t, plant index, axis index, phytomer index, organ name, element index, outputs of element.
+                * plant: t, plant index, outputs by plant,
+                * axis: t, plant index, axis id, outputs by axis,
+                * phytomer: t, plant index, axis id, phytomer index, outputs by phytomer,
+                * organ: t, plant index, axis id, organ type, outputs by organ,
+                * and element: t, plant index, axis id, phytomer index, organ type, element type, outputs by element.
 
         :Returns Type:
             :class:`tuple` of :class:`pandas.DataFrame`
@@ -262,9 +262,9 @@ class CNWheat(object):
         def update_rows(model_object, indexes, rows, i):
             row = []
             class_ = model_object.__class__
-            if issubclass(model_object.__class__, model.Organ):
+            if issubclass(class_, model.Organ):
                 class_ = model.Organ
-            if issubclass(model_object.__class__, model.PhotosyntheticOrganElement):
+            elif issubclass(class_, model.PhotosyntheticOrganElement):
                 class_ = model.PhotosyntheticOrganElement
             compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[class_]
             for compartment_name in compartments_names:
@@ -292,8 +292,10 @@ class CNWheat(object):
                         if organ is None:
                             continue
                         i = update_rows(organ, [t, plant.index, axis.index, organ.__class__.__name__], all_rows[model.Organ], i)
-                        for element in organ.elements:
-                            i = update_rows(element, [t, plant.index, axis.index, phytomer.index, organ.__class__.__name__, element.index], all_rows[model.PhotosyntheticOrganElement], i)
+                        for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
+                            if element is None:
+                                continue
+                            i = update_rows(element, [t, plant.index, axis.index, phytomer.index, organ.__class__.__name__, element_type], all_rows[model.PhotosyntheticOrganElement], i)
 
         row_sep = '\n'
         column_sep = ','
@@ -381,10 +383,11 @@ class CNWheat(object):
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is not None:
-                            for element in organ.elements:
-                                transpiration_mapping[element] = element.calculate_transpiration(t, element.Tr, phytomer.index)
-                                total_transpiration += transpiration_mapping[element]
-                                phloem_contributors.append(element)
+                            for element in (organ.exposed_element, organ.enclosed_element):
+                                if element is not None:
+                                    transpiration_mapping[element] = element.calculate_transpiration(t, element.Tr, phytomer.index)
+                                    total_transpiration += transpiration_mapping[element]
+                                    phloem_contributors.append(element)
 
                 # compute the flows from/to the roots to/from photosynthetic organs
                 conc_nitrates_soil = axis.roots.calculate_conc_nitrates_soil(t)
@@ -398,7 +401,9 @@ class CNWheat(object):
                         if organ is None:
                             continue
 
-                        for element in organ.elements:
+                        for element in (organ.exposed_element, organ.enclosed_element):
+                            if element is None:
+                                continue
 
                             element.starch = y[self.initial_conditions_mapping[element]['starch']]
                             element.sucrose = y[self.initial_conditions_mapping[element]['sucrose']]
@@ -514,11 +519,11 @@ class CNWheat(object):
         """
         Create :class:`dataframes <pandas.DataFrame>` of outputs at different scales:
 
-            * plant: t, plant index, outputs of plant,
-            * axis: t, plant index, axis index, outputs of axis,
-            * phytomer: t, plant index, axis index, phytomer index, outputs of phytomer,
-            * organ: t, plant index, axis index, organ name, outputs of organ.
-            * and element: t, plant index, axis index, phytomer index, organ name, element index, outputs of organ.
+            * plant: t, plant index, outputs by plant,
+            * axis: t, plant index, axis id, outputs by axis,
+            * phytomer: t, plant index, axis id, phytomer index, outputs by phytomer,
+            * organ: t, plant index, axis id, organ type, outputs by organ.
+            * and element: t, plant index, axis id, phytomer index, organ type, element type, outputs by element.
         """
         logger = logging.getLogger(__name__)
         logger.debug('Formatting of solver output...')
@@ -551,9 +556,10 @@ class CNWheat(object):
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is not None:
-                            for element in organ.elements:
-                                transpiration_mapping[element] = map(element.calculate_transpiration, t, [element.Tr] * len(t), [phytomer.index] * len(t))
-                                total_transpiration += transpiration_mapping[element]
+                            for element in (organ.exposed_element, organ.enclosed_element):
+                                if element is not None:
+                                    transpiration_mapping[element] = map(element.calculate_transpiration, t, [element.Tr] * len(t), [phytomer.index] * len(t))
+                                    total_transpiration += transpiration_mapping[element]
 
                 axes_df['Total_transpiration'] = total_transpiration
 
@@ -605,15 +611,17 @@ class CNWheat(object):
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
-                        for element in organ.elements:
+                        for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
+                            if element is None:
+                                continue
+                            
                             elements_df = pd.DataFrame(columns=all_elements_df.columns)
                             elements_df['t'] = t
                             elements_df['plant'] = plant.index
                             elements_df['axis'] = axis.id
                             elements_df['phytomer'] = phytomer.index
                             elements_df['organ'] = organ.__class__.__name__
-                            elements_df['element'] = element.index
-                            elements_df['exposed'] = element.exposed
+                            elements_df['element'] = element_type
                             elements_df['triosesP'] = solver_output[self.initial_conditions_mapping[element]['triosesP']]
                             elements_df['starch'] = solver_output[self.initial_conditions_mapping[element]['starch']]
                             elements_df['sucrose'] = solver_output[self.initial_conditions_mapping[element]['sucrose']]
@@ -636,7 +644,7 @@ class CNWheat(object):
                             elements_df['Conc_Nitrates'] = element.calculate_conc_nitrates(elements_df['nitrates'])
                             elements_df['Conc_Amino_Acids'] = element.calculate_conc_amino_acids(elements_df['amino_acids'])
                             elements_df['Conc_Proteins'] = element.calculate_conc_proteins(elements_df['proteins'])
-                            elements_df['SLN'] = map(element.calculate_surfacic_nitrogen, t, elements_df['nitrates'], elements_df['amino_acids'], elements_df['proteins'])
+                            elements_df['SLN'] = map(element.calculate_surfacic_nitrogen, t, elements_df['nitrates'], elements_df['amino_acids'], elements_df['proteins'], [phytomer.index] * len(t))
                             elements_df['S_Starch'] = map(element.calculate_s_starch, elements_df['triosesP'])
                             elements_df['D_Starch'] = map(element.calculate_d_starch, elements_df['starch'])
                             elements_df['S_Sucrose'] = map(element.calculate_s_sucrose, elements_df['triosesP'])
@@ -703,7 +711,7 @@ class CNWheat(object):
         all_axes_df['plant'] = all_axes_df['plant'].astype(int)
         all_phytomers_df[['plant', 'phytomer']] = all_phytomers_df[['plant', 'phytomer']].astype(int)
         all_organs_df['plant'] = all_organs_df['plant'].astype(int)
-        all_elements_df[['plant', 'phytomer', 'element']] = all_elements_df[['plant', 'phytomer', 'element']].astype(int)
+        all_elements_df[['plant', 'phytomer']] = all_elements_df[['plant', 'phytomer']].astype(int)
 
         logger.debug('Formatting of solver output DONE')
 
