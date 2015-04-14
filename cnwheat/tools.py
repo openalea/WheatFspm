@@ -102,8 +102,8 @@ def plot_linear_regression(x_array, y_array, x_label='x', y_label='y', plot_file
         plt.close()
 
 
-def plot(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}, plot_filepath=None, colors=[], linestyles=[], explicit_label=True):
-    """Plot `outputs`, with `x=x_name` and `y=y_name`.
+def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}, plot_filepath=None, colors=[], linestyles=[], explicit_label=True):
+    """Plot `outputs`, with x=`x_name` and y=`y_name`.
 
     The general algorithm is:
 

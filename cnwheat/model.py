@@ -23,13 +23,18 @@ from __future__ import division # use "//" to do integer division
         $Id$
 """
 
-import numpy as np
 import warnings
+import logging
+
+import numpy as np
 
 import parameters
 
 class ModelWarning(UserWarning): pass
 class ModelInputWarning(ModelWarning): pass
+
+class ModelError(Exception): pass
+class ModelInputError(ModelError): pass
 
 warnings.simplefilter('always', ModelInputWarning)
 
@@ -95,7 +100,9 @@ class Axis(object):
 
     PARAMETERS = parameters.AxisParameters #: the internal parameters of the axes
     
-    Types = enum(MAIN_STEM='MS', TILLER='T') #: the types of the axes
+    Types = enum(MAIN_STEM='MS', TILLER='T') #: the authorized types of the axes
+    
+    TYPES_STRINGS = Types.__dict__.values() #: the string values of the authorized types of the axes
 
     def __init__(self, roots=None, phloem=None, grains=None, phytomers=None, axis_type=Types.MAIN_STEM, index=0):
         self.roots = roots #: the roots
@@ -107,9 +114,19 @@ class Axis(object):
         
         self.type = axis_type #: the type of the axis ; can be either Axis.Types.MAIN_STEM or Axis.Types.TILLER
         self.index = index #: the index of the axis ; 0: main stem, 1..n: tiller.
-        if axis_type == Axis.Types.MAIN_STEM and index != 0:
-            warnings.warn('non-zero index for {}'.format(Axis.Types.MAIN_STEM), ModelInputWarning)
+        
+        if axis_type not in Axis.TYPES_STRINGS:
+            logger = logging.getLogger(__name__)
+            message = 'axis_type not in {}.'.format(Axis.TYPES_STRINGS)
+            logger.exception(message)
+            raise ModelInputError(message)
             
+        if axis_type == Axis.Types.MAIN_STEM and index != 0:
+            logger = logging.getLogger(__name__)
+            message = 'non-zero index for {}'.format(Axis.Types.MAIN_STEM)
+            logger.exception(message)
+            warnings.warn(message, ModelInputWarning)
+        
         self.id = axis_type #: the id of the axis ; the id is built from axis_type and index
         if axis_type != Axis.Types.MAIN_STEM:
             self.id += str(index)
@@ -337,10 +354,11 @@ class Roots(Organ):
 
     PARAMETERS = parameters.RootsParameters #: the internal parameters of the roots
 
-    def __init__(self, mstruct, sucrose, nitrates, amino_acids):
+    def __init__(self, mstruct, Nstruct, sucrose, nitrates, amino_acids):
 
         # variables
         self.mstruct = mstruct                 #: Structural mass (g)
+        self.Nstruct = Nstruct                 #: Structural nitrogen (g)
         self.sucrose = sucrose                 #: µmol C sucrose
         self.nitrates = nitrates               #: µmol N nitrates
         self.amino_acids = amino_acids         #: µmol N amino acids
@@ -348,7 +366,9 @@ class Roots(Organ):
         # fluxes from phloem
         self.unloading_sucrose = None          #: current unloading of sucrose from phloem to roots
         self.unloading_amino_acids = None      #: current unloading of amino acids from phloem to roots
-
+        
+        # Integrated variables
+        self.total_nitrogen = None            #: current total nitrogen amount (µmol N)
 
     # VARIABLES
 
@@ -356,7 +376,7 @@ class Roots(Organ):
         """Sucrose concentration (µmol sucrose g-1 MS).
         This is a concentration output (expressed in amount of substance g-1 MS).
         """
-        return (sucrose/self.mstruct)/12
+        return (sucrose/self.mstruct)/Organ.PARAMETERS.NB_C_SUCROSE
 
     def calculate_conc_nitrates_soil(self, t):
         """Nitrate concetration in soil (µmol nitrates m-3)
@@ -372,6 +392,9 @@ class Roots(Organ):
         """Amino_acid concentration (µmol amino_acids g-1 MS)
         """
         return (amino_acids/Organ.PARAMETERS.AMINO_ACIDS_N_RATIO)/self.mstruct
+    
+    def calculate_total_nitrogen(self, nitrates, amino_acids, Nstruct):
+        return nitrates + amino_acids + (Nstruct / Roots.PARAMETERS.N_MOLAR_MASS)*1E6
 
     # FLUXES
 
@@ -410,12 +433,12 @@ class Roots(Organ):
 
     # COMPARTMENTS
 
-    def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids):
+    def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids, R_Nnit_upt, R_Nnit_red, R_residual):
         """delta root sucrose integrated over delat_t (µmol C sucrose)
         """
         sucrose_consumption_AA = (s_amino_acids / Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) * Organ.PARAMETERS.AMINO_ACIDS_C_RATIO      #: Contribution of sucrose to the synthesis of amino_acids
 
-        return (unloading_sucrose - sucrose_consumption_AA) * self.mstruct
+        return (unloading_sucrose - sucrose_consumption_AA - R_Nnit_red) * self.mstruct - R_Nnit_upt - R_residual
 
     def calculate_nitrates_derivative(self, uptake_nitrates, s_amino_acids):
         """delta root nitrates integrated over delat_t (µmol N nitrates)
@@ -514,12 +537,13 @@ class PhotosyntheticOrganElement(object):
 
     PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
     
-    def __init__(self, area, mstruct, width, height, triosesP, starch,
+    def __init__(self, area, mstruct, Nstruct, width, height, triosesP, starch,
                  sucrose, fructan, nitrates, amino_acids, proteins,
                  An=None, Tr=None):
 
         self.area = area                     #: area (m-2)
         self.mstruct = mstruct               #: Structural mass (g)
+        self.Nstruct = Nstruct               #: Structural nitrogen (g)
         self.width = width                   #: Width (or diameter for stem organ elements) (m)
         self.height = height                 #: Height of the element from soil (m)
         self.An = An                         #: Net assimilation (µmol m-2 s-1)
@@ -539,11 +563,13 @@ class PhotosyntheticOrganElement(object):
 
         # Integrated variables
         self.surfacic_nitrogen = None         #: current surfacic nitrogen (g m-2)
+        self.total_nitrogen = None            #: current total nitrogen amount (µmol N)
 
     def calculate_integrative_variables(self, t, phytomer_index):
         """Calculate the integrative variables of the element.
         """
         self.surfacic_nitrogen = self.calculate_surfacic_nitrogen(t, self.nitrates, self.amino_acids, self.proteins, phytomer_index)
+        self.total_nitrogen = self.calculate_total_nitrogen(self.nitrates, self.amino_acids, self.proteins, self.Nstruct)
 
     # VARIABLES
     def calculate_photosynthesis(self, t, An, phytomer_index):
@@ -565,24 +591,24 @@ class PhotosyntheticOrganElement(object):
         """Trioses Phosphate concentration (µmol triosesP g-1 MS).
         This is a concentration output (expressed in amount of substance g-1 MS).
         """
-        return (triosesP/self.mstruct)/3
+        return (triosesP/self.mstruct)/Organ.PARAMETERS.NB_C_TRIOSEP
 
     def calculate_conc_sucrose(self, sucrose):
         """Sucrose concentration (µmol sucrose g-1 MS).
         This is a concentration output (expressed in amount of substance g-1 MS).
         """
-        return (sucrose/self.mstruct)/12
+        return (sucrose/self.mstruct)/Organ.PARAMETERS.NB_C_SUCROSE
 
     def calculate_conc_starch(self, starch):
         """Starch concentration (µmol starch g-1 MS (eq glucose)).
         This is a concentration output (expressed in amount of substance g-1 MS).
         """
-        return (starch/self.mstruct)/6
+        return (starch/self.mstruct)/Organ.PARAMETERS.NB_C_HEXOSES
 
     def calculate_conc_fructan(self, fructan):
         """fructan concentration (µmol fructan g-1 MS (eq glucose))
         """
-        return (fructan/self.mstruct)/6
+        return (fructan/self.mstruct)/Organ.PARAMETERS.NB_C_HEXOSES
 
     def calculate_regul_s_fructan(self, loading_sucrose):
         """Inhibition of fructan synthesis by the loading of sucrose to phloem
@@ -613,6 +639,8 @@ class PhotosyntheticOrganElement(object):
         green_area = self._calculate_green_area(t, phytomer_index)
         return (mass_N_tot / green_area)
 
+    def calculate_total_nitrogen(self, nitrates, amino_acids, proteins, Nstruct):
+        return nitrates + amino_acids + proteins + (Nstruct / PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS)*1E6
 
     # FLUXES
 
@@ -708,10 +736,10 @@ class PhotosyntheticOrganElement(object):
         """
         return (s_starch - d_starch) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
-    def calculate_sucrose_derivative(self, s_sucrose, d_starch, loading_sucrose, s_fructan, d_fructan):
+    def calculate_sucrose_derivative(self, s_sucrose, d_starch, loading_sucrose, s_fructan, d_fructan, R_phloem_loading, R_Nnit_red, R_residual):
         """delta sucrose of element integrated over delat_t (µmol C sucrose)
         """
-        return (s_sucrose + d_starch + d_fructan - s_fructan - loading_sucrose) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        return (s_sucrose + d_starch + d_fructan - s_fructan - loading_sucrose - R_phloem_loading - R_Nnit_red) * (self.mstruct*self.__class__.PARAMETERS.ALPHA) - R_residual
 
     def calculate_fructan_derivative(self, s_fructan, d_fructan):
         """delta fructan integrated over delat_t (µmol C fructan)
@@ -755,11 +783,9 @@ class LaminaElement(PhotosyntheticOrganElement):
     def _calculate_green_area(self, t, phytomer_index):
         """Compute green area of the lamina element.
         """
-        t_inflexion, value_inflexion = LaminaElement.PARAMETERS.INFLEXION_POINTS.get(phytomer_index, (float("inf"), None))
-        if t <= t_inflexion: # Non-senescent lamina element
-            green_area = self.area
-        else: # Senescent lamina element
-            green_area = max(0, -8.04E-6*t + value_inflexion)
+        value_inflexion = LaminaElement.PARAMETERS.INFLEXION_POINTS[phytomer_index]
+        green_area = max(0, min(self.area, -8.04E-6*t + value_inflexion))
+
         return green_area
 
 

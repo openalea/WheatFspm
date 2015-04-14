@@ -33,7 +33,7 @@ from cnwheat import model as cnwheat_model
 
 INPUTS_DIRPATH = 'inputs'
 
-AN_TR_TS_GS_FILENAME = 'An_Tr_Ts_gs.csv'
+PHOTOSYNTHESIS_DATA_FILENAME = 'photosynthesis_data.csv'
 
 OUTPUTS_DIRPATH = 'outputs'
 
@@ -96,7 +96,7 @@ def test_run():
 
     axis.grains = cnwheat_model.Grains(starch=0, structure=10850, proteins=170)
 
-    axis.roots = cnwheat_model.Roots(mstruct=0.504, sucrose=0, nitrates=0, amino_acids=0)
+    axis.roots = cnwheat_model.Roots(mstruct=0.504, Nstruct=0.01, sucrose=0, nitrates=0, amino_acids=0)
 
     axis.phloem = cnwheat_model.Phloem(sucrose=0, amino_acids=0)
 
@@ -104,19 +104,19 @@ def test_run():
     phytomer1 = cnwheat_model.Phytomer(index=1)
 
     phytomer1.lamina = cnwheat_model.Lamina()
-    lamina_element = cnwheat_model.LaminaElement(area=0.00346, mstruct=0.14, width= 0.018, height=0.6,
+    lamina_element = cnwheat_model.LaminaElement(area=0.00346, mstruct=0.14, Nstruct=0.00102, width= 0.018, height=0.6,
                                     starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0,
                                     amino_acids=0, proteins=380)
     phytomer1.lamina.exposed_element = lamina_element
 
     phytomer1.sheath = cnwheat_model.Sheath()
-    sheath_element = cnwheat_model.SheathElement(area=0.0006, mstruct=0.103, width=0.0011, height=0.5,
+    sheath_element = cnwheat_model.SheathElement(area=0.0006, mstruct=0.103, Nstruct=0.00068, width=0.0011, height=0.5,
                                     starch=0, sucrose=0, triosesP=0, fructan=0,
                                     nitrates=0, amino_acids=0, proteins=130)
     phytomer1.sheath.exposed_element = sheath_element
 
     phytomer1.internode = cnwheat_model.Internode()
-    internode_enclosed_element = cnwheat_model.InternodeElement(area=0.0012, mstruct=0.148, width=0.00257, height=0.3,
+    internode_enclosed_element = cnwheat_model.InternodeElement(area=0.0012, mstruct=0.148, Nstruct=0.00067, width=0.00257, height=0.3,
                                                                   starch=0, sucrose=0, triosesP=0, fructan=0,
                                                                   nitrates=0, amino_acids=0, proteins=20)
     phytomer1.internode.enclosed_element = internode_enclosed_element
@@ -125,13 +125,13 @@ def test_run():
     # Phytomer 4
     phytomer4 = cnwheat_model.Phytomer(index=4)
     phytomer4.peduncle = cnwheat_model.Peduncle()
-    peduncle_enclosed_element = cnwheat_model.PeduncleElement(area=0.00155, mstruct=0.168, width= 0.00349, height=0.65,
+    peduncle_enclosed_element = cnwheat_model.PeduncleElement(area=0.00155, mstruct=0.168, Nstruct=0.00085, width= 0.00349, height=0.65,
                                         starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0,
                                         amino_acids=0, proteins=30)
     phytomer4.peduncle.enclosed_element = peduncle_enclosed_element
 
     # Exposed peduncle
-    peduncle_exposed_element = cnwheat_model.PeduncleElement(area=0.00085, mstruct=0.089, width= 0.00349, height=0.5,
+    peduncle_exposed_element = cnwheat_model.PeduncleElement(area=0.00085, mstruct=0.089, Nstruct=0.00045, width= 0.00349, height=0.5,
                                                             starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0,
                                                             amino_acids=0, proteins=180)
     phytomer4.peduncle.exposed_element = peduncle_exposed_element
@@ -140,16 +140,16 @@ def test_run():
     # Phytomer 5
     phytomer5 = cnwheat_model.Phytomer(index=5)
     phytomer5.chaff = cnwheat_model.Chaff()
-    chaff_element = cnwheat_model.ChaffElement(area=0.00075, mstruct=0.21, width=0.00265, height= 0.7, starch=0,
+    chaff_element = cnwheat_model.ChaffElement(area=0.00075, mstruct=0.21, Nstruct=0.00107, width=0.00265, height= 0.7, starch=0,
                                   sucrose=0, triosesP=0, fructan=0, nitrates=0, amino_acids=0,
                                   proteins=260)
     phytomer5.chaff.exposed_element = chaff_element
     axis.phytomers.append(phytomer5)
 
-    # Get assimilation, transpiration, organ temperature and stomatal conductance data
-    An_Tr_Ts_gs_filepath = os.path.join(INPUTS_DIRPATH, AN_TR_TS_GS_FILENAME)
-    An_Tr_Ts_gs_df = pd.read_csv(An_Tr_Ts_gs_filepath)
-    An_Tr_Ts_gs_grouped = An_Tr_Ts_gs_df.groupby(simulation.CNWheat.ELEMENTS_INDEXES)
+    # Get photosynthesis data
+    photosynthesis_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_DATA_FILENAME)
+    photosynthesis_data_df = pd.read_csv(photosynthesis_data_filepath)
+    photosynthesis_data_grouped = photosynthesis_data_df.groupby(simulation.CNWheat.ELEMENTS_INDEXES)
 
     # initialize the simulator
     cnwheat_ = simulation.CNWheat(population=population)
@@ -180,9 +180,10 @@ def test_run():
                         for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                             if element is None:
                                 continue
-                            group = An_Tr_Ts_gs_grouped.get_group((t, plant_index, axe_id, phytomer_index, organ_type, element_type))
+                            group = photosynthesis_data_grouped.get_group((t, plant_index, axe_id, phytomer_index, organ_type, element_type))
                             row_index = group.first_valid_index()
                             element.An = group.An[row_index]
+                            element.Rd = group.Rd[row_index]
                             element.Tr = group.Tr[row_index]
                             element.Ts = group.Ts[row_index]
                             element.gs = group.gs[row_index]

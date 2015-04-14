@@ -58,6 +58,8 @@ class OrganParameters:
     DELTA_T = 3600                          #: Timestep of the model (s)
 
     C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
+    NB_C_TRIOSEP = 3                        #: Number of C in 1 mol of trioseP
+    NB_C_HEXOSES = 6                        #: Number of C in 1 mol of hexoses (glucose, fructose)
     NB_C_SUCROSE = 12                       #: Number of C in 1 mol of sucrose
     SUCROSE_MOLAR_MASS_C_RATIO = 0.4        #: Contribution of C in sucrose mass
 
@@ -216,9 +218,9 @@ class LaminaElementParameters(PhotosyntheticOrganElementParameters):
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
     #: Temporary estimation of lamina senescence ({lamina_index: (time of senescence beginning (h), offset of the linear regression)})
-    INFLEXION_POINTS = {1: (585, 8.57E-3),
-                        2: (465, 7.61E-3),
-                        3: (345, 6.64E-3)}
+    INFLEXION_POINTS = {1: 8.57E-3,
+                        2: 7.61E-3,
+                        3: 6.67E-3}
 
 
 class InternodeElementParameters(PhotosyntheticOrganElementParameters):
