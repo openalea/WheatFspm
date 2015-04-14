@@ -221,14 +221,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
             # construct a label with only the essential keys of the group name ; the essential keys are those for which cardinality is non zero
             for label_group in labels_groups:
                 label_group_index = group_keys_mapping[label_group]
-                if label_group == 'exposed':
-                    if outputs_group_name[label_group_index]:
-                        label = 'exposed'
-                    else:
-                        label = 'enclosed'
-                    line_label_list.append('{}'.format(label))
-                else:
-                    line_label_list.append('{}: {}'.format(group_keys_upper[label_group_index], outputs_group_name[label_group_index]))
+                line_label_list.append('{}: {}'.format(group_keys_upper[label_group_index], outputs_group_name[label_group_index]))
 
         kwargs = {'label': ' - '.join(line_label_list)}
 
