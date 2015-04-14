@@ -135,7 +135,7 @@ class Axis(object):
         """Calculate the integrative variables of the axis recursively.
         """
         if self.roots is not None:
-            self.roots.calculate_integrative_variables(t)
+            self.roots.calculate_integrative_variables()
         if self.phloem is not None:
             self.phloem.calculate_integrative_variables(t)
         if self.grains is not None:
@@ -369,6 +369,9 @@ class Roots(Organ):
         
         # Integrated variables
         self.total_nitrogen = None            #: current total nitrogen amount (µmol N)
+
+    def calculate_integrative_variables(self):
+        self.total_nitrogen = self.calculate_total_nitrogen(self.nitrates, self.amino_acids, self.Nstruct)
 
     # VARIABLES
 
@@ -635,7 +638,7 @@ class PhotosyntheticOrganElement(object):
     def calculate_surfacic_nitrogen(self, t, nitrates, amino_acids, proteins, phytomer_index):
         """Surfacic content of nitrogen (g m-2)
         """
-        mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS
+        mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS + self.Nstruct
         green_area = self._calculate_green_area(t, phytomer_index)
         return (mass_N_tot / green_area)
 
