@@ -122,8 +122,10 @@ def test_run():
     phytomer1.internode.enclosed_element = internode_enclosed_element
     axis.phytomers.append(phytomer1)
 
-    # Phytomer 4
+    # Phytomer 4 (reproductive)
     phytomer4 = cnwheat_model.Phytomer(index=4)
+
+    # Enclosed peduncle
     phytomer4.peduncle = cnwheat_model.Peduncle()
     peduncle_enclosed_element = cnwheat_model.PeduncleElement(area=0.00155, mstruct=0.168, Nstruct=0.00085, width= 0.00349, height=0.65,
                                         starch=0, sucrose=0, triosesP=0, fructan=0, nitrates=0,
@@ -137,7 +139,7 @@ def test_run():
     phytomer4.peduncle.exposed_element = peduncle_exposed_element
     axis.phytomers.append(phytomer4)
 
-    # Phytomer 5
+    # Phytomer 5 (reproductive)
     phytomer5 = cnwheat_model.Phytomer(index=5)
     phytomer5.chaff = cnwheat_model.Chaff()
     chaff_element = cnwheat_model.ChaffElement(area=0.00075, mstruct=0.21, Nstruct=0.00107, width=0.00265, height= 0.7, starch=0,
