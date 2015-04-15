@@ -33,12 +33,12 @@ from respiwheat.model import RespirationModel
 
 import model
 
-class CNWheatError(Exception): pass
-class CNWheatRunError(CNWheatError): pass
+class SimulationError(Exception): pass
+class SimulationRunError(SimulationError): pass
 
-class CNWheat(object):
+class Simulation(object):
     """
-    The CNWheat class permits to initialize and run the model.
+    The Simulation class permits to initialize and run the model.
 
     Use :meth:`run` to run the model.
 
@@ -110,7 +110,7 @@ class CNWheat(object):
                 class_ = model.Organ
             elif issubclass(class_, model.PhotosyntheticOrganElement):
                 class_ = model.PhotosyntheticOrganElement
-            compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[class_]
+            compartments_names = Simulation.MODEL_COMPARTMENTS_NAMES[class_]
             self.initial_conditions_mapping[model_object] = {}
             for compartment_name in compartments_names:
                 if hasattr(model_object, compartment_name):
@@ -196,26 +196,26 @@ class CNWheat(object):
             sep = ','
             if compartments_logger.isEnabledFor(logging.DEBUG):
                 plants_compartments_logger = logging.getLogger('cnwheat.compartments.plants')
-                plants_compartments_logger.debug(sep.join(CNWheat.PLANTS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Plant]))
+                plants_compartments_logger.debug(sep.join(Simulation.PLANTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Plant]))
                 axes_compartments_logger = logging.getLogger('cnwheat.compartments.axes')
-                axes_compartments_logger.debug(sep.join(CNWheat.AXES_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Axis]))
+                axes_compartments_logger.debug(sep.join(Simulation.AXES_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Axis]))
                 phytomers_compartments_logger = logging.getLogger('cnwheat.compartments.phytomers')
-                phytomers_compartments_logger.debug(sep.join(CNWheat.PHYTOMERS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
+                phytomers_compartments_logger.debug(sep.join(Simulation.PHYTOMERS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
                 organs_compartments_logger = logging.getLogger('cnwheat.compartments.organs')
-                organs_compartments_logger.debug(sep.join(CNWheat.ORGANS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Organ]))
+                organs_compartments_logger.debug(sep.join(Simulation.ORGANS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
                 elements_compartments_logger = logging.getLogger('cnwheat.compartments.elements')
-                elements_compartments_logger.debug(sep.join(CNWheat.ELEMENTS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
+                elements_compartments_logger.debug(sep.join(Simulation.ELEMENTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
             if derivatives_logger.isEnabledFor(logging.DEBUG):
                 plants_derivatives_logger = logging.getLogger('cnwheat.derivatives.plants')
-                plants_derivatives_logger.debug(sep.join(CNWheat.PLANTS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Plant]))
+                plants_derivatives_logger.debug(sep.join(Simulation.PLANTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Plant]))
                 axes_derivatives_logger = logging.getLogger('cnwheat.derivatives.axes')
-                axes_derivatives_logger.debug(sep.join(CNWheat.AXES_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Axis]))
+                axes_derivatives_logger.debug(sep.join(Simulation.AXES_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Axis]))
                 phytomers_derivatives_logger = logging.getLogger('cnwheat.derivatives.phytomers')
-                phytomers_derivatives_logger.debug(sep.join(CNWheat.PHYTOMERS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
+                phytomers_derivatives_logger.debug(sep.join(Simulation.PHYTOMERS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
                 organs_derivatives_logger = logging.getLogger('cnwheat.derivatives.organs')
-                organs_derivatives_logger.debug(sep.join(CNWheat.ORGANS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.Organ]))
+                organs_derivatives_logger.debug(sep.join(Simulation.ORGANS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
                 elements_derivatives_logger = logging.getLogger('cnwheat.derivatives.elements')
-                elements_derivatives_logger.debug(sep.join(CNWheat.ELEMENTS_INDEXES + CNWheat.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
+                elements_derivatives_logger.debug(sep.join(Simulation.ELEMENTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
 
         self._update_initial_conditions()
 
@@ -231,7 +231,7 @@ class CNWheat(object):
         if not set(infodict['mused']).issubset([1,2]):
             message = "Integration failed. See the logs of lsoda or try to increase the value of 'mxstep'."
             logger.exception(message)
-            raise CNWheatRunError(message)
+            raise SimulationRunError(message)
 
         last_compartments_values = soln[-1]
         self._update_population(t[-1], last_compartments_values)
@@ -243,7 +243,7 @@ class CNWheat(object):
                 """Run of the solver DONE: infodict = %s""",
                 infodict)
 
-        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = self._format_solver_output(t, soln)
+        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = self._format_outputs(t, soln)
 
         logger.info('Run of CN-Wheat from {} to {} DONE'.format(start_time, stop_time))
 
@@ -268,7 +268,7 @@ class CNWheat(object):
                 class_ = model.Organ
             elif issubclass(class_, model.PhotosyntheticOrganElement):
                 class_ = model.PhotosyntheticOrganElement
-            compartments_names = CNWheat.MODEL_COMPARTMENTS_NAMES[class_]
+            compartments_names = Simulation.MODEL_COMPARTMENTS_NAMES[class_]
             for compartment_name in compartments_names:
                 if hasattr(model_object, compartment_name):
                     row.append(str(y[i]))
@@ -354,14 +354,14 @@ class CNWheat(object):
 
         compartments_logger = logging.getLogger('cnwheat.compartments')
         if compartments_logger.isEnabledFor(logging.DEBUG):
-            self._log_compartments(t, y, CNWheat.LOGGERS_NAMES['compartments'])
+            self._log_compartments(t, y, Simulation.LOGGERS_NAMES['compartments'])
 
         # check that the solver is not crashed
         y_isnan = np.isnan(y)
         if y_isnan.any():
             message = 'The solver did not manage to compute a compartment. See the logs.'
             logger.exception(message)
-            raise CNWheatRunError(message)
+            raise SimulationRunError(message)
 
         y_derivatives = np.zeros_like(y)
         self.population.t = t
@@ -509,7 +509,7 @@ class CNWheat(object):
 
         derivatives_logger = logging.getLogger('cnwheat.derivatives')
         if derivatives_logger.isEnabledFor(logging.DEBUG):
-            self._log_compartments(t, y_derivatives, CNWheat.LOGGERS_NAMES['derivatives'])
+            self._log_compartments(t, y_derivatives, Simulation.LOGGERS_NAMES['derivatives'])
 
         return y_derivatives
 
@@ -526,7 +526,7 @@ class CNWheat(object):
         logger.debug('Updating the state of the population DONE')
 
 
-    def _format_solver_output(self, t, solver_output):
+    def _format_outputs(self, t, solver_output):
         """
         Create :class:`dataframes <pandas.DataFrame>` of outputs at different scales:
 
@@ -541,11 +541,11 @@ class CNWheat(object):
 
         solver_output = solver_output.T
 
-        all_plants_df = pd.DataFrame(columns=CNWheat.PLANTS_OUTPUTS)
-        all_axes_df = pd.DataFrame(columns=CNWheat.AXES_OUTPUTS)
-        all_phytomers_df = pd.DataFrame(columns=CNWheat.PHYTOMERS_OUTPUTS)
-        all_organs_df = pd.DataFrame(columns=CNWheat.ORGANS_OUTPUTS)
-        all_elements_df = pd.DataFrame(columns=CNWheat.ELEMENTS_OUTPUTS)
+        all_plants_df = pd.DataFrame(columns=Simulation.PLANTS_OUTPUTS)
+        all_axes_df = pd.DataFrame(columns=Simulation.AXES_OUTPUTS)
+        all_phytomers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_OUTPUTS)
+        all_organs_df = pd.DataFrame(columns=Simulation.ORGANS_OUTPUTS)
+        all_elements_df = pd.DataFrame(columns=Simulation.ELEMENTS_OUTPUTS)
 
         for plant in self.population.plants:
 
@@ -709,18 +709,18 @@ class CNWheat(object):
             all_plants_df = all_plants_df.append(plants_df, ignore_index=True)
 
         # set the order of the columns
-        all_plants_df = all_plants_df.reindex_axis(CNWheat.PLANTS_OUTPUTS, axis=1, copy=False)
-        all_axes_df = all_axes_df.reindex_axis(CNWheat.AXES_OUTPUTS, axis=1, copy=False)
-        all_phytomers_df = all_phytomers_df.reindex_axis(CNWheat.PHYTOMERS_OUTPUTS, axis=1, copy=False)
-        all_organs_df = all_organs_df.reindex_axis(CNWheat.ORGANS_OUTPUTS, axis=1, copy=False)
-        all_elements_df = all_elements_df.reindex_axis(CNWheat.ELEMENTS_OUTPUTS, axis=1, copy=False)
+        all_plants_df = all_plants_df.reindex_axis(Simulation.PLANTS_OUTPUTS, axis=1, copy=False)
+        all_axes_df = all_axes_df.reindex_axis(Simulation.AXES_OUTPUTS, axis=1, copy=False)
+        all_phytomers_df = all_phytomers_df.reindex_axis(Simulation.PHYTOMERS_OUTPUTS, axis=1, copy=False)
+        all_organs_df = all_organs_df.reindex_axis(Simulation.ORGANS_OUTPUTS, axis=1, copy=False)
+        all_elements_df = all_elements_df.reindex_axis(Simulation.ELEMENTS_OUTPUTS, axis=1, copy=False)
 
         # sort the rows by the columns
-        all_plants_df.sort_index(by=CNWheat.PLANTS_INDEXES, inplace=True)
-        all_axes_df.sort_index(by=CNWheat.AXES_INDEXES, inplace=True)
-        all_phytomers_df.sort_index(by=CNWheat.PHYTOMERS_INDEXES, inplace=True)
-        all_organs_df.sort_index(by=CNWheat.ORGANS_INDEXES, inplace=True)
-        all_elements_df.sort_index(by=CNWheat.ELEMENTS_INDEXES, inplace=True)
+        all_plants_df.sort_index(by=Simulation.PLANTS_INDEXES, inplace=True)
+        all_axes_df.sort_index(by=Simulation.AXES_INDEXES, inplace=True)
+        all_phytomers_df.sort_index(by=Simulation.PHYTOMERS_INDEXES, inplace=True)
+        all_organs_df.sort_index(by=Simulation.ORGANS_INDEXES, inplace=True)
+        all_elements_df.sort_index(by=Simulation.ELEMENTS_INDEXES, inplace=True)
 
         # infer the right types of the columns
         all_plants_df = all_plants_df.convert_objects(copy=False)

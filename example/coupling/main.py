@@ -224,13 +224,13 @@ axis.phytomers.append(phytomer5)
 # Get PAR data
 PAR_filepath = os.path.join(INPUTS_DIRPATH, PAR_FILENAME)
 PAR_df = pd.read_csv(PAR_filepath)
-PAR_grouped = PAR_df.groupby(simulation.CNWheat.ELEMENTS_INDEXES)
+PAR_grouped = PAR_df.groupby(simulation.Simulation.ELEMENTS_INDEXES)
  
 # get meteo data
 meteo_df = read_t_data(INPUTS_DIRPATH, METEO_FILENAME)
  
 # initialize the model of CN exchanges
-cnwheat_ = simulation.CNWheat(population=population)
+simulation_ = simulation.Simulation(population=population)
  
 # run the models
 start_time = 0
@@ -275,7 +275,7 @@ for t_photosynthesis_model in xrange(start_time, stop_time, photosynthesis_model
         # update the population
         population.t = t_cn_model
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
-        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = cnwheat_.run(start_time=t_cn_model, stop_time=t_cn_model+cn_model_ts, number_of_output_steps=cn_model_ts+1)
+        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.run(start_time=t_cn_model, stop_time=t_cn_model+cn_model_ts, number_of_output_steps=cn_model_ts+1)
         all_plants_df_list.append(all_plants_df)
         all_axes_df_list.append(all_axes_df)
         all_phytomers_df_list.append(all_phytomers_df)
@@ -283,27 +283,27 @@ for t_photosynthesis_model in xrange(start_time, stop_time, photosynthesis_model
         all_elements_df_list.append(all_elements_df)
  
 global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
-global_plants_df.drop_duplicates(subset=simulation.CNWheat.PLANTS_INDEXES, inplace=True)
+global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_INDEXES, inplace=True)
 plants_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, PLANTS_OUTPUTS_FILENAME)
 global_plants_df.to_csv(plants_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
  
 global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
-global_axes_df.drop_duplicates(subset=simulation.CNWheat.AXES_INDEXES, inplace=True)
+global_axes_df.drop_duplicates(subset=simulation.Simulation.AXES_INDEXES, inplace=True)
 axes_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, AXES_OUTPUTS_FILENAME)
 global_axes_df.to_csv(axes_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
  
 global_phytomers_df = pd.concat(all_phytomers_df_list, ignore_index=True)
-global_phytomers_df.drop_duplicates(subset=simulation.CNWheat.PHYTOMERS_INDEXES, inplace=True)
+global_phytomers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_INDEXES, inplace=True)
 phytomers_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, PHYTOMERS_OUTPUTS_FILENAME)
 global_phytomers_df.to_csv(phytomers_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
  
 global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
-global_organs_df.drop_duplicates(subset=simulation.CNWheat.ORGANS_INDEXES, inplace=True)
+global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_INDEXES, inplace=True)
 organs_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ORGANS_OUTPUTS_FILENAME)
 global_organs_df.to_csv(organs_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
  
 global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
-global_elements_df.drop_duplicates(subset=simulation.CNWheat.ELEMENTS_INDEXES, inplace=True)
+global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_INDEXES, inplace=True)
 elements_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME)
 global_elements_df.to_csv(elements_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
  
