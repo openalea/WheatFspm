@@ -2,11 +2,11 @@
 """
     test_farquhar_wheat
     ~~~~~~~~~~~~~~~~~~~
-    
+
     Test the Farquhar-Wheat model.
 
-    You must first install :mod:`farquharwheat` (and add it to your PYTHONPATH) 
-    before running this script with the command `python`. 
+    You must first install :mod:`farquharwheat` (and add it to your PYTHONPATH)
+    before running this script with the command `python`.
 
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
@@ -27,7 +27,7 @@ def assert_close(actual, desired, tolerance=0.01):
     assert abs(actual - desired) < tolerance * (abs(desired) + 1)
 
 def test_calculate_An():
-    
+
     organ_width = 0.018
     organ_height = 0.6
     PAR = 24.64
@@ -37,17 +37,17 @@ def test_calculate_An():
     Wind = 3.032
     organ_name = 'Lamina'
     Na = None
-    
-    actual_An, actual_Tr, _, _ = model.PhotosynthesisModel.calculate_An(Na, organ_width, organ_height, 
+
+    _, actual_An, _, actual_Tr, _, _ = model.PhotosynthesisModel.calculate_An(Na, organ_width, organ_height,
         PAR, air_temperature, ambient_CO2, humidity, Wind, organ_name)
-    
-    desired_An = 1.22
-    desired_Tr = 1.65e-6
-    
+
+    desired_An = 1.186
+    desired_Tr = 1.69e-6
+
     assert_close(actual_An, desired_An, tolerance=1e-3)
     assert_close(actual_Tr, desired_Tr, tolerance=1e-8)
-    
-    
+
+
 if __name__ == '__main__':
     test_calculate_An()
 

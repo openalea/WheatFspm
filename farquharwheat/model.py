@@ -75,6 +75,8 @@ class PhotosynthesisModel(object):
                   'deltaS': {'Vc_max': 0.486, 'Jmax': 0.495, 'TPU': 0.495},
                   'Tref': 298.15, 'R': 8.3145E-03}
 
+    DELTA_CONVERGENCE = 0.01 #: The relative delta for Ci and Torg convergence.
+
     @classmethod
     def _organ_temperature(cls, w, z, Zh, Ur, PAR, gs, Ta, Torg, RH, organ_name):
         """
@@ -301,4 +303,4 @@ class PhotosynthesisModel(object):
             if abs((Ci - prec_Ci)/prec_Ci) < cls.DELTA_CONVERGENCE and abs((Torg - prec_Torg)/prec_Torg) < cls.DELTA_CONVERGENCE:
                 break
 
-        return An, Rd, Tr, Torg, gs
+        return Ag, An, Rd, Tr, Torg, gs
