@@ -73,12 +73,12 @@ class CNWheat(object):
                                                                                        'RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual']
 
     ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element']
-    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['green_area', 'Loading_Sucrose', 'Regul_S_Fructan', 'An', 'Rd', 'R_phloem', 'R_Nnit_red', 'R_residual',
+    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['green_area', 'Loading_Sucrose', 'Regul_S_Fructan', 'Ag', 'An', 'Rd', 'R_phloem', 'R_Nnit_red', 'R_residual',
                                                                                                                 'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose',
                                                                                                                 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 'SLN',
                                                                                                                 'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan',
                                                                                                                 'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids',
-                                                                                                                'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids', 'R_phloem_loading', 
+                                                                                                                'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids', 'R_phloem_loading',
                                                                                                                 'gs', 'Tr', 'Ts', 'Photosynthesis']
 
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
@@ -416,7 +416,7 @@ class CNWheat(object):
                             element.proteins = y[self.initial_conditions_mapping[element]['proteins']]
 
                             # intermediate variables
-                            photosynthesis = element.calculate_photosynthesis(t, element.An, phytomer.index)
+                            photosynthesis = element.calculate_photosynthesis(t, element.Ag, phytomer.index)
                             element_transpiration = transpiration_mapping[element]
 
                             # flows
@@ -435,11 +435,12 @@ class CNWheat(object):
                             element.loading_amino_acids = element.calculate_loading_amino_acids(element.amino_acids, axis.phloem.amino_acids)
 
                             # compartments derivatives
-                            starch_derivative = element.calculate_starch_derivative(s_starch, d_starch)                            
-                            R_phloem_loading = RespirationModel.R_phloem(element.loading_sucrose, element.sucrose)
-                            R_Nnit_red = RespirationModel.R_Nnit_red(s_amino_acids, element.sucrose)
+                            starch_derivative = element.calculate_starch_derivative(s_starch, d_starch)
+                            R_phloem_loading = 0#RespirationModel.R_phloem(element.loading_sucrose, element.sucrose)
+                            print 'resp', RespirationModel.R_phloem(element.loading_sucrose, element.sucrose)
+                            R_Nnit_red = 0#RespirationModel.R_Nnit_red(s_amino_acids, element.sucrose)
                             element.total_nitrogen = element.calculate_total_nitrogen(element.nitrates, element.amino_acids, element.proteins, element.Nstruct)
-                            R_residual = RespirationModel.R_residual(element.sucrose/(element.mstruct*element.__class__.PARAMETERS.ALPHA), element.total_nitrogen)
+                            R_residual = 0#RespirationModel.R_residual(element.sucrose/(element.mstruct*element.__class__.PARAMETERS.ALPHA), element.total_nitrogen)
                             sucrose_derivative = element.calculate_sucrose_derivative(s_sucrose, d_starch, element.loading_sucrose, s_fructan, d_fructan, R_phloem_loading, R_Nnit_red, R_residual)
                             triosesP_derivative = element.calculate_triosesP_derivative(photosynthesis, s_sucrose, s_starch, s_amino_acids)
                             fructan_derivative = element.calculate_fructan_derivative(s_fructan, d_fructan)
@@ -486,10 +487,10 @@ class CNWheat(object):
                 axis.roots.s_amino_acids = axis.roots.calculate_s_amino_acids(axis.roots.nitrates, axis.roots.sucrose)
 
                 # compartments derivatives
-                R_Nnit_upt = RespirationModel.R_Nnit_upt(roots_uptake_nitrate, axis.roots.sucrose)
-                R_Nnit_red = RespirationModel.R_Nnit_red(axis.roots.s_amino_acids, axis.roots.sucrose, root=True)
+                R_Nnit_upt = 0#RespirationModel.R_Nnit_upt(roots_uptake_nitrate, axis.roots.sucrose)
+                R_Nnit_red = 0#RespirationModel.R_Nnit_red(axis.roots.s_amino_acids, axis.roots.sucrose, root=True)
                 axis.roots.total_nitrogen = axis.roots.calculate_total_nitrogen(axis.roots.nitrates, axis.roots.amino_acids, axis.roots.Nstruct)
-                R_residual = RespirationModel.R_residual(axis.roots.sucrose/(axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA), axis.roots.total_nitrogen)
+                R_residual = 0#RespirationModel.R_residual(axis.roots.sucrose/(axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA), axis.roots.total_nitrogen)
                 sucrose_derivative = axis.roots.calculate_sucrose_derivative(axis.roots.unloading_sucrose, axis.roots.s_amino_acids, R_Nnit_upt, R_Nnit_red, R_residual)
                 nitrates_derivative = axis.roots.calculate_nitrates_derivative(roots_uptake_nitrate, axis.roots.s_amino_acids)
                 amino_acids_derivative = axis.roots.calculate_amino_acids_derivative(axis.roots.unloading_amino_acids, axis.roots.s_amino_acids, roots_export_amino_acids)
@@ -628,14 +629,14 @@ class CNWheat(object):
                         for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                             if element is None:
                                 continue
-                            
+
                             elements_df = pd.DataFrame(columns=all_elements_df.columns)
                             elements_df['t'] = t
                             elements_df['plant'] = plant.index
                             elements_df['axis'] = axis.id
                             elements_df['phytomer'] = phytomer.index
                             elements_df['organ'] = organ.__class__.__name__
-                            elements_df['element'] = element_type                            
+                            elements_df['element'] = element_type
                             elements_df['green_area'] = map(element._calculate_green_area, t, [phytomer.index]*len(t))
                             elements_df['Nstruct'] = element.Nstruct
                             elements_df['triosesP'] = solver_output[self.initial_conditions_mapping[element]['triosesP']]
@@ -647,7 +648,8 @@ class CNWheat(object):
                             elements_df['proteins'] = solver_output[self.initial_conditions_mapping[element]['proteins']]
                             elements_df['Loading_Sucrose'] = map(element.calculate_loading_sucrose, elements_df['sucrose'], phloem_sucrose)
                             elements_df['Regul_S_Fructan'] = map(element.calculate_regul_s_fructan, elements_df['Loading_Sucrose'])
-                            elements_df['An'] = element.An                            
+                            elements_df['Ag'] = element.Ag
+                            elements_df['An'] = element.An
                             elements_df['Rd'] = element.Rd
                             elements_df['R_phloem_loading'] = map(RespirationModel.R_phloem, elements_df['Loading_Sucrose'], elements_df['sucrose'])
                             elements_df['S_Amino_Acids'] = map(element.calculate_s_amino_acids, elements_df['nitrates'], elements_df['triosesP'])
@@ -657,7 +659,7 @@ class CNWheat(object):
                             elements_df['Tr'] = element.Tr
                             elements_df['Ts'] = element.Ts
                             elements_df['gs'] = element.gs
-                            elements_df['Photosynthesis'] = map(element.calculate_photosynthesis, t, [element.An] * len(t), [phytomer.index] * len(t))
+                            elements_df['Photosynthesis'] = map(element.calculate_photosynthesis, t, [element.Ag] * len(t), [phytomer.index] * len(t))
                             elements_df['Transpiration'] = transpiration_mapping[element]
                             elements_df['Conc_TriosesP'] = element.calculate_conc_triosesP(elements_df['triosesP'])
                             elements_df['Conc_Starch'] = element.calculate_conc_starch(elements_df['starch'])
