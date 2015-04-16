@@ -38,17 +38,17 @@ def test_calculate_An():
     organ_name = 'Lamina'
     Na = None
 
-    _, actual_An, _, actual_Tr, _, _ = model.PhotosynthesisModel.calculate_An(Na, organ_width, organ_height,
+    actual_Ag, actual_An, _, actual_Tr, _, _ = model.PhotosynthesisModel.calculate_An(Na, organ_width, organ_height,
         PAR, air_temperature, ambient_CO2, humidity, Wind, organ_name)
 
+    desired_Ag = 1.446
     desired_An = 1.186
     desired_Tr = 1.69e-6
 
+    assert_close(actual_Ag, desired_Ag, tolerance=1e-3)
     assert_close(actual_An, desired_An, tolerance=1e-3)
     assert_close(actual_Tr, desired_Tr, tolerance=1e-8)
 
 
 if __name__ == '__main__':
     test_calculate_An()
-
-

@@ -269,8 +269,8 @@ class PhotosynthesisModel(object):
 
         :Returns Type:
             :class:`float`
-
         """
+
         if Na is None:
             Na = cls.NA_0
 
