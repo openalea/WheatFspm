@@ -7,7 +7,7 @@ from __future__ import division # use '//' to do integer division
     respiwheat.model
     ~~~~~~~~~~~~~~~~~~~
 
-    Model of respiration based on on Thornley and Cannell, 2000.
+    Model of respiration based on Thornley and Cannell, 2000.
     The model computes the respiration associated with the main biological processes.
 
     R_total = sum(R_growth) + R_phloem + R_Namm_upt + R_Nnit_upt + R_Nnit_red(shoot + root) + R_N2fix + R_min_upt + sum(R_residual)
@@ -19,134 +19,217 @@ from __future__ import division # use '//' to do integer division
 class RespirationModel(object):
 
     ### R_growth###
-    Yg = 0.75             # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
+    YG = 0.80             # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
 
     ### R_phloem###
-    Cphloem = 0.006       # Units C respired per unit C substrate loaded into the phloem
+    CPHLOEM = 0.006       # Units C respired per unit C substrate loaded into the phloem
 
     ### R_Namm_upt###
-    C_Namm_upt = 0.198    # µmol of C substrate respired per µmol of N ammonium taken up
+    C_AMM_UPT = 0.198     # µmol of C substrate respired per µmol of N ammonium taken up
 
     ### R_Nnit_upt###
-    C_Nnit_upt = 0.397    # µmol of C substrate respired per µmol of N nitrates taken up
+    C_NIT_UPT = 0.397     # µmol of C substrate respired per µmol of N nitrates taken up
 
     ### R_Nnit_red###
-    fNnit_red_sh_CS = 0.5 # fraction of nitrate reduced in the shoot using C substrate rather than using excess ATP and reducing power obtained directly from photosynthesis
-    C_Nnit_red = 1.98     # µmol of C substrate per µmol of N nitrates reduced
+    F_NIT_RED_SH_CS = 0.5 # fraction of nitrate reduced in the shoot using C substrate rather than using excess ATP and reducing power obtained directly from photosynthesis
+    C_NIT_RED = 1.98      # µmol of C substrate per µmol of N nitrates reduced
 
     ### R_N2fix ###
-    C_Nfix = 6            # kg substrate C respired (kg N fixed)-1 (in the range  5 to 12)
+    C_NFIX = 6            # kg substrate C respired (kg N fixed)-1 (in the range  5 to 12)
 
     ### R_min_upt ###
-    Cmin_upt = 5000       # µmol of C substrate respired per g of minerals taken up
-    ashe_content = 0.05   # g minerals per g of structural dry mass
+    CMIN_UPT = 5000       # µmol of C substrate respired per g of minerals taken up
+    ASHE_CONTENT = 0.05   # g minerals per g of structural dry mass
 
     ### R_residual ###
-    km_max = 4.1E-6       # Maximum value of the maintenance constant when C is much greater than Km (µmol of C substrate respired per µmol N s-1)
-    Km = 1.67E3           # The Michaelis-Menten constant affinity i.e. the C substrate concentration at half the value of km_max (µmol of C substrate per g of structural mass)
+    KM_MAX = 4.1E-6       # Maximum value of the maintenance constant when C is much greater than KM (µmol of C substrate respired per µmol N s-1)
+    KM = 1.67E-3          # The Michaelis-Menten constant affinity i.e. the C substrate concentration at half the value of KM_MAX (µmol of C substrate per g of structural mass)
 
     @classmethod
-    def R_growth(cls, G):
+    def R_growth(cls, G, mstruct):
         """
         Local growth respiration
-        - G: gross growth of plant tissue (µmol C added in new plant tissue)
+
+        : Parameters:
+            - `G` (:class:`float`) - gross growth of plant tissue (µmol C added in new plant tissue g-1 mstruct)
+            - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
+
+        : Returns:
+            _R_growth (µmol C respired)
+
+        :Returns Type:
+            :class:`float`
         """
-        Rg = ((1 - cls.Yg)/cls.Yg)*G
-        return Rg
+        _R_growth = ((1 - cls.YG)/cls.YG) * (G*mstruct)
+        return _R_growth
 
     @classmethod
-    def R_phloem(cls, L, sucrose):
+    def R_grain_growth(cls, mstruct_growth, starch_filling, mstruct):
+        """
+        Grain growth respiration
+
+        : Parameters:
+            - `mstruct_growth` (:class:`float`) - gross growth of grain structure (µmol C added in grain structure)
+            - `starch_filling` (:class:`float`) - gross growth of grain starch (µmol C added in grain starch g-1 mstruct)
+            - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
+
+        : Returns:
+            R_grain_growth (µmol C respired)
+
+        :Returns Type:
+            :class:`float`
+        """
+        R_grain_growth_struct = ((1 - cls.YG)/cls.YG) * mstruct_growth
+        R_grain_growth_starch = ((1 - cls.YG)/cls.YG) * (starch_filling*mstruct)
+        return R_grain_growth_struct, R_grain_growth_starch
+
+    @classmethod
+    def R_phloem(cls, sucrose_loading, sucrose, mstruct):
         """
         Phloem loading respiration
-        - L: Loading flux from the C substrate pool to phloem (µmol C)
+
+        : Parameters:
+            - `sucrose_loading` (:class:`float`) -  Loading flux from the C substrate pool to phloem (µmol C g-1 mstruct)
+            - `sucrose` (:class:`float`) -  amount of C sucrose in organ (µmol C)
+            - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
+
+        : Returns:
+            _R_phloem (µmol C respired)
+
+        :Returns Type:
+            :class:`float`
         """
-        if sucrose > 0:
-            Rp = cls.Cphloem * L
+
+        if sucrose_loading >0 and sucrose >0:
+            _R_phloem = cls.CPHLOEM * sucrose_loading * mstruct
         else:
-            Rp = 0
-        return Rp
+            _R_phloem = 0
+        return _R_phloem
 
     @classmethod
     def R_Namm_upt(cls, U_Namm):
         """
         Ammonium uptake respiration
-        - U_Namm: uptake of N ammonium (µmol N)
-        Neglected for wheat model
+
+        : Parameters:
+            - `U_Namm` (:class:`float`) -  uptake of N ammonium (µmol N)
+
+        : Returns:
+            _R_Namm (µmol C respired)
+
+        :Returns Type:
+            :class:`float`
         """
-        R_Namm = cls.C_Namm_upt * U_Namm
-        return R_Namm
+        R_Namm_upt = cls.C_AMM_UPT * U_Namm
+        return R_Namm_upt
 
     @classmethod
     def R_Nnit_upt(cls, U_Nnit, sucrose):
         """
         Nitrate uptake respiration
-        - U_Nnit: uptake of N nitrates (µmol N)
+
+        : Parameters:
+            - `U_Nnit` (:class:`float`) - uptake of N nitrates (µmol N)
+            - `sucrose` (:class:`float`) -  amount of C sucrose in organ (µmol C)
+
+        : Returns:
+            _R_Nnit_upt (µmol C respired)
+
+        :Returns Type:
+            :class:`float`
         """
         if sucrose > 0:
-            R_Nnit_upt_ = cls.C_Nnit_upt * U_Nnit
+            _R_Nnit_upt = cls.C_NIT_UPT * U_Nnit
         else:
-            R_Nnit_upt_ = 0
-        return R_Nnit_upt_
+            _R_Nnit_upt = 0
+        return _R_Nnit_upt
 
     @classmethod
-    def R_Nnit_red(cls, Nit_red, sucrose, root=False):
+    def R_Nnit_red(cls, s_amino_acids, sucrose, mstruct, root=False):
         """
         Nitrate reduction-linked respiration
-        - Nit_red: µmol of N nitrates reduced (supposed to equal consumption of N for the synthesis of amino acids)
-        - root: specifies if the nitrate reduction-linked respiration is computed for shoot (False) or root (True) tissues.
         Distinction is made between nitrate realised in roots or in shoots where a part of the energy required is derived from ATP
         and reducing power obtained directly from photosynthesis (rather than C substrate)
+
+        : Parameters:
+            - `s_amino_acids` (:class:`float`) - consumption of N for the synthesis of amino acids (µmol N g-1 mstruct)
+              (in the present version, this is used to approximate nitrate reduction needed in the original model of Thornley and Cannell, 2000)
+            - `sucrose` (:class:`float`) -  amount of C sucrose in organ (µmol C)
+            - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
+            - `root` (:class:`bool`) - specifies if the nitrate reduction-linked respiration is computed for shoot (False) or root (True) tissues.
+
+        : Returns:
+            _R_Nnit_upt (µmol C respired)
+
+        :Returns Type:
+            :class:`float`
         """
         if sucrose > 0:
             if not root:
-                R_Nnit_red_ = cls.fNnit_red_sh_CS * cls.C_Nnit_red *  Nit_red #: Respiration in shoot tissues
+                _R_Nnit_red = cls.F_NIT_RED_SH_CS * cls.C_NIT_RED *  s_amino_acids * mstruct # Respiration in shoot tissues
             else:
-                R_Nnit_red_ = cls.C_Nnit_red * Nit_red                         #: Respiration in root tissues
+                _R_Nnit_red = cls.C_NIT_RED * s_amino_acids * mstruct                        # Respiration in root tissues
         else:
-            R_Nnit_red_ = 0
-
-        return R_Nnit_red_
+            _R_Nnit_red = 0
+        return _R_Nnit_red
 
     @classmethod
     def R_N2fix(cls, I_Nfix):
         """
         N2-fixation respiration
-        - I_Nfix: flux of fixed N into the root substrate N pool (kg fixed N)
-        Not used in wheat model
+
+        : Parameters:
+            - `I_Nfix` (:class:`float`) - flux of fixed N into the root substrate N pool (kg fixed N)
+
+        : Returns:
+            _R_N2fix (µmol C respired)
+
+        :Returns Type:
+            :class:`float`
         """
 
-        R_N2 = cls.C_Nfix * I_Nfix
-        return R_N2
+        _R_N2fix = cls.C_NFIX * I_Nfix
+        return _R_N2fix
 
     @classmethod
     def R_min_upt(cls, delta_BMstruct):
         """
         Mineral ion (other than N) uptake-linked respiration
-        - delta_BMstruct: gross plant structural growth rate  (g)
+
+        : Parameters:
+            - `delta_BMstruct` (:class:`float`) - gross plant structural growth rate (g)
+
+        : Returns:
+            _R_min_upt (µmol C respired)
+
+        :Returns Type:
+            :class:`float`
         """
         # Uptake of minerals (g)
-        Umin = (cls.ashe_content * delta_BMstruct) * 0.5 #: 0.5: minerals internally recycled from senescing leaves
+        Umin = (cls.ASHE_CONTENT * delta_BMstruct) * 0.5 # 0.5: minerals internally recycled from senescing leaves
         # Respiratory cost
-        Rmin = cls.Cmin_upt * Umin
-        return Rmin
-    # c bien delta_BMstruct? (cls.ashe_content * created_tissues_BMstruct) - (cls.ashe_content * senesced_tissues_Mstruct)*0.5
-    # senesced_part_Mstruct = Mstruct des tissus qui deviennet senescents (progression d'un 'front de senscence' sur les organes)
-    # a chq pas de tps, calcul delta_BMstruct, puis C respiré depuis sucrose phloem?: OK car uptake + transport
+        _R_min_upt = cls.CMIN_UPT * Umin
+        return _R_min_upt
+
     @classmethod
-    def R_residual(cls, C, Ntot):
+    def R_residual(cls, sucrose, mstruct, Ntot):
         """
         Residual maintenance respiration (cost from protein turn-over, cell ion gradients, futile cycles...)
-        - C: C substrate concentration (µmol C g-1 structural mass)
-        - Ntot: total N in plant (µmol N)= structural N + meristematic N + substrate N + photosynthetic N
-        """
-        if C > 0:
-            Rres = ((cls.km_max * C)/(cls.Km + C)) * Ntot
-        else:
-            Rres = 0
-        return Rres
-# A chq pas de tps, faire ce calcul pr chq org_ph, roots et grains?
 
-#Prise en compte température:
-#    - pr la croissance: dépendance temp pr RER et beta (=ttes les vitesses pr les dimensions) type Arrhenius modifiee pr diminuer a 1 temp. Va ainsi affecter les flux de masse
-#    - pr respi residuelle: mettre Arrhenius classique (chercher ds biblio)
-#    - respi phloeme: a reguler + tard a travers les flux de C chargé
+        : Parameters:
+            - `sucrose` (:class:`float`) - amount of C sucrose (µmol C)
+            - `mstruct` (:class:`float`) - structural dry mass of organ (g)
+            - `Ntot` (:class:`float`) - total N in plant (µmol N)
+
+        : Returns:
+            _R_residual (µmol C respired)
+
+        :Returns Type:
+            :class:`float`
+        """
+        conc_sucrose = sucrose / mstruct
+        if conc_sucrose >0 :
+            _R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot
+        else:
+            _R_residual = 0
+        return _R_residual

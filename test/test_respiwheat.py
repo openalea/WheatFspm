@@ -29,29 +29,32 @@ def assert_close(actual, desired, tolerance=0.01):
 def test_calculate_respiwheat():
 
     G = 10
-    L = 10
+    mstruct_growth =10
+    starch_filling =10
+    sucrose_loading = 10
     U_Namm = 10
     U_Nnit = 10
-    Nit_red = 10
+    s_amino_acids = 10
     I_Nfix = 10
     delta_BMstruct = 10
-    C = 10
+    sucrose = 10
     Ntot = 10
-    sucrose = 2
+    mstruct = 1
 
     actual_respirations = {}
 
-    actual_respirations['R_growth'] =  model.RespirationModel.R_growth(G)
-    actual_respirations['R_phloem'] =  model.RespirationModel.R_phloem(L, sucrose)
+    actual_respirations['R_growth'] =  model.RespirationModel.R_growth(G, mstruct)
+    actual_respirations['R_grain_growth'] =  model.RespirationModel.R_grain_growth(mstruct_growth, starch_filling, mstruct)
+    actual_respirations['R_phloem'] =  model.RespirationModel.R_phloem(sucrose_loading, sucrose, mstruct)
     actual_respirations['R_Namm'] =  model.RespirationModel.R_Namm_upt(U_Namm)
     actual_respirations['R_Nnit'] =  model.RespirationModel.R_Nnit_upt(U_Nnit, sucrose)
-    actual_respirations['R_Nnit_red_shoot'] =  model.RespirationModel.R_Nnit_red(Nit_red, sucrose)
-    actual_respirations['R_Nnit_red_roots'] =  model.RespirationModel.R_Nnit_red(Nit_red, sucrose, root = True)
+    actual_respirations['R_Nnit_red_shoot'] =  model.RespirationModel.R_Nnit_red(s_amino_acids, sucrose, mstruct)
+    actual_respirations['R_Nnit_red_roots'] =  model.RespirationModel.R_Nnit_red(s_amino_acids, sucrose, mstruct, root = True)
     actual_respirations['R_N2fix'] =  model.RespirationModel.R_N2fix(I_Nfix)
     actual_respirations['R_min_upt'] =  model.RespirationModel.R_min_upt(delta_BMstruct)
-    actual_respirations['R_residual'] =  model.RespirationModel.R_residual(C, Ntot)
+    actual_respirations['R_residual'] =  model.RespirationModel.R_residual(sucrose, mstruct, Ntot)
 
-    desired_respirations = {'R_growth' : 3.33, 'R_phloem' : 0.06, 'R_Namm' : 1.98, 'R_Nnit' : 3.97, 'R_Nnit_red_shoot' : 9.9,
+    desired_respirations = {'R_growth' : 2.5,'R_grain_growth' : 5., 'R_phloem' : 0.06, 'R_Namm' : 1.98, 'R_Nnit' : 3.97, 'R_Nnit_red_shoot' : 9.9,
                             'R_Nnit_red_roots' : 19.8, 'R_N2fix' : 60, 'R_min_upt' : 1250, 'R_residual' : 2.44E-7}
 
     for R, desired_R in desired_respirations.iteritems():
