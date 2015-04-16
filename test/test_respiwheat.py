@@ -44,7 +44,7 @@ def test_calculate_respiwheat():
     actual_respirations = {}
 
     actual_respirations['R_growth'] =  model.RespirationModel.R_growth(G, mstruct)
-    actual_respirations['R_grain_growth'] =  model.RespirationModel.R_grain_growth(mstruct_growth, starch_filling, mstruct)
+    actual_respirations['R_grain_growth_struct'], actual_respirations['R_grain_growth_starch'] =  model.RespirationModel.R_grain_growth(mstruct_growth, starch_filling, mstruct)
     actual_respirations['R_phloem'] =  model.RespirationModel.R_phloem(sucrose_loading, sucrose, mstruct)
     actual_respirations['R_Namm'] =  model.RespirationModel.R_Namm_upt(U_Namm)
     actual_respirations['R_Nnit'] =  model.RespirationModel.R_Nnit_upt(U_Nnit, sucrose)
@@ -54,7 +54,7 @@ def test_calculate_respiwheat():
     actual_respirations['R_min_upt'] =  model.RespirationModel.R_min_upt(delta_BMstruct)
     actual_respirations['R_residual'] =  model.RespirationModel.R_residual(sucrose, mstruct, Ntot)
 
-    desired_respirations = {'R_growth' : 2.5,'R_grain_growth' : 5., 'R_phloem' : 0.06, 'R_Namm' : 1.98, 'R_Nnit' : 3.97, 'R_Nnit_red_shoot' : 9.9,
+    desired_respirations = {'R_growth' : 2.5, 'R_grain_growth_struct' : 2.5, 'R_grain_growth_starch' : 2.5, 'R_phloem' : 0.06, 'R_Namm' : 1.98, 'R_Nnit' : 3.97, 'R_Nnit_red_shoot' : 9.9,
                             'R_Nnit_red_roots' : 19.8, 'R_N2fix' : 60, 'R_min_upt' : 1250, 'R_residual' : 2.44E-7}
 
     for R, desired_R in desired_respirations.iteritems():
