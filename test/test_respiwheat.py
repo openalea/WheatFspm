@@ -40,6 +40,7 @@ def test_calculate_respiwheat():
     sucrose = 10
     Ntot = 10
     mstruct = 1
+    delta_t= 3600
 
     actual_respirations = {}
 
@@ -52,10 +53,10 @@ def test_calculate_respiwheat():
     actual_respirations['R_Nnit_red_roots'] =  model.RespirationModel.R_Nnit_red(s_amino_acids, sucrose, mstruct, root = True)
     actual_respirations['R_N2fix'] =  model.RespirationModel.R_N2fix(I_Nfix)
     actual_respirations['R_min_upt'] =  model.RespirationModel.R_min_upt(delta_BMstruct)
-    actual_respirations['R_residual'] =  model.RespirationModel.R_residual(sucrose, mstruct, Ntot)
+    actual_respirations['R_residual'] =  model.RespirationModel.R_residual(sucrose, mstruct, Ntot, delta_t)
 
     desired_respirations = {'R_growth' : 2.5, 'R_grain_growth_struct' : 2.5, 'R_grain_growth_starch' : 2.5, 'R_phloem' : 0.06, 'R_Namm' : 1.98, 'R_Nnit' : 3.97, 'R_Nnit_red_shoot' : 9.9,
-                            'R_Nnit_red_roots' : 19.8, 'R_N2fix' : 60, 'R_min_upt' : 1250, 'R_residual' : 2.44E-7}
+                            'R_Nnit_red_roots' : 19.8, 'R_N2fix' : 60, 'R_min_upt' : 1250, 'R_residual' : 0.148}
 
     for R, desired_R in desired_respirations.iteritems():
        assert_close(actual_respirations[R], desired_R, tolerance=1e-3)

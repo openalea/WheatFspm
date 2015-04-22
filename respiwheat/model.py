@@ -212,7 +212,7 @@ class RespirationModel(object):
         return _R_min_upt
 
     @classmethod
-    def R_residual(cls, sucrose, mstruct, Ntot):
+    def R_residual(cls, sucrose, mstruct, Ntot, delta_t):
         """
         Residual maintenance respiration (cost from protein turn-over, cell ion gradients, futile cycles...)
 
@@ -220,6 +220,7 @@ class RespirationModel(object):
             - `sucrose` (:class:`float`) - amount of C sucrose (µmol C)
             - `mstruct` (:class:`float`) - structural dry mass of organ (g)
             - `Ntot` (:class:`float`) - total N in plant (µmol N)
+            - `delta_t` (:class:`float`) - timestep (s)
 
         : Returns:
             _R_residual (µmol C respired)
@@ -229,7 +230,7 @@ class RespirationModel(object):
         """
         conc_sucrose = sucrose / mstruct
         if conc_sucrose >0 :
-            _R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot
+            _R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot * delta_t
         else:
             _R_residual = 0
         return _R_residual
