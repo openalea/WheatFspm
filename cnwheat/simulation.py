@@ -70,15 +70,15 @@ class Simulation(object):
                                                                                        'Potential_Uptake_Nitrates', 'S_Proteins', 'Conc_Nitrates', 'S_Amino_Acids',
                                                                                        'Conc_Amino_Acids', 'Dry_Mass', 'Unloading_Amino_Acids', 'S_grain_starch',
                                                                                        'Conc_Sucrose', 'Uptake_Nitrates', 'S_grain_structure', 'Proteins_N_Mass',
-                                                                                       'RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual']
+                                                                                       'RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual', 'R_grain_growth_struct', 'R_grain_growth_starch', 'R_grain_growth_struct_YG', 'R_grain_growth_starch_YG']
 
     ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element']
-    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['green_area', 'Loading_Sucrose', 'Regul_S_Fructan', 'Ag', 'An', 'Rd', 'R_phloem', 'R_Nnit_red', 'R_residual',
+    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['green_area', 'Loading_Sucrose', 'Regul_S_Fructan', 'Ag', 'An', 'Rd', 'R_phloem_loading', 'R_Nnit_red', 'R_residual',
                                                                                                                 'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose',
                                                                                                                 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 'SLN',
                                                                                                                 'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan',
                                                                                                                 'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids',
-                                                                                                                'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids', 'R_phloem_loading',
+                                                                                                                'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids',
                                                                                                                 'gs', 'Tr', 'Ts', 'Photosynthesis']
 
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
@@ -436,11 +436,10 @@ class Simulation(object):
 
                             # compartments derivatives
                             starch_derivative = element.calculate_starch_derivative(s_starch, d_starch)
-                            R_phloem_loading = 0#RespirationModel.R_phloem(element.loading_sucrose, element.sucrose)
-                            print 'resp', RespirationModel.R_phloem(element.loading_sucrose, element.sucrose)
-                            R_Nnit_red = 0#RespirationModel.R_Nnit_red(s_amino_acids, element.sucrose)
+                            R_phloem_loading = RespirationModel.R_phloem(element.loading_sucrose, element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA)
+                            R_Nnit_red = RespirationModel.R_Nnit_red(s_amino_acids, element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA)
                             element.total_nitrogen = element.calculate_total_nitrogen(element.nitrates, element.amino_acids, element.proteins, element.Nstruct)
-                            R_residual = 0#RespirationModel.R_residual(element.sucrose/(element.mstruct*element.__class__.PARAMETERS.ALPHA), element.total_nitrogen)
+                            R_residual = RespirationModel.R_residual(element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA, element.total_nitrogen, organ.__class__.PARAMETERS.DELTA_T)
                             sucrose_derivative = element.calculate_sucrose_derivative(s_sucrose, d_starch, element.loading_sucrose, s_fructan, d_fructan, R_phloem_loading, R_Nnit_red, R_residual)
                             triosesP_derivative = element.calculate_triosesP_derivative(photosynthesis, s_sucrose, s_starch, s_amino_acids)
                             fructan_derivative = element.calculate_fructan_derivative(s_fructan, d_fructan)
@@ -465,15 +464,17 @@ class Simulation(object):
 
                     # intermediate variables
                     RGR_structure = axis.grains.calculate_RGR_structure(axis.phloem.sucrose)
+                    structural_dry_mass = axis.grains.calculate_structural_dry_mass(axis.grains.structure)
 
                     # flows
                     axis.grains.s_grain_structure = axis.grains.calculate_s_grain_structure(t, axis.grains.structure, RGR_structure)
                     axis.grains.s_grain_starch = axis.grains.calculate_s_grain_starch(t, axis.phloem.sucrose)
-                    axis.grains.s_proteins = axis.grains.calculate_s_proteins(axis.grains.s_grain_structure, axis.grains.s_grain_starch, axis.phloem.amino_acids, axis.phloem.sucrose, axis.grains.structure)
+                    axis.grains.s_proteins = axis.grains.calculate_s_proteins(axis.grains.s_grain_structure, axis.grains.s_grain_starch, axis.phloem.amino_acids, axis.phloem.sucrose, structural_dry_mass)
 
                     # compartments derivatives
-                    structure_derivative = axis.grains.calculate_structure_derivative(axis.grains.s_grain_structure)
-                    starch_derivative = axis.grains.calculate_starch_derivative(axis.grains.s_grain_starch, axis.grains.structure)
+                    R_grain_growth_struct, R_grain_growth_starch = RespirationModel.R_grain_growth(axis.grains.s_grain_structure, axis.grains.s_grain_starch, structural_dry_mass)
+                    structure_derivative = axis.grains.calculate_structure_derivative(axis.grains.s_grain_structure, R_grain_growth_struct)
+                    starch_derivative = axis.grains.calculate_starch_derivative(axis.grains.s_grain_starch, structural_dry_mass, R_grain_growth_starch)
                     proteins_derivative = axis.grains.calculate_proteins_derivative(axis.grains.s_proteins)
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['structure']] = structure_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['starch']] = starch_derivative
@@ -487,10 +488,10 @@ class Simulation(object):
                 axis.roots.s_amino_acids = axis.roots.calculate_s_amino_acids(axis.roots.nitrates, axis.roots.sucrose)
 
                 # compartments derivatives
-                R_Nnit_upt = 0#RespirationModel.R_Nnit_upt(roots_uptake_nitrate, axis.roots.sucrose)
-                R_Nnit_red = 0#RespirationModel.R_Nnit_red(axis.roots.s_amino_acids, axis.roots.sucrose, root=True)
+                R_Nnit_upt = RespirationModel.R_Nnit_upt(roots_uptake_nitrate, axis.roots.sucrose)
+                R_Nnit_red = RespirationModel.R_Nnit_red(axis.roots.s_amino_acids, axis.roots.sucrose, axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA, root=True)
                 axis.roots.total_nitrogen = axis.roots.calculate_total_nitrogen(axis.roots.nitrates, axis.roots.amino_acids, axis.roots.Nstruct)
-                R_residual = 0#RespirationModel.R_residual(axis.roots.sucrose/(axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA), axis.roots.total_nitrogen)
+                R_residual = RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA, axis.roots.total_nitrogen, axis.roots.PARAMETERS.DELTA_T)
                 sucrose_derivative = axis.roots.calculate_sucrose_derivative(axis.roots.unloading_sucrose, axis.roots.s_amino_acids, R_Nnit_upt, R_Nnit_red, R_residual)
                 nitrates_derivative = axis.roots.calculate_nitrates_derivative(roots_uptake_nitrate, axis.roots.s_amino_acids)
                 amino_acids_derivative = axis.roots.calculate_amino_acids_derivative(axis.roots.unloading_amino_acids, axis.roots.s_amino_acids, roots_export_amino_acids)
@@ -597,6 +598,7 @@ class Simulation(object):
                 organs_df['sucrose'] = solver_output[self.initial_conditions_mapping[axis.roots]['sucrose']]
                 organs_df['nitrates'] = solver_output[self.initial_conditions_mapping[axis.roots]['nitrates']]
                 organs_df['amino_acids'] = solver_output[self.initial_conditions_mapping[axis.roots]['amino_acids']]
+                organs_df['Nstruct'] = [axis.roots.Nstruct] * len(t)
                 organs_df['Conc_Sucrose'] = axis.roots.calculate_conc_sucrose(organs_df['sucrose'])
                 organs_df['Conc_Nitrates'] = axis.roots.calculate_conc_nitrates(organs_df['nitrates'])
                 organs_df['Conc_Amino_Acids'] = axis.roots.calculate_conc_amino_acids(organs_df['amino_acids'])
@@ -610,9 +612,9 @@ class Simulation(object):
                 organs_df['Export_Amino_Acids'] = roots_export_amino_acids
                 organs_df['S_Amino_Acids'] = map(axis.roots.calculate_s_amino_acids, organs_df['nitrates'], organs_df['sucrose'])
                 organs_df['R_Nnit_upt'] = map(RespirationModel.R_Nnit_upt, organs_df['Uptake_Nitrates'], organs_df['sucrose'])
-                organs_df['R_Nnit_red'] = map(RespirationModel.R_Nnit_red, organs_df['S_Amino_Acids'] * axis.roots.mstruct, organs_df['sucrose'])
+                organs_df['R_Nnit_red'] = map(RespirationModel.R_Nnit_red, organs_df['S_Amino_Acids'], organs_df['sucrose'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(t), [True] * len(t))
                 total_nitrogen =  map(axis.roots.calculate_total_nitrogen, organs_df['nitrates'], organs_df['amino_acids'], [axis.roots.Nstruct] * len(t))
-                organs_df['R_residual'] = map(RespirationModel.R_residual, organs_df['sucrose']/(axis.roots.mstruct), total_nitrogen)
+                organs_df['R_residual'] = map(RespirationModel.R_residual, organs_df['sucrose'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(t), total_nitrogen, [axis.roots.PARAMETERS.DELTA_T]*len(t))
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
 
                 # format photosynthetic organs elements outputs
@@ -650,12 +652,12 @@ class Simulation(object):
                             elements_df['Regul_S_Fructan'] = map(element.calculate_regul_s_fructan, elements_df['Loading_Sucrose'])
                             elements_df['Ag'] = element.Ag
                             elements_df['An'] = element.An
-                            elements_df['Rd'] = element.Rd
-                            elements_df['R_phloem_loading'] = map(RespirationModel.R_phloem, elements_df['Loading_Sucrose'], elements_df['sucrose'])
+                            elements_df['Rd'] = map(element.calculate_total_Rd, t, [element.Rd]*len(t), [phytomer.index] * len(t))
+                            elements_df['R_phloem_loading'] = map(RespirationModel.R_phloem, elements_df['Loading_Sucrose'], elements_df['sucrose'], [element.mstruct*element.__class__.PARAMETERS.ALPHA] * len(t))
                             elements_df['S_Amino_Acids'] = map(element.calculate_s_amino_acids, elements_df['nitrates'], elements_df['triosesP'])
-                            elements_df['R_Nnit_red'] = map(RespirationModel.R_Nnit_red, elements_df['S_Amino_Acids'], elements_df['sucrose'])
+                            elements_df['R_Nnit_red'] = map(RespirationModel.R_Nnit_red, elements_df['S_Amino_Acids'], elements_df['sucrose'], [element.mstruct*element.__class__.PARAMETERS.ALPHA] * len(t))
                             total_nitrogen = map(element.calculate_total_nitrogen, elements_df['nitrates'], elements_df['amino_acids'], elements_df['proteins'], [element.Nstruct] * len(t))
-                            elements_df['R_residual'] = map(RespirationModel.R_residual, elements_df['sucrose']/(element.mstruct*element.__class__.PARAMETERS.ALPHA), total_nitrogen)
+                            elements_df['R_residual'] = map(RespirationModel.R_residual, elements_df['sucrose'], [element.mstruct*element.__class__.PARAMETERS.ALPHA] * len(t), total_nitrogen, [organ.__class__.PARAMETERS.DELTA_T] * len(t))
                             elements_df['Tr'] = element.Tr
                             elements_df['Ts'] = element.Ts
                             elements_df['gs'] = element.gs
@@ -697,13 +699,17 @@ class Simulation(object):
                 organs_df['proteins'] = solver_output[self.initial_conditions_mapping[axis.grains]['proteins']]
                 organs_df['RGR_Structure'] = map(axis.grains.calculate_RGR_structure, phloem_sucrose)
                 organs_df['S_grain_structure'] = map(axis.grains.calculate_s_grain_structure, t, organs_df['structure'], organs_df['RGR_Structure'])
+                structural_dry_mass = map(axis.grains.calculate_structural_dry_mass, organs_df['structure'])
                 organs_df['S_grain_starch'] = map(axis.grains.calculate_s_grain_starch, t, phloem_sucrose)
                 organs_df['Dry_Mass'] = axis.grains.calculate_dry_mass(organs_df['structure'], organs_df['starch'], organs_df['proteins'])
                 organs_df['Proteins_N_Mass'] = axis.grains.calculate_protein_mass(organs_df['proteins'])
-                organs_df['Unloading_Sucrose'] = map(axis.grains.calculate_unloading_sucrose, organs_df['S_grain_structure'], organs_df['S_grain_starch'], organs_df['structure'])
-                organs_df['S_Proteins'] = map(axis.grains.calculate_s_proteins, organs_df['S_grain_structure'], organs_df['S_grain_starch'], phloem_amino_acids, phloem_sucrose, organs_df['structure'])
-                all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
+                organs_df['Unloading_Sucrose'] = map(axis.grains.calculate_unloading_sucrose, organs_df['S_grain_structure'], organs_df['S_grain_starch'], structural_dry_mass)
+                organs_df['S_Proteins'] = map(axis.grains.calculate_s_proteins, organs_df['S_grain_structure'], organs_df['S_grain_starch'], phloem_amino_acids, phloem_sucrose, structural_dry_mass)
+                R_grain_growth =np.array(map(RespirationModel.R_grain_growth, organs_df['S_grain_structure'], organs_df['S_grain_starch'], structural_dry_mass))
+                organs_df['R_grain_growth_struct'], organs_df['R_grain_growth_starch']  = R_grain_growth[:,0], R_grain_growth[:,1]
+                organs_df['R_grain_growth_struct_YG'], organs_df['R_grain_growth_starch_YG']  = np.array(organs_df['S_grain_structure'])*0.25, np.array(organs_df['S_grain_starch'])*structural_dry_mass*0.25
 
+                all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
                 all_axes_df = all_axes_df.append(axes_df, ignore_index=True)
 
             all_plants_df = all_plants_df.append(plants_df, ignore_index=True)

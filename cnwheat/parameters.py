@@ -61,7 +61,7 @@ class OrganParameters:
     NB_C_TRIOSEP = 3                        #: Number of C in 1 mol of trioseP
     NB_C_HEXOSES = 6                        #: Number of C in 1 mol of hexoses (glucose, fructose)
     NB_C_SUCROSE = 12                       #: Number of C in 1 mol of sucrose
-    SUCROSE_MOLAR_MASS_C_RATIO = 0.4        #: Contribution of C in sucrose mass
+    HEXOSE_MOLAR_MASS_C_RATIO = 0.4        #: Contribution of C in hexose mass
 
     AMINO_ACIDS_C_RATIO = 3.67              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
@@ -92,7 +92,6 @@ class GrainsParameters(OrganParameters):
     VMAX_STARCH = 0.75                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
     K_STARCH = 100                              #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
 
-    Y_GRAINS = 0.75                             #: Proportion of C loaded from phloem actually used for grain structure and starch (1 - Y_GRAINS is a kind of growth respiration)
     FILLING_INIT = 360                          #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
 
 
@@ -102,7 +101,7 @@ class RootsParameters(OrganParameters):
     """
     ALPHA = 1                                 #: Proportion of structural mass containing substrate
 
-    VMAX_SUCROSE_UNLOADING = 0.02             #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
+    VMAX_SUCROSE_UNLOADING = 0.05             #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
     K_SUCROSE_UNLOADING = 100                 #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C sucrose g-1 MS)
     VMAX_AMINO_ACIDS_UNLOADING = 0.001        #: Maximal rate of amino acids unloading from phloem to roots (µmol N amino acids s-1 g-1 MS)
     K_AMINO_ACIDS_UNLOADING = 100             #: Affinity coefficient of amino acids unloading from phloem to roots (µmol N amino acids g-1 MS)

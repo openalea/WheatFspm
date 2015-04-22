@@ -99,9 +99,9 @@ class Axis(object):
     """
 
     PARAMETERS = parameters.AxisParameters #: the internal parameters of the axes
-    
+
     Types = enum(MAIN_STEM='MS', TILLER='T') #: the authorized types of the axes
-    
+
     TYPES_STRINGS = Types.__dict__.values() #: the string values of the authorized types of the axes
 
     def __init__(self, roots=None, phloem=None, grains=None, phytomers=None, axis_type=Types.MAIN_STEM, index=0):
@@ -111,22 +111,22 @@ class Axis(object):
         if phytomers is None:
             phytomers = []
         self.phytomers = phytomers #: the list of phytomers
-        
+
         self.type = axis_type #: the type of the axis ; can be either Axis.Types.MAIN_STEM or Axis.Types.TILLER
         self.index = index #: the index of the axis ; 0: main stem, 1..n: tiller.
-        
+
         if axis_type not in Axis.TYPES_STRINGS:
             logger = logging.getLogger(__name__)
             message = 'axis_type not in {}.'.format(Axis.TYPES_STRINGS)
             logger.exception(message)
             raise ModelInputError(message)
-            
+
         if axis_type == Axis.Types.MAIN_STEM and index != 0:
             logger = logging.getLogger(__name__)
             message = 'non-zero index for {}'.format(Axis.Types.MAIN_STEM)
             logger.exception(message)
             warnings.warn(message, ModelInputWarning)
-        
+
         self.id = axis_type #: the id of the axis ; the id is built from axis_type and index
         if axis_type != Axis.Types.MAIN_STEM:
             self.id += str(index)
@@ -275,12 +275,17 @@ class Grains(Organ):
         """Grain total dry mass (g)
         """
         #: Carbohydrates mass, grain carbohydrates supposed to be mainly starch i.e. glucose polymers (C6 H12 O6)
-        C_mass = ((structure + starch)*1E-6*Organ.PARAMETERS.C_MOLAR_MASS) / Organ.PARAMETERS.SUCROSE_MOLAR_MASS_C_RATIO
+        C_mass = ((structure + starch)*1E-6*Organ.PARAMETERS.C_MOLAR_MASS) / Organ.PARAMETERS.HEXOSE_MOLAR_MASS_C_RATIO
 
         #: N mass, grain proteins were supposed to be gluten mainly composed of Glu, Gln and Pro
         N_mass = (proteins*1E-6*Organ.PARAMETERS.N_MOLAR_MASS) / Grains.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO
 
         return  C_mass + N_mass
+
+    def calculate_structural_dry_mass(self, structure):
+        """Grain structural mass (g)
+        """
+        return (structure*1E-6*Organ.PARAMETERS.C_MOLAR_MASS) / Organ.PARAMETERS.HEXOSE_MOLAR_MASS_C_RATIO
 
     def calculate_protein_mass(self, proteins):
         """Grain total protein mass (g)
@@ -294,10 +299,10 @@ class Grains(Organ):
         """
         return ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_RGR) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_RGR)
 
-    def calculate_unloading_sucrose(self, s_grain_structure, s_grain_starch, structure):
-        """Unloading of sucrose from phloem to grains integrated over delta_t (µmol sucrose)
+    def calculate_unloading_sucrose(self, s_grain_structure, s_grain_starch, structural_dry_mass):
+        """Unloading of sucrose from phloem to grains integrated * delta_t (µmol sucrose)
         """
-        return (s_grain_structure + s_grain_starch * (structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)/Organ.PARAMETERS.NB_C_SUCROSE
+        return (s_grain_structure + (s_grain_starch * structural_dry_mass)) / Organ.PARAMETERS.NB_C_SUCROSE
 
 
     # FLUXES
@@ -320,26 +325,26 @@ class Grains(Organ):
             s_grain_starch = (((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_STARCH) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_STARCH)) * Organ.PARAMETERS.DELTA_T
         return s_grain_starch
 
-    def calculate_s_proteins(self, s_grain_structure, s_grain_starch, amino_acids_phloem, sucrose_phloem, structure):
+    def calculate_s_proteins(self, s_grain_structure, s_grain_starch, amino_acids_phloem, sucrose_phloem, structural_dry_mass):
         """Synthesis of grain proteins over delta_t (µmol N proteins). Rate regulated by phloem concentrations and unloading. Co-transported with sucrose relatively to the ratio amino acids:sucrose in phloem
         """
         if sucrose_phloem >0:
-            s_proteins = (s_grain_structure + s_grain_starch*((structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)) * (amino_acids_phloem / sucrose_phloem)
+            s_proteins = (s_grain_structure + s_grain_starch*structural_dry_mass) * (amino_acids_phloem / sucrose_phloem)
         else:
             s_proteins = 0
         return s_proteins
 
     # COMPARTMENTS
 
-    def calculate_structure_derivative(self, s_grain_structure):
+    def calculate_structure_derivative(self, s_grain_structure, R_growth):
         """delta grain structure integrated over delat_t (µmol C structure)
         """
-        return s_grain_structure * Grains.PARAMETERS.Y_GRAINS
+        return s_grain_structure - R_growth
 
-    def calculate_starch_derivative(self, s_grain_starch, structure):
+    def calculate_starch_derivative(self, s_grain_starch, structural_dry_mass, R_growth):
         """delta grain starch integrated over delat_t (µmol C starch)
         """
-        return s_grain_starch * Grains.PARAMETERS.Y_GRAINS * ((structure*1E-6)*Organ.PARAMETERS.C_MOLAR_MASS) #: Conversion of grain structure from µmol of C to g of C
+        return (s_grain_starch * structural_dry_mass) - R_growth
 
     def calculate_proteins_derivative(self, s_proteins):
         """delta grain proteins integrated over delat_t (µmol N proteins)
@@ -366,7 +371,7 @@ class Roots(Organ):
         # fluxes from phloem
         self.unloading_sucrose = None          #: current unloading of sucrose from phloem to roots
         self.unloading_amino_acids = None      #: current unloading of amino acids from phloem to roots
-        
+
         # Integrated variables
         self.total_nitrogen = None            #: current total nitrogen amount (µmol N)
 
@@ -395,7 +400,7 @@ class Roots(Organ):
         """Amino_acid concentration (µmol amino_acids g-1 MS)
         """
         return (amino_acids/Organ.PARAMETERS.AMINO_ACIDS_N_RATIO)/self.mstruct
-    
+
     def calculate_total_nitrogen(self, nitrates, amino_acids, Nstruct):
         return nitrates + amino_acids + (Nstruct / Roots.PARAMETERS.N_MOLAR_MASS)*1E6
 
@@ -441,7 +446,7 @@ class Roots(Organ):
         """
         sucrose_consumption_AA = (s_amino_acids / Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) * Organ.PARAMETERS.AMINO_ACIDS_C_RATIO      #: Contribution of sucrose to the synthesis of amino_acids
 
-        return (unloading_sucrose - sucrose_consumption_AA - R_Nnit_red) * self.mstruct - R_Nnit_upt - R_residual
+        return (unloading_sucrose - sucrose_consumption_AA) * self.mstruct - R_Nnit_upt - R_Nnit_red - R_residual
 
     def calculate_nitrates_derivative(self, uptake_nitrates, s_amino_acids):
         """delta root nitrates integrated over delat_t (µmol N nitrates)
@@ -469,12 +474,12 @@ class PhotosyntheticOrgan(Organ):
         # variables
         self.exposed_element = exposed_element #: the exposed element
         self.enclosed_element = enclosed_element #: the enclosed element
-        
+
     def calculate_integrative_variables(self, t, phytomer_index):
         for element in (self.exposed_element, self.enclosed_element):
             if element is not None:
                 element.calculate_integrative_variables(t, phytomer_index)
-               
+
 
 class Chaff(PhotosyntheticOrgan):
     """
@@ -539,7 +544,7 @@ class PhotosyntheticOrganElement(object):
     """
 
     PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
-    
+
     def __init__(self, area, mstruct, Nstruct, width, height, triosesP, starch,
                  sucrose, fructan, nitrates, amino_acids, proteins,
                  An=None, Tr=None):
@@ -551,7 +556,7 @@ class PhotosyntheticOrganElement(object):
         self.height = height                 #: Height of the element from soil (m)
         self.An = An                         #: Net assimilation (µmol m-2 s-1)
         self.Tr = Tr                         #: Transpiration (mm s-1)
-        
+
         self.triosesP = triosesP
         self.starch = starch
         self.sucrose = sucrose
@@ -579,6 +584,11 @@ class PhotosyntheticOrganElement(object):
         """Total photosynthesis of an element integrated over DELTA_T (µmol CO2 on element area integrated over delat_t)
         """
         return An * self._calculate_green_area(t, phytomer_index) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+
+    def calculate_total_Rd(self, t, Rd, phytomer_index):
+        """Total respiration of an element integrated over DELTA_T (µmol CO2 on element area integrated over delat_t)
+        """
+        return Rd * self._calculate_green_area(t, phytomer_index) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     def calculate_transpiration(self, t, Tr, phytomer_index):
         """Total transpiration of an element integrated over DELTA_T (mm of H2O on element area integrated over delat_t)
@@ -742,7 +752,7 @@ class PhotosyntheticOrganElement(object):
     def calculate_sucrose_derivative(self, s_sucrose, d_starch, loading_sucrose, s_fructan, d_fructan, R_phloem_loading, R_Nnit_red, R_residual):
         """delta sucrose of element integrated over delat_t (µmol C sucrose)
         """
-        return (s_sucrose + d_starch + d_fructan - s_fructan - loading_sucrose - R_phloem_loading - R_Nnit_red) * (self.mstruct*self.__class__.PARAMETERS.ALPHA) - R_residual
+        return (s_sucrose + d_starch + d_fructan - s_fructan - loading_sucrose) * (self.mstruct*self.__class__.PARAMETERS.ALPHA) - R_phloem_loading - R_Nnit_red - R_residual
 
     def calculate_fructan_derivative(self, s_fructan, d_fructan):
         """delta fructan integrated over delat_t (µmol C fructan)
