@@ -93,6 +93,7 @@ class GrainsParameters(OrganParameters):
     K_STARCH = 100                              #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
 
     FILLING_INIT = 360                          #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
+    FILLING_END = 840                           #: Time (h) at which grains filling stops.
 
 
 class RootsParameters(OrganParameters):

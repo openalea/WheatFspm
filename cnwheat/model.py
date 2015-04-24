@@ -319,9 +319,11 @@ class Grains(Organ):
     def calculate_s_grain_starch(self, t, sucrose_phloem):
         """Synthesis of grain C starch integrated over delta_t (µmol C starch s-1 g-1 MS * DELTA_T). Rate regulated by phloem concentrations and unloading
         """
-        if t<=Grains.PARAMETERS.FILLING_INIT: #: Grain enlargment
+        if t<= Grains.PARAMETERS.FILLING_INIT:   #: Grain enlargment
             s_grain_starch = 0
-        else:                                 #: Grain filling
+        elif t> Grains.PARAMETERS.FILLING_END:   #: Grain maturity
+            s_grain_starch = 0
+        else:                                    #: Grain filling
             s_grain_starch = (((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_STARCH) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_STARCH)) * Organ.PARAMETERS.DELTA_T
         return s_grain_starch
 
