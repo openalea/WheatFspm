@@ -121,15 +121,15 @@ def test_run():
 
     # Internode enclosed
     phytomer1.internode = cnwheat_model.Internode()
-    internode_enclosed_element = cnwheat_model.InternodeElement(area=0.0012, mstruct=0.148, Nstruct=0.00067, width=0.00257, height=0.3,
-                                          starch=0, sucrose=266, triosesP=0, fructan=0,
-                                          nitrates=0, amino_acids=17, proteins=20)
+    internode_enclosed_element = cnwheat_model.InternodeElement(area=0.001129, mstruct=0.1415, Nstruct=0.00064, width=0.00257, height=0.3,
+                                          starch=0, sucrose=255, triosesP=0, fructan=0,
+                                          nitrates=0, amino_acids=17, proteins=66)
     phytomer1.internode.enclosed_element = internode_enclosed_element
 
     # Internode exposed
-    internode_exposed_element = cnwheat_model.InternodeElement(area=0.0003, mstruct=0.04, Nstruct=0.00018, width=0.00257, height=0.4,
-                                          starch=0, sucrose=72, triosesP=0, fructan=0,
-                                          nitrates=0, amino_acids=5, proteins=90)
+    internode_exposed_element = cnwheat_model.InternodeElement(area=0.000371, mstruct=0.0465, Nstruct=0.00021, width=0.00257, height=0.4,
+                                          starch=0, sucrose=84, triosesP=0, fructan=0,
+                                          nitrates=0, amino_acids=5, proteins=22)
     phytomer1.internode.exposed_element = internode_exposed_element
 
     axis.phytomers.append(phytomer1)
@@ -139,15 +139,15 @@ def test_run():
 
     # Enclosed peduncle
     phytomer4.peduncle = cnwheat_model.Peduncle()
-    peduncle_enclosed_element = cnwheat_model.PeduncleElement(area=0.00155, mstruct=0.168, Nstruct=0.00085, width= 0.00349, height=0.65,
-                                        starch=0, sucrose=302, triosesP=0, fructan=0, nitrates=0,
-                                        amino_acids=20, proteins=30)
+    peduncle_enclosed_element = cnwheat_model.PeduncleElement(area=0.00159, mstruct=0.170, Nstruct=0.00086, width= 0.00349, height=0.65,
+                                        starch=0, sucrose=306, triosesP=0, fructan=0, nitrates=0,
+                                        amino_acids=20, proteins=120)
     phytomer4.peduncle.enclosed_element = peduncle_enclosed_element
 
     # Exposed peduncle
-    peduncle_exposed_element = cnwheat_model.PeduncleElement(area=0.00085, mstruct=0.089, Nstruct=0.00045, width= 0.00349, height=0.5,
-                                        starch=0, sucrose=160, triosesP=0, fructan=0, nitrates=0,
-                                        amino_acids=10, proteins=180)
+    peduncle_exposed_element = cnwheat_model.PeduncleElement(area=0.00081, mstruct=0.087, Nstruct=0.00044, width= 0.00349, height=0.5,
+                                        starch=0, sucrose=156, triosesP=0, fructan=0, nitrates=0,
+                                        amino_acids=10, proteins=61)
     phytomer4.peduncle.exposed_element = peduncle_exposed_element
     axis.phytomers.append(phytomer4)
 
