@@ -14,8 +14,20 @@ This is the documentation for Farquhar-Wheat, a model of photosynthesis based on
 Prerequisites
 -------------
 
-Farquhar-Wheat needs at least **Python 2.7** to run. 
+Farquhar-Wheat needs at least Python_ (2.7 or newer) to run and Pandas_ (0.14.0 or newer) to format outputs.
 Farquhar-Wheat has not been tested with **Python 3**. 
+
+.. _Python: http://www.python.org/
+.. _Pandas: http://pandas.pydata.org/
+
+
+To couple Farquhar-Wheat with other models, you also need NumPy_ (1.7.2 or newer), Alinea.Astk_ and 
+OpenAlea.MTG_ libraries.
+
+.. _NumPy: http://www.numpy.org/
+.. _Alinea.Astk: https://scm.gforge.inria.fr/svn/openaleapkg/trunk/astk
+.. _OpenAlea.MTG: https://scm.gforge.inria.fr/svn/vplants/vplants/trunk/newmtg/
+
 
 Usage
 -----

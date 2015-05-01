@@ -33,3 +33,21 @@ describing what they are and what they do.
     :synopsis: 
     
     
+:mod:`farquharwheat.simulation` module
+*********************************************************
+
+.. automodule:: farquharwheat.simulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :synopsis: 
+    
+
+:mod:`farquharwheat.converter` module
+*********************************************************
+
+.. automodule:: farquharwheat.converter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :synopsis:
