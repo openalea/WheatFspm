@@ -27,6 +27,9 @@ import pandas as pd
 
 import model
 
+class SimulationError(Exception): pass
+class SimulationInputsError(SimulationError): pass
+
 class Simulation(object):
     """
     The Simulation class permits to initialize and run the model, and format the 
@@ -41,6 +44,8 @@ class Simulation(object):
     """
     
     ELEMENTS_KEYS_NAMES = ['plant', 'axis', 'metamer', 'organ', 'element'] #: the keys which define the topology of an element.
+    
+    INPUTS_NAMES = ['organ', 'Na', 'organ_width', 'organ_height', 'STAR']
     
     def __init__(self):
         #: The inputs by element.
@@ -69,19 +74,28 @@ class Simulation(object):
         
         :Parameters:
         
-            - `inputs` (:class:`dict` of :class:`dict`) - The inputs by element.
-                `inputs` is a dictionary of dictionaries: {element1_id: element1_inputs, element2_id: element2_inputs, ..., elementN_id: elementN_inputs}, where:
+            - `inputs` (:class:`dict` or :class:`pandas.DataFrame`) - The inputs by element.
+                `inputs` can be: 
+                    
+                    * a dictionary of dictionaries: {element1_id: element1_inputs, element2_id: element2_inputs, ..., elementN_id: elementN_inputs}, where:
                  
-                    * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
-                    * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
+                        * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
+                        * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
+                    
+                    * or a pandas dataframe, with one row by element ; columns are :attr:`ELEMENTS_KEYS_NAMES` and Farquhar-Wheat inputs. 
                     
                 See :meth:`PhotosynthesisModel.calculate_An <farquharwheat.model.PhotosynthesisModel.calculate_An>` 
                 for more information about the inputs.  
             
         """
         self.inputs.clear()
-        self.inputs.update(inputs)
-
+        if isinstance(inputs, dict):
+            self.inputs.update(inputs)
+        elif isinstance(inputs, pd.DataFrame):
+            for elements_id, element_group in inputs.groupby(Simulation.ELEMENTS_KEYS_NAMES):
+                self.inputs[elements_id] = element_group.loc[element_group.first_valid_index(), Simulation.INPUTS_NAMES].to_dict()
+        else:
+            raise SimulationInputsError('Can not initialize Simulation from {}. Supported inputs types are: {}.'.format(type(inputs), (dict, pd.DataFrame)))
 
     def run(self, Ta, ambient_CO2, RH, Ur, PARi):
         """
@@ -103,7 +117,7 @@ class Simulation(object):
         """
         self.outputs.clear()
         for (element_id, element_inputs) in self.inputs.iteritems():
-            organ_type = element_inputs['organ_type']
+            organ_type = element_inputs['organ']
             Na = element_inputs['Na']
             organ_width = element_inputs['organ_width']
             organ_height = element_inputs['organ_height']
