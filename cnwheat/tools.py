@@ -28,12 +28,14 @@ import matplotlib.pyplot as plt
 
 from cnwheat.simulation import Simulation
 
+class DataWarning(UserWarning):
+    '''No data to plot for a variable.'''
+    def __init__(self, variable, keys):
+        self.message = 'No data to plot for variable {} at {}.'.format(variable, keys)
+    def __str__(self):
+        return repr(self.message)
 
-class NoDataWarning(UserWarning):
-    '''Warning issued when the user asks for plotting a variable for which no data are available.'''
-    pass
-
-warnings.simplefilter('always', NoDataWarning)
+warnings.simplefilter('always', DataWarning)
 
 
 def plot_linear_regression(x_array, y_array, x_label='x', y_label='y', plot_filepath=None):
@@ -184,8 +186,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
     if outputs[y_name].isnull().all():
         keys_outputs_tuples = [(group_keys_upper[i], outputs[group_keys[i]].unique()) for i in xrange(len(group_keys))]
         keys_outputs_strings = ['{}: {}'.format(group_key_upper, unique_outputs.tolist()) for (group_key_upper, unique_outputs) in keys_outputs_tuples]
-        keys_outputs_strings.append(y_name)
-        warnings.warn('No data to plot for {}'.format(' - '.join(keys_outputs_strings)), NoDataWarning)
+        warnings.warn(DataWarning(y_name, ' - '.join(keys_outputs_strings)))
         return
 
     # compute the cardinality of each group keys and create the title if needed
