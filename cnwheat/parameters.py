@@ -61,7 +61,8 @@ class OrganParameters:
     NB_C_TRIOSEP = 3                        #: Number of C in 1 mol of trioseP
     NB_C_HEXOSES = 6                        #: Number of C in 1 mol of hexoses (glucose, fructose)
     NB_C_SUCROSE = 12                       #: Number of C in 1 mol of sucrose
-    HEXOSE_MOLAR_MASS_C_RATIO = 0.4        #: Contribution of C in hexose mass
+    HEXOSE_MOLAR_MASS_C_RATIO = 0.4         #: Contribution of C in hexose mass
+    RATIO_C_MSTRUCT = 0.384                 #: Mean contribution of carbon to structural dry mass (g C g-1 Mstruct)
 
     AMINO_ACIDS_C_RATIO = 3.67              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
@@ -89,7 +90,7 @@ class GrainsParameters(OrganParameters):
     K_RGR = 300                                 #: Affinity coefficient of the Relative Growth Rate of grain structure (dimensionless)
 
     # Starch parameters
-    VMAX_STARCH = 0.75                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
+    VMAX_STARCH = 0.5                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
     K_STARCH = 100                              #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
 
     FILLING_INIT = 360                          #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
@@ -117,10 +118,14 @@ class RootsParameters(OrganParameters):
     LAMBDA_LATS = 1.6517E-03        #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (m3 µmol-1 s-1)
 
     # Amino acids
-    VMAX_AMINO_ACIDS = 0.001        #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
+    VMAX_AMINO_ACIDS = 0.002        #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
     K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
     K_AMINO_ACIDS_SUCROSE = 3       #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
     K_TR_EXPORT_AMINO_ACIDS = 1E-8  #: Affinity coefficient of amino acids export from roots to shoot (mm H20)
+
+    # Exudation
+    C_EXUDATION = 0.25              #: Proportion of C exudated from C sucrose unloaded to roots (Keith et al., 1986)
+    N_EXUDATION = 0.25              #: Proportion of N exudated from N uptake (Janzen, 1990)
 
 
 class PhotosyntheticOrganParameters(OrganParameters):

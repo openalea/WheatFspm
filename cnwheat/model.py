@@ -62,7 +62,7 @@ class Population(object):
         """Calculate the integrative variables of the population recursively.
         """
         for plant in self.plants:
-            plant.calculate_integrative_variables(self.t)
+            plant.calculate_integrative_variables()
 
 
 class Plant(object):
@@ -80,11 +80,11 @@ class Plant(object):
         self.axes = axes #: the list of axes
         self.index = index #: the index of the plant, from 1 to n.
 
-    def calculate_integrative_variables(self, t):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the plant recursively.
         """
         for axis in self.axes:
-            axis.calculate_integrative_variables(t)
+            axis.calculate_integrative_variables()
 
 
 class Axis(object):
@@ -131,17 +131,17 @@ class Axis(object):
         if axis_type != Axis.Types.MAIN_STEM:
             self.id += str(index)
 
-    def calculate_integrative_variables(self, t):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the axis recursively.
         """
         if self.roots is not None:
             self.roots.calculate_integrative_variables()
         if self.phloem is not None:
-            self.phloem.calculate_integrative_variables(t)
+            self.phloem.calculate_integrative_variables()
         if self.grains is not None:
-            self.grains.calculate_integrative_variables(t)
+            self.grains.calculate_integrative_variables()
         for phytomer in self.phytomers:
-            phytomer.calculate_integrative_variables(t, phytomer.index)
+            phytomer.calculate_integrative_variables()
 
 
 class Phytomer(object):
@@ -164,19 +164,19 @@ class Phytomer(object):
         self.sheath = sheath #: the sheath
         self.index = index #: the index of the phytomer, from 1 to n.
 
-    def calculate_integrative_variables(self, t, phytomer_index):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the phytomer recursively.
         """
         if self.chaff is not None:
-            self.chaff.calculate_integrative_variables(t, phytomer_index)
+            self.chaff.calculate_integrative_variables()
         if self.peduncle is not None:
-            self.peduncle.calculate_integrative_variables(t, phytomer_index)
+            self.peduncle.calculate_integrative_variables()
         if self.lamina is not None:
-            self.lamina.calculate_integrative_variables(t, phytomer_index)
+            self.lamina.calculate_integrative_variables()
         if self.internode is not None:
-            self.internode.calculate_integrative_variables(t, phytomer_index)
+            self.internode.calculate_integrative_variables()
         if self.sheath is not None:
-            self.sheath.calculate_integrative_variables(t, phytomer_index)
+            self.sheath.calculate_integrative_variables()
 
 
 class Organ(object):
@@ -188,7 +188,7 @@ class Organ(object):
 
     PARAMETERS = parameters.OrganParameters #: the internal parameters of the organs
 
-    def calculate_integrative_variables(self, t, phytomer_index=None):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the organ recursively.
         """
         pass
@@ -432,7 +432,7 @@ class Roots(Organ):
         return actual_uptake, potential_uptake
 
     def calculate_s_amino_acids(self, nitrates, sucrose):
-        """Rate of amino acid synthesis in roots(µmol N amino acids s-1 g-1 MS * DELTA_T)
+        """Rate of amino acid synthesis in roots (µmol N amino acids s-1 g-1 MS * DELTA_T)
         """
         return Roots.PARAMETERS.VMAX_AMINO_ACIDS / ((1 + Roots.PARAMETERS.K_AMINO_ACIDS_NITRATES/(nitrates/(self.mstruct*Roots.PARAMETERS.ALPHA))) * (1 + Roots.PARAMETERS.K_AMINO_ACIDS_SUCROSE/(sucrose/(self.mstruct*Roots.PARAMETERS.ALPHA)))) * Organ.PARAMETERS.DELTA_T
 
@@ -441,14 +441,20 @@ class Roots(Organ):
         """
         return (amino_acids/(self.mstruct * Roots.PARAMETERS.ALPHA)) * (total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_EXPORT_AMINO_ACIDS))
 
+    def calculate_exudation(self, unloading_sucrose, uptake_nitrates):
+        """Total C sucrose lost by root exudation (µmol C g-1 MS)
+        """
+        C_exudated = unloading_sucrose * Roots.PARAMETERS.C_EXUDATION #: C exudated (µmol g-1 MS)
+        N_exudated = uptake_nitrates * Roots.PARAMETERS.N_EXUDATION   #: N exudated (µmol)
+        return C_exudated, N_exudated
+
     # COMPARTMENTS
 
-    def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids, R_Nnit_upt, R_Nnit_red, R_residual):
+    def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids, mstruct_C_growth, C_exudated, R_Nnit_upt, R_Nnit_red, R_residual, R_roots_growth):
         """delta root sucrose integrated over delat_t (µmol C sucrose)
         """
         sucrose_consumption_AA = (s_amino_acids / Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) * Organ.PARAMETERS.AMINO_ACIDS_C_RATIO      #: Contribution of sucrose to the synthesis of amino_acids
-
-        return (unloading_sucrose - sucrose_consumption_AA) * self.mstruct - R_Nnit_upt - R_Nnit_red - R_residual
+        return (unloading_sucrose - sucrose_consumption_AA - C_exudated) * self.mstruct - R_Nnit_upt - R_Nnit_red - R_residual - R_roots_growth - mstruct_C_growth
 
     def calculate_nitrates_derivative(self, uptake_nitrates, s_amino_acids):
         """delta root nitrates integrated over delat_t (µmol N nitrates)
@@ -457,11 +463,10 @@ class Roots(Organ):
         nitrate_reduction_AA = s_amino_acids                                                                                        #: Contribution of nitrates to the synthesis of amino_acids
         return import_nitrates_roots - (nitrate_reduction_AA*self.mstruct)
 
-    def calculate_amino_acids_derivative(self, unloading_amino_acids, s_amino_acids, export_amino_acids):
+    def calculate_amino_acids_derivative(self, unloading_amino_acids, s_amino_acids, export_amino_acids, Nstruct_N_growth, N_exudated):
         """delta root amino acids integrated over delat_t (µmol N amino acids)
         """
-        return (unloading_amino_acids + s_amino_acids)*self.mstruct  - export_amino_acids
-
+        return (unloading_amino_acids + s_amino_acids)*self.mstruct - export_amino_acids - Nstruct_N_growth - N_exudated
 
 class PhotosyntheticOrgan(Organ):
     """
@@ -477,10 +482,10 @@ class PhotosyntheticOrgan(Organ):
         self.exposed_element = exposed_element #: the exposed element
         self.enclosed_element = enclosed_element #: the enclosed element
 
-    def calculate_integrative_variables(self, t, phytomer_index):
+    def calculate_integrative_variables(self):
         for element in (self.exposed_element, self.enclosed_element):
             if element is not None:
-                element.calculate_integrative_variables(t, phytomer_index)
+                element.calculate_integrative_variables()
 
 
 class Chaff(PhotosyntheticOrgan):
@@ -547,11 +552,12 @@ class PhotosyntheticOrganElement(object):
 
     PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
 
-    def __init__(self, area, mstruct, Nstruct, width, height, triosesP, starch,
+    def __init__(self, area, green_area, mstruct, Nstruct, width, height, triosesP, starch,
                  sucrose, fructan, nitrates, amino_acids, proteins,
                  An=None, Tr=None):
 
         self.area = area                     #: area (m-2)
+        self.green_area = green_area         #: green area (m-2)
         self.mstruct = mstruct               #: Structural mass (g)
         self.Nstruct = Nstruct               #: Structural nitrogen (g)
         self.width = width                   #: Width (or diameter for stem organ elements) (m)
@@ -575,32 +581,26 @@ class PhotosyntheticOrganElement(object):
         self.surfacic_nitrogen = None         #: current surfacic nitrogen (g m-2)
         self.total_nitrogen = None            #: current total nitrogen amount (µmol N)
 
-    def calculate_integrative_variables(self, t, phytomer_index):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the element.
         """
-        self.surfacic_nitrogen = self.calculate_surfacic_nitrogen(t, self.nitrates, self.amino_acids, self.proteins, phytomer_index)
         self.total_nitrogen = self.calculate_total_nitrogen(self.nitrates, self.amino_acids, self.proteins, self.Nstruct)
 
     # VARIABLES
-    def calculate_photosynthesis(self, t, An, phytomer_index):
+    def calculate_photosynthesis(self, Ag, green_area):
         """Total photosynthesis of an element integrated over DELTA_T (µmol CO2 on element area integrated over delat_t)
         """
-        return An * self._calculate_green_area(t, phytomer_index) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+        return Ag * green_area * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
-    def calculate_total_Rd(self, t, Rd, phytomer_index):
+    def calculate_total_Rd(self, Rd, green_area):
         """Total respiration of an element integrated over DELTA_T (µmol CO2 on element area integrated over delat_t)
         """
-        return Rd * self._calculate_green_area(t, phytomer_index) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+        return Rd * green_area * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
-    def calculate_transpiration(self, t, Tr, phytomer_index):
+    def calculate_transpiration(self, Tr, green_area):
         """Total transpiration of an element integrated over DELTA_T (mm of H2O on element area integrated over delat_t)
         """
-        return Tr * self._calculate_green_area(t, phytomer_index) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
-
-    def _calculate_green_area(self, t, phytomer_index):
-        """Compute green area of the element.
-        """
-        return self.area
+        return Tr * green_area * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     def calculate_conc_triosesP(self, triosesP):
         """Trioses Phosphate concentration (µmol triosesP g-1 MS).
@@ -647,15 +647,14 @@ class PhotosyntheticOrganElement(object):
         mass_proteins = mass_N_proteins / PhotosyntheticOrgan.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
 
-    def calculate_surfacic_nitrogen(self, t, nitrates, amino_acids, proteins, phytomer_index):
-        """Surfacic content of nitrogen (g m-2)
-        """
-        mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS + self.Nstruct
-        green_area = self._calculate_green_area(t, phytomer_index)
-        return (mass_N_tot / green_area)
-
     def calculate_total_nitrogen(self, nitrates, amino_acids, proteins, Nstruct):
         return nitrates + amino_acids + proteins + (Nstruct / PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS)*1E6
+
+    def calculate_surfacic_nitrogen(self, nitrates, amino_acids, proteins, Nstruct, green_area):
+        """Surfacic content of nitrogen (g m-2)
+        """
+        mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS + Nstruct
+        return (mass_N_tot / green_area)
 
     # FLUXES
 
@@ -665,9 +664,14 @@ class PhotosyntheticOrganElement(object):
         return (((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * PhotosyntheticOrgan.PARAMETERS.VMAX_STARCH) / ((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_STARCH)) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     def calculate_d_starch(self, starch):
-        """Rate of starch degradation from triosesP (µmol C starch s-1 g-1 MS * DELTA_T).
+        """Rate of starch degradation (µmol C starch s-1 g-1 MS * DELTA_T).
         """
         return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_DSTARCH * (starch/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+
+    def calculate_remob_starch_senescence(self, starch, delta_green_area):
+        """Rate of starch remobilisation due to senescence over delta_t (µmol C starch).
+        """
+        return starch * delta_green_area
 
     def calculate_s_sucrose(self, triosesP):
         """Rate of sucrose synthesis from triosesP (µmol C sucrose s-1 g-1 MS * DELTA_T).
@@ -690,7 +694,14 @@ class PhotosyntheticOrganElement(object):
     def calculate_d_fructan(self, sucrose, fructan):
         """Rate of fructan degradation (µmol C fructan s-1 g-1 MS)
         """
-        return min((PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN * PhotosyntheticOrgan.PARAMETERS.VMAX_DFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN) , max(0, fructan)) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+        d_potential = ((PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN * PhotosyntheticOrgan.PARAMETERS.VMAX_DFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN)) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+        d_actual = min(d_potential , max(0, fructan))
+        return d_actual
+
+    def calculate_remob_fructan_senescence(self, fructan, delta_green_area):
+        """Rate of fructan remobilisation due to senescence over delta_t (µmol C fructan).
+        """
+        return fructan * delta_green_area
 
     def calculate_nitrates_import(self, roots_uptake_nitrate, organ_transpiration, total_transpiration):
         """Total nitrates imported from roots (through xylem) distributed relatively to element transpiration (µmol N nitrates integrated over delta_t [already accounted in transpiration])
@@ -730,6 +741,11 @@ class PhotosyntheticOrganElement(object):
         """
         return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_DPROTEINS * (proteins/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
+    def calculate_remob_proteins_senescence(self, proteins, delta_green_area):
+        """Rate of proteins remobilisation due to senescence over delta_t (µmol N proteins).
+        """
+        return proteins * delta_green_area
+
     def calculate_loading_amino_acids(self, amino_acids, amino_acids_phloem):
         """Rate of amino acids loading to phloem (µmol N amino acids s-1 g-1 MS * DELTA_T)
         """
@@ -744,22 +760,23 @@ class PhotosyntheticOrganElement(object):
         """ delta triosesP of element integrated over delat_t (µmol C triosesP).
         """
         triosesP_consumption_AA = (s_amino_acids / PhotosyntheticOrgan.PARAMETERS.AMINO_ACIDS_N_RATIO) * PhotosyntheticOrgan.PARAMETERS.AMINO_ACIDS_C_RATIO #: Contribution of triosesP to the synthesis of amino_acids
-        return max(0, photosynthesis) - (s_sucrose + s_starch + triosesP_consumption_AA) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        return photosynthesis - (s_sucrose + s_starch + triosesP_consumption_AA) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
-    def calculate_starch_derivative(self, s_starch, d_starch):
+    def calculate_starch_derivative(self, s_starch, d_starch, remob_starch_senescence):
         """delta starch of element integrated over delat_t (µmol C starch).
         """
-        return (s_starch - d_starch) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        return (s_starch - d_starch - remob_starch_senescence) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
-    def calculate_sucrose_derivative(self, s_sucrose, d_starch, loading_sucrose, s_fructan, d_fructan, R_phloem_loading, R_Nnit_red, R_residual):
+    def calculate_sucrose_derivative(self, s_sucrose, d_starch, remob_starch_senescence, loading_sucrose, s_fructan, d_fructan, remob_fructan_senescence, R_phloem_loading, R_Nnit_red, R_residual):
         """delta sucrose of element integrated over delat_t (µmol C sucrose)
         """
-        return (s_sucrose + d_starch + d_fructan - s_fructan - loading_sucrose) * (self.mstruct*self.__class__.PARAMETERS.ALPHA) - R_phloem_loading - R_Nnit_red - R_residual
+        inter_compartment_flux = (s_sucrose + d_starch + remob_starch_senescence + d_fructan + remob_fructan_senescence - s_fructan - loading_sucrose) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        return inter_compartment_flux - R_phloem_loading - R_Nnit_red - R_residual
 
-    def calculate_fructan_derivative(self, s_fructan, d_fructan):
+    def calculate_fructan_derivative(self, s_fructan, d_fructan, remob_fructan_senescence):
         """delta fructan integrated over delat_t (µmol C fructan)
         """
-        return (s_fructan - d_fructan)* (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        return (s_fructan - d_fructan - remob_fructan_senescence)* (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
     def calculate_nitrates_derivative(self, nitrates_import, s_amino_acids):
         """delta nitrates integrated over delat_t (µmol N nitrates)
@@ -767,16 +784,15 @@ class PhotosyntheticOrganElement(object):
         nitrate_reduction_AA = s_amino_acids  #: Contribution of nitrates to the synthesis of amino_acids
         return nitrates_import - (nitrate_reduction_AA*self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
-    def calculate_amino_acids_derivative(self, amino_acids_import, s_amino_acids, s_proteins, d_proteins, loading_amino_acids):
+    def calculate_amino_acids_derivative(self, amino_acids_import, s_amino_acids, s_proteins, d_proteins, remob_proteins_senescence, loading_amino_acids):
         """delta amino acids integrated over delat_t (µmol N amino acids)
         """
-        return amino_acids_import + (s_amino_acids + d_proteins - s_proteins - loading_amino_acids) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        return amino_acids_import + (s_amino_acids + d_proteins + remob_proteins_senescence - s_proteins - loading_amino_acids) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
-    def calculate_proteins_derivative(self, s_proteins, d_proteins):
+    def calculate_proteins_derivative(self, s_proteins, d_proteins, remob_proteins_senescence):
         """delta proteins integrated over delat_t (µmol N proteins)
         """
-        return (s_proteins - d_proteins) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
-
+        return (s_proteins - d_proteins - remob_proteins_senescence) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
 class ChaffElement(PhotosyntheticOrganElement):
     """
@@ -792,16 +808,6 @@ class LaminaElement(PhotosyntheticOrganElement):
     """
 
     PARAMETERS = parameters.LaminaElementParameters #: the internal parameters of the laminae elements
-
-    # VARIABLES
-
-    def _calculate_green_area(self, t, phytomer_index):
-        """Compute green area of the lamina element.
-        """
-        value_inflexion = LaminaElement.PARAMETERS.INFLEXION_POINTS[phytomer_index]
-        green_area = max(0, min(self.area, -8.04E-6*t + value_inflexion))
-
-        return green_area
 
 
 class InternodeElement(PhotosyntheticOrganElement):
