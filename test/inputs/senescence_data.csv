@@ -1,4 +1,4 @@
-t,plant,axis,phytomer,organ,element,green_area,SLN,delta_green_area,mstruct_growth,Nstruct_N_growth,mstruct_turn_over,mstruct,Nstruct,mstruct_turn_over
+t,plant,axis,phytomer,organ,element,green_area,SLN,relative_delta_green_area,mstruct_growth,Nstruct_N_growth,mstruct_senescence,mstruct,Nstruct,mstruct_senescence
 0,1,MS,0,Roots,enclosed,,,,16.009412,0.788641,0.000635,0.503917,0.009998,0.000635
 0,1,MS,1,Internode,enclosed,0.001129,1.596103,0,,,,0.1415,0.00064,
 0,1,MS,1,Internode,exposed,0.000371,1.584906,0,,,,0.0465,0.00021,

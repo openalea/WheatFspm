@@ -668,10 +668,10 @@ class PhotosyntheticOrganElement(object):
         """
         return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_DSTARCH * (starch/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
-    def calculate_remob_starch_senescence(self, starch, delta_green_area):
+    def calculate_remob_starch_senescence(self, starch, relative_delta_green_area):
         """Rate of starch remobilisation due to senescence over delta_t (µmol C starch).
         """
-        return starch * delta_green_area
+        return starch * relative_delta_green_area
 
     def calculate_s_sucrose(self, triosesP):
         """Rate of sucrose synthesis from triosesP (µmol C sucrose s-1 g-1 MS * DELTA_T).
@@ -698,10 +698,10 @@ class PhotosyntheticOrganElement(object):
         d_actual = min(d_potential , max(0, fructan))
         return d_actual
 
-    def calculate_remob_fructan_senescence(self, fructan, delta_green_area):
+    def calculate_remob_fructan_senescence(self, fructan, relative_delta_green_area):
         """Rate of fructan remobilisation due to senescence over delta_t (µmol C fructan).
         """
-        return fructan * delta_green_area
+        return fructan * relative_delta_green_area
 
     def calculate_nitrates_import(self, roots_uptake_nitrate, organ_transpiration, total_transpiration):
         """Total nitrates imported from roots (through xylem) distributed relatively to element transpiration (µmol N nitrates integrated over delta_t [already accounted in transpiration])
@@ -741,10 +741,10 @@ class PhotosyntheticOrganElement(object):
         """
         return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_DPROTEINS * (proteins/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
-    def calculate_remob_proteins_senescence(self, proteins, delta_green_area):
+    def calculate_remob_proteins_senescence(self, proteins, relative_delta_green_area):
         """Rate of proteins remobilisation due to senescence over delta_t (µmol N proteins).
         """
-        return proteins * delta_green_area
+        return proteins * relative_delta_green_area
 
     def calculate_loading_amino_acids(self, amino_acids, amino_acids_phloem):
         """Rate of amino acids loading to phloem (µmol N amino acids s-1 g-1 MS * DELTA_T)

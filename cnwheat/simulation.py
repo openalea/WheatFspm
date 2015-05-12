@@ -71,10 +71,10 @@ class Simulation(object):
                                                                                        'Conc_Amino_Acids', 'Dry_Mass', 'Unloading_Amino_Acids', 'S_grain_starch',
                                                                                        'Conc_Sucrose', 'Uptake_Nitrates', 'S_grain_structure', 'Proteins_N_Mass',
                                                                                        'RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual', 'R_grain_growth_struct', 'R_grain_growth_starch', 'R_growth',
-                                                                                       'mstruct_growth', 'Nstruct_N_growth', 'mstruct_turn_over', 'C_exudation', 'N_exudation']
+                                                                                       'mstruct_growth', 'Nstruct_N_growth', 'mstruct_senescence', 'C_exudation', 'N_exudation']
 
     ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element']
-    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['green_area', 'delta_green_area', 'Loading_Sucrose', 'Regul_S_Fructan', 'Ag', 'An', 'Rd', 'R_phloem_loading', 'R_Nnit_red', 'R_residual',
+    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['green_area', 'relative_delta_green_area', 'Loading_Sucrose', 'Regul_S_Fructan', 'Ag', 'An', 'Rd', 'R_phloem_loading', 'R_Nnit_red', 'R_residual',
                                                                                                                 'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose',
                                                                                                                 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 'SLN',
                                                                                                                 'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan',
@@ -424,19 +424,19 @@ class Simulation(object):
                             # flows
                             s_starch = element.calculate_s_starch(element.triosesP)
                             d_starch = element.calculate_d_starch(element.starch)
-                            remob_starch_senescence = element.calculate_remob_starch_senescence(element.starch, element.delta_green_area)
+                            remob_starch_senescence = element.calculate_remob_starch_senescence(element.starch, element.relative_delta_green_area)
                             s_sucrose = element.calculate_s_sucrose(element.triosesP)
                             element.loading_sucrose = element.calculate_loading_sucrose(element.sucrose, axis.phloem.sucrose)
                             regul_s_fructan = element.calculate_regul_s_fructan(element.loading_sucrose)
                             d_fructan = element.calculate_d_fructan(element.sucrose, element.fructan)
-                            remob_fructan_senescence = element.calculate_remob_fructan_senescence(element.fructan, element.delta_green_area)
+                            remob_fructan_senescence = element.calculate_remob_fructan_senescence(element.fructan, element.relative_delta_green_area)
                             s_fructan = element.calculate_s_fructan(element.sucrose, regul_s_fructan)
                             nitrates_import = element.calculate_nitrates_import(roots_uptake_nitrate, element_transpiration, total_transpiration)
                             amino_acids_import = element.calculate_amino_acids_import(roots_export_amino_acids, element_transpiration, total_transpiration)
                             s_amino_acids = element.calculate_s_amino_acids(element.nitrates, element.triosesP)
                             s_proteins = element.calculate_s_proteins(element.amino_acids)
                             d_proteins = element.calculate_d_proteins(element.proteins)
-                            remob_proteins_senescence = element.calculate_remob_proteins_senescence(element.proteins, element.delta_green_area)
+                            remob_proteins_senescence = element.calculate_remob_proteins_senescence(element.proteins, element.relative_delta_green_area)
                             element.loading_amino_acids = element.calculate_loading_amino_acids(element.amino_acids, axis.phloem.amino_acids)
 
                             # compartments derivatives
@@ -628,7 +628,7 @@ class Simulation(object):
                 organs_df['R_residual'] = map(RespirationModel.R_residual, organs_df['sucrose'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(t), total_nitrogen, [axis.roots.PARAMETERS.DELTA_T]*len(t))
                 organs_df['mstruct_growth'] = axis.roots.mstruct_C_growth
                 organs_df['R_growth'] = map(RespirationModel.R_growth, organs_df['mstruct_growth'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(t))
-                organs_df['mstruct_turn_over'] = axis.roots.mstruct_turn_over
+                organs_df['mstruct_senescence'] = axis.roots.mstruct_senescence
                 organs_df['Nstruct_N_growth'] = axis.roots.Nstruct_N_growth
                 organs_df['C_exudation'], organs_df['N_exudation'] = axis.roots.calculate_exudation(organs_df['Unloading_Sucrose'], organs_df['Uptake_Nitrates'])
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
@@ -656,7 +656,7 @@ class Simulation(object):
                             elements_df['organ'] = organ.__class__.__name__
                             elements_df['element'] = element_type
                             elements_df['green_area'] = element.green_area
-                            elements_df['delta_green_area'] = element.delta_green_area
+                            elements_df['relative_delta_green_area'] = element.relative_delta_green_area
                             elements_df['mstruct'] = element.mstruct
                             elements_df['Nstruct'] = element.Nstruct
                             elements_df['triosesP'] = solver_output[self.initial_conditions_mapping[element]['triosesP']]
@@ -699,9 +699,9 @@ class Simulation(object):
                             elements_df['S_Proteins'] = map(element.calculate_s_proteins, elements_df['amino_acids'])
                             elements_df['D_Proteins'] = map(element.calculate_d_proteins, elements_df['proteins'])
                             elements_df['Loading_Amino_Acids'] = map(element.calculate_loading_amino_acids, elements_df['amino_acids'], phloem_amino_acids)
-                            elements_df['remob_starch_senescence'] = map(element.calculate_remob_starch_senescence, elements_df['starch'], [element.delta_green_area] * len(t))
-                            elements_df['remob_fructan_senescence'] = map(element.calculate_remob_fructan_senescence, elements_df['fructan'], [element.delta_green_area] * len(t))
-                            elements_df['remob_proteins_senescence'] = map(element.calculate_remob_proteins_senescence, elements_df['proteins'], [element.delta_green_area] * len(t))
+                            elements_df['remob_starch_senescence'] = map(element.calculate_remob_starch_senescence, elements_df['starch'], [element.relative_delta_green_area] * len(t))
+                            elements_df['remob_fructan_senescence'] = map(element.calculate_remob_fructan_senescence, elements_df['fructan'], [element.relative_delta_green_area] * len(t))
+                            elements_df['remob_proteins_senescence'] = map(element.calculate_remob_proteins_senescence, elements_df['proteins'], [element.relative_delta_green_area] * len(t))
 
                             all_elements_df = all_elements_df.append(elements_df, ignore_index=True)
 

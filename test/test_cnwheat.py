@@ -197,7 +197,7 @@ def test_run():
                 row_index = group.first_valid_index()
                 axis.roots.mstruct_C_growth = group.mstruct_growth[row_index]
                 axis.roots.Nstruct_N_growth = group.Nstruct_N_growth[row_index]
-                axis.roots.mstruct_turn_over = group.mstruct_turn_over[row_index]
+                axis.roots.mstruct_senescence = group.mstruct_senescence[row_index]
                 axis.roots.mstruct = group.mstruct[row_index]
                 axis.roots.Nstruct = group.Nstruct[row_index]
 
@@ -217,7 +217,7 @@ def test_run():
 
                             # Senescence
                             element.green_area = group_senesc.green_area[row_index_sensc]
-                            element.delta_green_area = group_senesc.delta_green_area[row_index_sensc]
+                            element.relative_delta_green_area = group_senesc.relative_delta_green_area[row_index_sensc]
                             element.mstruct = group_senesc.mstruct[row_index_sensc]
                             element.Nstruct = group_senesc.Nstruct[row_index_sensc]
                             element.surfacic_nitrogen = group_senesc.SLN[row_index_sensc]
