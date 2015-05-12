@@ -21,14 +21,6 @@ Farquhar-Wheat has not been tested with **Python 3**.
 .. _Pandas: http://pandas.pydata.org/
 
 
-To couple Farquhar-Wheat with other models, you also need NumPy_ (1.7.2 or newer), Alinea.Astk_ and 
-OpenAlea.MTG_ libraries.
-
-.. _NumPy: http://www.numpy.org/
-.. _Alinea.Astk: https://scm.gforge.inria.fr/svn/openaleapkg/trunk/astk
-.. _OpenAlea.MTG: https://scm.gforge.inria.fr/svn/vplants/vplants/trunk/newmtg/
-
-
 Usage
 -----
 

@@ -15,9 +15,6 @@
 
     .. seealso:: Barillot et al. 2014.
     
-    .. note:: Since we can not read/write a MTG from/to file by now, we use alinea.adel.astk_interface.initialise_stand 
-        to create and initialize the MTG. Thus, you also need to install :mod:`alinea.adel` (and add it to your PYTHONPATH) 
-        before running this script.
 '''
 
 '''
