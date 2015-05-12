@@ -38,6 +38,7 @@ t0 = time.time()
 INPUTS_DIRPATH = 'inputs'
 
 PHOTOSYNTHESIS_DATA_FILENAME = 'photosynthesis_data.csv'
+SENESCENCE_DATA_FILENAME = 'senescence_data.csv'
 
 OUTPUTS_DIRPATH = 'outputs'
 
@@ -98,9 +99,9 @@ def test_run():
     axis = cnwheat_model.Axis()
     plant.axes.append(axis)
 
-    axis.grains = cnwheat_model.Grains(starch=0, structure=10850, proteins=170)
+    axis.grains = cnwheat_model.Grains(starch=0, structure=4000, proteins=170)
 
-    axis.roots = cnwheat_model.Roots(mstruct=0.504, Nstruct=0.01, sucrose=900, nitrates=0, amino_acids=0)
+    axis.roots = cnwheat_model.Roots(mstruct=0.504, Nstruct=0.01, sucrose=900, nitrates=250, amino_acids=60)
 
     axis.phloem = cnwheat_model.Phloem(sucrose=0, amino_acids=0)
 
@@ -108,26 +109,26 @@ def test_run():
     phytomer1 = cnwheat_model.Phytomer(index=1)
 
     phytomer1.lamina = cnwheat_model.Lamina()
-    lamina_element = cnwheat_model.LaminaElement(area=0.00346, mstruct=0.14, Nstruct=0.00102, width= 0.018, height=0.6,
+    lamina_element = cnwheat_model.LaminaElement(area=0.00346, green_area=0.00346, mstruct=0.14, Nstruct=0.00102, width= 0.018, height=0.6,
                                     starch=0, sucrose=252, triosesP=0, fructan=0, nitrates=0,
                                     amino_acids=16, proteins=380)
     phytomer1.lamina.exposed_element = lamina_element
 
     phytomer1.sheath = cnwheat_model.Sheath()
-    sheath_element = cnwheat_model.SheathElement(area=0.0006, mstruct=0.103, Nstruct=0.00068, width=0.0011, height=0.5,
+    sheath_element = cnwheat_model.SheathElement(area=0.0006, green_area=0.0006, mstruct=0.103, Nstruct=0.00068, width=0.0011, height=0.5,
                                     starch=0, sucrose=185, triosesP=0, fructan=0,
                                     nitrates=0 , amino_acids=12, proteins=130)
     phytomer1.sheath.exposed_element = sheath_element
 
     # Internode enclosed
     phytomer1.internode = cnwheat_model.Internode()
-    internode_enclosed_element = cnwheat_model.InternodeElement(area=0.001129, mstruct=0.1415, Nstruct=0.00064, width=0.00257, height=0.3,
+    internode_enclosed_element = cnwheat_model.InternodeElement(area=0.001129, green_area=0.001129, mstruct=0.1415, Nstruct=0.00064, width=0.00257, height=0.3,
                                           starch=0, sucrose=255, triosesP=0, fructan=0,
                                           nitrates=0, amino_acids=17, proteins=66)
     phytomer1.internode.enclosed_element = internode_enclosed_element
 
     # Internode exposed
-    internode_exposed_element = cnwheat_model.InternodeElement(area=0.000371, mstruct=0.0465, Nstruct=0.00021, width=0.00257, height=0.4,
+    internode_exposed_element = cnwheat_model.InternodeElement(area=0.000371, green_area=0.000371, mstruct=0.0465, Nstruct=0.00021, width=0.00257, height=0.4,
                                           starch=0, sucrose=84, triosesP=0, fructan=0,
                                           nitrates=0, amino_acids=5, proteins=22)
     phytomer1.internode.exposed_element = internode_exposed_element
@@ -139,13 +140,13 @@ def test_run():
 
     # Enclosed peduncle
     phytomer4.peduncle = cnwheat_model.Peduncle()
-    peduncle_enclosed_element = cnwheat_model.PeduncleElement(area=0.00159, mstruct=0.170, Nstruct=0.00086, width= 0.00349, height=0.65,
+    peduncle_enclosed_element = cnwheat_model.PeduncleElement(area=0.00159, green_area=0.00159, mstruct=0.170, Nstruct=0.00086, width= 0.00349, height=0.65,
                                         starch=0, sucrose=306, triosesP=0, fructan=0, nitrates=0,
                                         amino_acids=20, proteins=120)
     phytomer4.peduncle.enclosed_element = peduncle_enclosed_element
 
     # Exposed peduncle
-    peduncle_exposed_element = cnwheat_model.PeduncleElement(area=0.00081, mstruct=0.087, Nstruct=0.00044, width= 0.00349, height=0.5,
+    peduncle_exposed_element = cnwheat_model.PeduncleElement(area=0.00081, green_area=0.00081, mstruct=0.087, Nstruct=0.00044, width= 0.00349, height=0.5,
                                         starch=0, sucrose=156, triosesP=0, fructan=0, nitrates=0,
                                         amino_acids=10, proteins=61)
     phytomer4.peduncle.exposed_element = peduncle_exposed_element
@@ -154,7 +155,7 @@ def test_run():
     # Phytomer 5 (reproductive)
     phytomer5 = cnwheat_model.Phytomer(index=5)
     phytomer5.chaff = cnwheat_model.Chaff()
-    chaff_element = cnwheat_model.ChaffElement(area=0.00075, mstruct=0.21, Nstruct=0.00107, width=0.00265, height= 0.7, starch=0,
+    chaff_element = cnwheat_model.ChaffElement(area=0.00075, green_area=0.00075, mstruct=0.21, Nstruct=0.00107, width=0.00265, height= 0.7, starch=0,
                                   sucrose=378, triosesP=0, fructan=0, nitrates=0, amino_acids=25,
                                   proteins=260)
     phytomer5.chaff.exposed_element = chaff_element
@@ -164,6 +165,11 @@ def test_run():
     photosynthesis_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_DATA_FILENAME)
     photosynthesis_data_df = pd.read_csv(photosynthesis_data_filepath)
     photosynthesis_data_grouped = photosynthesis_data_df.groupby(simulation.Simulation.ELEMENTS_INDEXES)
+
+    # Get senescence and growth data
+    senescence_data_filepath = os.path.join(INPUTS_DIRPATH, SENESCENCE_DATA_FILENAME)
+    senescence_data_df = pd.read_csv(senescence_data_filepath)
+    senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEMENTS_INDEXES)
 
     # initialize the simulator
     simulation_ = simulation.Simulation(population=population)
@@ -185,7 +191,16 @@ def test_run():
             plant_index = plant.index
             for axis in plant.axes:
                 axe_id = axis.id
-                axis.grains
+
+                # Root growth and senescence
+                group = senescence_data_grouped.get_group((t, plant_index, axe_id, 0, 'Roots', 'enclosed'))
+                row_index = group.first_valid_index()
+                axis.roots.mstruct_C_growth = group.mstruct_growth[row_index]
+                axis.roots.Nstruct_N_growth = group.Nstruct_N_growth[row_index]
+                axis.roots.mstruct_turn_over = group.mstruct_turn_over[row_index]
+                axis.roots.mstruct = group.mstruct[row_index]
+                axis.roots.Nstruct = group.Nstruct[row_index]
+
                 for phytomer in axis.phytomers:
                     phytomer_index = phytomer.index
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
@@ -195,17 +210,27 @@ def test_run():
                         for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                             if element is None:
                                 continue
-                            group = photosynthesis_data_grouped.get_group((t, plant_index, axe_id, phytomer_index, organ_type, element_type))
-                            row_index = group.first_valid_index()
-                            element.Ag = group.Ag[row_index]
-                            element.An = group.An[row_index]
-                            element.Rd = group.Rd[row_index]
-                            element.Tr = group.Tr[row_index]
-                            element.Ts = group.Ts[row_index]
-                            element.gs = group.gs[row_index]
+                            group_photo = photosynthesis_data_grouped.get_group((t, plant_index, axe_id, phytomer_index, organ_type, element_type))
+                            group_senesc = senescence_data_grouped.get_group((t, plant_index, axe_id, phytomer_index, organ_type, element_type))
+                            row_index_photo = group_photo.first_valid_index()
+                            row_index_sensc = group_senesc.first_valid_index()
+
+                            # Senescence
+                            element.green_area = group_senesc.green_area[row_index_sensc]
+                            element.delta_green_area = group_senesc.delta_green_area[row_index_sensc]
+                            element.mstruct = group_senesc.mstruct[row_index_sensc]
+                            element.Nstruct = group_senesc.Nstruct[row_index_sensc]
+                            element.surfacic_nitrogen = group_senesc.SLN[row_index_sensc]
+
+                            element.Ag = group_photo.Ag[row_index_photo]
+                            element.An = group_photo.An[row_index_photo]
+                            element.Rd = group_photo.Rd[row_index_photo]
+                            element.Tr = group_photo.Tr[row_index_photo]
+                            element.Ts = group_photo.Ts[row_index_photo]
+                            element.gs = group_photo.gs[row_index_photo]
 
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
-        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
+        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df, _ = simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
         all_plants_df_list.append(all_plants_df)
         all_axes_df_list.append(all_axes_df)
         all_phytomers_df_list.append(all_phytomers_df)
