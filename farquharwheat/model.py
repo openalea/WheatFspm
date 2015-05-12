@@ -26,7 +26,7 @@ from __future__ import division # use '//' to do integer division
 
 from math import sqrt, log,  exp
 
-class PhotosynthesisModel(object):
+class Model(object):
 
     O = 21000      #: Photosynthetic parameter: Intercellular O2 concentration, umol mol(air)-1 or Pa, from Bernacchi et al. (2001)
     KC25 = 404     #: Photosynthetic parameter: Affinity constant of RuBisCO for C, umol mol-1 or Pa, from Bernacchi et al. (2001) (estimation in Braune et al. (2009) not enough accurate)

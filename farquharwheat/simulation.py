@@ -54,7 +54,7 @@ class Simulation(object):
         #:     * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
         #:     * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
         #: 
-        #: See :meth:`PhotosynthesisModel.calculate_An <farquharwheat.model.PhotosynthesisModel.calculate_An>` 
+        #: See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
         #: for more information about the inputs.  
         self.inputs = {}
         #: The outputs by element. 
@@ -63,7 +63,7 @@ class Simulation(object):
         #:     * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
         #:     * and elementi_outputs is a dictionary: {'elementi_output1_name': elementi_output1_value, 'elementi_output2_name': elementi_output2_value, ..., 'elementi_outputN_name': elementi_outputN_value}.
         #: 
-        #: See :meth:`PhotosynthesisModel.calculate_An <farquharwheat.model.PhotosynthesisModel.calculate_An>` 
+        #: See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
         #: for more information about the outputs.
         self.outputs = {}
     
@@ -84,7 +84,7 @@ class Simulation(object):
                     
                     * or a pandas dataframe, with one row by element ; columns are :attr:`ELEMENTS_KEYS_NAMES` and Farquhar-Wheat inputs. 
                     
-                See :meth:`PhotosynthesisModel.calculate_An <farquharwheat.model.PhotosynthesisModel.calculate_An>` 
+                See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
                 for more information about the inputs.  
             
         """
@@ -123,7 +123,7 @@ class Simulation(object):
             organ_height = element_inputs['organ_height']
             STAR = element_inputs['STAR']
             PAR = STAR * PARi
-            Ag, An, Rd, Tr, Torg, gs = model.PhotosynthesisModel.calculate_An(Na, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, Ur, organ_type)
+            Ag, An, Rd, Tr, Torg, gs = model.Model.calculate_An(Na, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, Ur, organ_type)
             self.outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Torg': Torg, 'gs': gs}
     
             
@@ -133,7 +133,7 @@ class Simulation(object):
         
         :Returns:
             The outputs in a dataframe, with one row by element.
-            See :meth:`PhotosynthesisModel.calculate_An <farquharwheat.model.PhotosynthesisModel.calculate_An>` 
+            See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
             for more information about the outputs.  
         
         :Returns Type:

@@ -79,7 +79,7 @@ def from_MTG(g):
             * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
             * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
          
-        See :meth:`PhotosynthesisModel.calculate_An <farquharwheat.model.PhotosynthesisModel.calculate_An>` 
+        See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
         for more information about the inputs. 
         
     :Returns Type:
@@ -201,7 +201,7 @@ def update_MTG(outputs, g):
                 * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
                 * and elementi_outputs is a dictionary: {'elementi_output1_name': elementi_output1_value, 'elementi_output2_name': elementi_output2_value, ..., 'elementi_outputN_name': elementi_outputN_value}.
         
-            See :meth:`PhotosynthesisModel.calculate_An <farquharwheat.model.PhotosynthesisModel.calculate_An>` 
+            See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
             for more information about the outputs.
         
             - `g` (:class:`openalea.mtg.mtg.MTG`) - The MTG to update from the `outputs` of FarquharWheat. 
