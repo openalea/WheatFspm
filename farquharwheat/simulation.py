@@ -45,7 +45,7 @@ class Simulation(object):
     
     ELEMENTS_KEYS_NAMES = ['plant', 'axis', 'metamer', 'organ', 'element'] #: the keys which define the topology of an element.
     
-    INPUTS_NAMES = ['organ', 'Na', 'organ_width', 'organ_height', 'STAR']
+    INPUTS_NAMES = ['organ_type', 'Na', 'organ_width', 'organ_height', 'STAR']
     
     def __init__(self):
         #: The inputs by element.
@@ -117,7 +117,7 @@ class Simulation(object):
         """
         self.outputs.clear()
         for (element_id, element_inputs) in self.inputs.iteritems():
-            organ_type = element_inputs['organ']
+            organ_type = element_inputs['organ_type']
             Na = element_inputs['Na']
             organ_width = element_inputs['organ_width']
             organ_height = element_inputs['organ_height']
@@ -126,6 +126,24 @@ class Simulation(object):
             Ag, An, Rd, Tr, Torg, gs = model.Model.calculate_An(Na, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, Ur, organ_type)
             self.outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Torg': Torg, 'gs': gs}
     
+    def format_inputs(self):
+        """
+        Format :attr:`inputs` to Pandas dataframe.
+        
+        :Returns:
+            The inputs in a dataframe, with one row by element.
+            See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
+            for more information about the inputs.  
+        
+        :Returns Type:
+            :class:`pandas.DataFrame`
+        
+        """
+        elements_ids_df = pd.DataFrame(self.inputs.keys(), columns=Simulation.ELEMENTS_KEYS_NAMES)
+        elements_inputs_df = pd.DataFrame(self.inputs.values())
+        inputs_df = pd.concat([elements_ids_df, elements_inputs_df], axis=1)
+        inputs_df.sort_index(by=Simulation.ELEMENTS_KEYS_NAMES, inplace=True)
+        return inputs_df
             
     def format_outputs(self): 
         """

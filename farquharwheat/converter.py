@@ -168,7 +168,7 @@ Ignore current element (vid={}) and all its components.'.format(precedent_metame
                             warnings.warn(PropertyNotFoundWarning('surfacic_nitrogen', element_vid))
                             continue
                         Na = vertex_properties['surfacic_nitrogen'] # get Na
-                        elements_inputs[(plant_index, axis_id, metamer_index, organ_type, element_type)] = {'organ': organ_type,
+                        elements_inputs[(plant_index, axis_id, metamer_index, organ_type, element_type)] = {'organ_type': organ_type,
                                                                                                             'STAR': STAR, 
                                                                                                             'Na': Na, 
                                                                                                             'organ_width': organ_width, 
