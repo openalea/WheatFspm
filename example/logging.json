@@ -17,85 +17,109 @@
         },
         "file_info": {
             "level": "INFO",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "info.log",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "verbose"
         },
         "file_debug": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "debug.log",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "verbose"
         },
         "plants_compartments_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "plants_compartments.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         },
         "axes_compartments_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "axes_compartments.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         },
         "phytomers_compartments_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "phytomers_compartments.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         },
         "organs_compartments_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "organs_compartments.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         },
         "elements_compartments_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "elements_compartments.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         },
         "plants_derivatives_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "plants_derivatives.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         },
         "axes_derivatives_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "axes_derivatives.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         },
         "phytomers_derivatives_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "phytomers_derivatives.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         },
         "organs_derivatives_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "organs_derivatives.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         },
         "elements_derivatives_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": "elements_derivatives.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
             "mode": "w",
             "formatter": "simple"
         }
