@@ -243,7 +243,7 @@ def compute_CN_distrib(make_graphs=True):
 
     # run the models
     start_time = 0
-    stop_time = 50 # 960
+    stop_time = 960 # 960
     photosynthesis_model_ts = 2
     cn_model_ts = 1 #241
 
@@ -263,12 +263,12 @@ def compute_CN_distrib(make_graphs=True):
                 axis_id = axis.id
 
                 # Root growth and senescence
-                mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = SenescenceModel.calculate_mstruct_growth(axis.roots.sucrose, axis.roots.mstruct)
+                mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = SenescenceModel.calculate_roots_mstruct_growth(axis.roots.sucrose, axis.roots.mstruct, 3600) #3600 is temporary, will be moved
                 axis.roots.mstruct_C_growth = mstruct_C_growth
                 axis.roots.Nstruct_N_growth = Nstruct_N_growth
-                mstruct_turn_over, Nstruct_turn_over = SenescenceModel.calculate_mstruct_turn_over(axis.roots.mstruct, axis.roots.Nstruct)
-                axis.roots.mstruct_turn_over = mstruct_turn_over
-                delta_mstruct, delta_Nstruct = SenescenceModel.calculate_delta_mstruct_roots(mstruct_growth, Nstruct_growth, mstruct_turn_over, Nstruct_turn_over)
+                mstruct_senescence, Nstruct_senescence = SenescenceModel.calculate_roots_senescence(axis.roots.mstruct, axis.roots.Nstruct, 3600)
+                axis.roots.mstruct_senescence = mstruct_senescence
+                delta_mstruct, delta_Nstruct = SenescenceModel.calculate_delta_mstruct_roots(mstruct_growth, Nstruct_growth, mstruct_senescence, Nstruct_senescence)
                 axis.roots.mstruct += delta_mstruct
                 axis.roots.Nstruct += delta_Nstruct
 
@@ -284,10 +284,10 @@ def compute_CN_distrib(make_graphs=True):
 
                             # Senescence
                             group_id = (t_photosynthesis_model, plant_index, axis_id, phytomer_index, organ_type, element_type)
-                            new_green_area, delta_green_area = SenescenceModel.calculate_delta_green_area(green_area_grouped, group_id, element.green_area)
+                            new_green_area, relative_delta_green_area = SenescenceModel.calculate_relative_delta_green_area(green_area_grouped, group_id, element.green_area)
                             element.green_area = new_green_area
-                            element.delta_green_area = delta_green_area
-                            new_mstruct, new_Nstruct = SenescenceModel.calculate_delta_mstruct_shoot(delta_green_area, element.mstruct, element.Nstruct)
+                            element.relative_delta_green_area = relative_delta_green_area
+                            new_mstruct, new_Nstruct = SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element.mstruct, element.Nstruct)
                             element.mstruct = new_mstruct
                             element.Nstruct = new_Nstruct
                             new_SLN = SenescenceModel.calculate_surfacic_nitrogen(element.nitrates, element.amino_acids, element.proteins, element.Nstruct, new_green_area)
@@ -386,7 +386,7 @@ def compute_CN_distrib(make_graphs=True):
                             'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N AA h$^{-1}$)',
                             'R_Nnit_upt': u'Respiration nitrates uptake (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)', 'R_residual': u'Respiration residual (µmol C h$^{-1}$)',
                             'R_grain_growth_struct': u'Respiration grain structural growth (µmol C h$^{-1}$)', 'R_grain_growth_starch': u'Respiration grain starch growth (µmol C h$^{-1}$)',
-                            'R_growth': u'Growth respiration of roots (µmol C h$^{-1}$)', 'Nstruct_N_growth': u'Growth of Nstruct (µmol N h$^{-1}$)', 'mstruct_growth': u'growth of structural dry mass (µmol C g$^{-1}$ mstruct h$^{-1}$)', 'mstruct_turn_over': u'Structural dry mass lost by root turn-over (g h$^{-1}$)','mstruct': u'Structural mass (g)',
+                            'R_growth': u'Growth respiration of roots (µmol C h$^{-1}$)', 'Nstruct_N_growth': u'Growth of Nstruct (µmol N h$^{-1}$)', 'mstruct_growth': u'growth of structural dry mass (µmol C g$^{-1}$ mstruct h$^{-1}$)', 'mstruct_senescence': u'Structural dry mass lost by root senescence (g h$^{-1}$)','mstruct': u'Structural mass (g)',
                             'C_exudation': u'Carbon lost by root exudation (µmol C g$^{-1}$ mstruct h$^{-1}$', 'N_exudation': u'Nitrogen lost by root exudation (µmol N g$^{-1}$ mstruct h$^{-1}$'}
 
         for org in (['Roots'], ['Grains'], ['Phloem']):
