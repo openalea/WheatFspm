@@ -271,27 +271,27 @@ def compute_CN_distrib(make_graphs=True):
                         for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                             if element is None:
                                 continue
-                                group_photo = photosynthesis_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
-                                group_senesc = senescence_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
-                                row_index_photo = group_photo.first_valid_index()
-                                row_index_sensc = group_senesc.first_valid_index()
+                            group_photo = photosynthesis_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
+                            group_senesc = senescence_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
+                            row_index_photo = group_photo.first_valid_index()
+                            row_index_sensc = group_senesc.first_valid_index()
 
-                                # Senescence
-                                element.green_area = group_senesc.green_area[row_index_sensc]
-                                element.relative_delta_green_area = group_senesc.relative_delta_green_area[row_index_sensc]
-                                element.mstruct = group_senesc.mstruct[row_index_sensc]
-                                element.Nstruct = group_senesc.Nstruct[row_index_sensc]
-                                element.surfacic_nitrogen = group_senesc.SLN[row_index_sensc]
+                            # Senescence
+                            element.green_area = group_senesc.green_area[row_index_sensc]
+                            element.relative_delta_green_area = group_senesc.relative_delta_green_area[row_index_sensc]
+                            element.mstruct = group_senesc.mstruct[row_index_sensc]
+                            element.Nstruct = group_senesc.Nstruct[row_index_sensc]
+                            element.surfacic_nitrogen = group_senesc.SLN[row_index_sensc]
 
-                                element.Ag = group_photo.Ag[row_index_photo]
-                                element.An = group_photo.An[row_index_photo]
-                                element.Rd = group_photo.Rd[row_index_photo]
-                                element.Tr = group_photo.Tr[row_index_photo]
-                                element.Ts = group_photo.Ts[row_index_photo]
-                                element.gs = group_photo.gs[row_index_photo]
+                            element.Ag = group_photo.Ag[row_index_photo]
+                            element.An = group_photo.An[row_index_photo]
+                            element.Rd = group_photo.Rd[row_index_photo]
+                            element.Tr = group_photo.Tr[row_index_photo]
+                            element.Ts = group_photo.Ts[row_index_photo]
+                            element.gs = group_photo.gs[row_index_photo]
 
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
-        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.run(start_time=t, stop_time=t+timestep, number_of_output_steps=timestep+1)
+        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df, _ = simulation_.run(start_time=t, stop_time=t+timestep, number_of_output_steps=timestep+1)
         all_plants_df_list.append(all_plants_df)
         all_axes_df_list.append(all_axes_df)
         all_phytomers_df_list.append(all_phytomers_df)
