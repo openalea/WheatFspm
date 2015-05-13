@@ -277,7 +277,8 @@ class Simulation(object):
                     i += 1
                 else:
                     row.append('NA')
-            rows.append([str(index) for index in indexes] + row)
+            if row.count('NA') < len(row):
+                rows.append([str(index) for index in indexes] + row)
             return i
 
         i = 0
