@@ -29,8 +29,6 @@ import time, datetime
 import profile, pstats
 
 import logging
-import logging.config
-import json
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -67,48 +65,8 @@ LOGGING_CONFIG_FILEPATH = os.path.join('..', 'logging.json')
 
 LOGGING_LEVEL = logging.INFO # set to logging.DEBUG for debugging or logging.INFO for INFO level
 
-def setup_logging(config_filepath='logging.json', level=logging.INFO,
-                  log_compartments=False, log_derivatives=False, log_model=False):
-    """Setup logging configuration.
+tools.setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL)
 
-    :Parameters:
-
-        - `config_filepath` (:class:`str`) - the file path of the logging
-          configuration.
-
-        - `level` (:class:`int`) - the global level of the logging. Use either
-          `logging.DEBUG`, `logging.INFO`, `logging.WARNING`, `logging.ERROR` or
-          `logging.CRITICAL`.
-
-        - `log_compartments` (:class:`bool`) - if `True`, log the values of the compartments.
-          `False` otherwise.
-
-        - `log_derivatives` (:class:`bool`) - if `True`, log the values of the derivatives.
-          `False` otherwise.
-
-        - `log_model` (:class:`bool`) - if `True`, log the messages from :mod:`cnwheat.model`.
-          `False` otherwise.
-
-    """
-    if os.path.exists(config_filepath):
-        with open(config_filepath, 'r') as f:
-            config = json.load(f)
-        logging.config.dictConfig(config)
-    else:
-        logging.basicConfig()
-    root_logger = logging.getLogger()
-    root_logger.setLevel(level)
-
-    logging.getLogger('cnwheat.compartments').disabled = not log_compartments # set to False to log the compartments
-    logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives # set to False to log the derivatives
-    logging.getLogger('cnwheat.model').disabled = not log_model # set to False to log the derivatives
-
-setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL)
-
-
-def read_t_data(curr_data_dirpath, data_filename):
-    data_filepath = os.path.join(curr_data_dirpath, data_filename)
-    return pd.read_csv(data_filepath, sep=None, index_col='t', engine = 'python')
 
 def compute_CN_distrib(run_simu=True, make_graphs=True):
     
@@ -247,7 +205,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         green_area_grouped = green_area_df.groupby(simulation.Simulation.ELEMENTS_INDEXES)
     
         # get meteo data
-        meteo_df = read_t_data(INPUTS_DIRPATH, METEO_FILENAME)
+        meteo_df = tools.read_t_data(INPUTS_DIRPATH, METEO_FILENAME)
     
         # initialize the model of CN exchanges
         simulation_ = simulation.Simulation(population=population)
@@ -510,7 +468,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         plt.close()
 
 if __name__ == '__main__':
-    compute_CN_distrib(run_simu=True, make_graphs=True)
+    compute_CN_distrib(run_simu=True, make_graphs=False)
 ##    # Profiling
 ##    filename = 'profile.pstats'
 ##    profile.run('compute_CN_distrib(make_graphs=True)', filename)

@@ -18,11 +18,16 @@
         $Id$
 """
 
+import os
 import types
 from itertools import cycle
 import warnings
+import logging
+import logging.config
+import json
 
 import numpy as np
+import pandas as pd
 from scipy import stats
 import matplotlib.pyplot as plt
 
@@ -258,3 +263,64 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
         # save the plot
         plt.savefig(plot_filepath, dpi=200, format='PNG')
         plt.close()
+        
+        
+def setup_logging(config_filepath='logging.json', level=logging.INFO,
+                  log_compartments=False, log_derivatives=False, log_model=False):
+    """Setup logging configuration.
+
+    :Parameters:
+
+        - `config_filepath` (:class:`str`) - the file path of the logging
+          configuration.
+
+        - `level` (:class:`int`) - the global level of the logging. Use either
+          `logging.DEBUG`, `logging.INFO`, `logging.WARNING`, `logging.ERROR` or
+          `logging.CRITICAL`.
+
+        - `log_compartments` (:class:`bool`) - if `True`, log the values of the compartments.
+          `False` otherwise.
+
+        - `log_derivatives` (:class:`bool`) - if `True`, log the values of the derivatives.
+          `False` otherwise.
+
+        - `log_model` (:class:`bool`) - if `True`, log the messages from :mod:`cnwheat.model`.
+          `False` otherwise.
+
+    """
+    if os.path.exists(config_filepath):
+        with open(config_filepath, 'r') as f:
+            config = json.load(f)
+        logging.config.dictConfig(config)
+    else:
+        logging.basicConfig()
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+
+    logging.getLogger('cnwheat.compartments').disabled = not log_compartments # set to False to log the compartments
+    logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives # set to False to log the derivatives
+    logging.getLogger('cnwheat.model').disabled = not log_model # set to False to log the derivatives
+    
+
+def read_t_data(data_dirpath, data_filename):
+    """
+    Read data from CSV file with a  column 't', and return a Pandas DataFrame indexed on this 't'.
+
+    :Parameters:
+
+        - `data_dirpath` (:class:`str`) - The directory of the CSV file.
+
+        - `data_filename` (:class:`str`) - The name of the CSV file.
+
+    :Returns:
+        
+        A :class:`dataframe <pandas.DataFrame>` indexed on the column 't'.
+
+    :Returns Type:
+        :class:`pandas.DataFrame`
+
+    """
+    data_filepath = os.path.join(data_dirpath, data_filename)
+    return pd.read_csv(data_filepath, sep=None, index_col='t', engine = 'python')
+
+

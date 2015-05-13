@@ -59,11 +59,6 @@ RELATIVE_TOLERANCE = 10**-PRECISION
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
 
-def read_t_data(curr_data_dirpath, data_filename):
-    data_filepath = os.path.join(curr_data_dirpath, data_filename)
-    return pd.read_csv(data_filepath, sep=None, index_col='t', engine = 'python')
-
-
 def compare_actual_to_desired(outputs_dirpath, actual_output_df, desired_output_filename, actual_output_filename, save_actual_output=False):
     # read desired output
     desired_output_filepath = os.path.join(outputs_dirpath, desired_output_filename)
