@@ -254,7 +254,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
     
         # run the models
         start_time = 0
-        stop_time = 10 # 960
+        stop_time = 960 # 960
         photosynthesis_model_ts = 2
         cn_model_ts = 1 #241
     
