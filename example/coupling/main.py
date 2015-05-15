@@ -468,7 +468,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         plt.close()
 
 if __name__ == '__main__':
-    compute_CN_distrib(run_simu=True, make_graphs=False)
+    compute_CN_distrib(run_simu=True, make_graphs=True)
 ##    # Profiling
 ##    filename = 'profile.pstats'
 ##    profile.run('compute_CN_distrib(make_graphs=True)', filename)

@@ -266,7 +266,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
         
         
 def setup_logging(config_filepath='logging.json', level=logging.INFO,
-                  log_compartments=False, log_derivatives=False, log_model=False):
+                  log_model=False, log_compartments=False, log_derivatives=False):
     """Setup logging configuration.
 
     :Parameters:
@@ -277,14 +277,14 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
         - `level` (:class:`int`) - the global level of the logging. Use either
           `logging.DEBUG`, `logging.INFO`, `logging.WARNING`, `logging.ERROR` or
           `logging.CRITICAL`.
+          
+        - `log_model` (:class:`bool`) - if `True`, log the messages from :mod:`cnwheat.model`.
+          `False` otherwise.
 
         - `log_compartments` (:class:`bool`) - if `True`, log the values of the compartments.
           `False` otherwise.
 
         - `log_derivatives` (:class:`bool`) - if `True`, log the values of the derivatives.
-          `False` otherwise.
-
-        - `log_model` (:class:`bool`) - if `True`, log the messages from :mod:`cnwheat.model`.
           `False` otherwise.
 
     """
@@ -296,10 +296,10 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
         logging.basicConfig()
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
-
+    
+    logging.getLogger('cnwheat.model').disabled = not log_model # set to False to log messages from cnwheat.model
     logging.getLogger('cnwheat.compartments').disabled = not log_compartments # set to False to log the compartments
     logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives # set to False to log the derivatives
-    logging.getLogger('cnwheat.model').disabled = not log_model # set to False to log the derivatives
     
 
 def read_t_data(data_dirpath, data_filename):

@@ -57,32 +57,55 @@ class Simulation(object):
                                                                    'sucrose', 'triosesP', 'fructan', 'mstruct', 'Nstruct']}
 
     PLANTS_INDEXES = ['t', 'plant']
-    PLANTS_OUTPUTS = PLANTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Plant, [])
+    PLANTS_STATE_PARAMETERS = []
+    PLANTS_INTERMEDIATE_VARIABLES = []
+    PLANTS_FLUXES = []
+    PLANTS_INTEGRATIVE_VARIABLES = []
+    PLANTS_RUN_VARIABLES = PLANTS_INDEXES + PLANTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Plant, []) + PLANTS_INTERMEDIATE_VARIABLES + PLANTS_FLUXES + PLANTS_INTEGRATIVE_VARIABLES
+    PLANTS_POSTPROCESSING_VARIABLES = []
+    PLANTS_FORMAT_OUTPUTS_VARIABLES = PLANTS_RUN_VARIABLES + PLANTS_POSTPROCESSING_VARIABLES
 
     AXES_INDEXES = ['t', 'plant', 'axis']
-    AXES_OUTPUTS = AXES_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Axis, []) + ['Total_transpiration']
-
+    AXES_STATE_PARAMETERS = []
+    AXES_INTERMEDIATE_VARIABLES = []
+    AXES_FLUXES = []
+    AXES_INTEGRATIVE_VARIABLES = ['Total_transpiration']
+    AXES_RUN_VARIABLES = AXES_INDEXES + AXES_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Axis, []) + AXES_INTERMEDIATE_VARIABLES + AXES_FLUXES + AXES_INTEGRATIVE_VARIABLES
+    AXES_POSTPROCESSING_VARIABLES = []
+    AXES_FORMAT_OUTPUTS_VARIABLES = AXES_RUN_VARIABLES + AXES_POSTPROCESSING_VARIABLES
+    
     PHYTOMERS_INDEXES = ['t', 'plant', 'axis', 'phytomer']
-    PHYTOMERS_OUTPUTS = PHYTOMERS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Phytomer, [])
+    PHYTOMERS_STATE_PARAMETERS = []
+    PHYTOMERS_INTERMEDIATE_VARIABLES = []
+    PHYTOMERS_FLUXES = []
+    PHYTOMERS_INTEGRATIVE_VARIABLES = []
+    PHYTOMERS_RUN_VARIABLES = PHYTOMERS_INDEXES + PHYTOMERS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Phytomer, []) + PHYTOMERS_INTERMEDIATE_VARIABLES + PHYTOMERS_FLUXES + PHYTOMERS_INTEGRATIVE_VARIABLES
+    PHYTOMERS_POSTPROCESSING_VARIABLES = []
+    PHYTOMERS_FORMAT_OUTPUTS_VARIABLES = PHYTOMERS_RUN_VARIABLES + PHYTOMERS_POSTPROCESSING_VARIABLES
 
     ORGANS_INDEXES = ['t', 'plant', 'axis', 'organ']
-    ORGANS_OUTPUTS = ORGANS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.Organ, []) + ['Unloading_Sucrose', 'Export_Amino_Acids', 'Conc_Nitrates_Soil',
-                                                                                       'Potential_Uptake_Nitrates', 'S_Proteins', 'Conc_Nitrates', 'S_Amino_Acids',
-                                                                                       'Conc_Amino_Acids', 'Dry_Mass', 'Unloading_Amino_Acids', 'S_grain_starch',
-                                                                                       'Conc_Sucrose', 'Uptake_Nitrates', 'S_grain_structure', 'Proteins_N_Mass',
-                                                                                       'RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual', 'R_grain_growth_struct', 'R_grain_growth_starch', 'R_growth',
-                                                                                       'mstruct_growth', 'Nstruct_N_growth', 'mstruct_senescence', 'C_exudation', 'N_exudation']
-
+    ORGANS_STATE_PARAMETERS = ['mstruct_growth', 'Nstruct_N_growth', 'mstruct_senescence']
+    ORGANS_INTERMEDIATE_VARIABLES = ['Conc_Nitrates_Soil', 'RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual', 'R_grain_growth_struct', 'R_grain_growth_starch', 'R_growth', 
+                                     'C_exudation', 'N_exudation']
+    ORGANS_FLUXES = ['Unloading_Sucrose', 'Export_Amino_Acids', 'Potential_Uptake_Nitrates', 'S_Proteins', 'S_Amino_Acids', 'Unloading_Amino_Acids', 
+                     'S_grain_starch', 'Uptake_Nitrates', 'S_grain_structure']
+    ORGANS_INTEGRATIVE_VARIABLES = ['total_nitrogen']
+    ORGANS_RUN_VARIABLES = ORGANS_INDEXES + ORGANS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Organ, []) + ORGANS_INTERMEDIATE_VARIABLES + ORGANS_FLUXES + ORGANS_INTEGRATIVE_VARIABLES
+    ORGANS_POSTPROCESSING_VARIABLES = ['Conc_Nitrates', 'Conc_Amino_Acids', 'Dry_Mass', 'Conc_Sucrose', 'Proteins_N_Mass']
+    ORGANS_FORMAT_OUTPUTS_VARIABLES = ORGANS_RUN_VARIABLES + ORGANS_POSTPROCESSING_VARIABLES
+    
     ELEMENTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element']
-    ELEMENTS_OUTPUTS = ELEMENTS_INDEXES + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ['green_area', 'relative_delta_green_area', 'Loading_Sucrose', 'Regul_S_Fructan', 'Ag', 'An', 'Rd', 'R_phloem_loading', 'R_Nnit_red', 'R_residual',
-                                                                                                                'Transpiration', 'Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose',
-                                                                                                                'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 'SLN',
-                                                                                                                'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan',
-                                                                                                                'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids',
-                                                                                                                'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids',
-                                                                                                                'gs', 'Tr', 'Ts', 'Photosynthesis',
-                                                                                                                'remob_starch_senescence', 'remob_fructan_senescence', 'remob_proteins_senescence']
-
+    ELEMENTS_STATE_PARAMETERS = ['area', 'green_area', 'width', 'height', 'relative_delta_green_area', 'Ag', 'An', 'Rd', 'gs', 'Tr', 'Ts', 'surfacic_nitrogen']
+    
+    ELEMENTS_INTERMEDIATE_VARIABLES = ['Transpiration', 'R_phloem_loading', 'R_Nnit_red', 'R_residual', 'Photosynthesis']
+    ELEMENTS_FLUXES = ['Loading_Sucrose', 'Regul_S_Fructan', 'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan', 'remob_starch_senescence', 
+                       'remob_fructan_senescence', 'remob_proteins_senescence']
+    ELEMENTS_INTEGRATIVE_VARIABLES = ['total_nitrogen']
+    ELEMENTS_RUN_VARIABLES = ELEMENTS_INDEXES + ELEMENTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ELEMENTS_INTERMEDIATE_VARIABLES + ELEMENTS_FLUXES + ELEMENTS_INTEGRATIVE_VARIABLES
+    ELEMENTS_POSTPROCESSING_VARIABLES = ['Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose', 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins', 
+                                         'SLN', 'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids', 'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids']
+    ELEMENTS_FORMAT_OUTPUTS_VARIABLES = ELEMENTS_RUN_VARIABLES + ELEMENTS_POSTPROCESSING_VARIABLES
+    
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
                                       model.Axis: 'cnwheat.compartments.axes',
                                       model.Phytomer: 'cnwheat.compartments.phytomers',
@@ -553,11 +576,11 @@ class Simulation(object):
 
         solver_output = solver_output.T
 
-        all_plants_df = pd.DataFrame(columns=Simulation.PLANTS_OUTPUTS)
-        all_axes_df = pd.DataFrame(columns=Simulation.AXES_OUTPUTS)
-        all_phytomers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_OUTPUTS)
-        all_organs_df = pd.DataFrame(columns=Simulation.ORGANS_OUTPUTS)
-        all_elements_df = pd.DataFrame(columns=Simulation.ELEMENTS_OUTPUTS)
+        all_plants_df = pd.DataFrame(columns=Simulation.PLANTS_FORMAT_OUTPUTS_VARIABLES)
+        all_axes_df = pd.DataFrame(columns=Simulation.AXES_FORMAT_OUTPUTS_VARIABLES)
+        all_phytomers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_FORMAT_OUTPUTS_VARIABLES)
+        all_organs_df = pd.DataFrame(columns=Simulation.ORGANS_FORMAT_OUTPUTS_VARIABLES)
+        all_elements_df = pd.DataFrame(columns=Simulation.ELEMENTS_FORMAT_OUTPUTS_VARIABLES)
 
         for plant in self.population.plants:
 
@@ -626,6 +649,7 @@ class Simulation(object):
                 organs_df['R_Nnit_upt'] = map(RespirationModel.R_Nnit_upt, organs_df['Uptake_Nitrates'], organs_df['sucrose'])
                 organs_df['R_Nnit_red'] = map(RespirationModel.R_Nnit_red, organs_df['S_Amino_Acids'], organs_df['sucrose'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(t), [True] * len(t))
                 total_nitrogen =  map(axis.roots.calculate_total_nitrogen, organs_df['nitrates'], organs_df['amino_acids'], [axis.roots.Nstruct] * len(t))
+                organs_df['total_nitrogen'] = total_nitrogen
                 organs_df['R_residual'] = map(RespirationModel.R_residual, organs_df['sucrose'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(t), total_nitrogen, [axis.roots.PARAMETERS.DELTA_T]*len(t))
                 organs_df['mstruct_growth'] = axis.roots.mstruct_C_growth
                 organs_df['R_growth'] = map(RespirationModel.R_growth, organs_df['mstruct_growth'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(t))
@@ -656,7 +680,11 @@ class Simulation(object):
                             elements_df['phytomer'] = phytomer.index
                             elements_df['organ'] = organ.__class__.__name__
                             elements_df['element'] = element_type
+                            elements_df['area'] = element.area
                             elements_df['green_area'] = element.green_area
+                            elements_df['height'] = element.height
+                            elements_df['width'] = element.width
+                            elements_df['surfacic_nitrogen'] = element.surfacic_nitrogen
                             elements_df['relative_delta_green_area'] = element.relative_delta_green_area
                             elements_df['mstruct'] = element.mstruct
                             elements_df['Nstruct'] = element.Nstruct
@@ -676,6 +704,7 @@ class Simulation(object):
                             elements_df['S_Amino_Acids'] = map(element.calculate_s_amino_acids, elements_df['nitrates'], elements_df['triosesP'])
                             elements_df['R_Nnit_red'] = map(RespirationModel.R_Nnit_red, elements_df['S_Amino_Acids'], elements_df['sucrose'], [element.mstruct*element.__class__.PARAMETERS.ALPHA] * len(t))
                             total_nitrogen = map(element.calculate_total_nitrogen, elements_df['nitrates'], elements_df['amino_acids'], elements_df['proteins'], [element.Nstruct] * len(t))
+                            elements_df['total_nitrogen'] = total_nitrogen
                             elements_df['R_residual'] = map(RespirationModel.R_residual, elements_df['sucrose'], [element.mstruct*element.__class__.PARAMETERS.ALPHA] * len(t), total_nitrogen, [organ.__class__.PARAMETERS.DELTA_T] * len(t))
                             elements_df['Tr'] = element.Tr
                             elements_df['Ts'] = element.Ts
@@ -737,11 +766,11 @@ class Simulation(object):
             all_plants_df = all_plants_df.append(plants_df, ignore_index=True)
 
         # set the order of the columns
-        all_plants_df = all_plants_df.reindex_axis(Simulation.PLANTS_OUTPUTS, axis=1, copy=False)
-        all_axes_df = all_axes_df.reindex_axis(Simulation.AXES_OUTPUTS, axis=1, copy=False)
-        all_phytomers_df = all_phytomers_df.reindex_axis(Simulation.PHYTOMERS_OUTPUTS, axis=1, copy=False)
-        all_organs_df = all_organs_df.reindex_axis(Simulation.ORGANS_OUTPUTS, axis=1, copy=False)
-        all_elements_df = all_elements_df.reindex_axis(Simulation.ELEMENTS_OUTPUTS, axis=1, copy=False)
+        all_plants_df = all_plants_df.reindex_axis(Simulation.PLANTS_FORMAT_OUTPUTS_VARIABLES, axis=1, copy=False)
+        all_axes_df = all_axes_df.reindex_axis(Simulation.AXES_FORMAT_OUTPUTS_VARIABLES, axis=1, copy=False)
+        all_phytomers_df = all_phytomers_df.reindex_axis(Simulation.PHYTOMERS_FORMAT_OUTPUTS_VARIABLES, axis=1, copy=False)
+        all_organs_df = all_organs_df.reindex_axis(Simulation.ORGANS_FORMAT_OUTPUTS_VARIABLES, axis=1, copy=False)
+        all_elements_df = all_elements_df.reindex_axis(Simulation.ELEMENTS_FORMAT_OUTPUTS_VARIABLES, axis=1, copy=False)
 
         # sort the rows by the columns
         all_plants_df.sort_index(by=Simulation.PLANTS_INDEXES, inplace=True)

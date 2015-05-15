@@ -203,7 +203,7 @@ class Phloem(Organ):
 
     def __init__(self, sucrose, amino_acids):
 
-        # variables
+        # state variables
         self.sucrose = sucrose          #: µmol C sucrose
         self.amino_acids = amino_acids  #: µmol N amino acids
 
@@ -258,7 +258,7 @@ class Grains(Organ):
 
     def __init__(self, starch, structure, proteins):
 
-        # variables
+        # state variables
         self.starch = starch                     #: µmol of C starch
         self.structure = structure               #: µmol of C sucrose
         self.proteins = proteins                 #: µmol of N proteins
@@ -361,9 +361,15 @@ class Roots(Organ):
 
     PARAMETERS = parameters.RootsParameters #: the internal parameters of the roots
 
-    def __init__(self, mstruct, Nstruct, sucrose, nitrates, amino_acids):
+    def __init__(self, mstruct, Nstruct, sucrose, nitrates, amino_acids, mstruct_C_growth=None, 
+                 Nstruct_N_growth=None, mstruct_senescence=None):
+        
+        # state parameters
+        self.mstruct_C_growth = mstruct_C_growth
+        self.Nstruct_N_growth = Nstruct_N_growth
+        self.mstruct_senescence = mstruct_senescence
 
-        # variables
+        # state variables
         self.mstruct = mstruct                 #: Structural mass (g)
         self.Nstruct = Nstruct                 #: Structural nitrogen (g)
         self.sucrose = sucrose                 #: µmol C sucrose
@@ -478,7 +484,6 @@ class PhotosyntheticOrgan(Organ):
     PARAMETERS = parameters.PhotosyntheticOrganParameters #: the internal parameters of the photosynthetic organs
 
     def __init__(self, exposed_element=None, enclosed_element=None):
-        # variables
         self.exposed_element = exposed_element #: the exposed element
         self.enclosed_element = enclosed_element #: the enclosed element
 
@@ -554,17 +559,26 @@ class PhotosyntheticOrganElement(object):
 
     def __init__(self, area, green_area, mstruct, Nstruct, width, height, triosesP, starch,
                  sucrose, fructan, nitrates, amino_acids, proteins,
-                 An=None, Tr=None):
+                 An=None, Tr=None, Ag=None, Rd=None, Ts=None, gs=None, 
+                 surfacic_nitrogen=None, relative_delta_green_area=None):
 
+        # state parameters
         self.area = area                     #: area (m-2)
         self.green_area = green_area         #: green area (m-2)
-        self.mstruct = mstruct               #: Structural mass (g)
-        self.Nstruct = Nstruct               #: Structural nitrogen (g)
         self.width = width                   #: Width (or diameter for stem organ elements) (m)
         self.height = height                 #: Height of the element from soil (m)
         self.An = An                         #: Net assimilation (µmol m-2 s-1)
         self.Tr = Tr                         #: Transpiration (mm s-1)
+        self.Ag = Ag
+        self.Rd = Rd
+        self.Ts = Ts
+        self.gs = gs
+        self.surfacic_nitrogen = surfacic_nitrogen        #: current surfacic nitrogen (g m-2)
+        self.relative_delta_green_area = relative_delta_green_area
 
+        # state variables
+        self.mstruct = mstruct               #: Structural mass (g)
+        self.Nstruct = Nstruct               #: Structural nitrogen (g)
         self.triosesP = triosesP
         self.starch = starch
         self.sucrose = sucrose
@@ -578,7 +592,6 @@ class PhotosyntheticOrganElement(object):
         self.loading_amino_acids = None       #: current rate of amino acids loading to phloem
 
         # Integrated variables
-        self.surfacic_nitrogen = None         #: current surfacic nitrogen (g m-2)
         self.total_nitrogen = None            #: current total nitrogen amount (µmol N)
 
     def calculate_integrative_variables(self):
