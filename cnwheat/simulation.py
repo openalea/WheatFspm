@@ -83,7 +83,7 @@ class Simulation(object):
     PHYTOMERS_POSTPROCESSING_VARIABLES = []
     PHYTOMERS_FORMAT_OUTPUTS_VARIABLES = PHYTOMERS_RUN_VARIABLES + PHYTOMERS_POSTPROCESSING_VARIABLES
 
-    ORGANS_INDEXES = ['t', 'plant', 'axis', 'organ']
+    ORGANS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ']
     ORGANS_STATE_PARAMETERS = ['mstruct_growth', 'Nstruct_N_growth', 'mstruct_senescence']
     ORGANS_INTERMEDIATE_VARIABLES = ['Conc_Nitrates_Soil', 'RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual', 'R_grain_growth_struct', 'R_grain_growth_starch', 'R_growth', 
                                      'C_exudation', 'N_exudation']
@@ -201,7 +201,7 @@ class Simulation(object):
                 * plant: t, plant index, outputs by plant,
                 * axis: t, plant index, axis id, outputs by axis,
                 * phytomer: t, plant index, axis id, phytomer index, outputs by phytomer,
-                * organ: t, plant index, axis id, organ type, outputs by organ,
+                * organ: t, plant index, axis id, phytomer index, organ type, outputs by organ,
                 * and element: t, plant index, axis id, phytomer index, organ type, element type, outputs by element.
             
             If `full_output` is True, also return the optional outputs of :func:`scipy.integrate.odeint`. 
@@ -318,21 +318,21 @@ class Simulation(object):
         for plant in self.population.plants:
             i = update_rows(plant, [t, plant.index], all_rows[model.Plant], i)
             for axis in plant.axes:
-                i = update_rows(axis, [t, plant.index, axis.index], all_rows[model.Axis], i)
+                i = update_rows(axis, [t, plant.index, axis.id], all_rows[model.Axis], i)
                 for organ in (axis.roots, axis.phloem, axis.grains):
                     if organ is None:
                         continue
-                    i = update_rows(organ, [t, plant.index, axis.index, organ.__class__.__name__], all_rows[model.Organ], i)
+                    i = update_rows(organ, [t, plant.index, axis.id, 'NA', organ.__class__.__name__], all_rows[model.Organ], i)
                 for phytomer in axis.phytomers:
-                    i = update_rows(phytomer, [t, plant.index, axis.index, phytomer.index], all_rows[model.Phytomer], i)
+                    i = update_rows(phytomer, [t, plant.index, axis.id, phytomer.index], all_rows[model.Phytomer], i)
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
-                        i = update_rows(organ, [t, plant.index, axis.index, organ.__class__.__name__], all_rows[model.Organ], i)
+                        i = update_rows(organ, [t, plant.index, axis.id, phytomer.index, organ.__class__.__name__], all_rows[model.Organ], i)
                         for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                             if element is None:
                                 continue
-                            i = update_rows(element, [t, plant.index, axis.index, phytomer.index, organ.__class__.__name__, element_type], all_rows[model.PhotosyntheticOrganElement], i)
+                            i = update_rows(element, [t, plant.index, axis.id, phytomer.index, organ.__class__.__name__, element_type], all_rows[model.PhotosyntheticOrganElement], i)
 
         row_sep = '\n'
         column_sep = ','
@@ -575,7 +575,7 @@ class Simulation(object):
             * plant: t, plant index, outputs by plant,
             * axis: t, plant index, axis id, outputs by axis,
             * phytomer: t, plant index, axis id, phytomer index, outputs by phytomer,
-            * organ: t, plant index, axis id, organ type, outputs by organ.
+            * organ: t, plant index, axis id, phytomer index, organ type, outputs by organ.
             * and element: t, plant index, axis id, phytomer index, organ type, element type, outputs by element.
         """
         logger = logging.getLogger(__name__)
@@ -621,6 +621,7 @@ class Simulation(object):
                 organs_df['t'] = t
                 organs_df['plant'] = plant.index
                 organs_df['axis'] = axis.id
+                organs_df['phytomer'] = np.nan
                 organs_df['organ'] = axis.phloem.__class__.__name__
                 phloem_sucrose = solver_output[self.initial_conditions_mapping[axis.phloem]['sucrose']]
                 organs_df['sucrose'] = phloem_sucrose
@@ -635,6 +636,7 @@ class Simulation(object):
                 organs_df['t'] = t
                 organs_df['plant'] = plant.index
                 organs_df['axis'] = axis.id
+                organs_df['phytomer'] = np.nan
                 organs_df['organ'] = axis.roots.__class__.__name__
                 organs_df['sucrose'] = solver_output[self.initial_conditions_mapping[axis.roots]['sucrose']]
                 organs_df['nitrates'] = solver_output[self.initial_conditions_mapping[axis.roots]['nitrates']]
@@ -752,6 +754,7 @@ class Simulation(object):
                 organs_df['t'] = t
                 organs_df['plant'] = plant.index
                 organs_df['axis'] = axis.id
+                organs_df['phytomer'] = np.nan
                 organs_df['organ'] = axis.grains.__class__.__name__
                 organs_df['structure'] = solver_output[self.initial_conditions_mapping[axis.grains]['structure']]
                 organs_df['starch'] = solver_output[self.initial_conditions_mapping[axis.grains]['starch']]
