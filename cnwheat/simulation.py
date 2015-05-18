@@ -172,7 +172,7 @@ class Simulation(object):
         logger.info('Initialization of the simulation DONE')
 
 
-    def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=0, show_progressbar=False):
+    def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=0, full_output=False, show_progressbar=False):
         """
         Compute CN exchanges in :attr:`population` from `start_time` to `stop_time`, for `number_of_output_steps` steps.
 
@@ -190,6 +190,8 @@ class Simulation(object):
               and if the integration failed. However, take care that the origin of an integration failure could be a discontinuity in the RHS function used
               by :func:`scipy.integrate.odeint`, and that this discontinuity could be due to a bug in your model. To summary: if the integration failed, first
               check the logs.
+              
+            - `full_output` (:class:`bool`) - If `True`, return the optional outputs of :func:`scipy.integrate.odeint` as the second output. Default is `False`.
 
             - `show_progressbar` (:class:`bool`) - True: show the progress bar ; False: do not show the progress bar.
 
@@ -201,9 +203,12 @@ class Simulation(object):
                 * phytomer: t, plant index, axis id, phytomer index, outputs by phytomer,
                 * organ: t, plant index, axis id, organ type, outputs by organ,
                 * and element: t, plant index, axis id, phytomer index, organ type, element type, outputs by element.
+            
+            If `full_output` is True, also return the optional outputs of :func:`scipy.integrate.odeint`. 
+            See the documentation of :func:`scipy.integrate.odeint` for a description of these optional outputs. 
 
         :Returns Type:
-            :class:`tuple` of :class:`pandas.DataFrame`
+            :class:`tuple`
 
         """
         logger = logging.getLogger(__name__)
@@ -259,7 +264,7 @@ class Simulation(object):
             raise SimulationRunError(message)
 
         last_compartments_values = soln[-1]
-        self._update_population(t[-1], last_compartments_values)
+        self._update_population(last_compartments_values)
 
         self.population.calculate_integrative_variables()
 
@@ -272,7 +277,11 @@ class Simulation(object):
 
         logger.info('Run of CN-Wheat from {} to {} DONE'.format(start_time, stop_time))
 
-        return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df, infodict
+        outputs_to_return = [all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df]
+        if full_output:
+            outputs_to_return.append(infodict)
+            
+        return tuple(outputs_to_return)
 
 
     def _update_initial_conditions(self):
@@ -390,7 +399,6 @@ class Simulation(object):
             raise SimulationRunError(message)
 
         y_derivatives = np.zeros_like(y)
-        self.population.t = t
 
         for plant in self.population.plants:
             for axis in plant.axes:
@@ -549,12 +557,11 @@ class Simulation(object):
         return y_derivatives
 
 
-    def _update_population(self, t, compartments_values):
+    def _update_population(self, compartments_values):
         """Update the state of :attr:`population` from the values in `compartments_values`.
         """
         logger = logging.getLogger(__name__)
         logger.debug('Updating the state of the population...')
-        self.population.t = t
         for model_object, compartments in self.initial_conditions_mapping.iteritems():
             for compartment_name, compartment_index in compartments.iteritems():
                 setattr(model_object, compartment_name, compartments_values[compartment_index])

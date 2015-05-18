@@ -215,7 +215,6 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
     
         for t in xrange(start_time, stop_time, timestep):
             # update the population
-            population.t = t
             for plant in population.plants:
                 plant_index = plant.index
                 for axis in plant.axes:
@@ -259,7 +258,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                                 element.gs = group_photo.gs[row_index_photo]
     
             # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
-            all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df, _ = simulation_.run(start_time=t, stop_time=t+timestep, number_of_output_steps=timestep+1)
+            all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.run(start_time=t, stop_time=t+timestep, number_of_output_steps=timestep+1)
             all_plants_df_list.append(all_plants_df)
             all_axes_df_list.append(all_axes_df)
             all_phytomers_df_list.append(all_phytomers_df)

@@ -52,11 +52,10 @@ class Population(object):
 
     PARAMETERS = parameters.PopulationParameters #: the internal parameters of the population
 
-    def __init__(self, t=0, plants=None):
+    def __init__(self, plants=None):
         if plants is None:
             plants = []
         self.plants = plants #: the list of plants
-        self.t = t #: Time (h)
 
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the population recursively.

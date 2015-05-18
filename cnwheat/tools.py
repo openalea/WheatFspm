@@ -33,6 +33,11 @@ import matplotlib.pyplot as plt
 
 from cnwheat.simulation import Simulation
 
+PRECISION = 5
+RELATIVE_TOLERANCE = 10**-PRECISION
+ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
+
+
 class DataWarning(UserWarning):
     '''No data to plot for a variable.'''
     def __init__(self, variable, keys):
@@ -324,3 +329,40 @@ def read_t_data(data_dirpath, data_filename):
     return pd.read_csv(data_filepath, sep=None, index_col='t', engine = 'python')
 
 
+def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):
+    """Compare actual data to desired data. Raise an assertion if actual and desired are not equal up to :mod:`RELATIVE_TOLERANCE` or :mod:`ABSOLUTE_TOLERANCE`.
+
+    :Parameters:
+
+        - `data_dirpath` (:class:`str`) - The path of the directory where to find the data to compare.
+
+        - `actual_data_df` (:class:`pandas.DataFrame`) - The computed data.
+
+        - `desired_data_filename` (:class:`str`) - The file name of the expected data.
+
+        - `actual_data_filename` (:class:`str`) - If not None, save the computed data to `actual_data_filename`, in directory `data_dirpath`. Default is None.
+
+    """
+    # read desired data
+    desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
+    desired_data_df = pd.read_csv(desired_data_filepath)
+    
+    # keep only the rows to test
+    if 't' in actual_data_df and 't' in desired_data_df:
+        actual_data_df = actual_data_df[actual_data_df['t'].isin(desired_data_df['t'])]
+
+    # keep only the columns to test
+    actual_data_df = actual_data_df[desired_data_df.columns]
+
+    if actual_data_filename is not None:
+        actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
+        actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(PRECISION))
+
+    # keep only numerical data
+    for column in ('axis', 'organ', 'element'):
+        if column in desired_data_df.columns:
+            del desired_data_df[column]
+            del actual_data_df[column]
+
+    # compare to the desired data
+    np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
