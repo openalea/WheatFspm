@@ -86,11 +86,11 @@ class GrainsParameters(OrganParameters):
     AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.136      #: Mean contribution of N in amino acids mass contained in gluten (Glu, Gln and Pro)
 
     # Structure parameters
-    VMAX_RGR = 1.9e-06                          #: Maximal value of the Relative Growth Rate of grain structure (dimensionless)
+    VMAX_RGR = 1.5e-06                          #: Maximal value of the Relative Growth Rate of grain structure (dimensionless)
     K_RGR = 300                                 #: Affinity coefficient of the Relative Growth Rate of grain structure (dimensionless)
 
     # Starch parameters
-    VMAX_STARCH = 0.5                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
+    VMAX_STARCH = 0.15                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
     K_STARCH = 100                              #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
 
     FILLING_INIT = 360                          #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
@@ -103,10 +103,8 @@ class RootsParameters(OrganParameters):
     """
     ALPHA = 1                                 #: Proportion of structural mass containing substrate
 
-    VMAX_SUCROSE_UNLOADING = 0.05             #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
+    VMAX_SUCROSE_UNLOADING = 0.035            #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
     K_SUCROSE_UNLOADING = 100                 #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C sucrose g-1 MS)
-    VMAX_AMINO_ACIDS_UNLOADING = 0.001        #: Maximal rate of amino acids unloading from phloem to roots (µmol N amino acids s-1 g-1 MS)
-    K_AMINO_ACIDS_UNLOADING = 100             #: Affinity coefficient of amino acids unloading from phloem to roots (µmol N amino acids g-1 MS)
 
     # Nitrate uptake
     K_TR_UPTAKE_NITRATES = 1E-2     #: Affinity coefficient of nitrate uptake by roots (mm H20)
@@ -144,7 +142,7 @@ class PhotosyntheticOrganParameters(OrganParameters):
     # Fructans
     VMAX_SFRUCTAN = 0.2             #: Maximal rate of fructan synthesis (µmol C s-1 g-1 MS)
     K_SFRUCTAN = 5000               #: Affinity coefficient of fructan synthesis (µmol C g-1 MS)
-    N_SFRUCTAN = 3                  #: Number of "substrates" for fructan synthesis (dimensionless)
+    N_SFRUCTAN = 2.5                #: Number of "substrates" for fructan synthesis (dimensionless)
     VMAX_REGUL_SFRUCTAN = 1         #: Maximal value of the regulation function of fructan synthesis (dimensionless)
     K_REGUL_SFRUCTAN = 8            #: Affinity coefficient of the regulation function of fructan synthesis (dimensionless)
     N_REGUL_SFRUCTAN = 15           #: Parameter of the regulation function of fructan synthesis (dimensionless)
@@ -222,11 +220,6 @@ class LaminaElementParameters(PhotosyntheticOrganElementParameters):
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
-    #: Temporary estimation of lamina senescence ({lamina_index: (time of senescence beginning (h), offset of the linear regression)})
-    INFLEXION_POINTS = {1: 8.57E-3,
-                        2: 7.61E-3,
-                        3: 6.67E-3}
-
 
 class InternodeElementParameters(PhotosyntheticOrganElementParameters):
     """
@@ -249,6 +242,8 @@ class SheathElementParameters(PhotosyntheticOrganElementParameters):
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
 
-
-
-
+class SoilParameters:
+    """
+    Internal parameters of soil.
+    """
+    pass

@@ -150,7 +150,7 @@ class Simulation(object):
             i = _init_initial_conditions(plant, i)
             for axis in plant.axes:
                 i = _init_initial_conditions(axis, i)
-                for organ in (axis.roots, axis.phloem, axis.grains):
+                for organ in (axis.roots, axis.soil, axis.phloem, axis.grains):
                     if organ is None:
                         continue
                     i = _init_initial_conditions(organ, i)
@@ -411,6 +411,7 @@ class Simulation(object):
 
                 axis.roots.nitrates = y[self.initial_conditions_mapping[axis.roots]['nitrates']]
                 axis.roots.amino_acids = y[self.initial_conditions_mapping[axis.roots]['amino_acids']]
+                axis.soil.nitrates = y[self.initial_conditions_mapping[axis.soil]['nitrates']]
                 phloem_contributors.append(axis.roots)
 
                 # compute the total transpiration at t_inf
@@ -426,7 +427,7 @@ class Simulation(object):
                                     phloem_contributors.append(element)
 
                 # compute the flows from/to the roots to/from photosynthetic organs
-                conc_nitrates_soil = axis.roots.calculate_conc_nitrates_soil(t)
+                conc_nitrates_soil = axis.soil.calculate_conc_nitrates(axis.soil.nitrates)
                 roots_uptake_nitrate, potential_roots_uptake_nitrates = axis.roots.calculate_uptake_nitrates(conc_nitrates_soil, axis.roots.nitrates, total_transpiration)
                 roots_export_amino_acids = axis.roots.calculate_export_amino_acids(axis.roots.amino_acids, total_transpiration)
 
@@ -517,16 +518,18 @@ class Simulation(object):
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['starch']] = starch_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['proteins']] = proteins_derivative
 
-                # compute the derivative of each compartment of roots
+                # compute the derivative of each compartment of roots and soil
+                y_derivatives[self.initial_conditions_mapping[axis.soil]['nitrates']] = axis.soil.calculate_nitrates_derivative(roots_uptake_nitrate)
+
                 axis.roots.sucrose = y[self.initial_conditions_mapping[axis.roots]['sucrose']]
                 mstruct_C_growth = axis.roots.mstruct_C_growth
                 Nstruct_N_growth = axis.roots.Nstruct_N_growth
 
                 # flows
                 axis.roots.unloading_sucrose = axis.roots.calculate_unloading_sucrose(axis.phloem.sucrose)
-                axis.roots.unloading_amino_acids = axis.roots.calculate_unloading_amino_acids(axis.phloem.amino_acids)
+                axis.roots.unloading_amino_acids = axis.roots.calculate_unloading_amino_acids(axis.roots.unloading_sucrose, axis.phloem.sucrose, axis.phloem.amino_acids)
                 axis.roots.s_amino_acids = axis.roots.calculate_s_amino_acids(axis.roots.nitrates, axis.roots.sucrose)
-                C_exudated, N_exudated = axis.roots.calculate_exudation(axis.roots.unloading_sucrose, roots_uptake_nitrate)
+                C_exudated, N_exudated = axis.roots.calculate_exudation(axis.roots.unloading_sucrose, axis.phloem.sucrose, axis.phloem.amino_acids)
 
                 # compartments derivatives
                 axis.roots.total_nitrogen = axis.roots.calculate_total_nitrogen(axis.roots.nitrates, axis.roots.amino_acids, axis.roots.Nstruct)
@@ -631,6 +634,15 @@ class Simulation(object):
                 organs_df['Conc_Amino_Acids'] = axis.phloem.calculate_conc_amino_acids(organs_df['amino_acids'])
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
 
+                # format soil output
+                organs_df = pd.DataFrame(columns=all_organs_df.columns)
+                organs_df['t'] = t
+                organs_df['plant'] = plant.index
+                organs_df['axis'] = axis.id
+                organs_df['organ'] = axis.soil.__class__.__name__
+                organs_df['Conc_Nitrates'] = axis.soil.calculate_conc_nitrates(solver_output[self.initial_conditions_mapping[axis.soil]['nitrates']])
+                all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
+
                 # format roots outputs
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = t
@@ -646,9 +658,8 @@ class Simulation(object):
                 organs_df['Conc_Sucrose'] = axis.roots.calculate_conc_sucrose(organs_df['sucrose'])
                 organs_df['Conc_Nitrates'] = axis.roots.calculate_conc_nitrates(organs_df['nitrates'])
                 organs_df['Conc_Amino_Acids'] = axis.roots.calculate_conc_amino_acids(organs_df['amino_acids'])
-                organs_df['Conc_Nitrates_Soil'] = map(axis.roots.calculate_conc_nitrates_soil,t)
                 organs_df['Unloading_Sucrose'] = map(axis.roots.calculate_unloading_sucrose, phloem_sucrose)
-                organs_df['Unloading_Amino_Acids'] = map(axis.roots.calculate_unloading_amino_acids, phloem_amino_acids)
+                organs_df['Unloading_Amino_Acids'] = map(axis.roots.calculate_unloading_amino_acids, organs_df['Unloading_Sucrose'], phloem_sucrose, phloem_amino_acids)
                 roots_uptake_nitrates, roots_potential_uptake_nitrates = axis.roots.calculate_uptake_nitrates(organs_df['Conc_Nitrates_Soil'], organs_df['nitrates'], total_transpiration)
                 organs_df['Uptake_Nitrates'] = roots_uptake_nitrates
                 organs_df['Potential_Uptake_Nitrates'] = map(axis.roots.calculate_export_amino_acids, organs_df['amino_acids'], total_transpiration)
@@ -664,7 +675,8 @@ class Simulation(object):
                 organs_df['R_growth'] = map(RespirationModel.R_growth, organs_df['mstruct_growth'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(t))
                 organs_df['mstruct_senescence'] = axis.roots.mstruct_senescence
                 organs_df['Nstruct_N_growth'] = axis.roots.Nstruct_N_growth
-                organs_df['C_exudation'], organs_df['N_exudation'] = axis.roots.calculate_exudation(organs_df['Unloading_Sucrose'], organs_df['Uptake_Nitrates'])
+                exudation = np.array(map(axis.roots.calculate_exudation, organs_df['Unloading_Sucrose'], phloem_sucrose, phloem_amino_acids))
+                organs_df['C_exudation'], organs_df['N_exudation'] = exudation[:,0], exudation[:,1]
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
 
                 # format photosynthetic organs elements outputs

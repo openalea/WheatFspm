@@ -393,11 +393,6 @@ class Roots(Organ):
         """
         return (sucrose/self.mstruct)/Organ.PARAMETERS.NB_C_SUCROSE
 
-    def calculate_conc_nitrates_soil(self, t):
-        """Nitrate concetration in soil (µmol nitrates m-3)
-        """
-        return -500*t + 5E+05 # TODO: Temporary
-
     def calculate_conc_nitrates(self, nitrates):
         """Nitrate concentration (µmol nitrates g-1 MS)
         """
@@ -418,10 +413,14 @@ class Roots(Organ):
         """
         return (((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Roots.PARAMETERS.VMAX_SUCROSE_UNLOADING) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Roots.PARAMETERS.K_SUCROSE_UNLOADING)) * Organ.PARAMETERS.DELTA_T
 
-    def calculate_unloading_amino_acids(self, amino_acids_phloem):
+    def calculate_unloading_amino_acids(self, unloading_sucrose, sucrose_phloem, amino_acids_phloem):
         """Unloading of amino_acids from phloem to roots over delta_t (µmol N amino_acids unloaded s-1 g-1 MS)
         """
-        return (((max(0, amino_acids_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Roots.PARAMETERS.VMAX_AMINO_ACIDS_UNLOADING) / ((max(0, amino_acids_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Roots.PARAMETERS.K_AMINO_ACIDS_UNLOADING)) * Organ.PARAMETERS.DELTA_T # TODO: Temporary
+        if amino_acids_phloem <= 0:
+            unloading_amino_acids = 0
+        else:
+            unloading_amino_acids =  unloading_sucrose/ (sucrose_phloem/amino_acids_phloem)
+        return unloading_amino_acids
 
     def calculate_uptake_nitrates(self, conc_nitrates_soil, nitrates_roots, total_transpiration):
         """Uptake of nitrates by roots (µmol N nitrates imported s-1 * DELTA_T)
@@ -446,11 +445,14 @@ class Roots(Organ):
         """
         return (amino_acids/(self.mstruct * Roots.PARAMETERS.ALPHA)) * (total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_EXPORT_AMINO_ACIDS))
 
-    def calculate_exudation(self, unloading_sucrose, uptake_nitrates):
+    def calculate_exudation(self, unloading_sucrose, sucrose_phloem, amino_acids_phloem):
         """Total C sucrose lost by root exudation (µmol C g-1 MS)
         """
-        C_exudated = unloading_sucrose * Roots.PARAMETERS.C_EXUDATION #: C exudated (µmol g-1 MS)
-        N_exudated = uptake_nitrates * Roots.PARAMETERS.N_EXUDATION   #: N exudated (µmol)
+        C_exudated = unloading_sucrose * Roots.PARAMETERS.C_EXUDATION      #: C exudated (µmol g-1 MS)
+        if amino_acids_phloem <= 0:
+            N_exudated = 0
+        else:
+            N_exudated = C_exudated / (sucrose_phloem / amino_acids_phloem) #: N exudated (µmol g-1 MS)
         return C_exudated, N_exudated
 
     # COMPARTMENTS
@@ -471,7 +473,7 @@ class Roots(Organ):
     def calculate_amino_acids_derivative(self, unloading_amino_acids, s_amino_acids, export_amino_acids, Nstruct_N_growth, N_exudated):
         """delta root amino acids integrated over delat_t (µmol N amino acids)
         """
-        return (unloading_amino_acids + s_amino_acids)*self.mstruct - export_amino_acids - Nstruct_N_growth - N_exudated
+        return (unloading_amino_acids + s_amino_acids- N_exudated)*self.mstruct - export_amino_acids - Nstruct_N_growth
 
 class PhotosyntheticOrgan(Organ):
     """
@@ -845,3 +847,31 @@ class SheathElement(PhotosyntheticOrganElement):
 
     PARAMETERS = parameters.SheathElementParameters #: the internal parameters of the sheaths elements
 
+
+
+class Soil(Organ):
+    """
+    The class :class:`Soil` defines the amount of nitrogen in the volume of soil explored by roots.
+    """
+
+    PARAMETERS = parameters.SoilParameters #: the internal parameters of the soil
+
+    def __init__(self, volume, nitrates):
+
+        # variables
+        self.volume = volume                   #: Volume of soil explored by roots (m3)
+        self.nitrates = nitrates               #: µmol N nitrates
+
+    # VARIABLES
+
+    def calculate_conc_nitrates(self, nitrates):
+        """Nitrate concetration in soil (µmol nitrates m-3)
+        """
+        return (nitrates/self.volume)
+
+    # COMPARTMENTS
+
+    def calculate_nitrates_derivative(self, uptake_nitrates):
+        """delta soil nitrates integrated over delat_t (µmol N nitrates)
+        """
+        return -uptake_nitrates
