@@ -69,6 +69,7 @@ def test_run():
     axis.grains = cnwheat_model.Grains(starch=0, structure=4000, proteins=170)
 
     axis.roots = cnwheat_model.Roots(mstruct=0.504, Nstruct=0.01, sucrose=900, nitrates=250, amino_acids=60)
+    axis.soil = cnwheat_model.Soil(volume=0.00875, nitrates=1875) # 1875 µmol of nitrates in this volume is almost equivalent to 3 g m-2 of N fertilizer
 
     axis.phloem = cnwheat_model.Phloem(sucrose=0, amino_acids=0)
 
@@ -156,10 +157,10 @@ def test_run():
         for plant in simulation_.population.plants:
             plant_index = plant.index
             for axis in plant.axes:
-                axe_id = axis.id
+                axis_id = axis.id
 
                 # Root growth and senescence
-                group = senescence_data_grouped.get_group((t, plant_index, axe_id, 0, 'Roots', 'enclosed'))
+                group = senescence_data_grouped.get_group((t, plant_index, axis_id, 0, 'Roots', 'enclosed'))
                 row_index = group.first_valid_index()
                 axis.roots.mstruct_C_growth = group.mstruct_growth[row_index]
                 axis.roots.Nstruct_N_growth = group.Nstruct_N_growth[row_index]
@@ -176,8 +177,8 @@ def test_run():
                         for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                             if element is None:
                                 continue
-                            group_photo = photosynthesis_data_grouped.get_group((t, plant_index, axe_id, phytomer_index, organ_type, element_type))
-                            group_senesc = senescence_data_grouped.get_group((t, plant_index, axe_id, phytomer_index, organ_type, element_type))
+                            group_photo = photosynthesis_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
+                            group_senesc = senescence_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
                             row_index_photo = group_photo.first_valid_index()
                             row_index_sensc = group_senesc.first_valid_index()
 
