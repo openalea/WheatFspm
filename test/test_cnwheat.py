@@ -38,6 +38,12 @@ t0 = time.time()
 
 INPUTS_DIRPATH = 'inputs'
 
+PLANTS_INPUTS_FILENAME = 'plants_inputs.csv'
+AXES_INPUTS_FILENAME = 'axes_inputs.csv'
+PHYTOMERS_INPUTS_FILENAME = 'phytomers_inputs.csv'
+ORGANS_INPUTS_FILENAME = 'organs_inputs.csv'
+ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
+
 PHOTOSYNTHESIS_DATA_FILENAME = 'photosynthesis_data.csv'
 SENESCENCE_DATA_FILENAME = 'senescence_data.csv'
 
@@ -57,90 +63,39 @@ ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
 
 
 def test_run():
-
-    population = cnwheat_model.Population()
-
-    plant = cnwheat_model.Plant(index=1)
-    population.plants.append(plant)
-
-    axis = cnwheat_model.Axis()
-    plant.axes.append(axis)
-
-    axis.grains = cnwheat_model.Grains(starch=0, structure=4000, proteins=170)
-
-    axis.roots = cnwheat_model.Roots(mstruct=0.504, Nstruct=0.01, sucrose=900, nitrates=250, amino_acids=60)
-    axis.soil = cnwheat_model.Soil(volume=0.00875, nitrates=1875) # 1875 µmol of nitrates in this volume is almost equivalent to 3 g m-2 of N fertilizer
-
-    axis.phloem = cnwheat_model.Phloem(sucrose=0, amino_acids=0)
-
-    # Phytomer 1
-    phytomer1 = cnwheat_model.Phytomer(index=1)
-
-    phytomer1.lamina = cnwheat_model.Lamina()
-    lamina_element = cnwheat_model.LaminaElement(area=0.00346, green_area=0.00346, mstruct=0.14, Nstruct=0.00102, width= 0.018, height=0.6,
-                                    starch=0, sucrose=252, triosesP=0, fructan=0, nitrates=0,
-                                    amino_acids=16, proteins=380)
-    phytomer1.lamina.exposed_element = lamina_element
-
-    phytomer1.sheath = cnwheat_model.Sheath()
-    sheath_element = cnwheat_model.SheathElement(area=0.0006, green_area=0.0006, mstruct=0.103, Nstruct=0.00068, width=0.0011, height=0.5,
-                                    starch=0, sucrose=185, triosesP=0, fructan=0,
-                                    nitrates=0 , amino_acids=12, proteins=130)
-    phytomer1.sheath.exposed_element = sheath_element
-
-    # Internode enclosed
-    phytomer1.internode = cnwheat_model.Internode()
-    internode_enclosed_element = cnwheat_model.InternodeElement(area=0.001129, green_area=0.001129, mstruct=0.1415, Nstruct=0.00064, width=0.00257, height=0.3,
-                                          starch=0, sucrose=255, triosesP=0, fructan=0,
-                                          nitrates=0, amino_acids=17, proteins=66)
-    phytomer1.internode.enclosed_element = internode_enclosed_element
-
-    # Internode exposed
-    internode_exposed_element = cnwheat_model.InternodeElement(area=0.000371, green_area=0.000371, mstruct=0.0465, Nstruct=0.00021, width=0.00257, height=0.4,
-                                          starch=0, sucrose=84, triosesP=0, fructan=0,
-                                          nitrates=0, amino_acids=5, proteins=22)
-    phytomer1.internode.exposed_element = internode_exposed_element
-
-    axis.phytomers.append(phytomer1)
-
-    # Phytomer 4 (reproductive)
-    phytomer4 = cnwheat_model.Phytomer(index=4)
-
-    # Enclosed peduncle
-    phytomer4.peduncle = cnwheat_model.Peduncle()
-    peduncle_enclosed_element = cnwheat_model.PeduncleElement(area=0.00159, green_area=0.00159, mstruct=0.170, Nstruct=0.00086, width= 0.00349, height=0.65,
-                                        starch=0, sucrose=306, triosesP=0, fructan=0, nitrates=0,
-                                        amino_acids=20, proteins=120)
-    phytomer4.peduncle.enclosed_element = peduncle_enclosed_element
-
-    # Exposed peduncle
-    peduncle_exposed_element = cnwheat_model.PeduncleElement(area=0.00081, green_area=0.00081, mstruct=0.087, Nstruct=0.00044, width= 0.00349, height=0.5,
-                                        starch=0, sucrose=156, triosesP=0, fructan=0, nitrates=0,
-                                        amino_acids=10, proteins=61)
-    phytomer4.peduncle.exposed_element = peduncle_exposed_element
-    axis.phytomers.append(phytomer4)
-
-    # Phytomer 5 (reproductive)
-    phytomer5 = cnwheat_model.Phytomer(index=5)
-    phytomer5.chaff = cnwheat_model.Chaff()
-    chaff_element = cnwheat_model.ChaffElement(area=0.00075, green_area=0.00075, mstruct=0.21, Nstruct=0.00107, width=0.00265, height= 0.7, starch=0,
-                                  sucrose=378, triosesP=0, fructan=0, nitrates=0, amino_acids=25,
-                                  proteins=260)
-    phytomer5.chaff.exposed_element = chaff_element
-    axis.phytomers.append(phytomer5)
-
+    
+    # create the simulation
+    simulation_ = simulation.Simulation()
+    # read inputs from Pandas dataframes
+    inputs_dataframes = {}
+    for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, PHYTOMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME):
+        inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
+    # initialize the simulation with the inputs
+    simulation_.initialize(plants_inputs=inputs_dataframes[PLANTS_INPUTS_FILENAME], 
+                           axes_inputs=inputs_dataframes[AXES_INPUTS_FILENAME],
+                           phytomers_inputs=inputs_dataframes[PHYTOMERS_INPUTS_FILENAME],
+                           organs_inputs=inputs_dataframes[ORGANS_INPUTS_FILENAME],
+                           elements_inputs=inputs_dataframes[ELEMENTS_INPUTS_FILENAME])
+    # format the inputs to Pandas dataframes
+    formatted_inputs_dataframes = {}
+    formatted_inputs_dataframes[PLANTS_INPUTS_FILENAME], \
+    formatted_inputs_dataframes[AXES_INPUTS_FILENAME], \
+    formatted_inputs_dataframes[PHYTOMERS_INPUTS_FILENAME], \
+    formatted_inputs_dataframes[ORGANS_INPUTS_FILENAME], \
+    formatted_inputs_dataframes[ELEMENTS_INPUTS_FILENAME] = simulation_.format_inputs()
+    # compare inputs
+    for inputs_filename, inputs_df in formatted_inputs_dataframes.iteritems():
+        tools.compare_actual_to_desired(INPUTS_DIRPATH, inputs_df, inputs_filename)
+        
     # Get photosynthesis data
     photosynthesis_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_DATA_FILENAME)
     photosynthesis_data_df = pd.read_csv(photosynthesis_data_filepath)
-    photosynthesis_data_grouped = photosynthesis_data_df.groupby(simulation.Simulation.ELEMENTS_INDEXES)
+    photosynthesis_data_grouped = photosynthesis_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
  
     # Get senescence and growth data
     senescence_data_filepath = os.path.join(INPUTS_DIRPATH, SENESCENCE_DATA_FILENAME)
     senescence_data_df = pd.read_csv(senescence_data_filepath)
-    senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEMENTS_INDEXES)
-
-    # initialize the simulator
-    simulation_ = simulation.Simulation(population=population)
+    senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
 
     start_time = 0
     stop_time = 48
@@ -197,7 +152,11 @@ def test_run():
                             element.gs = group_photo.gs[row_index_photo]
 
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
-        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
+        simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
+        
+        # format the outputs to Pandas dataframes
+        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.format_outputs()
+        
         all_plants_df_list.append(all_plants_df)
         all_axes_df_list.append(all_axes_df)
         all_phytomers_df_list.append(all_phytomers_df)
@@ -208,23 +167,23 @@ def test_run():
     print '\n', 'Model executed in ', str(datetime.timedelta(seconds=execution_time))
 
     global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
-    global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_INDEXES, inplace=True)
+    global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
     tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_plants_df, DESIRED_PLANTS_OUTPUTS_FILENAME, ACTUAL_PLANTS_OUTPUTS_FILENAME)
 
     global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
-    global_axes_df.drop_duplicates(subset=simulation.Simulation.AXES_INDEXES, inplace=True)
+    global_axes_df.drop_duplicates(subset=simulation.Simulation.AXES_OUTPUTS_INDEXES, inplace=True)
     tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_axes_df, DESIRED_AXES_OUTPUTS_FILENAME, ACTUAL_AXES_OUTPUTS_FILENAME)
 
     global_phytomers_df = pd.concat(all_phytomers_df_list, ignore_index=True)
-    global_phytomers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_INDEXES, inplace=True)
+    global_phytomers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
     tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_phytomers_df, DESIRED_PHYTOMERS_OUTPUTS_FILENAME, ACTUAL_PHYTOMERS_OUTPUTS_FILENAME)
 
     global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
-    global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_INDEXES, inplace=True)
+    global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
     tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_organs_df, DESIRED_ORGANS_OUTPUTS_FILENAME, ACTUAL_ORGANS_OUTPUTS_FILENAME)
 
     global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
-    global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_INDEXES, inplace=True)
+    global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
     tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_elements_df, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME)
 
 if __name__ == '__main__':

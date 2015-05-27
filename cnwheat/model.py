@@ -103,16 +103,14 @@ class Axis(object):
 
     TYPES_STRINGS = Types.__dict__.values() #: the string values of the authorized types of the axes
 
-    def __init__(self, roots=None, phloem=None, grains=None, phytomers=None, axis_type=Types.MAIN_STEM, index=0):
+    def __init__(self, roots=None, phloem=None, grains=None, soil=None, phytomers=None, axis_type=Types.MAIN_STEM, index=0, axis_id=None):
         self.roots = roots #: the roots
         self.phloem = phloem #: the phloem
         self.grains = grains #: the grains
+        self.soil = soil #: the soil
         if phytomers is None:
             phytomers = []
         self.phytomers = phytomers #: the list of phytomers
-
-        self.type = axis_type #: the type of the axis ; can be either Axis.Types.MAIN_STEM or Axis.Types.TILLER
-        self.index = index #: the index of the axis ; 0: main stem, 1..n: tiller.
 
         if axis_type not in Axis.TYPES_STRINGS:
             logger = logging.getLogger(__name__)
@@ -125,10 +123,16 @@ class Axis(object):
             message = 'non-zero index for {}'.format(Axis.Types.MAIN_STEM)
             logger.exception(message)
             warnings.warn(message, ModelInputWarning)
-
-        self.id = axis_type #: the id of the axis ; the id is built from axis_type and index
-        if axis_type != Axis.Types.MAIN_STEM:
-            self.id += str(index)
+        
+        self.id = None #: the id of the axis
+        if axis_id is None:
+            # build the id from axis_type and index
+            self.id = axis_type
+            if axis_type != Axis.Types.MAIN_STEM:
+                self.id += str(index)
+        else:
+            # use axis_id
+            self.id = axis_id
 
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the axis recursively.
@@ -139,6 +143,8 @@ class Axis(object):
             self.phloem.calculate_integrative_variables()
         if self.grains is not None:
             self.grains.calculate_integrative_variables()
+        if self.soil is not None:
+            self.soil.calculate_integrative_variables()
         for phytomer in self.phytomers:
             phytomer.calculate_integrative_variables()
 
@@ -200,7 +206,7 @@ class Phloem(Organ):
 
     PARAMETERS = parameters.PhloemParameters #: the internal parameters of the phloems
 
-    def __init__(self, sucrose, amino_acids):
+    def __init__(self, sucrose=None, amino_acids=None):
 
         # state variables
         self.sucrose = sucrose          #: µmol C sucrose
@@ -255,7 +261,7 @@ class Grains(Organ):
 
     PARAMETERS = parameters.GrainsParameters #: the internal parameters of the grains
 
-    def __init__(self, starch, structure, proteins):
+    def __init__(self, starch=None, structure=None, proteins=None):
 
         # state variables
         self.starch = starch                     #: µmol of C starch
@@ -360,7 +366,7 @@ class Roots(Organ):
 
     PARAMETERS = parameters.RootsParameters #: the internal parameters of the roots
 
-    def __init__(self, mstruct, Nstruct, sucrose, nitrates, amino_acids, mstruct_C_growth=None, 
+    def __init__(self, mstruct=None, Nstruct=None, sucrose=None, nitrates=None, amino_acids=None, mstruct_C_growth=None, 
                  Nstruct_N_growth=None, mstruct_senescence=None):
         
         # state parameters
@@ -474,6 +480,37 @@ class Roots(Organ):
         """delta root amino acids integrated over delat_t (µmol N amino acids)
         """
         return (unloading_amino_acids + s_amino_acids- N_exudated)*self.mstruct - export_amino_acids - Nstruct_N_growth
+    
+    
+class Soil(Organ):
+    """
+    The class :class:`Soil` defines the amount of nitrogen in the volume of soil explored by roots.
+    """
+
+    PARAMETERS = parameters.SoilParameters #: the internal parameters of the soil
+
+    def __init__(self, volume=None, nitrates=None):
+        
+        # state parameters
+        self.volume = volume                   #: Volume of soil explored by roots (m3)
+
+        # variables
+        self.nitrates = nitrates               #: µmol N nitrates
+
+    # VARIABLES
+
+    def calculate_conc_nitrates(self, nitrates):
+        """Nitrate concetration in soil (µmol nitrates m-3)
+        """
+        return (nitrates/self.volume)
+
+    # COMPARTMENTS
+
+    def calculate_nitrates_derivative(self, uptake_nitrates):
+        """delta soil nitrates integrated over delat_t (µmol N nitrates)
+        """
+        return -uptake_nitrates
+
 
 class PhotosyntheticOrgan(Organ):
     """
@@ -558,8 +595,8 @@ class PhotosyntheticOrganElement(object):
 
     PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
 
-    def __init__(self, area, green_area, mstruct, Nstruct, width, height, triosesP, starch,
-                 sucrose, fructan, nitrates, amino_acids, proteins,
+    def __init__(self, area=None, green_area=None, mstruct=None, Nstruct=None, width=None, height=None, triosesP=None, starch=None,
+                 sucrose=None, fructan=None, nitrates=None, amino_acids=None, proteins=None,
                  An=None, Tr=None, Ag=None, Rd=None, Ts=None, gs=None, 
                  surfacic_nitrogen=None, relative_delta_green_area=None):
 
@@ -847,31 +884,3 @@ class SheathElement(PhotosyntheticOrganElement):
 
     PARAMETERS = parameters.SheathElementParameters #: the internal parameters of the sheaths elements
 
-
-
-class Soil(Organ):
-    """
-    The class :class:`Soil` defines the amount of nitrogen in the volume of soil explored by roots.
-    """
-
-    PARAMETERS = parameters.SoilParameters #: the internal parameters of the soil
-
-    def __init__(self, volume, nitrates):
-
-        # variables
-        self.volume = volume                   #: Volume of soil explored by roots (m3)
-        self.nitrates = nitrates               #: µmol N nitrates
-
-    # VARIABLES
-
-    def calculate_conc_nitrates(self, nitrates):
-        """Nitrate concetration in soil (µmol nitrates m-3)
-        """
-        return (nitrates/self.volume)
-
-    # COMPARTMENTS
-
-    def calculate_nitrates_derivative(self, uptake_nitrates):
-        """delta soil nitrates integrated over delat_t (µmol N nitrates)
-        """
-        return -uptake_nitrates

@@ -141,7 +141,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
 
         - `filters` (:class:`dict`) - A dictionary whose keys are the columns of
           `outputs` for which we want to apply a specific filter.
-          These columns can be one or more element of :const:`ELEMENTS_INDEXES <cnwheat.simulation.Simulation.ELEMENTS_INDEXES>`.
+          These columns can be one or more element of :const:`ELEMENTS_OUTPUTS_INDEXES <cnwheat.simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES>`.
           The value associated to each key is a criteria that the rows of `outputs`
           must satisfy to be plotted. The values can be either one value or a list of values.
           If no value is given for any column, then all rows are plotted (default).
@@ -165,7 +165,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
     """
 
     # finds the scale of `outputs`
-    group_keys = [key for key in Simulation.ELEMENTS_INDEXES if key in outputs and key != x_name and key != y_name]
+    group_keys = [key for key in Simulation.ELEMENTS_OUTPUTS_INDEXES if key in outputs and key != x_name and key != y_name]
 
     # make a group_keys with first letter of each key in upper case
     group_keys_upper = [group_key[0].upper() + group_key[1:] for group_key in group_keys]

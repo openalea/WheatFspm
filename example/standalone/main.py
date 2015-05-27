@@ -195,15 +195,18 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         # Get assimilation and transpiration data
         photosynthesis_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_DATA_FILENAME)
         photosynthesis_data_df = pd.read_csv(photosynthesis_data_filepath)
-        photosynthesis_data_grouped = photosynthesis_data_df.groupby(simulation.Simulation.ELEMENTS_INDEXES)
+        photosynthesis_data_grouped = photosynthesis_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
 
         # Get senescence and growth data
         senescence_data_filepath = os.path.join(INPUTS_DIRPATH, SENESCENCE_DATA_FILENAME)
         senescence_data_df = pd.read_csv(senescence_data_filepath)
-        senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEMENTS_INDEXES)
+        senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
 
-        # initialize the model
-        simulation_ = simulation.Simulation(population=population)
+        # create the simulation
+        simulation_ = simulation.Simulation()
+        
+        # initialize the simulation from population
+        simulation_.initialize(population)
 
         start_time = 0
         stop_time = 48
@@ -260,7 +263,11 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                                 element.gs = group_photo.gs[row_index_photo]
 
             # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
-            all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.run(start_time=t, stop_time=t+timestep, number_of_output_steps=timestep+1)
+            simulation_.run(start_time=t, stop_time=t+timestep, number_of_output_steps=timestep+1)
+            
+            # format the outputs to Pandas dataframes
+            all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.format_outputs()
+            
             all_plants_df_list.append(all_plants_df)
             all_axes_df_list.append(all_axes_df)
             all_phytomers_df_list.append(all_phytomers_df)
@@ -268,23 +275,23 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
             all_elements_df_list.append(all_elements_df)
 
         global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
-        global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_INDEXES, inplace=True)
+        global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
         global_plants_df.to_csv(plants_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
         global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
-        global_axes_df.drop_duplicates(subset=simulation.Simulation.AXES_INDEXES, inplace=True)
+        global_axes_df.drop_duplicates(subset=simulation.Simulation.AXES_OUTPUTS_INDEXES, inplace=True)
         global_axes_df.to_csv(axes_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
         global_phytomers_df = pd.concat(all_phytomers_df_list, ignore_index=True)
-        global_phytomers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_INDEXES, inplace=True)
+        global_phytomers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
         global_phytomers_df.to_csv(phytomers_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
         global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
-        global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_INDEXES, inplace=True)
+        global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
         global_organs_df.to_csv(organs_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
         global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
-        global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_INDEXES, inplace=True)
+        global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
         global_elements_df.to_csv(elements_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
         execution_time = int(time.time()-t0)

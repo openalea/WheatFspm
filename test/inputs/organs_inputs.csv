@@ -1,0 +1,5 @@
+plant,axis,phytomer,organ,starch,structure,proteins,mstruct,Nstruct,sucrose,nitrates,amino_acids,volume
+1,MS,NA,Grains,0,4000,170,NA,NA,NA,NA,NA,NA
+1,MS,NA,Phloem,NA,NA,NA,NA,NA,0,NA,0,NA
+1,MS,NA,Roots,NA,NA,NA,0.504,0.01,900,250,60,NA
+1,MS,NA,Soil,NA,NA,NA,NA,NA,NA,1875,NA,0.00875
