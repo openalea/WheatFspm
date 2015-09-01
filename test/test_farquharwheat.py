@@ -26,7 +26,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from farquharwheat import model, simulation 
+from farquharwheat import model, simulation
 
 INPUTS_DIRPATH = 'inputs'
 
@@ -63,7 +63,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
 
 
 def test_run():
-    
+
     # create a simulation
     simulation_ = simulation.Simulation()
     # read inputs from Pandas dataframe
@@ -80,7 +80,7 @@ def test_run():
     outputs_df = simulation_.format_outputs()
     # compare outputs
     compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, DESIRED_OUTPUTS_FILENAME, ACTUAL_OUTPUTS_FILENAME, save_actual_data=True)
-    
+
 
 if __name__ == '__main__':
     test_run()
