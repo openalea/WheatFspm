@@ -2,6 +2,7 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import division # use '//' to do integer division
+from math import log, exp
 
 """
     respiwheat.model
@@ -20,6 +21,7 @@ class RespirationModel(object):
 
     ### R_growth###
     YG = 0.80             # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
+    YG_GRAINS = 0.70             # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
 
     ### R_phloem###
     CPHLOEM = 0.006       # Units C respired per unit C substrate loaded into the phloem
@@ -31,7 +33,7 @@ class RespirationModel(object):
     C_NIT_UPT = 0.397     # µmol of C substrate respired per µmol of N nitrates taken up
 
     ### R_Nnit_red###
-    F_NIT_RED_SH_CS = 0.5 # fraction of nitrate reduced in the shoot using C substrate rather than using excess ATP and reducing power obtained directly from photosynthesis
+    F_NIT_RED_SH_CS = 0.5 # fraction of nitrate reduced in shoot using C substrate rather than using excess ATP and reducing power obtained directly from photosynthesis
     C_NIT_RED = 1.98      # µmol of C substrate per µmol of N nitrates reduced
 
     ### R_N2fix ###
@@ -42,8 +44,8 @@ class RespirationModel(object):
     ASHE_CONTENT = 0.05   # g minerals per g of structural dry mass
 
     ### R_residual ###
-    KM_MAX = 4.1E-6       # Maximum value of the maintenance constant when C is much greater than KM (µmol of C substrate respired per µmol N s-1)
-    KM = 1.67E-3          # The Michaelis-Menten constant affinity i.e. the C substrate concentration at half the value of KM_MAX (µmol of C substrate per g of structural mass)
+    KM_MAX = 4.1E-6#8E-6#4.1E-6       # Maximum value of the maintenance constant when C is much greater than KM (µmol of C substrate respired per µmol N s-1)
+    KM = 1.67E3           # The Michaelis-Menten constant affinity i.e. the C substrate concentration at half the value of KM_MAX (µmol of C substrate per g of structural mass)
 
     @classmethod
     def R_growth(cls, G, mstruct):
@@ -79,8 +81,8 @@ class RespirationModel(object):
         :Returns Type:
             :class:`float`
         """
-        R_grain_growth_struct = ((1 - cls.YG)/cls.YG) * mstruct_growth
-        R_grain_growth_starch = ((1 - cls.YG)/cls.YG) * (starch_filling*mstruct)
+        R_grain_growth_struct = ((1 - cls.YG_GRAINS)/cls.YG_GRAINS) * mstruct_growth
+        R_grain_growth_starch = ((1 - cls.YG_GRAINS)/cls.YG_GRAINS) * (starch_filling*mstruct)
         return R_grain_growth_struct, R_grain_growth_starch
 
     @classmethod
@@ -100,11 +102,12 @@ class RespirationModel(object):
             :class:`float`
         """
 
-        if sucrose_loading >0 and sucrose >0:
-            _R_phloem = cls.CPHLOEM * sucrose_loading * mstruct
-        else:
-            _R_phloem = 0
-        return _R_phloem
+#        if sucrose >0:
+        _R_phloem = max(0, cls.CPHLOEM * sucrose_loading * mstruct) #: Do not count a respiratory cost for negative loading i.e. unloading (assumed to be passive)
+##        else:
+##            _R_phloem = 0
+##            sucrose_loading = min(0, sucrose_loading)                   #: If sucrose is null, neither respiration nor sucrose loading occur. Unloading is maintained.
+        return _R_phloem, sucrose_loading
 
     @classmethod
     def R_Namm_upt(cls, U_Namm):
@@ -138,7 +141,7 @@ class RespirationModel(object):
         :Returns Type:
             :class:`float`
         """
-        if sucrose > 0:
+        if sucrose >0:
             _R_Nnit_upt = cls.C_NIT_UPT * U_Nnit
         else:
             _R_Nnit_upt = 0
@@ -164,14 +167,15 @@ class RespirationModel(object):
         :Returns Type:
             :class:`float`
         """
-        if sucrose > 0:
-            if not root:
-                _R_Nnit_red = cls.F_NIT_RED_SH_CS * cls.C_NIT_RED *  s_amino_acids * mstruct # Respiration in shoot tissues
-            else:
-                _R_Nnit_red = cls.C_NIT_RED * s_amino_acids * mstruct                        # Respiration in root tissues
+        if not root:
+            _R_Nnit_red = cls.F_NIT_RED_SH_CS * cls.C_NIT_RED *  s_amino_acids * mstruct # Respiration in shoot tissues
         else:
-            _R_Nnit_red = 0
-        return _R_Nnit_red
+            _R_Nnit_red = cls.C_NIT_RED * s_amino_acids * mstruct                        # Respiration in root tissues
+
+##        if sucrose < _R_Nnit_red:
+##            _R_Nnit_red = 0
+##            s_amino_acids = 0
+        return _R_Nnit_red, s_amino_acids
 
     @classmethod
     def R_N2fix(cls, I_Nfix):
@@ -212,15 +216,16 @@ class RespirationModel(object):
         return _R_min_upt
 
     @classmethod
-    def R_residual(cls, sucrose, mstruct, Ntot, delta_t):
+    def R_residual(cls, sucrose, mstruct, Ntot, delta_t, Ts):
         """
         Residual maintenance respiration (cost from protein turn-over, cell ion gradients, futile cycles...)
 
         : Parameters:
             - `sucrose` (:class:`float`) - amount of C sucrose (µmol C)
             - `mstruct` (:class:`float`) - structural dry mass of organ (g)
-            - `Ntot` (:class:`float`) - total N in plant (µmol N)
+            - `Ntot` (:class:`float`) - total N in organ (µmol N)
             - `delta_t` (:class:`float`) - timestep (s)
+            - `Ts` (:class:`float`) - organ temperature (°C)
 
         : Returns:
             _R_residual (µmol C respired)
@@ -229,8 +234,10 @@ class RespirationModel(object):
             :class:`float`
         """
         conc_sucrose = sucrose / mstruct
-        if conc_sucrose >0 :
-            _R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot * delta_t
-        else:
-            _R_residual = 0
-        return _R_residual
+        Q10 = 2
+        T_ref = 20
+        R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot * Q10**((Ts - T_ref)/10) * delta_t
+
+        rm = 0.004208754
+        R_maintenance = rm*mstruct * Q10**((Ts - T_ref)/10) * delta_t
+        return R_residual, R_maintenance
