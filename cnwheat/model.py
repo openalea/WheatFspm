@@ -192,12 +192,17 @@ class Organ(object):
     """
 
     PARAMETERS = parameters.OrganParameters #: the internal parameters of the organs
+    
+    def initialize(self):
+        """Initialize the derived attributes of the organ.
+        """
+        pass
 
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the organ recursively.
         """
         pass
-
+    
 
 class Phloem(Organ):
     """
@@ -216,37 +221,66 @@ class Phloem(Organ):
     # VARIABLES
 
     def calculate_conc_sucrose(self, sucrose):
-        """sucrose concentration (µmol sucrose g-1 MS)
+        """Sucrose concentration. Related to the structural dry mass of the culm
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - Amount of sucrose in phloem (µmol C)
+        :Returns:
+            Sucrose concentration (µmol sucrose g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (sucrose/Organ.PARAMETERS.NB_C_SUCROSE)/Organ.PARAMETERS.MSTRUCT_AXIS
 
     def calculate_conc_amino_acids(self, amino_acids):
-        """Amino_acid concentration (µmol amino_acids g-1 MS)
+        """Amino_acids concentration. Related to the structural dry mass of the culm.
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino_acids in phloem (µmol N)
+        :Returns:
+            Amino_acids concentration (µmol amino_acids g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (amino_acids/Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) / Organ.PARAMETERS.MSTRUCT_AXIS
 
     # COMPARTMENTS
 
     def calculate_sucrose_derivative(self, contributors):
-        """delta sucrose of phloem integrated over delta_t (µmol C sucrose)
+        """delta sucrose
+
+        :Parameters:
+            - `contributors` (:class:`object`) - Organs exchanging C with the phloem
+        :Returns:
+            delta sucrose (µmol C sucrose)
+        :Returns Type:
+            :class:`float`
         """
         sucrose_derivative = 0
         for contributor in contributors:
             if isinstance(contributor, PhotosyntheticOrganElement):
-                sucrose_derivative += contributor.loading_sucrose * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
+                sucrose_derivative += contributor.loading_sucrose
             elif isinstance(contributor, Grains):
-                sucrose_derivative -= contributor.s_grain_structure + (contributor.s_grain_starch * ((contributor.structure*1E-6) * Organ.PARAMETERS.C_MOLAR_MASS)) #: Conversion of structure from umol of C to g of C
+                sucrose_derivative -= contributor.s_grain_structure + (contributor.s_grain_starch * contributor.structural_dry_mass)
             elif isinstance(contributor, Roots):
                 sucrose_derivative -= contributor.unloading_sucrose * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
+
         return sucrose_derivative
 
     def calculate_amino_acids_derivative(self, contributors):
-        """delta amino acids of phloem integrated over delat_t (µmol N amino acids)
+        """delta amino acids
+
+        :Parameters:
+            - `contributors` (:class:`object`) - Organs exchanging N with the phloem
+        :Returns:
+            delta amino acids (µmol N amino acids)
+        :Returns Type:
+            :class:`float`
         """
         amino_acids_derivative = 0
         for contributor in contributors:
             if isinstance(contributor, PhotosyntheticOrganElement):
-                amino_acids_derivative += contributor.loading_amino_acids * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
+                amino_acids_derivative += contributor.loading_amino_acids
             elif isinstance(contributor, Grains):
                 amino_acids_derivative -= contributor.s_proteins
             elif isinstance(contributor, Roots):
@@ -267,17 +301,33 @@ class Grains(Organ):
         self.starch = starch                     #: µmol of C starch
         self.structure = structure               #: µmol of C sucrose
         self.proteins = proteins                 #: µmol of N proteins
+        
+        # derived attributes
+        self.structural_dry_mass = None          #: g of MS
 
         # fluxes from phloem
-        self.s_grain_structure = None            #: current rate of grain structure synthesis
-        self.s_grain_starch = None               #: current rate of grain starch C synthesis
-        self.s_proteins = None                   #: current rate of grain protein synthesis
+        self.s_grain_structure = None            #: current synthesis of grain structure
+        self.s_grain_starch = None               #: current synthesis of grain starch
+        self.s_proteins = None                   #: current synthesis of grain proteins
 
+    def initialize(self):
+        """Initialize the derived attributes of the organ.
+        """
+        self.structural_dry_mass = self.calculate_structural_dry_mass(self.structure)
 
     # VARIABLES
 
     def calculate_dry_mass(self, structure, starch, proteins):
-        """Grain total dry mass (g)
+        """Grain total dry mass.
+
+        :Parameters:
+            - `structure` (:class:`float`) - Grain structural C mass (µmol C)
+            - `starch` (:class:`float`) - Grain starch content (µmol C)
+            - `proteins` (:class:`float`) - Grain protein content (µmol N)
+        :Returns:
+            Grain total dry mass (g)
+        :Returns Type:
+            :class:`float`
         """
         #: Carbohydrates mass, grain carbohydrates supposed to be mainly starch i.e. glucose polymers (C6 H12 O6)
         C_mass = ((structure + starch)*1E-6*Organ.PARAMETERS.C_MOLAR_MASS) / Organ.PARAMETERS.HEXOSE_MOLAR_MASS_C_RATIO
@@ -288,32 +338,58 @@ class Grains(Organ):
         return  C_mass + N_mass
 
     def calculate_structural_dry_mass(self, structure):
-        """Grain structural mass (g)
+        """Grain structural dry mass.
+
+        :Parameters:
+            - `structure` (:class:`float`) - Grain structural C mass (µmol C)
+        :Returns:
+            Grain structural dry mass (g)
+        :Returns Type:
+            :class:`float`
         """
-        return (structure*1E-6*Organ.PARAMETERS.C_MOLAR_MASS) / Organ.PARAMETERS.HEXOSE_MOLAR_MASS_C_RATIO
+        return (structure*1E-6*Organ.PARAMETERS.C_MOLAR_MASS) / Organ.PARAMETERS.RATIO_C_MSTRUCT
 
     def calculate_protein_mass(self, proteins):
-        """Grain total protein mass (g)
+        """Grain total protein mass.
+
+        :Parameters:
+            - `proteins` (:class:`float`) - Grain protein content (µmol N)
+        :Returns:
+            Grain total protein mass (g)
+        :Returns Type:
+            :class:`float`
         """
         mass_N_proteins = proteins*1E-6 * Organ.PARAMETERS.N_MOLAR_MASS                        #: Mass of nitrogen in proteins (g)
         #mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO     #: Total mass of proteins (g)
         return mass_N_proteins
 
     def calculate_RGR_structure(self, sucrose_phloem):
-        """Relative Growth Rate of grain structure, regulated by phloem concentrations
+        """Relative Growth Rate of grain structure, regulated by sucrose concentration in phloem.
+
+        :Parameters:
+            - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
+        :Returns:
+            RGR of grain structure (dimensionless?)
+        :Returns Type:
+            :class:`float`
         """
         return ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_RGR) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_RGR)
-
-    def calculate_unloading_sucrose(self, s_grain_structure, s_grain_starch, structural_dry_mass):
-        """Unloading of sucrose from phloem to grains integrated * delta_t (µmol sucrose)
-        """
-        return (s_grain_structure + (s_grain_starch * structural_dry_mass)) / Organ.PARAMETERS.NB_C_SUCROSE
 
 
     # FLUXES
 
     def calculate_s_grain_structure(self, t, prec_structure, RGR_structure):
-        """Synthesis of grain structure integrated over delta_t (µmol C structure s-1 * DELTA_T). RGR_structure is regulated by phloem concentrations
+        """Rate of grain structure synthesis integrated over DELTA_T (µmol C structure s-1 * DELTA_T).
+        Exponential function, RGR regulated by sucrose concentration in the phloem.
+
+        :Parameters:
+            - `t` (:class:`float`) - Time of the simulation (s)
+            - `prec_structure` (:class:`float`) - Grain structure at t-1 (µmol C)
+            - `RGR_structure` (:class:`float`) - Relative Growth Rate of grain structure (dimensionless?)
+        :Returns:
+            Synthesis of grain structure (µmol C)
+        :Returns Type:
+            :class:`float`
         """
         if t<=Grains.PARAMETERS.FILLING_INIT: #: Grain enlargment
             s_grain_structure = prec_structure * RGR_structure * Organ.PARAMETERS.DELTA_T
@@ -322,7 +398,16 @@ class Grains(Organ):
         return s_grain_structure
 
     def calculate_s_grain_starch(self, t, sucrose_phloem):
-        """Synthesis of grain C starch integrated over delta_t (µmol C starch s-1 g-1 MS * DELTA_T). Rate regulated by phloem concentrations and unloading
+        """Rate of starch synthesis in grains (i.e. grain filling) integrated over DELTA_T (µmol C starch g-1 mstruct s-1 * DELTA_T).
+        Michaelis-Menten function of sucrose concentration in the phloem.
+
+        :Parameters:
+            - `t` (:class:`float`) - Time of the simulation (s)
+            - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
+        :Returns:
+            Synthesis of grain starch (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         if t<= Grains.PARAMETERS.FILLING_INIT:   #: Grain enlargment
             s_grain_starch = 0
@@ -333,7 +418,19 @@ class Grains(Organ):
         return s_grain_starch
 
     def calculate_s_proteins(self, s_grain_structure, s_grain_starch, amino_acids_phloem, sucrose_phloem, structural_dry_mass):
-        """Synthesis of grain proteins over delta_t (µmol N proteins). Rate regulated by phloem concentrations and unloading. Co-transported with sucrose relatively to the ratio amino acids:sucrose in phloem
+        """Protein synthesis in grains integrated over DELTA_T.
+        N is assumed to be co-transported along with the unloaded sucrose from phloem (using the ratio amino acids:sucrose of phloem).
+
+        :Parameters:
+            - `s_grain_structure` (:class:`float`) - Synthesis of grain structure (µmol C)
+            - `s_grain_starch` (:class:`float`) - Synthesis of grain starch (µmol C g-1 mstruct)
+            - `amino_acids_phloem` (:class:`float`) - Amino acids concentration in phloem (µmol N g-1 mstruct)
+            - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
+            - `structural_dry_mass` (:class:`float`) - Grain structural dry mass (g)
+        :Returns:
+            Synthesis of grain proteins (µmol N)
+        :Returns Type:
+            :class:`float`
         """
         if sucrose_phloem >0:
             s_proteins = (s_grain_structure + s_grain_starch*structural_dry_mass) * (amino_acids_phloem / sucrose_phloem)
@@ -344,17 +441,41 @@ class Grains(Organ):
     # COMPARTMENTS
 
     def calculate_structure_derivative(self, s_grain_structure, R_growth):
-        """delta grain structure integrated over delat_t (µmol C structure)
+        """delta grain structure.
+
+        :Parameters:
+            - `s_grain_structure` (:class:`float`) - Synthesis of grain structure (µmol C)
+            - `R_growth` (:class:`float`) - Grain growth respiration (µmol C respired)
+        :Returns:
+            delta grain structure (µmol C structure)
+        :Returns Type:
+            :class:`float`
         """
         return s_grain_structure - R_growth
 
     def calculate_starch_derivative(self, s_grain_starch, structural_dry_mass, R_growth):
-        """delta grain starch integrated over delat_t (µmol C starch)
+        """delta grain starch.
+
+        :Parameters:
+            - `s_grain_starch` (:class:`float`) - Synthesis of grain starch (µmol C g-1 mstruct)
+            - `structural_dry_mass` (:class:`float`) - Grain structural dry mass (g)
+            - `R_growth` (:class:`float`) - Grain growth respiration (µmol C respired)
+        :Returns:
+            delta grain starch (µmol C starch)
+        :Returns Type:
+            :class:`float`
         """
         return (s_grain_starch * structural_dry_mass) - R_growth
 
     def calculate_proteins_derivative(self, s_proteins):
-        """delta grain proteins integrated over delat_t (µmol N proteins)
+        """delta grain proteins.
+
+        :Parameters:
+            - `s_proteins` (:class:`float`) - Synthesis of grain proteins (µmol N)
+        :Returns:
+            delta grain proteins (µmol N proteins)
+        :Returns Type:
+            :class:`float`
         """
         return s_proteins
 
@@ -366,122 +487,357 @@ class Roots(Organ):
 
     PARAMETERS = parameters.RootsParameters #: the internal parameters of the roots
 
-    def __init__(self, mstruct=None, Nstruct=None, sucrose=None, nitrates=None, amino_acids=None, mstruct_C_growth=None, 
-                 Nstruct_N_growth=None, mstruct_senescence=None):
-        
+    def __init__(self, mstruct=None, Nstruct=None, sucrose=None, nitrates=None, amino_acids=None, cytokinines=None, mstruct_C_growth=None,
+                 Nstruct_N_growth=None, mstruct_death=None):
+
         # state parameters
-        self.mstruct_C_growth = mstruct_C_growth
-        self.Nstruct_N_growth = Nstruct_N_growth
-        self.mstruct_senescence = mstruct_senescence
+        self.mstruct_C_growth = mstruct_C_growth #: Growth of root structural dry mass (µmol C)
+        self.Nstruct_N_growth = Nstruct_N_growth #: Growth of root structural N mass (µmol N)
+        self.mstruct_death = mstruct_death
 
         # state variables
         self.mstruct = mstruct                 #: Structural mass (g)
-        self.Nstruct = Nstruct                 #: Structural nitrogen (g)
+        self.Nstruct = Nstruct                 #: Structural N mass (g)
         self.sucrose = sucrose                 #: µmol C sucrose
         self.nitrates = nitrates               #: µmol N nitrates
         self.amino_acids = amino_acids         #: µmol N amino acids
+        self.cytokinines = cytokinines         #: UA cytokinines
 
         # fluxes from phloem
         self.unloading_sucrose = None          #: current unloading of sucrose from phloem to roots
         self.unloading_amino_acids = None      #: current unloading of amino acids from phloem to roots
 
         # Integrated variables
-        self.total_nitrogen = None            #: current total nitrogen amount (µmol N)
+        self.total_organic_nitrogen = None     #: current amount of organic N (µmol N)
 
     def calculate_integrative_variables(self):
-        self.total_nitrogen = self.calculate_total_nitrogen(self.nitrates, self.amino_acids, self.Nstruct)
+        self.total_organic_nitrogen = self.calculate_total_organic_nitrogen(self.amino_acids, self.Nstruct)
 
     # VARIABLES
 
     def calculate_conc_sucrose(self, sucrose):
-        """Sucrose concentration (µmol sucrose g-1 MS).
-        This is a concentration output (expressed in amount of substance g-1 MS).
+        """Sucrose concentration.
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
+        :Returns:
+            Sucrose concentration (µmol sucrose g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (sucrose/self.mstruct)/Organ.PARAMETERS.NB_C_SUCROSE
 
     def calculate_conc_nitrates(self, nitrates):
-        """Nitrate concentration (µmol nitrates g-1 MS)
+        """Nitrate concentration.
+
+        :Parameters:
+            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
+        :Returns:
+            Nitrate concentration (µmol nitrates g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (nitrates/self.mstruct)
 
     def calculate_conc_amino_acids(self, amino_acids):
-        """Amino_acid concentration (µmol amino_acids g-1 MS)
+        """Amino_acid concentration.
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
+        :Returns:
+            Amino_acid concentration (µmol amino_acids g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (amino_acids/Organ.PARAMETERS.AMINO_ACIDS_N_RATIO)/self.mstruct
 
-    def calculate_total_nitrogen(self, nitrates, amino_acids, Nstruct):
-        return nitrates + amino_acids + (Nstruct / Roots.PARAMETERS.N_MOLAR_MASS)*1E6
+    def calculate_conc_cytokinines(self, cytokinines):
+        """Cytokinines concentration.
+
+        :Parameters:
+            - `cytokinines` (:class:`float`) - Amount of cytokinines (UA)
+        :Returns:
+            cytokinines concentration (UA cytokinines g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        return cytokinines/self.mstruct
+
+    def calculate_total_organic_nitrogen(self, amino_acids, Nstruct):
+        """Total amount of organic N (amino acids + Nstruct).
+        Used to calculate residual respiration.
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
+            - `Nstruct` (:class:`float`) -Structural N mass (g)
+        :Returns:
+            Total amount of organic N (µmol N)
+        :Returns Type:
+            :class:`float`
+        """
+        return amino_acids + (Nstruct / Roots.PARAMETERS.N_MOLAR_MASS)*1E6
 
     # FLUXES
 
     def calculate_unloading_sucrose(self, sucrose_phloem):
-        """Unloading of sucrose from phloem to roots (µmol C sucrose unloaded s-1 g-1 MS * DELTA_T)
+        """Rate of sucrose unloading from phloem to roots integrated over DELTA_T (µmol C sucrose unloaded g-1 mstruct s-1 * DELTA_T).
+        Michaelis-Menten function of the sucrose concentration in phloem.
+
+        :Parameters:
+            - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
+        :Returns:
+            Sucrose unloading (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Roots.PARAMETERS.VMAX_SUCROSE_UNLOADING) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Roots.PARAMETERS.K_SUCROSE_UNLOADING)) * Organ.PARAMETERS.DELTA_T
 
     def calculate_unloading_amino_acids(self, unloading_sucrose, sucrose_phloem, amino_acids_phloem):
-        """Unloading of amino_acids from phloem to roots over delta_t (µmol N amino_acids unloaded s-1 g-1 MS)
+        """Unloading of amino_acids from phloem to roots integrated over DELTA_T.
+        Amino acids are assumed to be co-transported along with the unloaded sucrose from phloem (using the ratio amino acids:sucrose of phloem).
+
+        :Parameters:
+            - `unloading_sucrose` (:class:`float`) - Sucrose unloading (µmol C g-1 mstruct)
+            - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
+            - `amino_acids_phloem` (:class:`float`) - Amino acids concentration in phloem (µmol N g-1 mstruct)
+        :Returns:
+            Amino acids unloading (µmol N g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         if amino_acids_phloem <= 0:
             unloading_amino_acids = 0
         else:
-            unloading_amino_acids =  unloading_sucrose/ (sucrose_phloem/amino_acids_phloem)
+            unloading_amino_acids =  unloading_sucrose * (amino_acids_phloem / sucrose_phloem)
         return unloading_amino_acids
 
-    def calculate_uptake_nitrates(self, conc_nitrates_soil, nitrates_roots, total_transpiration):
-        """Uptake of nitrates by roots (µmol N nitrates imported s-1 * DELTA_T)
-        """
-        VMAX_HATS_MAX = Roots.PARAMETERS.A_VMAX_HATS * np.exp(-Roots.PARAMETERS.LAMBDA_VMAX_HATS*(nitrates_roots/self.mstruct))        #: Maximal rate of nitrates uptake at saturating soil N concentration;HATS (µmol N nitrates g-1 s-1)
-        K_HATS = Roots.PARAMETERS.A_K_HATS * np.exp(-Roots.PARAMETERS.LAMBDA_K_HATS*(nitrates_roots/self.mstruct))                     #: Affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (µmol m-3)
-        HATS = (VMAX_HATS_MAX * conc_nitrates_soil)/ (K_HATS + conc_nitrates_soil)                                                     #: High Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
-        K_LATS = Roots.PARAMETERS.A_LATS * np.exp(-Roots.PARAMETERS.LAMBDA_LATS*(nitrates_roots/self.mstruct))                         #: Rate of nitrates uptake at low soil N concentration; LATS (m3 g-1 s-1)
-        LATS = (K_LATS * conc_nitrates_soil)                                                                                           #: Low Affinity Transport System (µmol N nitrates uptaked s-1 g-1 MS roots)
+    def calculate_uptake_nitrates(self, conc_nitrates_soil, nitrates_roots, total_surfacic_transpiration, sucrose_roots):
+        """Rate of nitrate uptake by roots integrated over DELTA_T.
+            - Nitrate uptake is calculated as the sum of the 2 transport systems: HATS and LATS
+            - HATS and LATS parameters are calculated as a function of root nitrate concentration (negative regulation)
+            - Nitrate uptake is finally regulated by the total culm transpiration and sucrose concentration (positive regulation)
 
-        potential_uptake = (HATS + LATS) * self.mstruct * Organ.PARAMETERS.DELTA_T                                                     #: Potential nitrate uptake (µmol N nitrates uptaked by roots integrated over delta_t)
-        actual_uptake = potential_uptake * (total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_UPTAKE_NITRATES))         #: Nitrate uptake regulated by plant transpiration (µmol N nitrates uptaked by roots)
-        return actual_uptake, potential_uptake
+        :Parameters:
+            - `conc_nitrates_soil` (:class:`float`) - Soil nitrate concentration unloading (µmol N m-3 soil)
+            - `nitrates_roots` (:class:`float`) - Amount of nitrates in roots (µmol N)
+            - `total_surfacic_transpiration` (:class:`float`) - Total culm transpiration (mmol H2O m-2 s-1)
+            - `sucrose_roots` (:class:`float`) - Amount of sucrose in roots (µmol C)
+        :Returns:
+            Nitrate uptake (µmol N nitrates)
+        :Returns Type:
+            :class:`float`
+        """
+        #: High Affinity Transport System (HATS)
+        VMAX_HATS_MAX = Roots.PARAMETERS.A_VMAX_HATS * np.exp(-Roots.PARAMETERS.LAMBDA_VMAX_HATS*(nitrates_roots/self.mstruct))        #: Maximal rate of nitrates influx at saturating soil N concentration;HATS (µmol N nitrates g-1 mstruct s-1)
+        K_HATS = Roots.PARAMETERS.A_K_HATS * np.exp(-Roots.PARAMETERS.LAMBDA_K_HATS*(nitrates_roots/self.mstruct))                     #: Affinity coefficient of nitrates influx at saturating soil N concentration;HATS (µmol m-3)
+        HATS = (VMAX_HATS_MAX * conc_nitrates_soil)/ (K_HATS + conc_nitrates_soil)                                                     #: Rate of nitrate influx by HATS (µmol N nitrates uptaked s-1 g-1 mstruct)
+
+        #: Low Affinity Transport System (LATS)
+        K_LATS = Roots.PARAMETERS.A_LATS * np.exp(-Roots.PARAMETERS.LAMBDA_LATS*(nitrates_roots/self.mstruct))                         #: Rate constant for nitrates influx at low soil N concentration; LATS (m3 g-1 mstruct s-1)
+        LATS = (K_LATS * conc_nitrates_soil)                                                                                           #: Rate of nitrate influx by LATS (µmol N nitrates uptaked s-1 g-1 mstruct)
+        HATS_LATS = (HATS + LATS) * self.mstruct * Organ.PARAMETERS.DELTA_T                                                            #: Nitrate influx (µmol N)
+
+        # Regulations
+        regul_transpiration = (total_surfacic_transpiration/(total_surfacic_transpiration + Roots.PARAMETERS.K_TRANSPIRATION))         #: Nitrate uptake regulation by plant transpiration
+        regul_C = (sucrose_roots/self.mstruct) / ((sucrose_roots/self.mstruct) + 2000)                                                  #: Nitrate uptake regulation by root C
+
+        net_nitrate_uptake = HATS_LATS * Roots.PARAMETERS.NET_INFLUX_UPTAKE_RATIO * regul_transpiration * regul_C                      #: Net nitrate uptake (µmol N nitrates uptaked by roots)
+        return net_nitrate_uptake, HATS_LATS, regul_transpiration
 
     def calculate_s_amino_acids(self, nitrates, sucrose):
-        """Rate of amino acid synthesis in roots (µmol N amino acids s-1 g-1 MS * DELTA_T)
+        """Rate of amino acid synthesis in roots integrated over DELTA_T (µmol N amino acids g-1 mstruct s-1 * DELTA_T).
+        Bi-substrate Michaelis-Menten function of nitrates and sucrose.
+
+        :Parameters:
+            - `nitrates` (:class:`float`) - Amount of nitrates in roots (µmol N)
+            - `sucrose` (:class:`float`) - Amount of sucrose in roots (µmol C)
+        :Returns:
+            Amino acids synthesis (µmol N g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return Roots.PARAMETERS.VMAX_AMINO_ACIDS / ((1 + Roots.PARAMETERS.K_AMINO_ACIDS_NITRATES/(nitrates/(self.mstruct*Roots.PARAMETERS.ALPHA))) * (1 + Roots.PARAMETERS.K_AMINO_ACIDS_SUCROSE/(sucrose/(self.mstruct*Roots.PARAMETERS.ALPHA)))) * Organ.PARAMETERS.DELTA_T
 
-    def calculate_export_amino_acids(self, amino_acids, total_transpiration):
-        """Total export of amino acids from roots to shoot organs (abstraction of the xylem compartment) (µmol N amino acids exported during DELTA_T (already accounted in Transpiration))
-        """
-        return (amino_acids/(self.mstruct * Roots.PARAMETERS.ALPHA)) * (total_transpiration/(total_transpiration + Roots.PARAMETERS.K_TR_EXPORT_AMINO_ACIDS))
+    def calculate_export_nitrates(self, nitrates, total_surfacic_transpiration):
+        """Total export of nitrates from roots to shoot organs integrated over DELTA_T.
+        Export is calculated as a function on nitrate concentration and culm transpiration.
 
-    def calculate_exudation(self, unloading_sucrose, sucrose_phloem, amino_acids_phloem):
-        """Total C sucrose lost by root exudation (µmol C g-1 MS)
+        :Parameters:
+            - `nitrates` (:class:`float`) - Amount of nitrates in roots (µmol N)
+            - `total_surfacic_transpiration` (:class:`float`) - Total culm transpiration (mmol H2O m-2 s-1)
+        :Returns:
+            Export of nitrates (µmol N)
+        :Returns Type:
+            :class:`float`
         """
-        C_exudated = unloading_sucrose * Roots.PARAMETERS.C_EXUDATION      #: C exudated (µmol g-1 MS)
-        if amino_acids_phloem <= 0:
+        if nitrates <=0 or total_surfacic_transpiration<=0:
+            export_nitrates = 0
+        else:
+            f_nitrates = (nitrates/(self.mstruct*Roots.PARAMETERS.ALPHA))*Roots.PARAMETERS.K_NITRATE_EXPORT
+            regul_transpiration = (total_surfacic_transpiration/(total_surfacic_transpiration + Roots.PARAMETERS.K_TRANSPIRATION)) #: Nitrate export regulation by plant transpiration
+            export_nitrates = f_nitrates* self.mstruct * regul_transpiration * Organ.PARAMETERS.DELTA_T                                 #: Actual nitrate export (µmol N)
+        return export_nitrates
+
+    def calculate_export_amino_acids(self, amino_acids, total_surfacic_transpiration):
+        """Total export of amino acids from roots to shoot organs integrated over DELTA_T.
+        Amino acids export is calculated as a function of nitrate export using the ratio amino acids:nitrates in roots.
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino acids in roots (µmol N)
+            - `total_surfacic_transpiration` (:class:`float`) - Total culm transpiration (mmol H2O m-2 s-1)
+
+        :Returns:
+            Export of amino acids (µmol N)
+        :Returns Type:
+            :class:`float`
+        """
+        if amino_acids <=0:
+            export_amino_acids = 0
+        else:
+            f_amino_acids = (amino_acids/(self.mstruct*Roots.PARAMETERS.ALPHA))*Roots.PARAMETERS.K_AMINO_ACIDS_EXPORT
+            regul_transpiration = (total_surfacic_transpiration/(total_surfacic_transpiration + Roots.PARAMETERS.K_TRANSPIRATION)) #: Amino acids export regulation by plant transpiration
+            export_amino_acids = f_amino_acids* self.mstruct * regul_transpiration * Organ.PARAMETERS.DELTA_T                           #: Actual nitrate export (µmol N)
+
+        return export_amino_acids
+
+    def calculate_exudation(self, unloading_sucrose, sucrose_roots, sucrose_phloem, amino_acids_roots, amino_acids_phloem):
+        """C sucrose and N amino acids lost by root exudation integrated over DELTA_T (µmol C or N g-1 mstruct).
+            - C exudation is calculated as a fraction of C unloading from phloem
+            - N exudation is calculated from C exudation using the ratio amino acids:sucrose of the phloem
+
+        :Parameters:
+            - `unloading_sucrose` (:class:`float`) - Sucrose unloading (µmol C g-1 mstruct)
+            - `sucrose_roots` (:class:`float`) - Amount of sucrose in roots (µmol C)
+            - `sucrose_phloem` (:class:`float`) - Amount of sucrose in phloem (µmol C)
+            - `amino_acids_roots` (:class:`float`) - Amount of amino acids in roots (µmol N)
+            - `amino_acids_phloem` (:class:`float`) - Amount of amino acids in phloem (µmol N)
+        :Returns:
+            C exudated, N_exudated (µmol C g-1 mstruct, µmol N g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        C_exudated = min(sucrose_roots, unloading_sucrose * Roots.PARAMETERS.C_EXUDATION)           #: C exudated (µmol g-1 mstruct)
+        if amino_acids_phloem <= 0 or amino_acids_roots <= 0:
             N_exudated = 0
         else:
-            N_exudated = C_exudated / (sucrose_phloem / amino_acids_phloem) #: N exudated (µmol g-1 MS)
+            N_exudated = min(amino_acids_roots, C_exudated * (amino_acids_phloem / sucrose_phloem )) #: N exudated (µmol g-1 mstruct)
         return C_exudated, N_exudated
+
+    def calculate_s_cytokinines(self, sucrose_roots):
+        """ Rate of cytokinines synthesis integrated over DELTA_T (UA cytokinines g-1 mstruct s-1 * DELTA_T).
+        Michaelis-Menten function of sucrose concentration in roots. As a signal molecule, cytokinines are assumed have a neglected effect on sucrose. Thus, no cost in C is applied to the sucrose pool.
+
+        :Parameters:
+            - `sucrose_roots` (:class:`float`) - Amount of sucrose in roots (µmol C)
+        :Returns:
+            Cytokinines synthesis (UA g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        return (Roots.PARAMETERS.VMAX_S_CYTOKININES * max(0, (sucrose_roots/self.mstruct))) / (Roots.PARAMETERS.K_S_CYTOKININES + max(0, (sucrose_roots/self.mstruct))) * Organ.PARAMETERS.DELTA_T
+
+    def calculate_export_cytokinines(self, cytokinines, total_surfacic_transpiration):
+        """Total export of cytokinines from roots to shoot organs integrated over DELTA_T.
+        Cytokinines export is calculated as a function of cytokinines concentration and culm transpiration.
+
+        :Parameters:
+            - `cytokinines` (:class:`float`) - Amount of cytokinines in roots (UA)
+            - `total_surfacic_transpiration` (:class:`float`) - Total culm transpiration (mmol H2O m-2 s-1)
+        :Returns:
+            Cytokinines export (UA)
+        :Returns Type:
+            :class:`float`
+        """
+        if cytokinines <=0:
+            export_cytokinines = 0
+        else:
+            f_cytokinines = (cytokinines/(self.mstruct*Roots.PARAMETERS.ALPHA)) * Roots.PARAMETERS.K_CYTOKININES_EXPORT                   #: Potential export of cytokinines (UA g-1 mstruct s-1)
+            regul_transpiration = (total_surfacic_transpiration/(total_surfacic_transpiration + Roots.PARAMETERS.K_TRANSPIRATION))        #: Cytokinines export regulation by plant transpiration
+            export_cytokinines = f_cytokinines* self.mstruct * regul_transpiration * Organ.PARAMETERS.DELTA_T                             #: Actual cytokinines export (UA)
+
+        return export_cytokinines
+
+    def calculate_d_cytokinines(self, cytokinines):
+        """Rate of cytokinines degradation integrated over DELTA_T (UA g-1 mstruct s-1 * DELTA_T).
+        Degradation calculated as a first order kinetic.
+
+        :Parameters:
+            - `cytokinines` (:class:`float`) - Amount of cytokinines in roots (UA)
+        :Returns:
+            Cytokinines degradation (UA g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        return max(0, Roots.PARAMETERS.DELTA_D_CYTOKININES * (cytokinines/self.mstruct)) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     # COMPARTMENTS
 
-    def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids, mstruct_C_growth, C_exudated, R_Nnit_upt, R_Nnit_red, R_residual, R_roots_growth):
-        """delta root sucrose integrated over delat_t (µmol C sucrose)
+    def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids, mstruct_C_growth, C_exudated, sum_respi):
+        """delta root sucrose.
+
+        :Parameters:
+            - `unloading_sucrose` (:class:`float`) - Sucrose unloading (µmol C g-1 mstruct)
+            - `s_amino_acids` (:class:`float`) - Amino acids synthesis (µmol N g-1 mstruct)
+            - `mstruct_C_growth` (:class:`float`) - Growth of root structural dry mass (µmol C)
+            - `C_exudated` (:class:`float`) - C exudation (µmol C g-1 mstruct)
+            - `sum_respi` (:class:`float`) - Sum of respirations for roots i.e. related to N uptake, amino acids synthesis, mstruct growth and residual (µmol C)
+        :Returns:
+            delta root sucrose (µmol C sucrose)
+        :Returns Type:
+            :class:`float`
         """
         sucrose_consumption_AA = (s_amino_acids / Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) * Organ.PARAMETERS.AMINO_ACIDS_C_RATIO      #: Contribution of sucrose to the synthesis of amino_acids
-        return (unloading_sucrose - sucrose_consumption_AA - C_exudated) * self.mstruct - R_Nnit_upt - R_Nnit_red - R_residual - R_roots_growth - mstruct_C_growth
+        return (unloading_sucrose - sucrose_consumption_AA - C_exudated) * self.mstruct - sum_respi - mstruct_C_growth
 
-    def calculate_nitrates_derivative(self, uptake_nitrates, s_amino_acids):
-        """delta root nitrates integrated over delat_t (µmol N nitrates)
+    def calculate_nitrates_derivative(self, uptake_nitrates, export_nitrates, s_amino_acids):
+        """delta root nitrates.
+
+        :Parameters:
+            - `uptake_nitrates` (:class:`float`) - Nitrate uptake (µmol N nitrates)
+            - `export_nitrates` (:class:`float`) - Export of nitrates (µmol N)
+            - `s_amino_acids` (:class:`float`) - Amino acids synthesis (µmol N g-1 mstruct)
+        :Returns:
+            delta root nitrates (µmol N nitrates)
+        :Returns Type:
+            :class:`float`
         """
         import_nitrates_roots = uptake_nitrates * (1-Organ.PARAMETERS.RATIO_EXPORT_NITRATES_ROOTS)                                  #: Proportion of uptaked nitrates staying in roots
         nitrate_reduction_AA = s_amino_acids                                                                                        #: Contribution of nitrates to the synthesis of amino_acids
-        return import_nitrates_roots - (nitrate_reduction_AA*self.mstruct)
+        return import_nitrates_roots - export_nitrates - nitrate_reduction_AA*self.mstruct
 
     def calculate_amino_acids_derivative(self, unloading_amino_acids, s_amino_acids, export_amino_acids, Nstruct_N_growth, N_exudated):
-        """delta root amino acids integrated over delat_t (µmol N amino acids)
+        """delta root amino acids.
+
+        :Parameters:
+            - `unloading_amino_acids` (:class:`float`) - Amino acids unloading (µmol N g-1 mstruct)
+            - `s_amino_acids` (:class:`float`) - Amino acids synthesis (µmol N g-1 mstruct)
+            - `export_amino_acids` (:class:`float`) - Export of amino acids (µmol N)
+            - `Nstruct_N_growth` (:class:`float`) - Growth of root structural N mass (µmol N)
+            - `N_exudated` (:class:`float`) - N exudated (µmol g-1 mstruct)
+        :Returns:
+            delta root amino acids (µmol N amino acids)
+        :Returns Type:
+            :class:`float`
         """
         return (unloading_amino_acids + s_amino_acids- N_exudated)*self.mstruct - export_amino_acids - Nstruct_N_growth
-    
-    
+
+    # VARIABLES
+
+    def calculate_cytokinines_derivative(self, s_cytokinines, d_cytokinines, export_cytokinines):
+        """delta root cytokinines.
+
+        :Parameters:
+            - `s_cytokinines` (:class:`float`) - Cytokinines synthesis (UA g-1 mstruct)
+            - `d_cytokinines` (:class:`float`) - Cytokinines degradation (UA g-1 mstruct)
+            - `export_cytokinines` (:class:`float`) - Cytokinines export (UA)
+        :Returns:
+            delta root cytokinines (UA cytokinines)
+        :Returns Type:
+            :class:`float`
+        """
+        return (s_cytokinines - d_cytokinines)*self.mstruct - export_cytokinines
+
+
 class Soil(Organ):
     """
     The class :class:`Soil` defines the amount of nitrogen in the volume of soil explored by roots.
@@ -489,25 +845,38 @@ class Soil(Organ):
 
     PARAMETERS = parameters.SoilParameters #: the internal parameters of the soil
 
-    def __init__(self, volume=None, nitrates=None):
-        
-        # state parameters
-        self.volume = volume                   #: Volume of soil explored by roots (m3)
+    def __init__(self, volume=None, nitrates=None, Tsoil=None):
 
         # variables
+        self.volume = volume                   #: Volume of soil explored by roots (m3)
         self.nitrates = nitrates               #: µmol N nitrates
+        self.Tsoil = Tsoil                     #: soil temperature (°C)
 
     # VARIABLES
 
     def calculate_conc_nitrates(self, nitrates):
-        """Nitrate concetration in soil (µmol nitrates m-3)
+        """Nitrate concentration in soil.
+
+        :Parameters:
+            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
+        :Returns:
+            Nitrate concentration (µmol nitrates m-3)
+        :Returns Type:
+            :class:`float`
         """
         return (nitrates/self.volume)
 
     # COMPARTMENTS
 
     def calculate_nitrates_derivative(self, uptake_nitrates):
-        """delta soil nitrates integrated over delat_t (µmol N nitrates)
+        """delta soil nitrates.
+
+        :Parameters:
+            - `uptake_nitrates` (:class:`float`) - Nitrate uptake (µmol N nitrates)
+        :Returns:
+            delta nitrates (µmol N nitrates)
+        :Returns Type:
+            :class:`float`
         """
         return -uptake_nitrates
 
@@ -529,6 +898,15 @@ class PhotosyntheticOrgan(Organ):
         for element in (self.exposed_element, self.enclosed_element):
             if element is not None:
                 element.calculate_integrative_variables()
+
+    def calculate_total_green_area(self):
+        """Calculate the sum of the element green area belonging to the organ.
+        """
+        total_green_area = 0
+        for element in (self.exposed_element, self.enclosed_element):
+            if element is not None:
+                total_green_area += element.green_area
+        return total_green_area
 
 
 class Chaff(PhotosyntheticOrgan):
@@ -596,184 +974,382 @@ class PhotosyntheticOrganElement(object):
     PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
 
     def __init__(self, area=None, green_area=None, mstruct=None, Nstruct=None, width=None, height=None, triosesP=None, starch=None,
-                 sucrose=None, fructan=None, nitrates=None, amino_acids=None, proteins=None,
-                 An=None, Tr=None, Ag=None, Rd=None, Ts=None, gs=None, 
-                 surfacic_nitrogen=None, relative_delta_green_area=None):
+                 sucrose=None, fructan=None, nitrates=None, amino_acids=None, proteins=None, cytokinines=None,
+                 PAR = None, An=None, Tr=None, Ag=None, Rd=None, Ts=None, gs=None,
+                 surfacic_nitrogen=None):
 
         # state parameters
         self.area = area                     #: area (m-2)
         self.green_area = green_area         #: green area (m-2)
-        self.width = width                   #: Width (or diameter for stem organ elements) (m)
+        self.width = width                   #: Width for lamina or diameter for stem organs (m)
         self.height = height                 #: Height of the element from soil (m)
         self.An = An                         #: Net assimilation (µmol m-2 s-1)
-        self.Tr = Tr                         #: Transpiration (mm s-1)
-        self.Ag = Ag
-        self.Rd = Rd
-        self.Ts = Ts
-        self.gs = gs
+        self.Tr = Tr                         #: Transpiration rate (mmol m-2 s-1)
+        self.Ag = Ag                         #: Gross assimilation (µmol m-2 s-1)
+        self.Rd = Rd                         #: Mitochondrial respiration rate (µmol m-2 s-1)
+        self.Ts = Ts                         #: Organ temperature (°C)
+        self.gs = gs                         #: Stomatal conductance to water (mol m-2 s-1)
         self.surfacic_nitrogen = surfacic_nitrogen        #: current surfacic nitrogen (g m-2)
-        self.relative_delta_green_area = relative_delta_green_area
 
         # state variables
-        self.mstruct = mstruct               #: Structural mass (g)
-        self.Nstruct = Nstruct               #: Structural nitrogen (g)
-        self.triosesP = triosesP
-        self.starch = starch
-        self.sucrose = sucrose
-        self.fructan = fructan
-        self.nitrates = nitrates
-        self.amino_acids = amino_acids
-        self.proteins = proteins
+        self.mstruct = mstruct               #: Structural dry mass (g)
+        self.Nstruct = Nstruct               #: Structural N mass (g)
+        self.triosesP = triosesP             #: µmol C
+        self.starch = starch                 #: µmol C
+        self.sucrose = sucrose               #: µmol C
+        self.fructan = fructan               #: µmol C
+        self.nitrates = nitrates             #: µmol N
+        self.amino_acids = amino_acids       #: µmol N
+        self.proteins = proteins             #: µmol N
+        self.cytokinines = cytokinines       #: UA
+        self.PAR = PAR                       #: absorbed PAR (µmol m-2 s-1)
 
         # fluxes to phloem
-        self.loading_sucrose = None           #: current rate of sucrose loading to phloem
-        self.loading_amino_acids = None       #: current rate of amino acids loading to phloem
+        self.loading_sucrose = None          #: current rate of sucrose loading to phloem
+        self.loading_amino_acids = None      #: current rate of amino acids loading to phloem
 
         # Integrated variables
-        self.total_nitrogen = None            #: current total nitrogen amount (µmol N)
+        self.total_organic_nitrogen = None           #: current total nitrogen amount (µmol N)
 
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the element.
         """
-        self.total_nitrogen = self.calculate_total_nitrogen(self.nitrates, self.amino_acids, self.proteins, self.Nstruct)
+        self.total_organic_nitrogen = self.calculate_total_organic_nitrogen(self.amino_acids, self.proteins, self.Nstruct)
 
     # VARIABLES
     def calculate_photosynthesis(self, Ag, green_area):
-        """Total photosynthesis of an element integrated over DELTA_T (µmol CO2 on element area integrated over delat_t)
+        """Total photosynthesis of an element integrated over DELTA_T (µmol C m-2 s-1 * m2 * DELTA_T).
+
+        :Parameters:
+            - `Ag` (:class:`float`) - Gross photosynthesis rate (µmol C m-2 s-1)
+            - `green_area` (:class:`float`) - Green area (m2)
+        :Returns:
+            Total photosynthesis (µmol C)
+        :Returns Type:
+            :class:`float`
         """
         return Ag * green_area * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     def calculate_total_Rd(self, Rd, green_area):
-        """Total respiration of an element integrated over DELTA_T (µmol CO2 on element area integrated over delat_t)
+        """Total respiration of an element integrated over DELTA_T (µmol C m-2 s-1 * m2 * DELTA_T).
+
+        :Parameters:
+            - `Rd` (:class:`float`) - Respiration rate (µmol C m-2 s-1)
+            - `green_area` (:class:`float`) - Green area (m2)
+        :Returns:
+            Total respiration (µmol C)
+        :Returns Type:
+            :class:`float`
         """
         return Rd * green_area * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
-    def calculate_transpiration(self, Tr, green_area):
-        """Total transpiration of an element integrated over DELTA_T (mm of H2O on element area integrated over delat_t)
+    def calculate_total_transpiration(self, Tr, green_area):
+        """Surfacic transpiration rate of an element
+
+        :Parameters:
+            - `Tr` (:class:`float`) - Transpiration rate (mmol H2O m-2 s-1)
+            - `green_area` (:class:`float`) - Green area (m2)
+        :Returns:
+            Total transpiration (mmol H2O s-1)
+        :Returns Type:
+            :class:`float`
         """
-        return Tr * green_area * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+        return Tr * green_area
 
     def calculate_conc_triosesP(self, triosesP):
-        """Trioses Phosphate concentration (µmol triosesP g-1 MS).
-        This is a concentration output (expressed in amount of substance g-1 MS).
+        """Triose Phosphates concentration.
+
+        :Parameters:
+            - `triosesP` (:class:`float`) - Amount of triose phosphates (µmol C)
+        :Returns:
+            Triose phosphates concentration (µmol triosesP g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (triosesP/self.mstruct)/Organ.PARAMETERS.NB_C_TRIOSEP
 
     def calculate_conc_sucrose(self, sucrose):
-        """Sucrose concentration (µmol sucrose g-1 MS).
-        This is a concentration output (expressed in amount of substance g-1 MS).
+        """Sucrose concentration.
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
+        :Returns:
+            Sucrose concentration (µmol sucrose g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (sucrose/self.mstruct)/Organ.PARAMETERS.NB_C_SUCROSE
 
     def calculate_conc_starch(self, starch):
-        """Starch concentration (µmol starch g-1 MS (eq glucose)).
-        This is a concentration output (expressed in amount of substance g-1 MS).
+        """Starch concentration.
+
+        :Parameters:
+            - `starch` (:class:`float`) - Amount of sucrose (µmol C)
+        :Returns:
+            Starch concentration (µmol starch g-1 mstruct, eq. glucose).
+        :Returns Type:
+            :class:`float`
         """
         return (starch/self.mstruct)/Organ.PARAMETERS.NB_C_HEXOSES
 
     def calculate_conc_fructan(self, fructan):
-        """fructan concentration (µmol fructan g-1 MS (eq glucose))
+        """Fructan concentration.
+
+        :Parameters:
+            - `fructan` (:class:`float`) - Amount of fructan (µmol C)
+        :Returns:
+            Fructan concentration (µmol fructan g-1 mstruct, eq. glucose).
+        :Returns Type:
+            :class:`float`
         """
         return (fructan/self.mstruct)/Organ.PARAMETERS.NB_C_HEXOSES
 
     def calculate_regul_s_fructan(self, loading_sucrose):
-        """Inhibition of fructan synthesis by the loading of sucrose to phloem
+        """Regulating function for fructan synthesis.
+        Negative regulation by the loading of sucrose from the phloem ("swith-off" sigmoïdal kinetic).
+
+        :Parameters:
+            - `loading_sucrose` (:class:`float`) - Sucrose loading (µmol C)
+        :Returns:
+            Regulating function for fructan synthesis (dimensionless, from 0 to 1)
+        :Returns Type:
         """
-        return ((PhotosyntheticOrgan.PARAMETERS.VMAX_REGUL_SFRUCTAN * PhotosyntheticOrgan.PARAMETERS.K_REGUL_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)) / (max(0, loading_sucrose**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)) + PhotosyntheticOrgan.PARAMETERS.K_REGUL_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)))
+        if loading_sucrose <=0:
+            #regul_s_fructan = PhotosyntheticOrgan.PARAMETERS.VMAX_REGUL_SFRUCTAN
+            Vmax_Sfructans = PhotosyntheticOrgan.PARAMETERS.VMAX_SFRUCTAN
+        else:
+            rate_loading_sucrose_massic = loading_sucrose/self.mstruct/PhotosyntheticOrgan.PARAMETERS.DELTA_T
+            #regul_s_fructan = ((PhotosyntheticOrgan.PARAMETERS.VMAX_REGUL_SFRUCTAN * PhotosyntheticOrgan.PARAMETERS.K_REGUL_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)) / (max(0, rate_loading_sucrose_massic**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)) + PhotosyntheticOrgan.PARAMETERS.K_REGUL_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)))
+            Vmax_Sfructans = ((PhotosyntheticOrgan.PARAMETERS.VMAX_SFRUCTAN * PhotosyntheticOrgan.PARAMETERS.K_REGUL_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)) / (max(0, rate_loading_sucrose_massic**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)) + PhotosyntheticOrgan.PARAMETERS.K_REGUL_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)))
+        return Vmax_Sfructans#regul_s_fructan
 
     def calculate_conc_nitrates(self, nitrates):
-        """Nitrate concentration (µmol nitrates g-1 MS)
+        """Nitrate concentration.
+
+        :Parameters:
+            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
+        :Returns:
+            Nitrate concentration (µmol nitrates g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (nitrates/self.mstruct)
 
     def calculate_conc_amino_acids(self, amino_acids):
-        """Amino_acid concentration (µmol amino acids g-1 MS)
+        """Amino_acid concentration.
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
+        :Returns:
+            Amino_acid concentration (µmol amino acids g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (amino_acids/PhotosyntheticOrgan.PARAMETERS.AMINO_ACIDS_N_RATIO) / self.mstruct
 
     def calculate_conc_proteins(self, proteins):
-        """Protein concentration (g proteins g-1 MS)
+        """Protein concentration.
+
+        :Parameters:
+            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
+        :Returns:
+            Protein concentration (g proteins g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
-        mass_N_proteins = proteins*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS                        #: Mass of nitrogen in proteins (g)
+        mass_N_proteins = proteins*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS                        #: Mass of N in proteins (g)
         mass_proteins = mass_N_proteins / PhotosyntheticOrgan.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
 
-    def calculate_total_nitrogen(self, nitrates, amino_acids, proteins, Nstruct):
-        return nitrates + amino_acids + proteins + (Nstruct / PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS)*1E6
+    def calculate_total_organic_nitrogen(self, amino_acids, proteins, Nstruct):
+        """Total amount of organic N (amino acids + proteins + Nstruct).
+        Used to calculate residual respiration.
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
+            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
+            - `Nstruct` (:class:`float`) - Structural N mass (g)
+        :Returns:
+            Total amount of organic N (µmol N)
+        :Returns Type:
+            :class:`float`
+        """
+        return amino_acids + proteins + (Nstruct / PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS)*1E6
 
     def calculate_surfacic_nitrogen(self, nitrates, amino_acids, proteins, Nstruct, green_area):
-        """Surfacic content of nitrogen (g m-2)
+        """Surfacic content of nitrogen.
+
+        :Parameters:
+            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
+            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
+            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
+            - `Nstruct` (:class:`float`) -  Structural N mass (g)
+            - `green_area` (:class:`float`) -  Green area (m2)
+        :Returns:
+            Surfacic content of nitrogen (g m-2)
+        :Returns Type:
+            :class:`float`
         """
         mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS + Nstruct
         return (mass_N_tot / green_area)
 
+    def calculate_conc_cytokinines(self, cytokinines):
+        """Cytokinines concentration.
+
+        :Parameters:
+            - `cytokinines` (:class:`float`) - Amount of cytokinines (UA)
+        :Returns:
+            Cytokinines concentration (UA g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        return cytokinines/self.mstruct
+
     # FLUXES
 
     def calculate_s_starch(self, triosesP):
-        """Rate of starch synthesis from triosesP (µmol C starch s-1 g-1 MS * DELTA_T).
+        """Rate of starch synthesis (µmol C starch g-1 mstruct s-1 * DELTA_T).
+        Michaelis-Menten function of triose phosphates.
+
+        :Parameters:
+            - `triosesP` (:class:`float`) - Amount of triose phosphates (µmol C)
+        :Returns:
+            Starch synthesis (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * PhotosyntheticOrgan.PARAMETERS.VMAX_STARCH) / ((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_STARCH)) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     def calculate_d_starch(self, starch):
-        """Rate of starch degradation (µmol C starch s-1 g-1 MS * DELTA_T).
+        """Rate of starch degradation (µmol C starch g-1 mstruct s-1 * DELTA_T).
+        First order kinetic.
+
+        :Parameters:
+            - `starch` (:class:`float`) - Amount of starch (µmol C)
+        :Returns:
+            Starch degradation (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_DSTARCH * (starch/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
-    def calculate_remob_starch_senescence(self, starch, relative_delta_green_area):
-        """Rate of starch remobilisation due to senescence over delta_t (µmol C starch).
-        """
-        return starch * relative_delta_green_area
-
     def calculate_s_sucrose(self, triosesP):
-        """Rate of sucrose synthesis from triosesP (µmol C sucrose s-1 g-1 MS * DELTA_T).
+        """Rate of sucrose synthesis (µmol C sucrose g-1 mstruct s-1 * DELTA_T).
+        Michaelis-Menten function of triose phosphates.
+
+        :Parameters:
+            - `triosesP` (:class:`float`) - Amount of triose phosphates (µmol C)
+        :Returns:
+            Sucrose synthesis (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         return (((max(0,triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * PhotosyntheticOrgan.PARAMETERS.VMAX_SUCROSE) / ((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SUCROSE)) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     def calculate_loading_sucrose(self, sucrose, sucrose_phloem):
-        """Rate of sucrose loading to phloem (µmol C sucrose s-1 g-1 MS * DELTA_T).
+        """Rate of sucrose loading to phloem (µmol C sucrose s-1 * DELTA_T).
+        Transport-resistance model.
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - Amount of sucrose in the element (µmol C)
+            - `sucrose_phloem` (:class:`float`) - Amount of sucrose in the phloem (µmol C)
+        :Returns:
+            Sucrose loading (µmol C)
+        :Returns Type:
+            :class:`float`
         """
+        #: Driving compartment (µmol C g-1 mstruct)
         driving_sucrose_compartment = max(sucrose / (self.mstruct*self.__class__.PARAMETERS.ALPHA), sucrose_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS))
+        #: Gradient of sucrose between the element and the phloem (µmol C g-1 mstruct)
         diff_sucrose = sucrose/(self.mstruct*self.__class__.PARAMETERS.ALPHA) - sucrose_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS)
+        #: Conductance depending on mstruct (g2 µmol-1 s-1)
         conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_SUCROSE * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
+
         return driving_sucrose_compartment * diff_sucrose * conductance * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     def calculate_s_fructan(self, sucrose, regul_s_fructan):
-        """Rate of fructan synthesis (µmol C fructan s-1 g-1 MS * DELTA_T)
+        """Rate of fructan synthesis (µmol C fructan g-1 mstruct s-1 * DELTA_T).
+        Sigmoïdal function of sucrose.
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
+            - `regul_s_fructan` (:class:`float`) - Regulating function for fructan synthesis (dimensionless)
+        :Returns:
+            Fructan synthesis (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
-        return (((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA))**(PhotosyntheticOrgan.PARAMETERS.N_SFRUCTAN) * PhotosyntheticOrgan.PARAMETERS.VMAX_SFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA))**(PhotosyntheticOrgan.PARAMETERS.N_SFRUCTAN) + PhotosyntheticOrgan.PARAMETERS.K_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_SFRUCTAN))) * regul_s_fructan * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+        #return (((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA))**(PhotosyntheticOrgan.PARAMETERS.N_SFRUCTAN) * PhotosyntheticOrgan.PARAMETERS.VMAX_SFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA))**(PhotosyntheticOrgan.PARAMETERS.N_SFRUCTAN) + PhotosyntheticOrgan.PARAMETERS.K_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_SFRUCTAN))) * regul_s_fructan * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+        return ((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * regul_s_fructan)/((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SFRUCTAN) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+
 
     def calculate_d_fructan(self, sucrose, fructan):
-        """Rate of fructan degradation (µmol C fructan s-1 g-1 MS)
+        """Rate of fructan degradation (µmol C fructan g-1 mstruct s-1 * DELTA_T).
+        Inhibition function by the end product i.e. sucrose (Bancal et al., 2012).
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
+            - `fructan` (:class:`float`) - Amount of fructan (µmol C)
+        :Returns:
+            Fructan degradation (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         d_potential = ((PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN * PhotosyntheticOrgan.PARAMETERS.VMAX_DFRUCTAN) / ((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN)) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
         d_actual = min(d_potential , max(0, fructan))
         return d_actual
 
-    def calculate_remob_fructan_senescence(self, fructan, relative_delta_green_area):
-        """Rate of fructan remobilisation due to senescence over delta_t (µmol C fructan).
-        """
-        return fructan * relative_delta_green_area
+    def calculate_nitrates_import(self, roots_uptake_nitrates, roots_export_nitrates, element_transpiration, total_transpiration):
+        """Total nitrates imported from roots (µmol N nitrates integrated over DELTA_T).
+        Nitrates coming from roots (fraction of uptake + direct export) are distributed according to the contribution of the element to culm transpiration.
 
-    def calculate_nitrates_import(self, roots_uptake_nitrate, organ_transpiration, total_transpiration):
-        """Total nitrates imported from roots (through xylem) distributed relatively to element transpiration (µmol N nitrates integrated over delta_t [already accounted in transpiration])
+        :Parameters:
+            - `roots_uptake_nitrates` (:class:`float`) - Nitrate uptake by roots (µmol N)
+            - `roots_export_nitrates` (:class:`float`) - Exported nitrates by roots (µmol N)
+            - `element_transpiration` (:class:`float`) - Element transpiration (mmol H2O s-1)
+            - `total_transpiration` (:class:`float`) - Culm transpiration (mmol H2O s-1)
+        :Returns:
+            Total nitrates import (µmol N nitrates)
+        :Returns Type:
+            :class:`float`
         """
-        if organ_transpiration>0:
-            nitrates_import = roots_uptake_nitrate * (organ_transpiration/total_transpiration)* PhotosyntheticOrgan.PARAMETERS.RATIO_EXPORT_NITRATES_ROOTS # Proportion of uptaked nitrates exported from roots to shoot
+        if total_transpiration>0:
+            nitrates_import = roots_uptake_nitrates * PhotosyntheticOrgan.PARAMETERS.RATIO_EXPORT_NITRATES_ROOTS * (element_transpiration/total_transpiration) #: Proportion of uptaked nitrates transfered to element
+            nitrates_import += roots_export_nitrates * (element_transpiration/total_transpiration)                                                             #: Proportion of exported nitrates from roots to element
         else: # Avoids further float division by zero error
             nitrates_import = 0
         return nitrates_import
 
-    def calculate_amino_acids_import(self, roots_exported_amino_acids, organ_transpiration, total_transpiration):
-        """Total Amino acids imported from roots (through xylem) distributed relatively to element transpiration (µmol N Amino acids integrated over delta_t [already accounted in transpiration])
+    def calculate_amino_acids_import(self, roots_exported_amino_acids, element_transpiration, total_transpiration):
+        """Total amino acids imported from roots  (µmol N amino acids integrated over DELTA_T).
+        Amino acids exported by roots are distributed according to the contribution of the element to culm transpiration.
+
+        :Parameters:
+            - `roots_exported_amino_acids` (:class:`float`) - Exported amino acids by roots (µmol N)
+            - `element_transpiration` (:class:`float`) - Element transpiration (mmol H2O s-1)
+            - `total_transpiration` (:class:`float`) - Culm transpiration (mmol H2O s-1)
+        :Returns:
+            Total amino acids import (µmol N amino acids)
+        :Returns Type:
+            :class:`float`
         """
-        if organ_transpiration>0:
-            amino_acids_import = roots_exported_amino_acids * (organ_transpiration/total_transpiration)
+        if total_transpiration>0:
+            amino_acids_import = roots_exported_amino_acids * (element_transpiration/total_transpiration) #: Proportion of exported amino acids from roots to organ
         else:
             amino_acids_import = 0
         return amino_acids_import
 
     def calculate_s_amino_acids(self, nitrates, triosesP):
-        """Rate of amino acid synthesis (µmol N amino acids s-1 g-1 MS * DELTA_T)
+        """Rate of amino acids synthesis (µmol N amino acids s-1 g-1 MS * DELTA_T).
+        Bi-substrate Michaelis-Menten function of nitrates and triose phosphates.
+
+        :Parameters:
+            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
+            - `triosesP` (:class:`float`) - Amount of triosesP (µmol C)
+        :Returns:
+            Amino acids synthesis (µmol N g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         if nitrates <=0 or triosesP <=0:
             calculate_s_amino_acids = 0
@@ -782,68 +1358,206 @@ class PhotosyntheticOrganElement(object):
         return calculate_s_amino_acids
 
     def calculate_s_proteins(self, amino_acids):
-        """Rate of protein synthesis (µmol N proteins s-1 g-1 MS * DELTA_T)
+        """Rate of protein synthesis (µmol N proteins s-1 g-1 MS * DELTA_T).
+        Michaelis-Menten function of amino acids.
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N).
+        :Returns:
+            Protein synthesis (µmol N g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
         calculate_s_proteins = (((max(0,amino_acids)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * PhotosyntheticOrgan.PARAMETERS.VMAX_SPROTEINS) / ((max(0, amino_acids)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SPROTEINS)) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
         return calculate_s_proteins
 
-    def calculate_d_proteins(self, proteins):
-        """Rate of protein degradation (µmol N proteins s-1 g-1 MS * DELTA_T)
-        """
-        return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_DPROTEINS * (proteins/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+    def calculate_d_proteins(self, proteins, cytokinines):
+        """Rate of protein degradation (µmol N proteins s-1 g-1 MS * DELTA_T).
+        First order kinetic regulated by cytokinines concentration.
 
-    def calculate_remob_proteins_senescence(self, proteins, relative_delta_green_area):
-        """Rate of proteins remobilisation due to senescence over delta_t (µmol N proteins).
+        :Parameters:
+            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
+            - `cytokinines` (:class:`float`) - Amount of cytokinines (UA)
+        :Returns:
+            Protein degradation (µmol N g-1 mstruct)
+        :Returns Type:
+            :class:`float`
         """
-        return proteins * relative_delta_green_area
+        conc_cytokinines = max(0,cytokinines/self.mstruct)
+        k = (PhotosyntheticOrgan.PARAMETERS.VMAX_DPROTEINS * PhotosyntheticOrgan.PARAMETERS.K_DPROTEINS**PhotosyntheticOrgan.PARAMETERS.N_DPROTEINS) / (conc_cytokinines**PhotosyntheticOrgan.PARAMETERS.N_DPROTEINS + PhotosyntheticOrgan.PARAMETERS.K_DPROTEINS**PhotosyntheticOrgan.PARAMETERS.N_DPROTEINS)
+
+        return k, max(0, k * (proteins/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     def calculate_loading_amino_acids(self, amino_acids, amino_acids_phloem):
-        """Rate of amino acids loading to phloem (µmol N amino acids s-1 g-1 MS * DELTA_T)
+        """Rate of amino acids loading to phloem (µmol N amino acids s-1 * DELTA_T).
+        Transport-resistance model.
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino acids in the element (µmol N)
+            - `amino_acids_phloem` (:class:`float`) - Amount of amino acids in the phloem (µmol N)
+        :Returns:
+            Amino acids loading (µmol N)
+        :Returns Type:
+            :class:`float`
         """
+        #: Driving compartment (µmol N g-1 mstruct)
         driving_amino_acids_compartment = max(amino_acids / (self.mstruct*self.__class__.PARAMETERS.ALPHA), amino_acids_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS))
+        #: Gradient of amino acids between the element and the phloem (µmol N g-1 mstruct)
         diff_amino_acids = amino_acids/(self.mstruct*self.__class__.PARAMETERS.ALPHA) - amino_acids_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS)
+        #: Conductance depending on mstruct (g2 µmol-1 s-1)
         conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_AMINO_ACIDS * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
+
         return driving_amino_acids_compartment * diff_amino_acids * conductance * PhotosyntheticOrgan.PARAMETERS.DELTA_T
+
+    # test
+    def calculate_cytokinines_import(self, roots_exported_cytokinines, element_transpiration, total_transpiration):
+        """Import of cytokinines (UA cytokinines integrated over DELTA_T).
+        Cytokinines exported by roots are distributed according to the contribution of the element to culm transpiration.
+
+        :Parameters:
+            - `roots_exported_cytokinines` (:class:`float`) - Exported cytokinines from roots (UA)
+            - `element_transpiration` (:class:`float`) - Element transpiration (mmol H2O s-1)
+            - `total_transpiration` (:class:`float`) - Culm transpiration (mmol H2O s-1)
+        :Returns:
+            Cytokinines import (UA)
+        :Returns Type:
+            :class:`float`
+        """
+        if total_transpiration>0:
+            cytokinines_import = roots_exported_cytokinines * (element_transpiration/total_transpiration)
+        else:
+            cytokinines_import = 0
+        return cytokinines_import
+
+    def calculate_d_cytokinines(self, cytokinines):
+        """Rate of cytokinines degradation integrated over DELTA_T (UA g-1 mstruct s-1 * DELTA_T).
+        First order kinetic.
+
+        :Parameters:
+            - `cytokinines` (:class:`float`) - Amount of cytokinines (UA)
+        :Returns:
+            Cytokinines degradation (UA g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_D_CYTOKININES * (cytokinines/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * PhotosyntheticOrgan.PARAMETERS.DELTA_T
 
     # COMPARTMENTS
 
     def calculate_triosesP_derivative(self, photosynthesis, s_sucrose, s_starch, s_amino_acids):
-        """ delta triosesP of element integrated over delat_t (µmol C triosesP).
+        """ delta triose phosphates of element.
+
+        :Parameters:
+            - `photosynthesis` (:class:`float`) - Total gross photosynthesis (µmol C)
+            - `s_sucrose` (:class:`float`) - Sucrose synthesis (µmol C g-1 mstruct)
+            - `s_starch` (:class:`float`) - Starch synthesis (µmol C g-1 mstruct)
+            - `s_amino_acids` (:class:`float`) - Amino acids synthesis (µmol N g-1 mstruct)
+        :Returns:
+            delta triose phosphates (µmol C triose phosphates)
+        :Returns Type:
+            :class:`float`
         """
         triosesP_consumption_AA = (s_amino_acids / PhotosyntheticOrgan.PARAMETERS.AMINO_ACIDS_N_RATIO) * PhotosyntheticOrgan.PARAMETERS.AMINO_ACIDS_C_RATIO #: Contribution of triosesP to the synthesis of amino_acids
         return photosynthesis - (s_sucrose + s_starch + triosesP_consumption_AA) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
-    def calculate_starch_derivative(self, s_starch, d_starch, remob_starch_senescence):
-        """delta starch of element integrated over delat_t (µmol C starch).
-        """
-        return (s_starch - d_starch - remob_starch_senescence) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+    def calculate_starch_derivative(self, s_starch, d_starch):
+        """delta starch of element.
 
-    def calculate_sucrose_derivative(self, s_sucrose, d_starch, remob_starch_senescence, loading_sucrose, s_fructan, d_fructan, remob_fructan_senescence, R_phloem_loading, R_Nnit_red, R_residual):
-        """delta sucrose of element integrated over delat_t (µmol C sucrose)
+        :Parameters:
+            - `s_starch` (:class:`float`) - Starch synthesis (µmol C g-1 mstruct)
+            - `d_starch` (:class:`float`) - Starch degradation (µmol C g-1 mstruct)
+        :Returns:
+            delta starch (µmol C starch)
+        :Returns Type:
+            :class:`float`
         """
-        inter_compartment_flux = (s_sucrose + d_starch + remob_starch_senescence + d_fructan + remob_fructan_senescence - s_fructan - loading_sucrose) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
-        return inter_compartment_flux - R_phloem_loading - R_Nnit_red - R_residual
+        return (s_starch - d_starch) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
-    def calculate_fructan_derivative(self, s_fructan, d_fructan, remob_fructan_senescence):
-        """delta fructan integrated over delat_t (µmol C fructan)
+    def calculate_sucrose_derivative(self, s_sucrose, d_starch, loading_sucrose, s_fructan, d_fructan, sum_respi):
+        """delta sucrose of element.
+
+        :Parameters:
+            - `s_sucrose` (:class:`float`) - Sucrose synthesis (µmol C g-1 mstruct)
+            - `d_starch` (:class:`float`) - Starch degradation (µmol C g-1 mstruct)
+            - `loading_sucrose` (:class:`float`) - Sucrose loading (µmol C)
+            - `s_fructan` (:class:`float`) - Fructan synthesis (µmol C g-1 mstruct)
+            - `d_fructan` (:class:`float`) - Fructan degradation (µmol C g-1 mstruct)
+            - `sum_respi` (:class:`float`) - Sum of respirations for the element i.e. related to C loading to phloem, amino acids synthesis and residual (µmol C)
+        :Returns:
+            delta sucrose (µmol C sucrose)
+        :Returns Type:
+            :class:`float`
         """
-        return (s_fructan - d_fructan - remob_fructan_senescence)* (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        return (s_sucrose + d_starch + d_fructan - s_fructan) * (self.mstruct) - sum_respi - loading_sucrose
+
+    def calculate_fructan_derivative(self, s_fructan, d_fructan):
+        """delta fructan of element.
+
+        :Parameters:
+            - `s_fructan` (:class:`float`) - Fructan synthesis (µmol C g-1 mstruct)
+            - `d_fructan` (:class:`float`) - Fructan degradation (µmol C g-1 mstruct)
+        :Returns:
+            delta fructan (µmol C fructan)
+        :Returns Type:
+            :class:`float`
+        """
+        return (s_fructan - d_fructan)* (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
     def calculate_nitrates_derivative(self, nitrates_import, s_amino_acids):
-        """delta nitrates integrated over delat_t (µmol N nitrates)
+        """delta nitrates of element.
+
+        :Parameters:
+            - `nitrates_import` (:class:`float`) - Nitrate import from roots (µmol N)
+            - `s_amino_acids` (:class:`float`) - Amino acids synthesis (µmol N g-1 mstruct)
+        :Returns:
+            delta nitrates (µmol N nitrates)
+        :Returns Type:
+            :class:`float`
         """
         nitrate_reduction_AA = s_amino_acids  #: Contribution of nitrates to the synthesis of amino_acids
         return nitrates_import - (nitrate_reduction_AA*self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
-    def calculate_amino_acids_derivative(self, amino_acids_import, s_amino_acids, s_proteins, d_proteins, remob_proteins_senescence, loading_amino_acids):
-        """delta amino acids integrated over delat_t (µmol N amino acids)
-        """
-        return amino_acids_import + (s_amino_acids + d_proteins + remob_proteins_senescence - s_proteins - loading_amino_acids) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+    def calculate_amino_acids_derivative(self, amino_acids_import, s_amino_acids, s_proteins, d_proteins, loading_amino_acids):
+        """delta amino acids of element.
 
-    def calculate_proteins_derivative(self, s_proteins, d_proteins, remob_proteins_senescence):
-        """delta proteins integrated over delat_t (µmol N proteins)
+        :Parameters:
+            - `amino_acids_import` (:class:`float`) - Amino acids import from roots (µmol N)
+            - `s_amino_acids` (:class:`float`) - Amino acids synthesis (µmol N g-1 mstruct)
+            - `s_proteins` (:class:`float`) - Protein synthesis (µmol N g-1 mstruct)
+            - `d_proteins` (:class:`float`) - Protein degradation (µmol N g-1 mstruct)
+            - `loading_amino_acids` (:class:`float`) - Amino acids loading (µmol N)
+        :Returns:
+            delta amino acids (µmol N amino acids)
+        :Returns Type:
+            :class:`float`
         """
-        return (s_proteins - d_proteins - remob_proteins_senescence) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        return amino_acids_import - loading_amino_acids + (s_amino_acids + d_proteins - s_proteins) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+
+    def calculate_proteins_derivative(self, s_proteins, d_proteins):
+        """delta proteins of element.
+
+        :Parameters:
+            - `s_proteins` (:class:`float`) - Protein synthesis (µmol N g-1 mstruct)
+            - `d_proteins` (:class:`float`) - Protein degradation (µmol N g-1 mstruct)
+        :Returns:
+            delta proteins (µmol N proteins)
+        :Returns Type:
+            :class:`float`
+        """
+        return (s_proteins - d_proteins) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+
+    def calculate_cytokinines_derivative(self, import_cytokinines, d_cytokinines):
+        """delta cytokinines of element.
+
+        :Parameters:
+            - `import_cytokinines` (:class:`float`) - Cytokinines import (UA)
+            - `d_cytokinines` (:class:`float`) - Cytokinines degradation (UA g-1 mstruct)
+        :Returns:
+            delta cytokinines (UA cytokinines)
+        :Returns Type:
+            :class:`float`
+        """
+        return import_cytokinines - d_cytokinines * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
 class ChaffElement(PhotosyntheticOrganElement):
     """

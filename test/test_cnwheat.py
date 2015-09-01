@@ -7,6 +7,9 @@
 
     You must first install :mod:`cnwheat` (and add it to your PYTHONPATH)
     before running this script with the command `python`.
+    
+    To get a coverage report of :mod:`cnwheat`, use the command: 
+    `nosetests --with-coverage --cover-package=cnwheat test_cnwheat.py`.   
 
     CSV files must contain only ASCII characters and ',' as separator.
 
@@ -25,16 +28,10 @@
 
 import os
 
-import numpy as np
 import pandas as pd
 
 from cnwheat import simulation
-from cnwheat import model as cnwheat_model
 from cnwheat import tools
-
-import time, datetime
-
-t0 = time.time()
 
 INPUTS_DIRPATH = 'inputs'
 
@@ -98,7 +95,7 @@ def test_run():
     senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
 
     start_time = 0
-    stop_time = 48
+    stop_time = 8
     time_step = 4
 
     all_plants_df_list = []
@@ -116,13 +113,9 @@ def test_run():
 
                 # Root growth and senescence
                 group = senescence_data_grouped.get_group((t, plant_index, axis_id, 0, 'Roots', 'enclosed'))
-                row_index = group.first_valid_index()
-                axis.roots.mstruct_C_growth = group.mstruct_growth[row_index]
-                axis.roots.Nstruct_N_growth = group.Nstruct_N_growth[row_index]
-                axis.roots.mstruct_senescence = group.mstruct_senescence[row_index]
-                axis.roots.mstruct = group.mstruct[row_index]
-                axis.roots.Nstruct = group.Nstruct[row_index]
-
+                senescence_data_to_use = group.loc[group.first_valid_index(), simulation.Simulation.ORGANS_STATE].dropna().to_dict()
+                axis.roots.__dict__.update(senescence_data_to_use)
+                
                 for phytomer in axis.phytomers:
                     phytomer_index = phytomer.index
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
@@ -132,24 +125,14 @@ def test_run():
                         for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                             if element is None:
                                 continue
-                            group_photo = photosynthesis_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
+                            # Element senescence
                             group_senesc = senescence_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
-                            row_index_photo = group_photo.first_valid_index()
-                            row_index_sensc = group_senesc.first_valid_index()
-
-                            # Senescence
-                            element.green_area = group_senesc.green_area[row_index_sensc]
-                            element.relative_delta_green_area = group_senesc.relative_delta_green_area[row_index_sensc]
-                            element.mstruct = group_senesc.mstruct[row_index_sensc]
-                            element.Nstruct = group_senesc.Nstruct[row_index_sensc]
-                            element.surfacic_nitrogen = group_senesc.SLN[row_index_sensc]
-
-                            element.Ag = group_photo.Ag[row_index_photo]
-                            element.An = group_photo.An[row_index_photo]
-                            element.Rd = group_photo.Rd[row_index_photo]
-                            element.Tr = group_photo.Tr[row_index_photo]
-                            element.Ts = group_photo.Ts[row_index_photo]
-                            element.gs = group_photo.gs[row_index_photo]
+                            senescence_data_to_use = group_senesc.loc[group_senesc.first_valid_index(), simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
+                            element.__dict__.update(senescence_data_to_use)
+                            # Element photosynthesis
+                            group_photo = photosynthesis_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
+                            photosynthesis_data_to_use = group_photo.loc[group_photo.first_valid_index(), simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
+                            element.__dict__.update(photosynthesis_data_to_use)
 
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
         simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
@@ -162,9 +145,6 @@ def test_run():
         all_phytomers_df_list.append(all_phytomers_df)
         all_organs_df_list.append(all_organs_df)
         all_elements_df_list.append(all_elements_df)
-
-    execution_time = int(time.time()-t0)
-    print '\n', 'Model executed in ', str(datetime.timedelta(seconds=execution_time))
 
     global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
     global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)

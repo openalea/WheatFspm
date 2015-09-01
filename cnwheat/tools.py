@@ -268,8 +268,8 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
         # save the plot
         plt.savefig(plot_filepath, dpi=200, format='PNG')
         plt.close()
-        
-        
+
+
 def setup_logging(config_filepath='logging.json', level=logging.INFO,
                   log_model=False, log_compartments=False, log_derivatives=False):
     """Setup logging configuration.
@@ -282,7 +282,7 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
         - `level` (:class:`int`) - the global level of the logging. Use either
           `logging.DEBUG`, `logging.INFO`, `logging.WARNING`, `logging.ERROR` or
           `logging.CRITICAL`.
-          
+
         - `log_model` (:class:`bool`) - if `True`, log the messages from :mod:`cnwheat.model`.
           `False` otherwise.
 
@@ -301,11 +301,11 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
         logging.basicConfig()
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
-    
+
     logging.getLogger('cnwheat.model').disabled = not log_model # set to False to log messages from cnwheat.model
     logging.getLogger('cnwheat.compartments').disabled = not log_compartments # set to False to log the compartments
     logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives # set to False to log the derivatives
-    
+
 
 def read_t_data(data_dirpath, data_filename):
     """
@@ -318,7 +318,7 @@ def read_t_data(data_dirpath, data_filename):
         - `data_filename` (:class:`str`) - The name of the CSV file.
 
     :Returns:
-        
+
         A :class:`dataframe <pandas.DataFrame>` indexed on the column 't'.
 
     :Returns Type:
@@ -346,7 +346,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
     # read desired data
     desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
     desired_data_df = pd.read_csv(desired_data_filepath)
-    
+
     # keep only the rows to test
     if 't' in actual_data_df and 't' in desired_data_df:
         actual_data_df = actual_data_df[actual_data_df['t'].isin(desired_data_df['t'])]
@@ -359,7 +359,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(PRECISION))
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'element'):
+    for column in ('axis', 'organ', 'element', 'PAR'):
         if column in desired_data_df.columns:
             del desired_data_df[column]
             del actual_data_df[column]
