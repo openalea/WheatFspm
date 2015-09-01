@@ -22,7 +22,7 @@ class SenescenceModel(object):
     SENESCENCE_ROOTS = 3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997).
 
     @classmethod
-    def calculate_relative_delta_green_area(cls, green_area_df, group_id, prev_green_area):
+    def calculate_forced_relative_delta_green_area(cls, green_area_df, group_id, prev_green_area):
         """relative green_area variation due to senescence
 
         : Parameters:
@@ -39,6 +39,45 @@ class SenescenceModel(object):
         new_green_area = green_area_df.get_group(group_id).green_area.values[0]
         relative_delta_green_area = (prev_green_area - new_green_area) / prev_green_area
         return new_green_area, relative_delta_green_area
+
+
+    @classmethod
+    def calculate_relative_delta_green_area(cls, group_id, prev_green_area, proteins, max_proteins, DELTA_T):
+        """relative green_area variation due to senescence
+
+        : Parameters:
+            - `group_id` (:class:`tuple`) - the group id to be used to select data in the DataFrame
+            - `prev_green_area` (:class:`float`) - previous value of an organ green area (m-2)
+
+        : Returns:
+            new_green_area (m-2), relative_delta_green_area (dimensionless)
+
+        :Returns Type:
+            :class:`float`
+        """
+        senescence_max_rate = 0.5E-8 # maximal senescence m² s-1
+        fraction_N_max = 0.55
+
+        # First run
+        if max_proteins.has_key(group_id)==False:
+            max_proteins[group_id] = proteins
+            new_green_area = prev_green_area
+            relative_delta_green_area = 0
+        # Overwrite max proteins
+        elif max_proteins[group_id] < proteins:
+            max_proteins[group_id] = proteins
+            new_green_area = prev_green_area
+            relative_delta_green_area = 0
+        # Senescence if (actual proteins/max_proteins) < fraction_N_max
+        elif (proteins / max_proteins[group_id]) < fraction_N_max :
+            senesced_area = min(prev_green_area, senescence_max_rate * DELTA_T)
+            new_green_area = max(0, prev_green_area - senesced_area)
+            relative_delta_green_area = senesced_area / prev_green_area
+        else:
+            new_green_area = prev_green_area
+            relative_delta_green_area = 0
+
+        return new_green_area, relative_delta_green_area, max_proteins
 
     @classmethod
     def calculate_delta_mstruct_shoot(cls, relative_delta_green_area, prev_mstruct, prev_Nstruct):
@@ -58,6 +97,14 @@ class SenescenceModel(object):
         new_mstruct = prev_mstruct - prev_mstruct*relative_delta_green_area
         new_Nstruct = prev_Nstruct - prev_Nstruct*relative_delta_green_area
         return new_mstruct, new_Nstruct
+
+    @classmethod
+    def calculate_remobilisation(cls, metabolite, relative_delta_structure):
+        """Metabolite remobilisation due to senescence over delta_t (µmol).
+        : Parameters:
+            - `relative_delta_structure` (:class:`float`) - could be relative variation of a photosynthetic element green area or relative variation of mstruct
+        """
+        return metabolite * relative_delta_structure
 
     @classmethod
     def calculate_surfacic_nitrogen(cls, nitrates, amino_acids, proteins, Nstruct, green_area):
@@ -83,7 +130,7 @@ class SenescenceModel(object):
 
     # Roots
     @classmethod
-    def calculate_roots_mstruct_growth(cls, sucrose, mstruct, DELTA_T):
+    def calculate_roots_mstruct_growth(cls, sucrose, amino_acids, mstruct, DELTA_T):
         # TODO: to be moved in a particular model (shouldn't be included in SenescenceModel)
 
         """Root structural dry matter growth
@@ -109,7 +156,7 @@ class SenescenceModel(object):
         mstruct_C_growth = (((max(0, sucrose)/(mstruct*ALPHA)) * VMAX_GROWTH) / ((max(0, sucrose)/(mstruct*ALPHA)) + K_GROWTH)) * DELTA_T * mstruct     #: root growth in C (µmol of C)
         mstruct_growth = (mstruct_C_growth*1E-6 * C_MOLAR_MASS) / RATIO_C_MSTRUCT                                                                       #: root growth (g of structural dry mass)
         Nstruct_growth = mstruct_growth*RATIO_N_MSTRUCT                                                                                                 #: root growth in nitrogen (g)
-        Nstruct_N_growth = (Nstruct_growth/cls.N_MOLAR_MASS)*1E6                                                                                            #: root growth in nitrogen (µmol N)
+        Nstruct_N_growth = min(amino_acids, (Nstruct_growth/cls.N_MOLAR_MASS)*1E6)                                                                      #: root growth in nitrogen (µmol N)
 
         return mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth
 
@@ -132,7 +179,7 @@ class SenescenceModel(object):
 
 
     @classmethod
-    def calculate_delta_mstruct_roots(cls, mstruct_growth, Nstruct_growth, mstruct_senescence, Nstruct_senescence):
+    def calculate_delta_mstruct_roots(cls, mstruct_growth, Nstruct_growth, mstruct_senescence, Nstruct_senescence, root_mstruct):
         """delta of root structural dry matter (g)
 
         : Parameters:
@@ -140,11 +187,14 @@ class SenescenceModel(object):
             - `Nstruct_growth` (:class:`float`) - root structural N growth (g)
             - `mstruct_senescence` (:class:`float`) - amount of C lost by root senescence (g mstruct)
             - `Nstruct_senescence` (:class:`float`) - amount of N lost by root senescence (g Nstruct)
+            - `root_mstruct` (:class:`float`) - actual mstruct of roots (g)
 
         : Returns:
-            delta mstruct (g), delta Nstruct (g)
+            delta_mstruct (g), delta_mstruct (g), relative_delta_mstruct
 
         :Returns Type:
             :class:`float`
         """
-        return (mstruct_growth - mstruct_senescence), (Nstruct_growth - Nstruct_senescence)
+        delta_mstruct, delta_Nstruct = (mstruct_growth - mstruct_senescence), (Nstruct_growth - Nstruct_senescence)
+        relative_delta_mstruct = mstruct_senescence/root_mstruct
+        return delta_mstruct, delta_Nstruct, relative_delta_mstruct

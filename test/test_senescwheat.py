@@ -41,23 +41,24 @@ def test_calculate_senescwheat():
     nitrates=0
     amino_acids=6
     proteins=85
+    max_proteins={}
     sucrose = 90
     delta_t = 3600
 
     actual_senescence = {}
 
-    _, actual_senescence['relative_delta_green_area'] = model.SenescenceModel.calculate_relative_delta_green_area(green_area_df, group_id, prev_green_area)
+    _, actual_senescence['relative_delta_green_area'], _ = model.SenescenceModel.calculate_relative_delta_green_area(group_id, prev_green_area, proteins, max_proteins, delta_t)
     actual_senescence['delta_mstruct_shoot'], actual_senescence['delta_Nstruct_shoot'] = model.SenescenceModel.calculate_delta_mstruct_shoot(actual_senescence['relative_delta_green_area'], prev_mstruct, prev_Nstruct)
     actual_senescence['surfacic_nitrogen'] = model.SenescenceModel.calculate_surfacic_nitrogen(nitrates, amino_acids, proteins, prev_Nstruct, prev_green_area)
-    _, actual_senescence['mstruct_growth'], actual_senescence['Nstruct_growth'], _ = model.SenescenceModel.calculate_roots_mstruct_growth(sucrose, prev_mstruct, delta_t)
+    _, actual_senescence['mstruct_growth'], actual_senescence['Nstruct_growth'], _ = model.SenescenceModel.calculate_roots_mstruct_growth(sucrose, amino_acids, prev_mstruct, delta_t)
     actual_senescence['mstruct_senescence'], actual_senescence['Nstruct_senescence'] = model.SenescenceModel.calculate_roots_senescence(prev_mstruct, prev_Nstruct, delta_t)
-    actual_senescence['delta_mstruct_roots'], actual_senescence['delta_Nstruct_roots'] = model.SenescenceModel.calculate_delta_mstruct_roots(actual_senescence['mstruct_growth'], actual_senescence['Nstruct_growth'], actual_senescence['mstruct_senescence'], actual_senescence['Nstruct_senescence'])
+    actual_senescence['delta_mstruct_roots'], actual_senescence['delta_Nstruct_roots'],_ = model.SenescenceModel.calculate_delta_mstruct_roots(actual_senescence['mstruct_growth'], actual_senescence['Nstruct_growth'], actual_senescence['mstruct_senescence'], actual_senescence['Nstruct_senescence'], prev_mstruct)
 
-    desired_senescence = {'relative_delta_green_area': 0.0986, 'delta_mstruct_shoot': 0.0451, 'delta_Nstruct_shoot': 0.0005, 'surfacic_nitrogen': 0.7912, 'mstruct_growth': 5.4946E-5, 'Nstruct_growth': 1.0989E-6, 'mstruct_senescence': 6.3e-05,
+    desired_senescence = {'relative_delta_green_area': 0, 'delta_mstruct_shoot': 0.05, 'delta_Nstruct_shoot': 0.0005, 'surfacic_nitrogen': 0.7912, 'mstruct_growth': 5.4946E-5, 'Nstruct_growth': 1.0989E-6, 'mstruct_senescence': 6.3e-05,
                           'Nstruct_senescence': 6.678E-7, 'delta_mstruct_roots': -8.0537E-6, 'delta_Nstruct_roots': 4.3113E-7}
 
     for senesc, desired_senesc in desired_senescence.iteritems():
-       assert_close(actual_senescence[senesc], desired_senesc, tolerance=1e-3)
+        assert_close(actual_senescence[senesc], desired_senesc, tolerance=1e-3)
 
 if __name__ == '__main__':
     test_calculate_senescwheat()
