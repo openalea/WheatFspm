@@ -34,10 +34,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from cnwheat import simulation, parameters
+from cnwheat import simulation, parameters, converter, tools
 from cnwheat import model as cnwheat_model
 from farquharwheat import model as photosynthesis_model
-from cnwheat import tools
 from senescwheat.model import SenescenceModel
 
 INPUTS_DIRPATH = 'inputs'
@@ -89,12 +88,15 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         inputs_dataframes = {}
         for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, PHYTOMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME):
             inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
-        # initialize the simulation with the inputs
-        simulation_.initialize(plants_inputs=inputs_dataframes[PLANTS_INPUTS_FILENAME], 
-                               axes_inputs=inputs_dataframes[AXES_INPUTS_FILENAME],
-                               phytomers_inputs=inputs_dataframes[PHYTOMERS_INPUTS_FILENAME],
-                               organs_inputs=inputs_dataframes[ORGANS_INPUTS_FILENAME],
-                               elements_inputs=inputs_dataframes[ELEMENTS_INPUTS_FILENAME])
+        # convert inputs to a population of plants
+        population = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FILENAME], 
+                                               inputs_dataframes[AXES_INPUTS_FILENAME],
+                                               inputs_dataframes[PHYTOMERS_INPUTS_FILENAME],
+                                               inputs_dataframes[ORGANS_INPUTS_FILENAME],
+                                               inputs_dataframes[ELEMENTS_INPUTS_FILENAME])
+        
+        # initialize the simulation from the population
+        simulation_.initialize(population)
 
         # Get PAR data
         PAR_filepath = os.path.join(INPUTS_DIRPATH, PAR_FILENAME)
@@ -221,8 +223,8 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                 # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
                 simulation_.run(start_time=t_cn_model, stop_time=t_cn_model+cn_model_ts, number_of_output_steps=cn_model_ts+1)
                 
-                # format the outputs to Pandas dataframes
-                all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.format_outputs()
+                # run post-processings
+                all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.postprocessings()
             
                 all_plants_df_list.append(all_plants_df)
                 all_axes_df_list.append(all_axes_df)

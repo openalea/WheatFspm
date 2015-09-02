@@ -29,8 +29,7 @@ import os
 import pandas as pd
 import numpy as np
 
-from cnwheat import simulation, parameters
-from cnwheat import tools
+from cnwheat import simulation, parameters, converter
 
 # inputs paths
 INPUTS_DIRPATH = 'inputs'
@@ -65,28 +64,29 @@ OUTPUTS_PRECISION = 6
 
 ### 1. Initialize from CSV files
 
-# CN exchange data
+# Read CN exchange inputs
 inputs_dataframes = {}
 for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, PHYTOMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME):
     inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
+    
+# Initialize a simulation from CN exchange inputs
+simulation_ = simulation.Simulation()
+population = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FILENAME], 
+                                       inputs_dataframes[AXES_INPUTS_FILENAME],
+                                       inputs_dataframes[PHYTOMERS_INPUTS_FILENAME],
+                                       inputs_dataframes[ORGANS_INPUTS_FILENAME],
+                                       inputs_dataframes[ELEMENTS_INPUTS_FILENAME])
+simulation_.initialize(population)
 
-# Read photosynthesis data
+# Read photosynthesis inputs
 photosynthesis_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_DATA_FILENAME)
 photosynthesis_data_df = pd.read_csv(photosynthesis_data_filepath)
 photosynthesis_data_grouped = photosynthesis_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
 
-# Read senescence and growth data
+# Read senescence and growth inputs
 senescence_data_filepath = os.path.join(INPUTS_DIRPATH, SENESCENCE_DATA_FILENAME)
 senescence_data_df = pd.read_csv(senescence_data_filepath)
 senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
-    
-# Initialize a simulation from the inputs
-simulation_ = simulation.Simulation()
-simulation_.initialize(plants_inputs=inputs_dataframes[PLANTS_INPUTS_FILENAME], 
-                       axes_inputs=inputs_dataframes[AXES_INPUTS_FILENAME],
-                       phytomers_inputs=inputs_dataframes[PHYTOMERS_INPUTS_FILENAME],
-                       organs_inputs=inputs_dataframes[ORGANS_INPUTS_FILENAME],
-                       elements_inputs=inputs_dataframes[ELEMENTS_INPUTS_FILENAME])
 
 
 ### 2. Run the simulation
@@ -138,8 +138,8 @@ for t in xrange(start_time, stop_time, timestep):
     # Run the model ; the population is internally updated by the model
     simulation_.run(start_time=t, stop_time=t+timestep, number_of_output_steps=timestep+1)
     
-    # Format the outputs to Pandas dataframes
-    all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.format_outputs()
+    # Run post-processings
+    all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.postprocessings()
     
     # Update the lists of outputs 
     all_plants_df_list.append(all_plants_df)

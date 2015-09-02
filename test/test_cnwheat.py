@@ -30,8 +30,7 @@ import os
 
 import pandas as pd
 
-from cnwheat import simulation
-from cnwheat import tools
+from cnwheat import simulation, tools, converter
 
 INPUTS_DIRPATH = 'inputs'
 
@@ -67,19 +66,23 @@ def test_run():
     inputs_dataframes = {}
     for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, PHYTOMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME):
         inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
-    # initialize the simulation with the inputs
-    simulation_.initialize(plants_inputs=inputs_dataframes[PLANTS_INPUTS_FILENAME], 
-                           axes_inputs=inputs_dataframes[AXES_INPUTS_FILENAME],
-                           phytomers_inputs=inputs_dataframes[PHYTOMERS_INPUTS_FILENAME],
-                           organs_inputs=inputs_dataframes[ORGANS_INPUTS_FILENAME],
-                           elements_inputs=inputs_dataframes[ELEMENTS_INPUTS_FILENAME])
-    # format the inputs to Pandas dataframes
+        
+    # convert inputs to a population of plants
+    population = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FILENAME], 
+                                           inputs_dataframes[AXES_INPUTS_FILENAME],
+                                           inputs_dataframes[PHYTOMERS_INPUTS_FILENAME],
+                                           inputs_dataframes[ORGANS_INPUTS_FILENAME],
+                                           inputs_dataframes[ELEMENTS_INPUTS_FILENAME])
+        
+    # initialize the simulation from the population
+    simulation_.initialize(population)
+    # convert the population to Pandas dataframes
     formatted_inputs_dataframes = {}
     formatted_inputs_dataframes[PLANTS_INPUTS_FILENAME], \
     formatted_inputs_dataframes[AXES_INPUTS_FILENAME], \
     formatted_inputs_dataframes[PHYTOMERS_INPUTS_FILENAME], \
     formatted_inputs_dataframes[ORGANS_INPUTS_FILENAME], \
-    formatted_inputs_dataframes[ELEMENTS_INPUTS_FILENAME] = simulation_.format_inputs()
+    formatted_inputs_dataframes[ELEMENTS_INPUTS_FILENAME] = converter.to_dataframes(population)
     # compare inputs
     for inputs_filename, inputs_df in formatted_inputs_dataframes.iteritems():
         tools.compare_actual_to_desired(INPUTS_DIRPATH, inputs_df, inputs_filename)
@@ -137,8 +140,8 @@ def test_run():
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
         simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
         
-        # format the outputs to Pandas dataframes
-        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.format_outputs()
+        # run post-processings
+        all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.postprocessings()
         
         all_plants_df_list.append(all_plants_df)
         all_axes_df_list.append(all_axes_df)

@@ -66,10 +66,9 @@ class Simulation(object):
     PLANTS_INTERMEDIATE_VARIABLES = []
     PLANTS_FLUXES = []
     PLANTS_INTEGRATIVE_VARIABLES = []
-    PLANTS_RUN_VARIABLES = PLANTS_OUTPUTS_INDEXES + PLANTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Plant, []) + PLANTS_INTERMEDIATE_VARIABLES + PLANTS_FLUXES + PLANTS_INTEGRATIVE_VARIABLES
+    PLANTS_RUN_VARIABLES = PLANTS_OUTPUTS_INDEXES + PLANTS_STATE + PLANTS_INTERMEDIATE_VARIABLES + PLANTS_FLUXES + PLANTS_INTEGRATIVE_VARIABLES
     PLANTS_POSTPROCESSING_VARIABLES = []
-    PLANTS_FORMAT_INPUTS = PLANTS_INPUTS_INDEXES + PLANTS_STATE
-    PLANTS_FORMAT_OUTPUTS = PLANTS_RUN_VARIABLES + PLANTS_POSTPROCESSING_VARIABLES
+    PLANTS_ALL_VARIABLES = PLANTS_RUN_VARIABLES + PLANTS_POSTPROCESSING_VARIABLES
 
     AXES_INPUTS_INDEXES = ['plant', 'axis']
     AXES_OUTPUTS_INDEXES = [T_INDEX] + AXES_INPUTS_INDEXES
@@ -78,10 +77,9 @@ class Simulation(object):
     AXES_INTERMEDIATE_VARIABLES = []
     AXES_FLUXES = []
     AXES_INTEGRATIVE_VARIABLES = ['Total_transpiration']
-    AXES_RUN_VARIABLES = AXES_OUTPUTS_INDEXES + AXES_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Axis, []) + AXES_INTERMEDIATE_VARIABLES + AXES_FLUXES + AXES_INTEGRATIVE_VARIABLES
+    AXES_RUN_VARIABLES = AXES_OUTPUTS_INDEXES + AXES_STATE + AXES_INTERMEDIATE_VARIABLES + AXES_FLUXES + AXES_INTEGRATIVE_VARIABLES
     AXES_POSTPROCESSING_VARIABLES = []
-    AXES_FORMAT_INPUTS = AXES_INPUTS_INDEXES + AXES_STATE
-    AXES_FORMAT_OUTPUTS = AXES_RUN_VARIABLES + AXES_POSTPROCESSING_VARIABLES
+    AXES_ALL_VARIABLES = AXES_RUN_VARIABLES + AXES_POSTPROCESSING_VARIABLES
 
     PHYTOMERS_INPUTS_INDEXES = ['plant', 'axis', 'phytomer']
     PHYTOMERS_OUTPUTS_INDEXES = [T_INDEX] + PHYTOMERS_INPUTS_INDEXES
@@ -90,10 +88,9 @@ class Simulation(object):
     PHYTOMERS_INTERMEDIATE_VARIABLES = []
     PHYTOMERS_FLUXES = []
     PHYTOMERS_INTEGRATIVE_VARIABLES = []
-    PHYTOMERS_RUN_VARIABLES = PHYTOMERS_OUTPUTS_INDEXES + PHYTOMERS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Phytomer, []) + PHYTOMERS_INTERMEDIATE_VARIABLES + PHYTOMERS_FLUXES + PHYTOMERS_INTEGRATIVE_VARIABLES
+    PHYTOMERS_RUN_VARIABLES = PHYTOMERS_OUTPUTS_INDEXES + PHYTOMERS_STATE + PHYTOMERS_INTERMEDIATE_VARIABLES + PHYTOMERS_FLUXES + PHYTOMERS_INTEGRATIVE_VARIABLES
     PHYTOMERS_POSTPROCESSING_VARIABLES = []
-    PHYTOMERS_FORMAT_INPUTS = PHYTOMERS_INPUTS_INDEXES + PHYTOMERS_STATE
-    PHYTOMERS_FORMAT_OUTPUTS = PHYTOMERS_RUN_VARIABLES + PHYTOMERS_POSTPROCESSING_VARIABLES
+    PHYTOMERS_ALL_VARIABLES = PHYTOMERS_RUN_VARIABLES + PHYTOMERS_POSTPROCESSING_VARIABLES
 
     ORGANS_INPUTS_INDEXES = ['plant', 'axis', 'phytomer', 'organ']
     ORGANS_OUTPUTS_INDEXES = [T_INDEX] + ORGANS_INPUTS_INDEXES
@@ -104,10 +101,9 @@ class Simulation(object):
     ORGANS_FLUXES = ['Unloading_Sucrose', 'Export_Nitrates', 'Export_Amino_Acids', 'S_Proteins', 'S_Amino_Acids', 'Unloading_Amino_Acids',
                      'S_grain_starch', 'Uptake_Nitrates', 'S_grain_structure', 'S_cytokinines', 'D_cytokinines', 'Export_cytokinines']
     ORGANS_INTEGRATIVE_VARIABLES = ['total_organic_nitrogen']
-    ORGANS_RUN_VARIABLES = ORGANS_OUTPUTS_INDEXES + ORGANS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Organ, []) + ORGANS_INTERMEDIATE_VARIABLES + ORGANS_FLUXES + ORGANS_INTEGRATIVE_VARIABLES
+    ORGANS_RUN_VARIABLES = ORGANS_OUTPUTS_INDEXES + ORGANS_STATE + ORGANS_INTERMEDIATE_VARIABLES + ORGANS_FLUXES + ORGANS_INTEGRATIVE_VARIABLES
     ORGANS_POSTPROCESSING_VARIABLES = ['Conc_Nitrates', 'Conc_Amino_Acids', 'Dry_Mass', 'Conc_Sucrose', 'Proteins_N_Mass', 'Conc_cytokinines']
-    ORGANS_FORMAT_INPUTS = ORGANS_INPUTS_INDEXES + ORGANS_STATE
-    ORGANS_FORMAT_OUTPUTS = ORGANS_RUN_VARIABLES + ORGANS_POSTPROCESSING_VARIABLES
+    ORGANS_ALL_VARIABLES = ORGANS_RUN_VARIABLES + ORGANS_POSTPROCESSING_VARIABLES
 
     ELEMENTS_INPUTS_INDEXES = ['plant', 'axis', 'phytomer', 'organ', 'element']
     ELEMENTS_OUTPUTS_INDEXES = [T_INDEX] + ELEMENTS_INPUTS_INDEXES
@@ -116,11 +112,10 @@ class Simulation(object):
     ELEMENTS_INTERMEDIATE_VARIABLES = ['Transpiration', 'R_phloem_loading', 'R_Nnit_red', 'R_residual', 'R_maintenance', 'Photosynthesis']
     ELEMENTS_FLUXES = ['Loading_Sucrose', 'Regul_S_Fructan', 'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan']
     ELEMENTS_INTEGRATIVE_VARIABLES = ['total_organic_nitrogen']
-    ELEMENTS_RUN_VARIABLES = ELEMENTS_OUTPUTS_INDEXES + ELEMENTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, []) + ELEMENTS_INTERMEDIATE_VARIABLES + ELEMENTS_FLUXES + ELEMENTS_INTEGRATIVE_VARIABLES
+    ELEMENTS_RUN_VARIABLES = ELEMENTS_OUTPUTS_INDEXES + ELEMENTS_STATE + ELEMENTS_INTERMEDIATE_VARIABLES + ELEMENTS_FLUXES + ELEMENTS_INTEGRATIVE_VARIABLES
     ELEMENTS_POSTPROCESSING_VARIABLES = ['Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose', 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins',
                                          'SLN', 'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids', 'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids', 'Conc_cytokinines', 'D_cytokinines', 'cytokinines_import', 'k_proteins']
-    ELEMENTS_FORMAT_INPUTS = ELEMENTS_INPUTS_INDEXES + ELEMENTS_STATE
-    ELEMENTS_FORMAT_OUTPUTS = ELEMENTS_RUN_VARIABLES + ELEMENTS_POSTPROCESSING_VARIABLES
+    ELEMENTS_ALL_VARIABLES = ELEMENTS_RUN_VARIABLES + ELEMENTS_POSTPROCESSING_VARIABLES
 
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
                                       model.Axis: 'cnwheat.compartments.axes',
@@ -132,6 +127,7 @@ class Simulation(object):
                                      model.Phytomer: 'cnwheat.derivatives.phytomers',
                                      model.Organ: 'cnwheat.derivatives.organs',
                                      model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements'}}
+
 
     def __init__(self):
 
@@ -146,26 +142,20 @@ class Simulation(object):
         self.progressbar = ProgressBar(title='Solver progress') #: progress bar to show the progress of the solver
         self.show_progressbar = False #: True: show the progress bar ; False: DO NOT show the progress bar
 
-    def initialize(self, population=None, plants_inputs=None, axes_inputs=None, phytomers_inputs=None, organs_inputs=None, elements_inputs=None):
+
+    def initialize(self, population):
         """
-        Initialize :attr:`population` from `population` (if given), and complete it with `plants_inputs`, `axes_inputs`, `phytomers_inputs`, 
-        `organs_inputs` and `elements_inputs` (if given).
+        Initialize:
+            
+            * :attr:`population`, 
+            * :attr:`initial_conditions_mapping`, 
+            * and :attr:`initial_conditions`
+        
+        from `population`.
         
         :Parameters:
             
             - `population` (:class:`model.Population`) - a population of plants.
-            
-            - `plants_inputs` (:class:`pandas.DataFrame`) - Plants inputs, with one line by plant.
-            
-            - `axes_inputs` (:class:`pandas.DataFrame`) - Axes inputs, with one line by axis.
-            
-            - `phytomers_inputs` (:class:`pandas.DataFrame`) - Phytomers inputs, with one line by phytomer.
-            
-            - `organs_inputs` (:class:`pandas.DataFrame`) - Organs inputs, with one line by organ.
-            
-            - `elements_inputs` (:class:`pandas.DataFrame`) - Elements inputs, with one line by element.
-            
-            .. seealso:: See :mod:`cnwheat.model` for more information about the inputs.  
             
         """
         
@@ -173,81 +163,13 @@ class Simulation(object):
 
         logger.info('Initialization of the simulation...')
         
-        if (plants_inputs is None or axes_inputs is None or phytomers_inputs is None or organs_inputs is None or elements_inputs is None) and population is None:
-            raise SimulationInputsError('You must pass either {} or {} or both.'.format('population', ('plants_inputs', 'axes_inputs', 'phytomers_inputs', 'organs_inputs', 'elements_inputs')))
-            
         # clean the attributes of the simulation
         del self.population.plants[:]
         del self.initial_conditions[:]
         self.initial_conditions_mapping.clear()
         
-        # build the population
-        if population is not None:
-            self.population.plants.extend(population.plants)
+        self.population.plants.extend(population.plants)
             
-        if not (plants_inputs is None or axes_inputs is None or phytomers_inputs is None or organs_inputs is None or elements_inputs is None):
-            
-            for curr_plant_index in plants_inputs.plant:
-                # create a new plant
-                curr_plant = model.Plant(index=curr_plant_index)
-                self.population.plants.append(curr_plant)
-                curr_axes_inputs = axes_inputs[axes_inputs['plant'] == curr_plant_index]
-                for curr_axis_id in curr_axes_inputs.axis:
-                    # create a new axis
-                    curr_axis = model.Axis(axis_id=curr_axis_id)
-                    curr_plant.axes.append(curr_axis)
-                    
-                    curr_organs_inputs = organs_inputs[(organs_inputs['plant'] == curr_plant_index) & (organs_inputs['axis'] == curr_axis_id)]
-                    
-                    for curr_axis_attribute_name, curr_axis_attribute_class in (('grains', model.Grains), ('roots', model.Roots), ('soil', model.Soil), ('phloem', model.Phloem)):
-                        curr_organ_class_name = curr_axis_attribute_class.__name__
-                        curr_organ_inputs = curr_organs_inputs[curr_organs_inputs['organ'] == curr_organ_class_name]
-                        if len(curr_organ_inputs) != 0:
-                            # create a new organ
-                            curr_organ = curr_axis_attribute_class()
-                            curr_organ_attributes_names = [state_var_name for state_var_name in Simulation.ORGANS_STATE if hasattr(curr_organ, state_var_name)]
-                            curr_organ_inputs_row = curr_organ_inputs.loc[curr_organ_inputs.first_valid_index()]
-                            curr_organ_attributes_values = curr_organ_inputs_row[curr_organ_attributes_names].tolist()
-                            curr_organ_attributes = dict(zip(curr_organ_attributes_names, curr_organ_attributes_values))
-                            curr_organ.__dict__.update(curr_organ_attributes)
-                            curr_organ.initialize()
-                            setattr(curr_axis, curr_axis_attribute_name, curr_organ)
-                            
-                    curr_phytomers_inputs = phytomers_inputs[(phytomers_inputs['plant'] == curr_plant_index) & (phytomers_inputs['axis'] == curr_axis_id)]
-                    for curr_phytomer_index in curr_phytomers_inputs.phytomer:
-                        # create a new phytomer
-                        curr_phytomer = model.Phytomer(index=curr_phytomer_index)
-                        curr_axis.phytomers.append(curr_phytomer)
-                        
-                        curr_organs_inputs = organs_inputs[(organs_inputs['plant'] == curr_plant_index) & (organs_inputs['axis'] == curr_axis_id) & (organs_inputs['phytomer'] == curr_phytomer_index)]
-                        
-                        for curr_phytomer_attribute_name, curr_phytomer_attribute_class, curr_phytomer_attribute_element_class in \
-                            (('chaff', model.Chaff, model.ChaffElement), 
-                             ('lamina', model.Lamina, model.LaminaElement), 
-                             ('internode', model.Internode, model.InternodeElement), 
-                             ('peduncle', model.Peduncle, model.PeduncleElement),
-                             ('sheath', model.Sheath, model.SheathElement)):
-                            
-                            curr_organ_class_name = curr_phytomer_attribute_class.__name__
-                            curr_elements_inputs = elements_inputs[(elements_inputs['plant'] == curr_plant_index) & (elements_inputs['axis'] == curr_axis_id) & (elements_inputs['phytomer'] == curr_phytomer_index) & (elements_inputs['organ'] == curr_organ_class_name)]
-                        
-                            if curr_organ_class_name not in curr_organs_inputs.organ.values and curr_organ_class_name not in curr_elements_inputs.organ.values:
-                                continue
-                            # create a new organ
-                            curr_organ = curr_phytomer_attribute_class()
-                            setattr(curr_phytomer, curr_phytomer_attribute_name, curr_organ)
-                            
-                            for curr_organ_attribute_name, curr_organ_attribute_type in (('enclosed_element', 'enclosed'), ('exposed_element', 'exposed')):
-                                curr_element_inputs = curr_elements_inputs[curr_elements_inputs['element'] == curr_organ_attribute_type]
-                                if len(curr_element_inputs) == 0:
-                                    continue
-                                curr_element_inputs = curr_element_inputs.loc[:, Simulation.ELEMENTS_STATE]
-                                # create a new element
-                                curr_element_inputs_dict = curr_element_inputs.loc[curr_element_inputs.first_valid_index()].to_dict()
-                                curr_element = curr_phytomer_attribute_element_class(**curr_element_inputs_dict)
-                                setattr(curr_organ, curr_organ_attribute_name, curr_element)
-                                
-                        
         # initialize initial conditions
         def _init_initial_conditions(model_object, i):
             class_ = model_object.__class__
@@ -287,6 +209,7 @@ class Simulation(object):
         
         #TODO: check the consistency of the population
         logger.info('Initialization of the simulation DONE')
+
 
     def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=0, show_progressbar=False):
         """
@@ -707,100 +630,25 @@ class Simulation(object):
         logger.debug('Updating the state of the population DONE')
         
     
-    def format_inputs(self):
+    def postprocessings(self):
         """
-        Format internal state parameters and compartments of :attr:`population` to Pandas dataframes.
+        Compute:
+        
+            * intermediate variables (see :attr:`Simulation:PLANTS_INTERMEDIATE_VARIABLES`, :attr:`Simulation:AXES_INTERMEDIATE_VARIABLES`, :attr:`Simulation:PHYTOMERS_INTERMEDIATE_VARIABLES`, :attr:`Simulation:ORGANS_INTERMEDIATE_VARIABLES` and :attr:`Simulation:ELEMENTS_INTERMEDIATE_VARIABLES`),
+            * fluxes (see :attr:`Simulation:PLANTS_FLUXES`, :attr:`Simulation:AXES_FLUXES`, :attr:`Simulation:PHYTOMERS_FLUXES`, :attr:`Simulation:ORGANS_FLUXES` and :attr:`Simulation:ELEMENTS_FLUXES`),
+            * and integrative variables (see :attr:`Simulation:PLANTS_INTEGRATIVE_VARIABLES`, :attr:`Simulation:AXES_INTEGRATIVE_VARIABLES`, :attr:`Simulation:PHYTOMERS_INTEGRATIVE_VARIABLES`, :attr:`Simulation:ORGANS_INTEGRATIVE_VARIABLES` and :attr:`Simulation:ELEMENTS_INTEGRATIVE_VARIABLES`),
+            
+        from :attr:`_solver_output` and format them to :class:`dataframes <pandas.DataFrame>`.
         
         :Returns:
-            :class:`dataframes <pandas.DataFrame>` of internal state parameters and compartments at different scales:
+            :class:`dataframes <pandas.DataFrame>` of post-processing outputs at each scale: 
 
-                * plant: plant index, state parameters and compartments of each plant (see :attr:`Simulation:PLANTS_FORMAT_INPUTS`) 
-                * axis: plant index, axis id, state parameters and compartments of each axis (see :attr:`Simulation:AXES_FORMAT_INPUTS`)
-                * phytomer: plant index, axis id, phytomer index, state parameters and compartments of phytomer plant (see :attr:`Simulation:PHYTOMERS_FORMAT_INPUTS`)
-                * organ: plant index, axis id, phytomer index, organ type, state parameters and compartments of each organ (see :attr:`Simulation:ORGANS_FORMAT_INPUTS`)
-                * and element: plant index, axis id, phytomer index, organ type, element type, state parameters and compartments of each element (see :attr:`Simulation:ELEMENTS_FORMAT_INPUTS`)
-        
-        :Returns Type:
-            :class:`tuple` of :class:`pandas.DataFrame`
-        
-        """
-        
-        logger = logging.getLogger(__name__)
-        logger.debug('Formatting of inputs...')
-        
-        all_plants_df = pd.DataFrame(columns=Simulation.PLANTS_FORMAT_INPUTS)
-        all_axes_df = pd.DataFrame(columns=Simulation.AXES_FORMAT_INPUTS)
-        all_phytomers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_FORMAT_INPUTS)
-        all_organs_df = pd.DataFrame(columns=Simulation.ORGANS_FORMAT_INPUTS)
-        all_elements_df = pd.DataFrame(columns=Simulation.ELEMENTS_FORMAT_INPUTS)
-        
-        def append_row(model_object, indexes, attributes_names, inputs_df):
-            attributes_values = []
-            for attribute_name in attributes_names:
-                attributes_values.append(getattr(model_object, attribute_name, np.nan))
-            if len(attributes_values) == 0 \
-                or any(attribute_value is None for attribute_value in attributes_values) \
-                or not np.isnan([attribute_value for attribute_value in attributes_values if attribute_value is not None]).all():
-                inputs_df.loc[len(inputs_df),:] = indexes + attributes_values
-                    
-        for plant in self.population.plants:
-            append_row(plant, [plant.index], Simulation.PLANTS_STATE, all_plants_df)
-            for axis in plant.axes:
-                append_row(axis, [plant.index, axis.id], Simulation.AXES_STATE, all_axes_df)
-                for organ in (axis.roots, axis.soil, axis.phloem, axis.grains):
-                    if organ is None:
-                        continue
-                    append_row(organ, [plant.index, axis.id, np.nan, organ.__class__.__name__], Simulation.ORGANS_STATE, all_organs_df)
-                for phytomer in axis.phytomers:
-                    append_row(phytomer, [plant.index, axis.id, phytomer.index], Simulation.PHYTOMERS_STATE, all_phytomers_df)
-                    for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
-                        if organ is None:
-                            continue
-                        append_row(organ, [plant.index, axis.id, phytomer.index, organ.__class__.__name__], Simulation.ORGANS_STATE, all_organs_df)
-                        for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
-                            if element is None:
-                                continue
-                            append_row(element, [plant.index, axis.id, phytomer.index, organ.__class__.__name__, element_type], Simulation.ELEMENTS_STATE, all_elements_df)
+                * plant (see :attr:`Simulation:PLANTS_ALL_VARIABLES`) 
+                * axis (see :attr:`Simulation:AXES_ALL_VARIABLES`)
+                * phytomer (see :attr:`Simulation:PHYTOMERS_ALL_VARIABLES`)
+                * organ (see :attr:`Simulation:ORGANS_ALL_VARIABLES`)
+                * and element (see :attr:`Simulation:ELEMENTS_ALL_VARIABLES`)
                 
-        # sort the rows by the columns
-        all_plants_df.sort_index(by=Simulation.PLANTS_FORMAT_INPUTS, inplace=True)
-        all_axes_df.sort_index(by=Simulation.AXES_FORMAT_INPUTS, inplace=True)
-        all_phytomers_df.sort_index(by=Simulation.PHYTOMERS_FORMAT_INPUTS, inplace=True)
-        all_organs_df.sort_index(by=Simulation.ORGANS_FORMAT_INPUTS, inplace=True)
-        all_elements_df.sort_index(by=Simulation.ELEMENTS_FORMAT_INPUTS, inplace=True)
-
-        # infer the right types of the columns
-        all_plants_df = all_plants_df.convert_objects(copy=False)
-        all_axes_df = all_axes_df.convert_objects(copy=False)
-        all_phytomers_df = all_phytomers_df.convert_objects(copy=False)
-        all_organs_df = all_organs_df.convert_objects(copy=False)
-        all_elements_df = all_elements_df.convert_objects(copy=False)
-
-        # convert the indexes of plants, phytomers and elements to integers
-        all_plants_df['plant'] = all_plants_df['plant'].astype(int)
-        all_axes_df['plant'] = all_axes_df['plant'].astype(int)
-        all_phytomers_df[['plant', 'phytomer']] = all_phytomers_df[['plant', 'phytomer']].astype(int)
-        all_organs_df['plant'] = all_organs_df['plant'].astype(int)
-        all_elements_df[['plant', 'phytomer']] = all_elements_df[['plant', 'phytomer']].astype(int)
-        
-        logger.debug('Formatting of inputs DONE')
-        
-        return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df
-
-
-    def format_outputs(self):
-        """
-        Create :class:`dataframes <pandas.DataFrame>` of outputs at different scales.
-        
-        :Returns:
-            :class:`dataframes <pandas.DataFrame>` of outputs at different scales:
-
-                * plant: plant index, state parameters and compartments of each plant (see :attr:`Simulation:PLANTS_FORMAT_INPUTS`) 
-                * axis: plant index, axis id, state parameters and compartments of each axis (see :attr:`Simulation:AXES_FORMAT_INPUTS`)
-                * phytomer: plant index, axis id, phytomer index, state parameters and compartments of phytomer plant (see :attr:`Simulation:PHYTOMERS_FORMAT_INPUTS`)
-                * organ: plant index, axis id, phytomer index, organ type, state parameters and compartments of each organ (see :attr:`Simulation:ORGANS_FORMAT_INPUTS`)
-                * and element: plant index, axis id, phytomer index, organ type, element type, state parameters and compartments of each element (see :attr:`Simulation:ELEMENTS_FORMAT_INPUTS`)
-        
         :Returns Type:
             :class:`tuple` of :class:`pandas.DataFrame`
         
@@ -810,11 +658,11 @@ class Simulation(object):
 
         solver_output_transposed = self._solver_output.T
 
-        all_plants_df = pd.DataFrame(columns=Simulation.PLANTS_FORMAT_OUTPUTS)
-        all_axes_df = pd.DataFrame(columns=Simulation.AXES_FORMAT_OUTPUTS)
-        all_phytomers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_FORMAT_OUTPUTS)
-        all_organs_df = pd.DataFrame(columns=Simulation.ORGANS_FORMAT_OUTPUTS)
-        all_elements_df = pd.DataFrame(columns=Simulation.ELEMENTS_FORMAT_OUTPUTS)
+        all_plants_df = pd.DataFrame(columns=Simulation.PLANTS_ALL_VARIABLES)
+        all_axes_df = pd.DataFrame(columns=Simulation.AXES_ALL_VARIABLES)
+        all_phytomers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_ALL_VARIABLES)
+        all_organs_df = pd.DataFrame(columns=Simulation.ORGANS_ALL_VARIABLES)
+        all_elements_df = pd.DataFrame(columns=Simulation.ELEMENTS_ALL_VARIABLES)
 
         for plant in self.population.plants:
 
@@ -1038,11 +886,11 @@ class Simulation(object):
             all_plants_df = all_plants_df.append(plants_df, ignore_index=True)
 
         # set the order of the columns
-        all_plants_df = all_plants_df.reindex_axis(Simulation.PLANTS_FORMAT_OUTPUTS, axis=1, copy=False)
-        all_axes_df = all_axes_df.reindex_axis(Simulation.AXES_FORMAT_OUTPUTS, axis=1, copy=False)
-        all_phytomers_df = all_phytomers_df.reindex_axis(Simulation.PHYTOMERS_FORMAT_OUTPUTS, axis=1, copy=False)
-        all_organs_df = all_organs_df.reindex_axis(Simulation.ORGANS_FORMAT_OUTPUTS, axis=1, copy=False)
-        all_elements_df = all_elements_df.reindex_axis(Simulation.ELEMENTS_FORMAT_OUTPUTS, axis=1, copy=False)
+        all_plants_df = all_plants_df.reindex_axis(Simulation.PLANTS_ALL_VARIABLES, axis=1, copy=False)
+        all_axes_df = all_axes_df.reindex_axis(Simulation.AXES_ALL_VARIABLES, axis=1, copy=False)
+        all_phytomers_df = all_phytomers_df.reindex_axis(Simulation.PHYTOMERS_ALL_VARIABLES, axis=1, copy=False)
+        all_organs_df = all_organs_df.reindex_axis(Simulation.ORGANS_ALL_VARIABLES, axis=1, copy=False)
+        all_elements_df = all_elements_df.reindex_axis(Simulation.ELEMENTS_ALL_VARIABLES, axis=1, copy=False)
 
         # sort the rows by the columns
         all_plants_df.sort_index(by=Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
