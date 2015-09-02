@@ -19,6 +19,7 @@
 """
 
 import os
+import sys
 import types
 from itertools import cycle
 import warnings
@@ -31,12 +32,11 @@ import pandas as pd
 from scipy import stats
 import matplotlib.pyplot as plt
 
-from cnwheat.simulation import Simulation
-
 PRECISION = 5
 RELATIVE_TOLERANCE = 10**-PRECISION
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
+OUTPUTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element'] #: All the possible indexes of CN-Wheat outputs.
 
 class DataWarning(UserWarning):
     '''No data to plot for a variable.'''
@@ -141,7 +141,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
 
         - `filters` (:class:`dict`) - A dictionary whose keys are the columns of
           `outputs` for which we want to apply a specific filter.
-          These columns can be one or more element of :const:`ELEMENTS_OUTPUTS_INDEXES <cnwheat.simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES>`.
+          These columns can be one or more element of :const:`OUTPUTS_INDEXES`.
           The value associated to each key is a criteria that the rows of `outputs`
           must satisfy to be plotted. The values can be either one value or a list of values.
           If no value is given for any column, then all rows are plotted (default).
@@ -165,7 +165,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
     """
 
     # finds the scale of `outputs`
-    group_keys = [key for key in Simulation.ELEMENTS_OUTPUTS_INDEXES if key in outputs and key != x_name and key != y_name]
+    group_keys = [key for key in OUTPUTS_INDEXES if key in outputs and key != x_name and key != y_name]
 
     # make a group_keys with first letter of each key in upper case
     group_keys_upper = [group_key[0].upper() + group_key[1:] for group_key in group_keys]
@@ -366,3 +366,53 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
 
     # compare to the desired data
     np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
+
+
+class ProgressBarError(Exception): pass
+
+class ProgressBar(object):
+    """
+    Display a console progress bar.
+    """
+
+    def __init__(self, bar_length=20, title='', block_character='#', uncomplete_character='-'):
+        if bar_length <= 0:
+            raise ProgressBarError('bar_length <= 0')
+        self.bar_length = bar_length #: the number of blocks in the progress bar. MUST BE GREATER THAN ZERO !
+        self.t_max = 1 #: the maximum t that the progress bar can display. MUST BE GREATER THAN ZERO !
+        self.block_interval = 1 #: the time interval of each block. MUST BE GREATER THAN ZERO !
+        self.last_upper_t = 0 #: the last upper t displayed by the progress bar
+        self.progress_mapping = {} #: a mapping to optimize the refresh rate
+        self.title = title #: the title to write on the left side of the progress bar
+        self.block_character = block_character #: the character to represent a block
+        self.uncomplete_character = uncomplete_character #: the character to represent the uncompleted part of the progress bar
+
+    def set_t_max(self, t_max):
+        """"Set :attr:`t_max` and update other attributes accordingly.
+        """
+        if t_max <= 0:
+            raise ProgressBarError('t_max <= 0')
+        self.t_max = t_max
+        self.block_interval = self.t_max / self.bar_length
+        self.last_upper_t = 0
+        self.progress_mapping.clear()
+
+    def update(self, t):
+        """Update the progress bar if needed.
+        """
+        t = min(t, self.t_max)
+        if t < self.last_upper_t:
+            return
+        else:
+            self.last_upper_t = t
+        t_inf = t // self.block_interval * self.block_interval
+        if t_inf not in self.progress_mapping:
+            progress = t / self.t_max
+            block = int(round(self.bar_length * progress))
+            text = "\r{0}: [{1}] {2:>5d}% ".format(self.title,
+                                                  self.block_character * block + self.uncomplete_character * (self.bar_length - block),
+                                                  int(progress*100))
+            self.progress_mapping[t_inf] = text
+            sys.stdout.write(self.progress_mapping[t_inf])
+            sys.stdout.flush()
+            

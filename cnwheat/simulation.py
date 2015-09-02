@@ -23,7 +23,6 @@ from __future__ import division # use "//" to do integer division
         $Id$
 """
 
-import sys
 import logging
 
 import numpy as np
@@ -31,7 +30,7 @@ import pandas as pd
 from scipy.integrate import odeint
 from respiwheat.model import RespirationModel
 
-import model
+import model, tools
 
 class SimulationError(Exception): pass
 class SimulationRunError(SimulationError): pass
@@ -139,7 +138,7 @@ class Simulation(object):
         self._time_grid = np.array([]) #: the time grid of the simulation
         self._solver_output = np.array([]) #: the value of the compartments for each time step, with the initial conditions in the first row
 
-        self.progressbar = ProgressBar(title='Solver progress') #: progress bar to show the progress of the solver
+        self.progressbar = tools.ProgressBar(title='Solver progress') #: progress bar to show the progress of the solver
         self.show_progressbar = False #: True: show the progress bar ; False: DO NOT show the progress bar
 
 
@@ -916,53 +915,4 @@ class Simulation(object):
         logger.debug('Formatting of outputs DONE')
 
         return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df
-
-
-class ProgressBarError(Exception): pass
-
-class ProgressBar(object):
-    """
-    Display a console progress bar.
-    """
-
-    def __init__(self, bar_length=20, title='', block_character='#', uncomplete_character='-'):
-        if bar_length <= 0:
-            raise ProgressBarError('bar_length <= 0')
-        self.bar_length = bar_length #: the number of blocks in the progress bar. MUST BE GREATER THAN ZERO !
-        self.t_max = 1 #: the maximum t that the progress bar can display. MUST BE GREATER THAN ZERO !
-        self.block_interval = 1 #: the time interval of each block. MUST BE GREATER THAN ZERO !
-        self.last_upper_t = 0 #: the last upper t displayed by the progress bar
-        self.progress_mapping = {} #: a mapping to optimize the refresh rate
-        self.title = title #: the title to write on the left side of the progress bar
-        self.block_character = block_character #: the character to represent a block
-        self.uncomplete_character = uncomplete_character #: the character to represent the uncompleted part of the progress bar
-
-    def set_t_max(self, t_max):
-        """"Set :attr:`t_max` and update other attributes accordingly.
-        """
-        if t_max <= 0:
-            raise ProgressBarError('t_max <= 0')
-        self.t_max = t_max
-        self.block_interval = self.t_max / self.bar_length
-        self.last_upper_t = 0
-        self.progress_mapping.clear()
-
-    def update(self, t):
-        """Update the progress bar if needed.
-        """
-        t = min(t, self.t_max)
-        if t < self.last_upper_t:
-            return
-        else:
-            self.last_upper_t = t
-        t_inf = t // self.block_interval * self.block_interval
-        if t_inf not in self.progress_mapping:
-            progress = t / self.t_max
-            block = int(round(self.bar_length * progress))
-            text = "\r{0}: [{1}] {2:>5d}% ".format(self.title,
-                                                  self.block_character * block + self.uncomplete_character * (self.bar_length - block),
-                                                  int(progress*100))
-            self.progress_mapping[t_inf] = text
-            sys.stdout.write(self.progress_mapping[t_inf])
-            sys.stdout.flush()
 
