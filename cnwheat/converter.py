@@ -1,3 +1,28 @@
+# -*- coding: latin-1 -*-
+
+"""
+    cnwheat.converter
+    ~~~~~~~~~~~~~~~~~
+
+    The module :mod:`cnwheat.converter` defines functions to:
+    
+        * convert :class:`dataframes <pandas.DataFrame>` to/from :class:`population <model.Population>`.
+
+    :copyright: Copyright 2015 INRA-EcoSys, see AUTHORS.
+    :license: TODO, see LICENSE for details.
+
+    .. seealso:: Barillot et al. 2015.
+"""
+
+"""
+    Information about this versioned file:
+        $LastChangedBy$
+        $LastChangedDate$
+        $LastChangedRevision$
+        $URL$
+        $Id$
+"""
+
 
 import numpy as np
 import pandas as pd
