@@ -26,7 +26,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from farquharwheat import model, simulation
+from farquharwheat import model, simulation, converter
 
 INPUTS_DIRPATH = 'inputs'
 
@@ -67,17 +67,19 @@ def test_run():
     # create a simulation
     simulation_ = simulation.Simulation()
     # read inputs from Pandas dataframe
-    inputs = pd.read_csv(os.path.join(INPUTS_DIRPATH, INPUTS_FILENAME))
+    inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, INPUTS_FILENAME))
+    # convert the dataframe to simulation inputs format
+    inputs = converter.from_dataframe(inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
-    # format the inputs to Pandas dataframe
-    formatted_inputs = simulation_.format_inputs()
+    # convert the inputs to Pandas dataframe
+    reconverted_inputs = converter.to_dataframe(simulation_.inputs)
     # compare inputs
-    compare_actual_to_desired(INPUTS_DIRPATH, formatted_inputs, INPUTS_FILENAME)
+    compare_actual_to_desired(INPUTS_DIRPATH, reconverted_inputs, INPUTS_FILENAME)
     # run the simulation
     simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.68, Ur=3.171, PARi=2262400)
-    # format the outputs to Pandas dataframe
-    outputs_df = simulation_.format_outputs()
+    # convert the outputs to Pandas dataframe
+    outputs_df = converter.to_dataframe(simulation_.outputs)
     # compare outputs
     compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, DESIRED_OUTPUTS_FILENAME, ACTUAL_OUTPUTS_FILENAME, save_actual_data=True)
 

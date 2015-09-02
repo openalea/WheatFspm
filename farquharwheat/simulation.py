@@ -23,29 +23,16 @@ from __future__ import division # use "//" to do integer division
         $Id$
 """
 
-import pandas as pd
-
 import model
 
 class SimulationError(Exception): pass
 class SimulationInputsError(SimulationError): pass
 
 class Simulation(object):
-    """
-    The Simulation class permits to initialize and run the model, and format the 
-    outputs of the model.
-
-    Use:
-    
-        * :meth:`initialize` to initialize the model,
-        * :meth:`run` to run the model,
-        * :meth:`format_outputs` to format the outputs of the model.
-
+    """The Simulation class permits to initialize and run a simulation.
     """
     
     ELEMENTS_KEYS_NAMES = ['plant', 'axis', 'metamer', 'organ', 'element'] #: the keys which define the topology of an element.
-    
-    INPUTS_NAMES = ['organ_type', 'Na', 'organ_width', 'organ_height', 'STAR']
     
     def __init__(self):
         #: The inputs by element.
@@ -74,28 +61,19 @@ class Simulation(object):
         
         :Parameters:
         
-            - `inputs` (:class:`dict` or :class:`pandas.DataFrame`) - The inputs by element.
-                `inputs` can be: 
-                    
-                    * a dictionary of dictionaries: {element1_id: element1_inputs, element2_id: element2_inputs, ..., elementN_id: elementN_inputs}, where:
+            - `inputs` (:class:`dict`) - The inputs by element.
+               Inputs must be a dictionary of dictionaries: {element1_id: element1_inputs, element2_id: element2_inputs, ..., elementN_id: elementN_inputs}, where:
                  
-                        * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
-                        * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
+                   * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
+                   * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
                     
-                    * or a pandas dataframe, with one row by element ; columns are :attr:`ELEMENTS_KEYS_NAMES` and Farquhar-Wheat inputs. 
-                    
-                See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
-                for more information about the inputs.  
+               See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
+               for more information about the inputs.  
             
         """
         self.inputs.clear()
-        if isinstance(inputs, dict):
-            self.inputs.update(inputs)
-        elif isinstance(inputs, pd.DataFrame):
-            for elements_id, element_group in inputs.groupby(Simulation.ELEMENTS_KEYS_NAMES):
-                self.inputs[elements_id] = element_group.loc[element_group.first_valid_index(), Simulation.INPUTS_NAMES].to_dict()
-        else:
-            raise SimulationInputsError('Can not initialize Simulation from {}. Supported inputs types are: {}.'.format(type(inputs), (dict, pd.DataFrame)))
+        self.inputs.update(inputs)
+
 
     def run(self, Ta, ambient_CO2, RH, Ur, PARi):
         """
@@ -126,42 +104,3 @@ class Simulation(object):
             Ag, An, Rd, Tr, Torg, gs = model.Model.calculate_An(Na, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, Ur, organ_type)
             self.outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Torg': Torg, 'gs': gs}
     
-    def format_inputs(self):
-        """
-        Format :attr:`inputs` to Pandas dataframe.
-        
-        :Returns:
-            The inputs in a dataframe, with one row by element.
-            See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
-            for more information about the inputs.  
-        
-        :Returns Type:
-            :class:`pandas.DataFrame`
-        
-        """
-        elements_ids_df = pd.DataFrame(self.inputs.keys(), columns=Simulation.ELEMENTS_KEYS_NAMES)
-        elements_inputs_df = pd.DataFrame(self.inputs.values())
-        inputs_df = pd.concat([elements_ids_df, elements_inputs_df], axis=1)
-        inputs_df.sort_index(by=Simulation.ELEMENTS_KEYS_NAMES, inplace=True)
-        return inputs_df
-            
-    def format_outputs(self): 
-        """
-        Format :attr:`outputs` to Pandas dataframe.
-        
-        :Returns:
-            The outputs in a dataframe, with one row by element.
-            See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
-            for more information about the outputs.  
-        
-        :Returns Type:
-            :class:`pandas.DataFrame`
-        
-        """
-        elements_ids_df = pd.DataFrame(self.outputs.keys(), columns=Simulation.ELEMENTS_KEYS_NAMES)
-        elements_outputs_df = pd.DataFrame(self.outputs.values())
-        outputs_df = pd.concat([elements_ids_df, elements_outputs_df], axis=1)
-        outputs_df.sort_index(by=Simulation.ELEMENTS_KEYS_NAMES, inplace=True)
-        return outputs_df
-            
-            

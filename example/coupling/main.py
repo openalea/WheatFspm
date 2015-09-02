@@ -129,7 +129,7 @@ if __name__ == '__main__':
     # update the MTG from Farquhar-Wheat outputs
     converter.update_MTG(simulation_.outputs, g)
     # format Farquhar-Wheat outputs to Pandas dataframe
-    outputs_df = simulation_.format_outputs()
+    outputs_df = converter.to_dataframe(simulation_.outputs)
     # write the dataframe to CSV
     outputs_df.to_csv(os.path.join(OUTPUTS_DIRPATH, CSV_OUTPUTS_FILENAME), index=False, na_rep='NA', float_format='%.{}f'.format(OUTPUTS_PRECISION)) 
 

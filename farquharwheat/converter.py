@@ -6,11 +6,10 @@ from __future__ import division # use "//" to do integer division
     farquharwheat.converter
     ~~~~~~~~~~~~~~~~~~~~~~~
 
-    The module :mod:`farquharwheat.converter` permits to:
+    The module :mod:`farquharwheat.converter` defines functions to:
         
-        * convert a :class:`MTG <openalea.mtg.mtg.MTG>` to Farquhar-Wheat inputs dictionary (see :func:`from_MTG`),
-        * update a :class:`MTG <openalea.mtg.mtg.MTG>` from Farquhar-Wheat outputs dictionary (see :func:`update_MTG`).
-
+        * convert :class:`dataframes <pandas.DataFrame>` to/from :class:`population <model.Population>`.
+        
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -26,11 +25,13 @@ from __future__ import division # use "//" to do integer division
         $Id$
 """
 
-import numpy as np
+import warnings
 
+import numpy as np
+import pandas as pd
 from alinea.astk import plantgl_utils
 
-import warnings
+import simulation
 
 class ConverterWarning(UserWarning): pass
 
@@ -60,6 +61,59 @@ FARQUHARWHEAT_MANDATORY_INPUTS_NAMES = set(['width', 'diameter', 'geometry', 'ex
 
 #: the name of the outputs of FarquharWheat ; :func:`update_MTG` adds/updates only these outputs. 
 FARQUHARWHEAT_OUTPUTS_NAMES = set(['Ag', 'An', 'Rd', 'Tr', 'Torg', 'gs'])
+
+
+def from_dataframe(data_df):
+    """
+    Convert Pandas dataframe `data_df` to dictionary like :attr:`simulation.Simulation.inputs` 
+    or :attr:`simulation.Simulation.outputs`.
+    
+    :Parameters:
+        
+        - `data_df` (:class:`pandas.DataFrame`) - The dataframe to convert, with one row by element. 
+        Columns are :attr:`simulation.Simulation.ELEMENTS_KEYS_NAMES` and Farquhar-Wheat inputs or outputs.
+    
+    :Returns:
+        The data in a dictionary. See :attr:`simulation.Simulation.inputs` or 
+        :attr:`simulation.Simulation.outputs` for the structure of these dictionaries.
+    
+    :Returns Type:
+        :class:`dict`
+        
+    .. seealso:: :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
+        for more information about the data.
+    
+    """
+    data_dict = {}
+    columns_without_keys = data_df.columns.difference(simulation.Simulation.ELEMENTS_KEYS_NAMES)
+    for elements_id, element_group in data_df.groupby(simulation.Simulation.ELEMENTS_KEYS_NAMES):
+        data_dict[elements_id] = element_group.loc[element_group.first_valid_index(), columns_without_keys].to_dict()
+    return data_dict
+
+def to_dataframe(data_dict):
+    """
+    Convert dictionary `data_dict` to Pandas dataframe.
+    
+    :Parameters:
+        
+        - `data_dict` (:class:`dict`) - The data to convert.
+        Data can be either :attr:`simulation.Simulation.inputs` or :attr:`simulation.Simulation.outputs`.
+    
+    :Returns:
+        The data in a dataframe, with one row by element.
+    
+    :Returns Type:
+        :class:`pandas.DataFrame`
+        
+    .. seealso:: :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
+        for more information about the data.
+    
+    """
+    elements_ids_df = pd.DataFrame(data_dict.keys(), columns=simulation.Simulation.ELEMENTS_KEYS_NAMES)
+    elements_data_df = pd.DataFrame(data_dict.values())
+    data_df = pd.concat([elements_ids_df, elements_data_df], axis=1)
+    data_df.sort_index(by=simulation.Simulation.ELEMENTS_KEYS_NAMES, inplace=True)
+    return data_df
 
 
 def from_MTG(g):
