@@ -8,7 +8,8 @@ from __future__ import division # use "//" to do integer division
 
     The module :mod:`farquharwheat.converter` defines functions to:
         
-        * convert :class:`dataframes <pandas.DataFrame>` to/from :class:`population <model.Population>`.
+        * convert :class:`dataframes <pandas.DataFrame>` to/from FarquharWheat :class:`inputs <simulation.Simulation.inputs>` or :class:`outputs <simulation.Simulation.outputs>`.
+        * convert :class:`MTG <openalea.mtg.mtg.MTG>` to/from FarquharWheat :class:`inputs <simulation.Simulation.inputs>` or :class:`outputs <simulation.Simulation.outputs>`.
         
     :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
