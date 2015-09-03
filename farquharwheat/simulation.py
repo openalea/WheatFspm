@@ -32,8 +32,6 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
     
-    ELEMENTS_KEYS_NAMES = ['plant', 'axis', 'metamer', 'organ', 'element'] #: the keys which define the topology of an element.
-    
     def __init__(self):
         #: The inputs by element.
         #:
@@ -96,11 +94,11 @@ class Simulation(object):
         self.outputs.clear()
         for (element_id, element_inputs) in self.inputs.iteritems():
             organ_type = element_inputs['organ_type']
-            Na = element_inputs['Na']
-            organ_width = element_inputs['organ_width']
-            organ_height = element_inputs['organ_height']
+            surfacic_nitrogen = element_inputs['surfacic_nitrogen']
+            width = element_inputs['width']
+            height = element_inputs['height']
             STAR = element_inputs['STAR']
             PAR = STAR * PARi
-            Ag, An, Rd, Tr, Torg, gs = model.Model.calculate_An(Na, organ_width, organ_height, PAR, Ta, ambient_CO2, RH, Ur, organ_type)
-            self.outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Torg': Torg, 'gs': gs}
+            Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_type)
+            self.outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
     

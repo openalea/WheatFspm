@@ -65,3 +65,32 @@ Outputs of Farquhar-Wheat
 
 TODO
 
+
+Farquhar inputs from MTG properties 
+===================================
+
+===========================  ==========================================================  
+   Farquhar inputs									MTG properties     											
+===========================  ==========================================================  
+surfacic_nitrogen		 	 surfacic_nitrogen											
+width					 	 blade						
+width 					 	 other organs diameter
+height of hidden element	 height of the precedent sheath					
+height of visible element	 mean(plantgl_utils.get_height(geometry))
+organ_type					 label of the vertex									
+PAR							 exposed_area / area * PARi 									
+===========================  ==========================================================  
+
+
+MTG properties from Farquhar outputs 
+====================================
+
+======================  ====================
+   MTG properties		  Farquhar outputs     	
+======================  ====================
+Ag						Ag
+An						An
+Tr						Tr
+Ts						Ts
+gs						gs
+======================  ====================

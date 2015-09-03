@@ -57,48 +57,56 @@ SHEATH_STAR_TRANSMISSION = 0.1
 #: the name of the organs modeled by FarquharWheat
 ORGANS_NAMES_SET = set(['internode', 'blade', 'sheath', 'peduncle', 'ear'])
 
-#: the name of the inputs FarquharWheat needs to run
+#: the MTG properties needed by FarquharWheat
 FARQUHARWHEAT_MANDATORY_INPUTS_NAMES = set(['width', 'diameter', 'geometry', 'exposed_area', 'area', 'surfacic_nitrogen'])
 
-#: the name of the outputs of FarquharWheat ; :func:`update_MTG` adds/updates only these outputs. 
-FARQUHARWHEAT_OUTPUTS_NAMES = set(['Ag', 'An', 'Rd', 'Tr', 'Torg', 'gs'])
+#: the inputs of FarquharWheat
+FARQUHARWHEAT_INPUTS = ['organ_type', 'surfacic_nitrogen', 'width', 'height', 'STAR']
+
+#: the outputs of FarquharWheat ; :func:`update_MTG` adds/updates only these outputs. 
+FARQUHARWHEAT_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs']
+
+#: the inputs and outputs of FarquharWheat. 
+FARQUHARWHEAT_INPUTS_OUTPUTS = FARQUHARWHEAT_INPUTS + FARQUHARWHEAT_OUTPUTS
+
+#: the keys which define the topology of an element. These keys permit to keep the 
+#: location of each element in the tree structure, and set the outputs to the right element.  
+ELEMENTS_KEYS = ['plant', 'axis', 'metamer', 'organ', 'element']
 
 
 def from_dataframe(data_df):
     """
-    Convert Pandas dataframe `data_df` to dictionary like :attr:`simulation.Simulation.inputs` 
-    or :attr:`simulation.Simulation.outputs`.
+    Convert Pandas dataframe `data_df` to a dictionary.
+    The dictionary has the same structure as :attr:`simulation.Simulation.inputs` 
+    and :attr:`simulation.Simulation.outputs`.
     
     :Parameters:
         
         - `data_df` (:class:`pandas.DataFrame`) - The dataframe to convert, with one row by element. 
-        Columns are :attr:`simulation.Simulation.ELEMENTS_KEYS_NAMES` and Farquhar-Wheat inputs or outputs.
     
     :Returns:
-        The data in a dictionary. See :attr:`simulation.Simulation.inputs` or 
-        :attr:`simulation.Simulation.outputs` for the structure of these dictionaries.
+        The data in a dictionary.
     
     :Returns Type:
         :class:`dict`
         
-    .. seealso:: :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
-        for more information about the data.
-    
     """
     data_dict = {}
-    columns_without_keys = data_df.columns.difference(simulation.Simulation.ELEMENTS_KEYS_NAMES)
-    for elements_id, element_group in data_df.groupby(simulation.Simulation.ELEMENTS_KEYS_NAMES):
+    columns_without_keys = data_df.columns.difference(ELEMENTS_KEYS)
+    for elements_id, element_group in data_df.groupby(ELEMENTS_KEYS):
         data_dict[elements_id] = element_group.loc[element_group.first_valid_index(), columns_without_keys].to_dict()
     return data_dict
 
+
 def to_dataframe(data_dict):
     """
-    Convert dictionary `data_dict` to Pandas dataframe.
+    Convert the dictionary `data_dict` to Pandas dataframe.
     
     :Parameters:
         
         - `data_dict` (:class:`dict`) - The data to convert.
-        Data can be either :attr:`simulation.Simulation.inputs` or :attr:`simulation.Simulation.outputs`.
+        The data has the same structure as :attr:`simulation.Simulation.inputs` 
+        and :attr:`simulation.Simulation.outputs`.
     
     :Returns:
         The data in a dataframe, with one row by element.
@@ -106,14 +114,13 @@ def to_dataframe(data_dict):
     :Returns Type:
         :class:`pandas.DataFrame`
         
-    .. seealso:: :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
-        for more information about the data.
-    
     """
-    elements_ids_df = pd.DataFrame(data_dict.keys(), columns=simulation.Simulation.ELEMENTS_KEYS_NAMES)
+    elements_ids_df = pd.DataFrame(data_dict.keys(), columns=ELEMENTS_KEYS)
     elements_data_df = pd.DataFrame(data_dict.values())
     data_df = pd.concat([elements_ids_df, elements_data_df], axis=1)
-    data_df.sort_index(by=simulation.Simulation.ELEMENTS_KEYS_NAMES, inplace=True)
+    data_df.sort_index(by=ELEMENTS_KEYS, inplace=True)
+    columns_sorted = ELEMENTS_KEYS + [input_output for input_output in FARQUHARWHEAT_INPUTS_OUTPUTS if input_output in data_df.columns]
+    data_df = data_df.reindex_axis(columns_sorted, axis=1, copy=False)
     return data_df
 
 
@@ -175,12 +182,12 @@ The organs modeled by FarquharWheat are: {}.'.format(organ_label, organ_vid, ORG
                         if 'width' not in vertex_properties:
                             warnings.warn(PropertyNotFoundWarning('width', organ_vid))
                             continue
-                        organ_width = vertex_properties['width'] # get organ width
+                        width = vertex_properties['width'] # get width
                     else:
                         if 'diameter' not in vertex_properties:
                             warnings.warn(PropertyNotFoundWarning('diameter', organ_vid))
                             continue
-                        organ_width = vertex_properties['diameter'] # get organ width
+                        width = vertex_properties['diameter'] # get width
                     number_of_visible_elements = 0
                     for element_vid in g.components_iter(organ_vid):
                         vertex_properties = g.get_vertex_property(element_vid)
@@ -192,7 +199,7 @@ The organs modeled by FarquharWheat are: {}.'.format(organ_label, organ_vid, ORG
 any visible element: no STAR nor height to use for the hidden elements of the organs of the current metamer (vid={}). \
 Ignore current element (vid={}) and all its components.'.format(precedent_metamer_vid, metamer_vid, element_vid))
                                 continue
-                            organ_height = precedent_sheath_height
+                            height = precedent_sheath_height
                             STAR = precedent_sheath_STAR * SHEATH_STAR_TRANSMISSION
                         else:
                             element_type = 'visible'
@@ -203,7 +210,7 @@ Ignore current element (vid={}) and all its components.'.format(precedent_metame
                             # compute organ height
                             triangles = vertex_properties['geometry']
                             triangles_heights = plantgl_utils.get_height({element_vid:triangles}).values()
-                            organ_height = np.mean(triangles_heights)
+                            height = np.mean(triangles_heights)
                             if 'exposed_area' not in vertex_properties:
                                 warnings.warn(PropertyNotFoundWarning('exposed_area', element_vid))
                                 continue
@@ -217,17 +224,17 @@ Ignore current element (vid={}) and all its components.'.format(precedent_metame
                             if organ_type == 'sheath': 
                                 # keep the height and the STAR for the hidden elements of the next metamer
                                 precedent_sheath_has_visible = True
-                                precedent_sheath_height = organ_height
+                                precedent_sheath_height = height
                                 precedent_sheath_STAR = STAR
                         if 'surfacic_nitrogen' not in vertex_properties:
                             warnings.warn(PropertyNotFoundWarning('surfacic_nitrogen', element_vid))
                             continue
-                        Na = vertex_properties['surfacic_nitrogen'] # get Na
+                        surfacic_nitrogen = vertex_properties['surfacic_nitrogen'] # get surfacic_nitrogen
                         elements_inputs[(plant_index, axis_id, metamer_index, organ_type, element_type)] = {'organ_type': organ_type,
                                                                                                             'STAR': STAR, 
-                                                                                                            'Na': Na, 
-                                                                                                            'organ_width': organ_width, 
-                                                                                                            'organ_height': organ_height}
+                                                                                                            'surfacic_nitrogen': surfacic_nitrogen, 
+                                                                                                            'width': width, 
+                                                                                                            'height': height}
                     if organ_type == 'sheath':
                         if number_of_visible_elements == 0:
                             precedent_sheath_has_visible = False
@@ -246,7 +253,7 @@ is used is undetermined.'.format(metamer_vid))
 def update_MTG(outputs, g):
     """
     Update a MTG from Farquhar-Wheat outputs. 
-    The list of Farquhar-Wheat outputs is :mod:`FARQUHARWHEAT_OUTPUTS_NAMES`.
+    The list of Farquhar-Wheat outputs is :mod:`FARQUHARWHEAT_OUTPUTS`.
     
     :Parameters:
         
@@ -265,7 +272,7 @@ def update_MTG(outputs, g):
     """
     # add the properties if needed
     properties = g.properties()
-    for farquharwheat_output_name in FARQUHARWHEAT_OUTPUTS_NAMES:
+    for farquharwheat_output_name in FARQUHARWHEAT_OUTPUTS:
         if farquharwheat_output_name not in properties:
             g.add_property(farquharwheat_output_name)
     # traverse the MTG recursively from top
