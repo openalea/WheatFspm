@@ -321,7 +321,7 @@ class Model(object):
             - `Ur` (:class:`float`) - Ur: wind at the reference height (zr) (m s-1), e.g. top of the canopy + 2m
                (in the case of wheat, Ur can be approximated as the wind speed at 2m from soil)
 
-            - `organ_name` (:class:`string`) - name of organ
+            - `organ_name` (:class:`string`) - type of the organ (e.g. "Lamina", "Sheath", etc.)
 
         :Returns:
             Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1), Tr (mmol m-2 s-1), Ts (°C) and  gsw (mol m-2 s-1)
