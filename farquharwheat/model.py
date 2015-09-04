@@ -116,7 +116,7 @@ class Model(object):
         u = Uh * exp(cls.A*(z/Zh -1))                       #: Wind speed at organ height (m s-1), from Campbell and Norman (1998), second edition.
 
         #: Boundary layer resistance to heat (s m-1). See Finnigan J, Raupach M. 1987 and Monteith JL. 1973 for basic equations.
-        if organ_name == 'Lamina':
+        if organ_name == 'blade':
             rbh = 154*sqrt(w/u)                             #: Case of horizontal planes submitted to forced convection
         else:
             rbh = w / (1.2E-5 * ((u*w)/1.5E-5)**0.47)       #: Case of vertical cylinders submitted to forced convection
@@ -321,7 +321,7 @@ class Model(object):
             - `Ur` (:class:`float`) - Ur: wind at the reference height (zr) (m s-1), e.g. top of the canopy + 2m
                (in the case of wheat, Ur can be approximated as the wind speed at 2m from soil)
 
-            - `organ_name` (:class:`string`) - type of the organ (e.g. "Lamina", "Sheath", etc.)
+            - `organ_name` (:class:`string`) - type of the organ (e.g. "blade", "sheath", etc.)
 
         :Returns:
             Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1), Tr (mmol m-2 s-1), Ts (°C) and  gsw (mol m-2 s-1)
@@ -367,6 +367,6 @@ class Model(object):
         #: Conversion of Tr from mm s-1 to mmol m-2 s-1 (more suitable for further use of Tr)
         Tr = (Tr * 1E6) / cls.MM_WATER # Using 1 mm = 1kg m-2
 
-        if organ_name != 'Lamina':
+        if organ_name != 'blade':
             Ag = Ag*0.75
         return Ag, An, Rd, Tr, Ts, gsw

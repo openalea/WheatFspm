@@ -61,7 +61,7 @@ ORGANS_NAMES_SET = set(['internode', 'blade', 'sheath', 'peduncle', 'ear'])
 FARQUHARWHEAT_MANDATORY_INPUTS_NAMES = set(['width', 'diameter', 'geometry', 'exposed_area', 'area', 'surfacic_nitrogen'])
 
 #: the inputs of FarquharWheat
-FARQUHARWHEAT_INPUTS = ['organ_type', 'surfacic_nitrogen', 'width', 'height', 'STAR']
+FARQUHARWHEAT_INPUTS = ['organ_label', 'surfacic_nitrogen', 'width', 'height', 'STAR']
 
 #: the outputs of FarquharWheat ; :func:`update_MTG` adds/updates only these outputs. 
 FARQUHARWHEAT_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs']
@@ -138,7 +138,7 @@ def from_MTG(g):
         
         The inputs is a dictionary of dictionaries: {element1_id: element1_inputs, element2_id: element2_inputs, ..., elementN_id: elementN_inputs}, where:
          
-            * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
+            * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_label, element_type),
             * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
          
         See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
@@ -171,14 +171,13 @@ def from_MTG(g):
             for metamer_vid in g.components_iter(axis_vid):
                 metamer_index = int(g.index(metamer_vid))
                 for organ_vid in g.components_iter(metamer_vid):
-                    organ_label = g.label(organ_vid)
+                    organ_label = g.label(organ_vid) # get organ label
                     if organ_label not in ORGANS_NAMES_SET:
                         warnings.warn('FarquharWheat does not model organ {}. Ignore vertex {} and all its components. \
 The organs modeled by FarquharWheat are: {}.'.format(organ_label, organ_vid, ORGANS_NAMES_SET))
                         continue
-                    organ_type = organ_label # get organ type
                     vertex_properties = g.get_vertex_property(organ_vid)
-                    if organ_type == 'blade':
+                    if organ_label == 'blade':
                         if 'width' not in vertex_properties:
                             warnings.warn(PropertyNotFoundWarning('width', organ_vid))
                             continue
@@ -221,7 +220,7 @@ Ignore current element (vid={}) and all its components.'.format(precedent_metame
                             # compute STAR
                             area = vertex_properties['area']
                             STAR = exposed_area / area
-                            if organ_type == 'sheath': 
+                            if organ_label == 'sheath': 
                                 # keep the height and the STAR for the hidden elements of the next metamer
                                 precedent_sheath_has_visible = True
                                 precedent_sheath_height = height
@@ -230,12 +229,12 @@ Ignore current element (vid={}) and all its components.'.format(precedent_metame
                             warnings.warn(PropertyNotFoundWarning('surfacic_nitrogen', element_vid))
                             continue
                         surfacic_nitrogen = vertex_properties['surfacic_nitrogen'] # get surfacic_nitrogen
-                        elements_inputs[(plant_index, axis_id, metamer_index, organ_type, element_type)] = {'organ_type': organ_type,
+                        elements_inputs[(plant_index, axis_id, metamer_index, organ_label, element_type)] = {'organ_label': organ_label,
                                                                                                             'STAR': STAR, 
                                                                                                             'surfacic_nitrogen': surfacic_nitrogen, 
                                                                                                             'width': width, 
                                                                                                             'height': height}
-                    if organ_type == 'sheath':
+                    if organ_label == 'sheath':
                         if number_of_visible_elements == 0:
                             precedent_sheath_has_visible = False
                             precedent_sheath_height = None
@@ -261,7 +260,7 @@ def update_MTG(outputs, g):
         
             `outputs` is a dictionary of dictionaries: {element1_id: element1_outputs, element2_id: element2_outputs, ..., elementN_id: elementN_outputs}, where:
              
-                * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
+                * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_label, element_type),
                 * and elementi_outputs is a dictionary: {'elementi_output1_name': elementi_output1_value, 'elementi_output2_name': elementi_output2_value, ..., 'elementi_outputN_name': elementi_outputN_value}.
         
             See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
@@ -286,14 +285,13 @@ def update_MTG(outputs, g):
                     organ_label = g.label(organ_vid)
                     if organ_label not in ORGANS_NAMES_SET:
                         continue
-                    organ_type = organ_label
                     for element_vid in g.components_iter(organ_vid):
                         element_label = g.label(element_vid)
                         if element_label.startswith('Hidden'):
                             element_type = 'hidden'
                         else:
                             element_type = 'visible'
-                        element_id = (plant_index, axis_id, metamer_index, organ_type, element_type)
+                        element_id = (plant_index, axis_id, metamer_index, organ_label, element_type)
                         if element_id in outputs:
                             element_outputs = outputs[element_id]
                             for output_name, output_value in element_outputs.iteritems():

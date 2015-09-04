@@ -55,8 +55,6 @@ def setup_MTG():
     
     properties_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, PROPERTIES_FILENAME))
     
-    ORGANS_MAPPING = {'internode': 'Internode', 'blade': 'Lamina', 'sheath': 'Sheath', 'peduncle': 'Peduncle', 'ear': 'Chaff'}
-    
     g, wheat, domain_area, domain, convUnit = initialise_stand(1500)
     
     # add the properties which do not exist yet
@@ -89,13 +87,12 @@ def setup_MTG():
                 metamer_properties_df = axis_properties_df[axis_properties_df['metamer'] == metamer_index]
                 for organ_vid in g.components_iter(metamer_vid):
                     organ_label = g.label(organ_vid)
-                    if organ_label not in ORGANS_MAPPING:
+                    if organ_label not in converter.ORGANS_NAMES_SET:
                         continue
-                    organ_type = ORGANS_MAPPING[organ_label]
-                    if organ_type not in metamer_properties_df['organ'].unique():
+                    if organ_label not in metamer_properties_df['organ'].unique():
                         # TODO: remove organ_vid and all its components
                         continue
-                    organ_properties_df = metamer_properties_df[metamer_properties_df['organ'] == organ_type]
+                    organ_properties_df = metamer_properties_df[metamer_properties_df['organ'] == organ_label]
                     # width
                     g.property('width')[organ_vid] = organ_properties_df['width'][organ_properties_df.first_valid_index()]
                     for element_vid in g.components_iter(organ_vid):

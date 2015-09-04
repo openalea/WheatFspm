@@ -53,7 +53,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'element', 'organ_type'):
+    for column in ('axis', 'organ', 'element', 'organ_label'):
         if column in desired_data_df.columns:
             del desired_data_df[column]
             del actual_data_df[column]

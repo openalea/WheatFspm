@@ -36,7 +36,7 @@ class Simulation(object):
         #: The inputs by element.
         #:
         #: `inputs` is a dictionary of dictionaries: {element1_id: element1_inputs, element2_id: element2_inputs, ..., elementN_id: elementN_inputs}, where: 
-        #:     * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
+        #:     * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_label, element_type),
         #:     * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
         #: 
         #: See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
@@ -45,7 +45,7 @@ class Simulation(object):
         #: The outputs by element. 
         #: 
         #: `outputs` is a dictionary of dictionaries: {element1_id: element1_outputs, element2_id: element2_outputs, ..., elementN_id: elementN_outputs}, where: 
-        #:     * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
+        #:     * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_label, element_type),
         #:     * and elementi_outputs is a dictionary: {'elementi_output1_name': elementi_output1_value, 'elementi_output2_name': elementi_output2_value, ..., 'elementi_outputN_name': elementi_outputN_value}.
         #: 
         #: See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
@@ -62,7 +62,7 @@ class Simulation(object):
             - `inputs` (:class:`dict`) - The inputs by element.
                Inputs must be a dictionary of dictionaries: {element1_id: element1_inputs, element2_id: element2_inputs, ..., elementN_id: elementN_inputs}, where:
                  
-                   * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_type, element_type),
+                   * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_label, element_type),
                    * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
                     
                See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
@@ -93,12 +93,12 @@ class Simulation(object):
         """
         self.outputs.clear()
         for (element_id, element_inputs) in self.inputs.iteritems():
-            organ_type = element_inputs['organ_type']
+            organ_label = element_inputs['organ_label']
             surfacic_nitrogen = element_inputs['surfacic_nitrogen']
             width = element_inputs['width']
             height = element_inputs['height']
             STAR = element_inputs['STAR']
             PAR = STAR * PARi
-            Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_type)
+            Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_label)
             self.outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
     

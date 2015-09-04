@@ -1,4 +1,4 @@
-plant,axis,metamer,organ,element,surfacic_nitrogen,STAR,height,organ_type,width
+plant,axis,metamer,organ,element,surfacic_nitrogen,STAR,height,organ_label,width
 1,MS,9,blade,visible,0.7912279999999999,1.91e-06,32.12856529091365,blade,0.018000000000000002
 1,MS,9,sheath,visible,1.0547030000000002,3.2000000000000006e-07,18.58919516066019,sheath,0.3609132887878119
 1,MS,10,blade,visible,1.15,6.210000000000001e-06,42.96438200561979,blade,0.018000000000000002
