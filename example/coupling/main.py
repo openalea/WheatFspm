@@ -47,6 +47,8 @@ PHYTOMERS_INPUTS_FILENAME = 'phytomers_inputs.csv'
 ORGANS_INPUTS_FILENAME = 'organs_inputs.csv'
 ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
 
+DIMENSIONS_FILENAME = 'dimensions.csv'
+
 PAR_FILENAME = 'PAR_Clermont_rebuild.csv'
 
 METEO_FILENAME = 'meteo_Clermont_rebuild.csv'
@@ -60,6 +62,9 @@ AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
 PHYTOMERS_OUTPUTS_FILENAME = 'phytomers_outputs.csv'
 ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
 ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
+
+ORGANS_COUPLING_VARIABLES_FILENAME = 'organs_coupling_variables.csv'
+ELEMENTS_COUPLING_VARIABLES_FILENAME = 'elements_coupling_variables.csv'
 
 OUTPUTS_PRECISION = 6
 
@@ -77,6 +82,9 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
     phytomers_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, PHYTOMERS_OUTPUTS_FILENAME)
     organs_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ORGANS_OUTPUTS_FILENAME)
     elements_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME)
+    
+    organs_coupling_variables_filepath = os.path.join(OUTPUTS_DIRPATH, ORGANS_COUPLING_VARIABLES_FILENAME)
+    elements_coupling_variables_filepath = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_COUPLING_VARIABLES_FILENAME)
 
     if run_simu:
 
@@ -98,6 +106,11 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         # initialize the simulation from the population
         simulation_.initialize(population)
 
+        # get the dimensions
+        dimensions_filepath = os.path.join(INPUTS_DIRPATH, DIMENSIONS_FILENAME)
+        dimensions_df = pd.read_csv(dimensions_filepath)
+        dimensions_grouped = dimensions_df.groupby(simulation.Simulation.ELEMENTS_INPUTS_INDEXES)
+        
         # Get PAR data
         PAR_filepath = os.path.join(INPUTS_DIRPATH, PAR_FILENAME)
         PAR_df = pd.read_csv(PAR_filepath)
@@ -105,7 +118,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         # get meteo data
         meteo_df = tools.read_t_data(INPUTS_DIRPATH, METEO_FILENAME)
-
+        
         # run the models
         start_time = 0
         stop_time = 960 # 960
@@ -120,6 +133,9 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         all_elements_df_list = []
 
         max_proteins = {}
+        
+        organs_coupling_variables_mapping = {}
+        elements_coupling_variables_mapping = {}
 
         for t_photosynthesis_model in xrange(start_time, stop_time, photosynthesis_model_ts):
             # run the model of photosynthesis and update the population
@@ -127,13 +143,13 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                 plant_index = plant.index
                 for axis in plant.axes:
                     axis_id = axis.id
-
                     # Root growth and death
+                    organs_coupling_variables_mapping[(t_photosynthesis_model, plant_index, axis_id, None, 'Roots')] = {}
                     mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = SenescenceModel.calculate_roots_mstruct_growth(axis.roots.sucrose, axis.roots.amino_acids, axis.roots.mstruct, 3600*photosynthesis_model_ts) #3600 is temporary, will be moved
                     axis.roots.mstruct_C_growth = mstruct_C_growth/ratio_ts
                     axis.roots.Nstruct_N_growth = Nstruct_N_growth/ratio_ts
                     mstruct_death, Nstruct_death = SenescenceModel.calculate_roots_senescence(axis.roots.mstruct, axis.roots.Nstruct, 3600*photosynthesis_model_ts)
-                    axis.roots.mstruct_death = mstruct_death/ratio_ts
+                    organs_coupling_variables_mapping[(t_photosynthesis_model, plant_index, axis_id, None, 'Roots')]['mstruct_death'] = mstruct_death/ratio_ts
                     delta_mstruct, delta_Nstruct, relative_delta_mstruct = SenescenceModel.calculate_delta_mstruct_roots(mstruct_growth, Nstruct_growth, mstruct_death, Nstruct_death, axis.roots.mstruct)
                     axis.roots.mstruct += delta_mstruct
                     axis.roots.Nstruct += delta_Nstruct
@@ -150,16 +166,17 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                             for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                                 if element is None:
                                     continue
-
+                                outputs_group_id = (t_photosynthesis_model, plant_index, axis_id, phytomer_index, organ_type, element_type)
+                                elements_coupling_variables_mapping[outputs_group_id] = {}
                                 # Senescence
-                                group_id = (plant_index, axis_id, phytomer_index, organ_type, element_type)
-                                new_green_area, relative_delta_green_area, max_proteins = SenescenceModel.calculate_relative_delta_green_area(group_id, element.green_area, (element.proteins/element.mstruct), max_proteins, 3600*photosynthesis_model_ts)
+                                inputs_group_id = (plant_index, axis_id, phytomer_index, organ_type, element_type)
+                                new_green_area, relative_delta_green_area, max_proteins = SenescenceModel.calculate_relative_delta_green_area(inputs_group_id, element.green_area, (element.proteins/element.mstruct), max_proteins, 3600*photosynthesis_model_ts)
                                 new_mstruct, new_Nstruct = SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element.mstruct, element.Nstruct)
                                 new_SLN = SenescenceModel.calculate_surfacic_nitrogen(element.nitrates, element.amino_acids, element.proteins, element.Nstruct, new_green_area)
                                 element.green_area = new_green_area
                                 element.mstruct = new_mstruct
                                 element.Nstruct = new_Nstruct
-                                element.surfacic_nitrogen = new_SLN
+                                elements_coupling_variables_mapping[outputs_group_id]['surfacic_nitrogen'] = new_SLN
                                 # Remobilisation
                                 remob_starch = SenescenceModel.calculate_remobilisation(element.starch, relative_delta_green_area)
                                 remob_fructan = SenescenceModel.calculate_remobilisation(element.fructan, relative_delta_green_area)
@@ -174,17 +191,20 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                                 element.cytokinines -= loss_cytokinines
 
                                 # PAR and photosynthesis
-                                PAR = PAR_grouped.get_group((t_photosynthesis_model, plant_index, axis_id, phytomer_index, organ_type, element_type)).PAR.values[0]*0.9*0.95
-                                element.PAR = PAR
-                                Ag, An, Rd, Tr, Ts, gs = photosynthesis_model.Model.calculate_An(element.surfacic_nitrogen, element.width, element.height, PAR, meteo_df['air_temperature'][t_photosynthesis_model],
+                                PAR = PAR_grouped.get_group(outputs_group_id).PAR.values[0]*0.9*0.95
+                                elements_coupling_variables_mapping[outputs_group_id]['PAR'] = PAR
+                                dimensions_group = dimensions_grouped.get_group(inputs_group_id)
+                                element_width = dimensions_group.loc[dimensions_group.first_valid_index(), 'width']
+                                element_height = dimensions_group.loc[dimensions_group.first_valid_index(), 'height']
+                                Ag, An, Rd, Tr, Ts, gs = photosynthesis_model.Model.calculate_An(new_SLN, element_width, element_height, PAR, meteo_df['air_temperature'][t_photosynthesis_model],
                                     meteo_df['ambient_CO2'][t_photosynthesis_model], meteo_df['humidity'][t_photosynthesis_model],
                                     meteo_df['Wind'][t_photosynthesis_model], organ_type)
                                 element.Ag = Ag
-                                element.An = An
+                                elements_coupling_variables_mapping[outputs_group_id]['An'] = An
                                 element.Rd = Rd
                                 element.Tr = Tr
                                 element.Ts = Ts
-                                element.gs = gs
+                                elements_coupling_variables_mapping[outputs_group_id]['gs'] = gs
 
                                 # Element death and suppression from population
                                 min_green_area = 1E-4 # Minimal green area below which the organ is suppressed (m²)
@@ -251,7 +271,20 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
         global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
         global_elements_df.to_csv(elements_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
-
+        
+        def dict_to_dataframe(dict_, ids_columns):
+            ids_df = pd.DataFrame(dict_.keys(), columns=ids_columns)
+            data_df = pd.DataFrame(dict_.values())
+            df = pd.concat([ids_df, data_df], axis=1)
+            df.sort_index(by=ids_columns, inplace=True)
+            return df
+        
+        organs_coupling_variables_df = dict_to_dataframe(organs_coupling_variables_mapping, simulation.Simulation.ORGANS_OUTPUTS_INDEXES)
+        organs_coupling_variables_df.to_csv(organs_coupling_variables_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+        
+        elements_coupling_variables_df = dict_to_dataframe(elements_coupling_variables_mapping, simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
+        elements_coupling_variables_df.to_csv(elements_coupling_variables_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+        
         execution_time = int(time.time()-t0)
         print '\n', 'Model executed in ', str(datetime.timedelta(seconds=execution_time))
 
@@ -260,9 +293,12 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         
         x_name = 't'
         x_label='Time (Hour)'
-
+        
         # 1) Photosynthetic organs
+        elements_coupling_variables_df = pd.read_csv(elements_coupling_variables_filepath)
+        elements_coupling_variables_df_without_keys = elements_coupling_variables_df.drop(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, axis=1)
         ph_elements_output_df = pd.read_csv(elements_outputs_filepath)
+        ph_elements_output_df = pd.concat([ph_elements_output_df, elements_coupling_variables_df_without_keys], axis=1)
 
         graph_variables_ph_elements = {'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
                            'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
@@ -288,7 +324,10 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                               explicit_label=False)
 
         # 2) Roots, grains and phloem
+        organs_coupling_variables_df = pd.read_csv(organs_coupling_variables_filepath)
+        organs_coupling_variables_df_without_keys = organs_coupling_variables_df.drop(simulation.Simulation.ORGANS_OUTPUTS_INDEXES, axis=1)
         organs_output_df = pd.read_csv(organs_outputs_filepath)
+        organs_output_df = pd.concat([organs_output_df, organs_coupling_variables_df_without_keys], axis=1)
 
         graph_variables_organs = {'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Dry_Mass':'Dry mass (g)',
                             'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Proteins_N_Mass': u'[N Proteins] (g)',

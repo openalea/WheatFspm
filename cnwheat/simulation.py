@@ -93,7 +93,7 @@ class Simulation(object):
 
     ORGANS_INPUTS_INDEXES = ['plant', 'axis', 'phytomer', 'organ']
     ORGANS_OUTPUTS_INDEXES = [T_INDEX] + ORGANS_INPUTS_INDEXES
-    ORGANS_STATE_PARAMETERS = ['volume', 'Tsoil', 'mstruct_C_growth', 'Nstruct_N_growth', 'mstruct_death']
+    ORGANS_STATE_PARAMETERS = ['volume', 'Tsoil', 'mstruct_C_growth', 'Nstruct_N_growth']
     ORGANS_STATE = ORGANS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Organ, [])
     ORGANS_INTERMEDIATE_VARIABLES = ['Conc_Nitrates_Soil', 'RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual', 'R_maintenance', 'R_grain_growth_struct', 'R_grain_growth_starch', 'R_growth',
                                      'C_exudation', 'N_exudation', 'regul_transpiration', 'HATS_LATS']
@@ -106,14 +106,15 @@ class Simulation(object):
 
     ELEMENTS_INPUTS_INDEXES = ['plant', 'axis', 'phytomer', 'organ', 'element']
     ELEMENTS_OUTPUTS_INDEXES = [T_INDEX] + ELEMENTS_INPUTS_INDEXES
-    ELEMENTS_STATE_PARAMETERS = ['area', 'green_area', 'width', 'height', 'PAR', 'Ag', 'An', 'Rd', 'gs', 'Tr', 'Ts', 'surfacic_nitrogen']
+    ELEMENTS_STATE_PARAMETERS = ['green_area', 'Ag', 'Rd', 'Tr', 'Ts']
     ELEMENTS_STATE = ELEMENTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, [])
     ELEMENTS_INTERMEDIATE_VARIABLES = ['Transpiration', 'R_phloem_loading', 'R_Nnit_red', 'R_residual', 'R_maintenance', 'Photosynthesis']
     ELEMENTS_FLUXES = ['Loading_Sucrose', 'Regul_S_Fructan', 'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan']
     ELEMENTS_INTEGRATIVE_VARIABLES = ['total_organic_nitrogen']
     ELEMENTS_RUN_VARIABLES = ELEMENTS_OUTPUTS_INDEXES + ELEMENTS_STATE + ELEMENTS_INTERMEDIATE_VARIABLES + ELEMENTS_FLUXES + ELEMENTS_INTEGRATIVE_VARIABLES
     ELEMENTS_POSTPROCESSING_VARIABLES = ['Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose', 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins',
-                                         'SLN', 'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids', 'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids', 'Conc_cytokinines', 'D_cytokinines', 'cytokinines_import', 'k_proteins']
+                                         'SLN', 'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids', 'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids', 
+                                         'Conc_cytokinines', 'D_cytokinines', 'cytokinines_import', 'k_proteins', 'Rd_total']
     ELEMENTS_ALL_VARIABLES = ELEMENTS_RUN_VARIABLES + ELEMENTS_POSTPROCESSING_VARIABLES
 
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
@@ -753,7 +754,6 @@ class Simulation(object):
                 organs_df['mstruct_C_growth'] = axis.roots.mstruct_C_growth
                 organs_df['R_growth'] = map(RespirationModel.R_growth, organs_df['mstruct_C_growth'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(self._time_grid))
                 organs_df['Nstruct_N_growth'] = axis.roots.Nstruct_N_growth
-                organs_df['mstruct_death'] = axis.roots.mstruct_death
                 exudation = np.array(map(axis.roots.calculate_exudation, organs_df['Unloading_Sucrose'], organs_df['sucrose'], phloem_sucrose, organs_df['amino_acids'], phloem_amino_acids))
                 organs_df['C_exudation'], organs_df['N_exudation'] = exudation[:,0], exudation[:,1]
 
@@ -789,11 +789,7 @@ class Simulation(object):
                             elements_df['phytomer'] = phytomer.index
                             elements_df['organ'] = organ.__class__.__name__
                             elements_df['element'] = element_type
-                            elements_df['area'] = element.area
                             elements_df['green_area'] = element.green_area
-                            elements_df['height'] = element.height
-                            elements_df['width'] = element.width
-                            elements_df['surfacic_nitrogen'] = element.surfacic_nitrogen
                             elements_df['mstruct'] = element.mstruct
                             elements_df['Nstruct'] = element.Nstruct
                             elements_df['triosesP'] = solver_output_transposed[self.initial_conditions_mapping[element]['triosesP']]
@@ -807,10 +803,9 @@ class Simulation(object):
                             output_respi_model =np.array(map(RespirationModel.R_phloem, elements_df['Loading_Sucrose'], elements_df['sucrose'], [element.mstruct*element.__class__.PARAMETERS.ALPHA] * len(self._time_grid)))
                             elements_df['R_phloem_loading'], elements_df['Loading_Sucrose'] = output_respi_model[:,0], output_respi_model[:,1]
                             elements_df['Regul_S_Fructan'] = map(element.calculate_regul_s_fructan, elements_df['Loading_Sucrose'])
-                            elements_df['PAR'] = element.PAR
                             elements_df['Ag'] = element.Ag
-                            elements_df['An'] = element.An
-                            elements_df['Rd'] = map(element.calculate_total_Rd, [element.Rd]*len(self._time_grid), [element.green_area] * len(self._time_grid))
+                            elements_df['Rd'] = element.Rd
+                            elements_df['Rd_total'] = map(element.calculate_total_Rd, [element.Rd]*len(self._time_grid), [element.green_area] * len(self._time_grid))
                             elements_df['S_Amino_Acids'] = map(element.calculate_s_amino_acids, elements_df['nitrates'], elements_df['triosesP'])
                             output_respi_model = np.array(map(RespirationModel.R_Nnit_red, elements_df['S_Amino_Acids'], elements_df['sucrose'], [element.mstruct*element.__class__.PARAMETERS.ALPHA] * len(self._time_grid)))
                             elements_df['R_Nnit_red'], elements_df['S_Amino_Acids'] = output_respi_model[:,0], output_respi_model[:,1]
@@ -820,7 +815,6 @@ class Simulation(object):
                             elements_df['R_residual'],  elements_df['R_maintenance'] = R_residual[:,0], R_residual[:,1]
                             elements_df['Tr'] = element.Tr
                             elements_df['Ts'] = element.Ts
-                            elements_df['gs'] = element.gs
                             elements_df['Photosynthesis'] = map(element.calculate_photosynthesis, [element.Ag] * len(self._time_grid), [element.green_area] * len(self._time_grid))
                             elements_df['Transpiration'] = transpiration_mapping[element]
                             elements_df['Conc_TriosesP'] = element.calculate_conc_triosesP(elements_df['triosesP'])

@@ -488,12 +488,11 @@ class Roots(Organ):
     PARAMETERS = parameters.RootsParameters #: the internal parameters of the roots
 
     def __init__(self, mstruct=None, Nstruct=None, sucrose=None, nitrates=None, amino_acids=None, cytokinines=None, mstruct_C_growth=None,
-                 Nstruct_N_growth=None, mstruct_death=None):
+                 Nstruct_N_growth=None):
 
         # state parameters
         self.mstruct_C_growth = mstruct_C_growth #: Growth of root structural dry mass (µmol C)
         self.Nstruct_N_growth = Nstruct_N_growth #: Growth of root structural N mass (µmol N)
-        self.mstruct_death = mstruct_death
 
         # state variables
         self.mstruct = mstruct                 #: Structural mass (g)
@@ -973,23 +972,16 @@ class PhotosyntheticOrganElement(object):
 
     PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
 
-    def __init__(self, area=None, green_area=None, mstruct=None, Nstruct=None, width=None, height=None, triosesP=None, starch=None,
+    def __init__(self, green_area=None, mstruct=None, Nstruct=None, triosesP=None, starch=None,
                  sucrose=None, fructan=None, nitrates=None, amino_acids=None, proteins=None, cytokinines=None,
-                 PAR = None, An=None, Tr=None, Ag=None, Rd=None, Ts=None, gs=None,
-                 surfacic_nitrogen=None):
+                 Tr=None, Ag=None, Rd=None, Ts=None):
 
         # state parameters
-        self.area = area                     #: area (m-2)
         self.green_area = green_area         #: green area (m-2)
-        self.width = width                   #: Width for lamina or diameter for stem organs (m)
-        self.height = height                 #: Height of the element from soil (m)
-        self.An = An                         #: Net assimilation (µmol m-2 s-1)
         self.Tr = Tr                         #: Transpiration rate (mmol m-2 s-1)
         self.Ag = Ag                         #: Gross assimilation (µmol m-2 s-1)
         self.Rd = Rd                         #: Mitochondrial respiration rate (µmol m-2 s-1)
         self.Ts = Ts                         #: Organ temperature (°C)
-        self.gs = gs                         #: Stomatal conductance to water (mol m-2 s-1)
-        self.surfacic_nitrogen = surfacic_nitrogen        #: current surfacic nitrogen (g m-2)
 
         # state variables
         self.mstruct = mstruct               #: Structural dry mass (g)
@@ -1002,7 +994,6 @@ class PhotosyntheticOrganElement(object):
         self.amino_acids = amino_acids       #: µmol N
         self.proteins = proteins             #: µmol N
         self.cytokinines = cytokinines       #: UA
-        self.PAR = PAR                       #: absorbed PAR (µmol m-2 s-1)
 
         # fluxes to phloem
         self.loading_sucrose = None          #: current rate of sucrose loading to phloem
