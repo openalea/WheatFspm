@@ -23,24 +23,9 @@ from __future__ import division # use "//" to do integer division
         $Id$
 """
 
-import warnings
-import logging
-
 import numpy as np
 
 import parameters
-
-class ModelWarning(UserWarning): pass
-class ModelInputWarning(ModelWarning): pass
-
-class ModelError(Exception): pass
-class ModelInputError(ModelError): pass
-
-warnings.simplefilter('always', ModelInputWarning)
-
-
-def enum(**enums):
-    return type('Enum', (), enums)
 
 
 class Population(object):
@@ -73,12 +58,11 @@ class Plant(object):
 
     PARAMETERS = parameters.PlantParameters #: the internal parameters of the plants
 
-    def __init__(self, axes=None, index=1):
+    def __init__(self, axes=None):
         if axes is None:
             axes = []
         self.axes = axes #: the list of axes
-        self.index = index #: the index of the plant, from 1 to n.
-
+        
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the plant recursively.
         """
@@ -99,11 +83,7 @@ class Axis(object):
 
     PARAMETERS = parameters.AxisParameters #: the internal parameters of the axes
 
-    Types = enum(MAIN_STEM='MS', TILLER='T') #: the authorized types of the axes
-
-    TYPES_STRINGS = Types.__dict__.values() #: the string values of the authorized types of the axes
-
-    def __init__(self, roots=None, phloem=None, grains=None, soil=None, phytomers=None, axis_type=Types.MAIN_STEM, index=0, axis_id=None):
+    def __init__(self, roots=None, phloem=None, grains=None, soil=None, phytomers=None):
         self.roots = roots #: the roots
         self.phloem = phloem #: the phloem
         self.grains = grains #: the grains
@@ -111,28 +91,6 @@ class Axis(object):
         if phytomers is None:
             phytomers = []
         self.phytomers = phytomers #: the list of phytomers
-
-        if axis_type not in Axis.TYPES_STRINGS:
-            logger = logging.getLogger(__name__)
-            message = 'axis_type not in {}.'.format(Axis.TYPES_STRINGS)
-            logger.exception(message)
-            raise ModelInputError(message)
-
-        if axis_type == Axis.Types.MAIN_STEM and index != 0:
-            logger = logging.getLogger(__name__)
-            message = 'non-zero index for {}'.format(Axis.Types.MAIN_STEM)
-            logger.exception(message)
-            warnings.warn(message, ModelInputWarning)
-        
-        self.id = None #: the id of the axis
-        if axis_id is None:
-            # build the id from axis_type and index
-            self.id = axis_type
-            if axis_type != Axis.Types.MAIN_STEM:
-                self.id += str(index)
-        else:
-            # use axis_id
-            self.id = axis_id
 
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the axis recursively.
@@ -147,6 +105,14 @@ class Axis(object):
             self.soil.calculate_integrative_variables()
         for phytomer in self.phytomers:
             phytomer.calculate_integrative_variables()
+            
+    @classmethod
+    def get_axis_id(cls, axis_index):
+        if axis_index == 0:
+            axis_id = 'MS'
+        else:
+            axis_id = 'T' + str(axis_index)
+        return axis_id
 
 
 class Phytomer(object):
@@ -161,13 +127,12 @@ class Phytomer(object):
 
     PARAMETERS = parameters.PhytomerParameters #: the internal parameters of the phytomers
 
-    def __init__(self, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None, index=1):
+    def __init__(self, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None):
         self.chaff = chaff #: the chaff
         self.peduncle = peduncle #: the peduncle
         self.lamina = lamina #: the lamina
         self.internode = internode #: the internode
         self.sheath = sheath #: the sheath
-        self.index = index #: the index of the phytomer, from 1 to n.
 
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the phytomer recursively.

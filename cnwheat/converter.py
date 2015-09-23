@@ -23,6 +23,7 @@
         $Id$
 """
 
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -64,65 +65,67 @@ def from_dataframes(plants_dataframe, axes_dataframe, phytomers_dataframe, organ
     
     population = model.Population()
     
-    for curr_plant_index in plants_dataframe.plant:
+    for plant_index in plants_dataframe.plant:
         # create a new plant
-        curr_plant = model.Plant(index=curr_plant_index)
-        population.plants.append(curr_plant)
-        curr_axes_dataframe = axes_dataframe[axes_dataframe['plant'] == curr_plant_index]
-        for curr_axis_id in curr_axes_dataframe.axis:
+        plant = model.Plant()
+        population.plants.append(plant)
+        curr_axes_dataframe = axes_dataframe[axes_dataframe['plant'] == plant_index]
+        for axis_id in curr_axes_dataframe.axis:
             # create a new axis
-            curr_axis = model.Axis(axis_id=curr_axis_id)
-            curr_plant.axes.append(curr_axis)
+            axis = model.Axis()
+            plant.axes.append(axis)
             
-            curr_organs_dataframe = organs_dataframe[(organs_dataframe['plant'] == curr_plant_index) & (organs_dataframe['axis'] == curr_axis_id)]
+            curr_organs_dataframe = organs_dataframe[(organs_dataframe['plant'] == plant_index) & (organs_dataframe['axis'] == axis_id)]
             
-            for curr_axis_attribute_name, curr_axis_attribute_class in (('grains', model.Grains), ('roots', model.Roots), ('soil', model.Soil), ('phloem', model.Phloem)):
-                curr_organ_class_name = curr_axis_attribute_class.__name__
-                curr_organ_dataframe = curr_organs_dataframe[curr_organs_dataframe['organ'] == curr_organ_class_name]
-                if len(curr_organ_dataframe) != 0:
-                    # create a new organ
-                    curr_organ = curr_axis_attribute_class()
-                    curr_organ_attributes_names = [state_var_name for state_var_name in simulation.Simulation.ORGANS_STATE if hasattr(curr_organ, state_var_name)]
-                    curr_organ_row = curr_organ_dataframe.loc[curr_organ_dataframe.first_valid_index()]
-                    curr_organ_attributes_values = curr_organ_row[curr_organ_attributes_names].tolist()
-                    curr_organ_attributes = dict(zip(curr_organ_attributes_names, curr_organ_attributes_values))
-                    curr_organ.__dict__.update(curr_organ_attributes)
-                    curr_organ.initialize()
-                    setattr(curr_axis, curr_axis_attribute_name, curr_organ)
+            for axis_attribute_name, axis_attribute_class in (('grains', model.Grains), ('roots', model.Roots), ('soil', model.Soil), ('phloem', model.Phloem)):
+                organ_class_name = axis_attribute_class.__name__
+                organ_dataframe = curr_organs_dataframe[curr_organs_dataframe['organ'] == organ_class_name]
+                # create a new organ
+                organ = axis_attribute_class()
+                organ_attributes_names = [state_var_name for state_var_name in simulation.Simulation.ORGANS_STATE if hasattr(organ, state_var_name)]
+                organ_row = organ_dataframe.loc[organ_dataframe.first_valid_index()]
+                organ_attributes_values = organ_row[organ_attributes_names].tolist()
+                organ_attributes = dict(zip(organ_attributes_names, organ_attributes_values))
+                organ.__dict__.update(organ_attributes)
+                organ.initialize()
+                setattr(axis, axis_attribute_name, organ)
                     
-            curr_phytomers_dataframe = phytomers_dataframe[(phytomers_dataframe['plant'] == curr_plant_index) & (phytomers_dataframe['axis'] == curr_axis_id)]
-            for curr_phytomer_index in curr_phytomers_dataframe.phytomer:
+            curr_phytomers_dataframe = phytomers_dataframe[(phytomers_dataframe['plant'] == plant_index) & (phytomers_dataframe['axis'] == axis_id)]
+            for phytomer_index in curr_phytomers_dataframe.phytomer:
                 # create a new phytomer
-                curr_phytomer = model.Phytomer(index=curr_phytomer_index)
-                curr_axis.phytomers.append(curr_phytomer)
+                phytomer = model.Phytomer()
+                axis.phytomers.append(phytomer)
                 
-                curr_organs_dataframe = organs_dataframe[(organs_dataframe['plant'] == curr_plant_index) & (organs_dataframe['axis'] == curr_axis_id) & (organs_dataframe['phytomer'] == curr_phytomer_index)]
+                curr_organs_dataframe = organs_dataframe[(organs_dataframe['plant'] == plant_index) & (organs_dataframe['axis'] == axis_id) & (organs_dataframe['phytomer'] == phytomer_index)]
                 
-                for curr_phytomer_attribute_name, curr_phytomer_attribute_class, curr_phytomer_attribute_element_class in \
+                for phytomer_attribute_name, phytomer_attribute_class, phytomer_attribute_element_class in \
                     (('chaff', model.Chaff, model.ChaffElement), 
                      ('lamina', model.Lamina, model.LaminaElement), 
                      ('internode', model.Internode, model.InternodeElement), 
                      ('peduncle', model.Peduncle, model.PeduncleElement),
                      ('sheath', model.Sheath, model.SheathElement)):
                     
-                    curr_organ_class_name = curr_phytomer_attribute_class.__name__
-                    curr_elements_dataframe = elements_dataframe[(elements_dataframe['plant'] == curr_plant_index) & (elements_dataframe['axis'] == curr_axis_id) & (elements_dataframe['phytomer'] == curr_phytomer_index) & (elements_dataframe['organ'] == curr_organ_class_name)]
+                    if phytomer_attribute_name == 'peduncle':
+                        pass
+                    
+                    organ_class_name = phytomer_attribute_class.__name__
+                    curr_elements_dataframe = elements_dataframe[(elements_dataframe['plant'] == plant_index) & (elements_dataframe['axis'] == axis_id) & (elements_dataframe['phytomer'] == phytomer_index) & (elements_dataframe['organ'] == organ_class_name)]
                 
-                    if curr_organ_class_name not in curr_organs_dataframe.organ.values and curr_organ_class_name not in curr_elements_dataframe.organ.values:
+                    if organ_class_name not in curr_organs_dataframe.organ.values and organ_class_name not in curr_elements_dataframe.organ.values:
                         continue
                     # create a new organ
-                    curr_organ = curr_phytomer_attribute_class()
-                    setattr(curr_phytomer, curr_phytomer_attribute_name, curr_organ)
+                    organ = phytomer_attribute_class()
+                    setattr(phytomer, phytomer_attribute_name, organ)
                     
-                    for curr_organ_attribute_name, curr_organ_attribute_type in (('enclosed_element', 'enclosed'), ('exposed_element', 'exposed')):
-                        curr_element_dataframe = curr_elements_dataframe[curr_elements_dataframe['element'] == curr_organ_attribute_type]
-                        if len(curr_element_dataframe) == 0:
+                    for organ_attribute_name, organ_attribute_type in (('enclosed_element', 'enclosed'), ('exposed_element', 'exposed')):
+                        element_dataframe = curr_elements_dataframe[curr_elements_dataframe['element'] == organ_attribute_type]
+                        if len(element_dataframe) == 0:
                             continue
-                        curr_element_dataframe = curr_element_dataframe.loc[:, simulation.Simulation.ELEMENTS_STATE]
+                        element_dataframe = element_dataframe.loc[:, simulation.Simulation.ELEMENTS_STATE]
                         # create a new element
-                        curr_element_dict = curr_element_dataframe.loc[curr_element_dataframe.first_valid_index()].to_dict()
-                        curr_element = curr_phytomer_attribute_element_class(**curr_element_dict)
-                        setattr(curr_organ, curr_organ_attribute_name, curr_element)
+                        element_dict = element_dataframe.loc[element_dataframe.first_valid_index()].to_dict()
+                        element = phytomer_attribute_element_class(**element_dict)
+                        setattr(organ, organ_attribute_name, element)
                         
     return population
 
@@ -167,24 +170,31 @@ def to_dataframes(population):
             inputs_df.loc[len(inputs_df),:] = indexes + attributes_values
     
     # run through the population tree and fill the dataframes
+    plant_index = 1
     for plant in population.plants:
-        append_row(plant, [plant.index], simulation.Simulation.PLANTS_STATE, all_plants_df)
+        append_row(plant, [plant_index], simulation.Simulation.PLANTS_STATE, all_plants_df)
+        axis_index = 0
         for axis in plant.axes:
-            append_row(axis, [plant.index, axis.id], simulation.Simulation.AXES_STATE, all_axes_df)
+            axis_id = model.Axis.get_axis_id(axis_index)
+            append_row(axis, [plant_index, axis_id], simulation.Simulation.AXES_STATE, all_axes_df)
             for organ in (axis.roots, axis.soil, axis.phloem, axis.grains):
                 if organ is None:
                     continue
-                append_row(organ, [plant.index, axis.id, np.nan, organ.__class__.__name__], simulation.Simulation.ORGANS_STATE, all_organs_df)
+                append_row(organ, [plant_index, axis_id, np.nan, organ.__class__.__name__], simulation.Simulation.ORGANS_STATE, all_organs_df)
+            phytomer_index = 1
             for phytomer in axis.phytomers:
-                append_row(phytomer, [plant.index, axis.id, phytomer.index], simulation.Simulation.PHYTOMERS_STATE, all_phytomers_df)
+                append_row(phytomer, [plant_index, axis_id, phytomer_index], simulation.Simulation.PHYTOMERS_STATE, all_phytomers_df)
                 for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                     if organ is None:
                         continue
-                    append_row(organ, [plant.index, axis.id, phytomer.index, organ.__class__.__name__], simulation.Simulation.ORGANS_STATE, all_organs_df)
+                    append_row(organ, [plant_index, axis_id, phytomer_index, organ.__class__.__name__], simulation.Simulation.ORGANS_STATE, all_organs_df)
                     for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                         if element is None:
                             continue
-                        append_row(element, [plant.index, axis.id, phytomer.index, organ.__class__.__name__, element_type], simulation.Simulation.ELEMENTS_STATE, all_elements_df)
+                        append_row(element, [plant_index, axis_id, phytomer_index, organ.__class__.__name__, element_type], simulation.Simulation.ELEMENTS_STATE, all_elements_df)
+                phytomer_index += 1
+            axis_index += 1
+        plant_index += 1
             
     # sort the rows of the dataframes by columns
     all_plants_df.sort_index(by=PLANTS_DATAFRAME_COLUMNS, inplace=True)
@@ -208,4 +218,5 @@ def to_dataframes(population):
     all_elements_df[['plant', 'phytomer']] = all_elements_df[['plant', 'phytomer']].astype(int)
     
     return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df
+
     

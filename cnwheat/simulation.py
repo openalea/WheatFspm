@@ -347,24 +347,31 @@ class Simulation(object):
 
         i = 0
         all_rows = dict([(class_, []) for class_ in loggers_names])
+        plant_index = 1
         for plant in self.population.plants:
-            i = update_rows(plant, [t, plant.index], all_rows[model.Plant], i)
+            i = update_rows(plant, [t, plant_index], all_rows[model.Plant], i)
+            axis_index = 0
             for axis in plant.axes:
-                i = update_rows(axis, [t, plant.index, axis.id], all_rows[model.Axis], i)
+                axis_id = model.Axis.get_axis_id(axis_index)
+                i = update_rows(axis, [t, plant_index, axis_id], all_rows[model.Axis], i)
                 for organ in (axis.roots, axis.soil, axis.phloem, axis.grains):
                     if organ is None:
                         continue
-                    i = update_rows(organ, [t, plant.index, axis.id, 'NA', organ.__class__.__name__], all_rows[model.Organ], i)
+                    i = update_rows(organ, [t, plant_index, axis_id, 'NA', organ.__class__.__name__], all_rows[model.Organ], i)
+                phytomer_index = 1    
                 for phytomer in axis.phytomers:
-                    i = update_rows(phytomer, [t, plant.index, axis.id, phytomer.index], all_rows[model.Phytomer], i)
+                    i = update_rows(phytomer, [t, plant_index, axis_id, phytomer_index], all_rows[model.Phytomer], i)
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
-                        i = update_rows(organ, [t, plant.index, axis.id, phytomer.index, organ.__class__.__name__], all_rows[model.Organ], i)
+                        i = update_rows(organ, [t, plant_index, axis_id, phytomer_index, organ.__class__.__name__], all_rows[model.Organ], i)
                         for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
                             if element is None:
                                 continue
-                            i = update_rows(element, [t, plant.index, axis.id, phytomer.index, organ.__class__.__name__, element_type], all_rows[model.PhotosyntheticOrganElement], i)
+                            i = update_rows(element, [t, plant_index, axis_id, phytomer_index, organ.__class__.__name__, element_type], all_rows[model.PhotosyntheticOrganElement], i)
+                    phytomer_index += 1
+                axis_index += 1
+            plant_index += 1
 
         row_sep = '\n'
         column_sep = ','
@@ -663,19 +670,22 @@ class Simulation(object):
         all_phytomers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_ALL_VARIABLES)
         all_organs_df = pd.DataFrame(columns=Simulation.ORGANS_ALL_VARIABLES)
         all_elements_df = pd.DataFrame(columns=Simulation.ELEMENTS_ALL_VARIABLES)
-
+        
+        plant_index = 1
         for plant in self.population.plants:
 
             plants_df = pd.DataFrame(columns=all_plants_df.columns)
             plants_df['t'] = self._time_grid
-            plants_df['plant'] = plant.index
-
+            plants_df['plant'] = plant_index
+            
+            axis_index = 0
             for axis in plant.axes:
 
                 axes_df = pd.DataFrame(columns=all_axes_df.columns)
                 axes_df['t'] = self._time_grid
-                axes_df['plant'] = plant.index
-                axes_df['axis'] = axis.id
+                axes_df['plant'] = plant_index
+                axis_id = model.Axis.get_axis_id(axis_index)
+                axes_df['axis'] = axis_id
 
                 # compute the total transpiration
                 total_transpiration = np.zeros_like(self._time_grid)
@@ -696,8 +706,8 @@ class Simulation(object):
                 # format phloem outputs
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = self._time_grid
-                organs_df['plant'] = plant.index
-                organs_df['axis'] = axis.id
+                organs_df['plant'] = plant_index
+                organs_df['axis'] = axis_id
                 organs_df['phytomer'] = np.nan
                 organs_df['organ'] = axis.phloem.__class__.__name__
                 phloem_sucrose = solver_output_transposed[self.initial_conditions_mapping[axis.phloem]['sucrose']]
@@ -711,8 +721,8 @@ class Simulation(object):
                 # format soil output
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = self._time_grid
-                organs_df['plant'] = plant.index
-                organs_df['axis'] = axis.id
+                organs_df['plant'] = plant_index
+                organs_df['axis'] = axis_id
                 organs_df['organ'] = axis.soil.__class__.__name__
                 conc_nitrates_soil = axis.soil.calculate_conc_nitrates(solver_output_transposed[self.initial_conditions_mapping[axis.soil]['nitrates']])
                 organs_df['Conc_Nitrates'] = conc_nitrates_soil
@@ -722,8 +732,8 @@ class Simulation(object):
                 # format roots outputs
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = self._time_grid
-                organs_df['plant'] = plant.index
-                organs_df['axis'] = axis.id
+                organs_df['plant'] = plant_index
+                organs_df['axis'] = axis_id
                 organs_df['phytomer'] = np.nan
                 organs_df['organ'] = axis.roots.__class__.__name__
                 organs_df['sucrose'] = solver_output_transposed[self.initial_conditions_mapping[axis.roots]['sucrose']]
@@ -768,12 +778,13 @@ class Simulation(object):
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
 
                 # format photosynthetic organs elements outputs
+                phytomer_index = 1
                 for phytomer in axis.phytomers:
                     phytomers_df = pd.DataFrame(columns=all_phytomers_df.columns)
                     phytomers_df['t'] = self._time_grid
-                    phytomers_df['plant'] = plant.index
-                    phytomers_df['axis'] = axis.id
-                    phytomers_df['phytomer'] = phytomer.index
+                    phytomers_df['plant'] = plant_index
+                    phytomers_df['axis'] = axis_id
+                    phytomers_df['phytomer'] = phytomer_index
 
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
@@ -784,9 +795,9 @@ class Simulation(object):
 
                             elements_df = pd.DataFrame(columns=all_elements_df.columns)
                             elements_df['t'] = self._time_grid
-                            elements_df['plant'] = plant.index
-                            elements_df['axis'] = axis.id
-                            elements_df['phytomer'] = phytomer.index
+                            elements_df['plant'] = plant_index
+                            elements_df['axis'] = axis_id
+                            elements_df['phytomer'] = phytomer_index
                             elements_df['organ'] = organ.__class__.__name__
                             elements_df['element'] = element_type
                             elements_df['green_area'] = element.green_area
@@ -849,6 +860,7 @@ class Simulation(object):
                             all_elements_df = all_elements_df.append(elements_df, ignore_index=True)
 
                     all_phytomers_df = all_phytomers_df.append(phytomers_df, ignore_index=True)
+                    phytomer_index += 1
 
                 # format grains outputs
                 if axis.grains is None:
@@ -856,8 +868,8 @@ class Simulation(object):
 
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = self._time_grid
-                organs_df['plant'] = plant.index
-                organs_df['axis'] = axis.id
+                organs_df['plant'] = plant_index
+                organs_df['axis'] = axis_id
                 organs_df['phytomer'] = np.nan
                 organs_df['organ'] = axis.grains.__class__.__name__
                 organs_df['structure'] = solver_output_transposed[self.initial_conditions_mapping[axis.grains]['structure']]
@@ -875,8 +887,10 @@ class Simulation(object):
 
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
                 all_axes_df = all_axes_df.append(axes_df, ignore_index=True)
+                axis_index += 1
 
             all_plants_df = all_plants_df.append(plants_df, ignore_index=True)
+            plant_index += 1
 
         # set the order of the columns
         all_plants_df = all_plants_df.reindex_axis(Simulation.PLANTS_ALL_VARIABLES, axis=1, copy=False)

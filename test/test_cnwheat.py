@@ -30,7 +30,7 @@ import os
 
 import pandas as pd
 
-from cnwheat import simulation, tools, converter
+from cnwheat import simulation, tools, converter, model
 
 INPUTS_DIRPATH = 'inputs'
 
@@ -109,18 +109,18 @@ def test_run():
 
     for t in xrange(start_time, stop_time, time_step):
         # update the population
+        plant_index = 1
         for plant in simulation_.population.plants:
-            plant_index = plant.index
+            axis_index = 0
             for axis in plant.axes:
-                axis_id = axis.id
+                axis_id = model.Axis.get_axis_id(axis_index)
 
                 # Root growth and senescence
                 group = senescence_data_grouped.get_group((t, plant_index, axis_id, 0, 'Roots', 'enclosed'))
                 senescence_data_to_use = group.loc[group.first_valid_index(), simulation.Simulation.ORGANS_STATE].dropna().to_dict()
                 axis.roots.__dict__.update(senescence_data_to_use)
-                
+                phytomer_index = 1
                 for phytomer in axis.phytomers:
-                    phytomer_index = phytomer.index
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
@@ -136,7 +136,9 @@ def test_run():
                             group_photo = photosynthesis_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
                             photosynthesis_data_to_use = group_photo.loc[group_photo.first_valid_index(), simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
                             element.__dict__.update(photosynthesis_data_to_use)
-
+                    phytomer_index += 1
+                axis_index += 1
+            plant_index += 1
         # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
         simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
         

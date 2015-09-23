@@ -139,10 +139,11 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         for t_photosynthesis_model in xrange(start_time, stop_time, photosynthesis_model_ts):
             # run the model of photosynthesis and update the population
+            plant_index = 1
             for plant in simulation_.population.plants:
-                plant_index = plant.index
+                axis_index = 0
                 for axis in plant.axes:
-                    axis_id = axis.id
+                    axis_id = cnwheat_model.Axis.get_axis_id(axis_index)
                     # Root growth and death
                     organs_coupling_variables_mapping[(t_photosynthesis_model, plant_index, axis_id, None, 'Roots')] = {}
                     mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = SenescenceModel.calculate_roots_mstruct_growth(axis.roots.sucrose, axis.roots.amino_acids, axis.roots.mstruct, 3600*photosynthesis_model_ts) #3600 is temporary, will be moved
@@ -156,9 +157,8 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                     loss_cytokinines = SenescenceModel.calculate_remobilisation(axis.roots.cytokinines, relative_delta_mstruct)
                     axis.roots.cytokinines -= loss_cytokinines
 
-
+                    phytomer_index = 1
                     for phytomer in axis.phytomers:
-                        phytomer_index = phytomer.index
                         for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                             if organ is None:
                                 continue
@@ -238,7 +238,11 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                                             phytomer.sheath.exposed_element = None
                                         else:
                                              phytomer.sheath.enclosed_element = None
-
+                                             
+                        phytomer_index += 1
+                    axis_index += 1
+                plant_index += 1
+                
             for t_cn_model in xrange(t_photosynthesis_model, t_photosynthesis_model + photosynthesis_model_ts, cn_model_ts):
                 # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
                 simulation_.run(start_time=t_cn_model, stop_time=t_cn_model+cn_model_ts, number_of_output_steps=cn_model_ts+1)
