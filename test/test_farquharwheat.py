@@ -28,11 +28,7 @@ import pandas as pd
 
 from farquharwheat import model, simulation, converter
 
-INPUTS_DIRPATH = 'inputs'
-
 INPUTS_FILENAME = 'inputs.csv'
-
-OUTPUTS_DIRPATH = 'outputs'
 
 DESIRED_OUTPUTS_FILENAME = 'desired_outputs.csv'
 
@@ -53,7 +49,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'element', 'organ_label'):
+    for column in ('axis', 'organ', 'element', 'label'):
         if column in desired_data_df.columns:
             del desired_data_df[column]
             del actual_data_df[column]
@@ -67,7 +63,7 @@ def test_run():
     # create a simulation
     simulation_ = simulation.Simulation()
     # read inputs from Pandas dataframe
-    inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, INPUTS_FILENAME))
+    inputs_df = pd.read_csv(INPUTS_FILENAME)
     # convert the dataframe to simulation inputs format
     inputs = converter.from_dataframe(inputs_df)
     # initialize the simulation with the inputs
@@ -75,13 +71,13 @@ def test_run():
     # convert the inputs to Pandas dataframe
     reconverted_inputs = converter.to_dataframe(simulation_.inputs)
     # compare inputs
-    compare_actual_to_desired(INPUTS_DIRPATH, reconverted_inputs, INPUTS_FILENAME)
+    compare_actual_to_desired('.', reconverted_inputs, INPUTS_FILENAME)
     # run the simulation
     simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.68, Ur=3.171, PARi=2262400)
     # convert the outputs to Pandas dataframe
     outputs_df = converter.to_dataframe(simulation_.outputs)
     # compare outputs
-    compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, DESIRED_OUTPUTS_FILENAME, ACTUAL_OUTPUTS_FILENAME)
+    compare_actual_to_desired('.', outputs_df, DESIRED_OUTPUTS_FILENAME, ACTUAL_OUTPUTS_FILENAME)
 
 
 if __name__ == '__main__':

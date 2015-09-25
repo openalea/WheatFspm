@@ -33,13 +33,9 @@ import pandas as pd
 
 from farquharwheat import model, simulation, converter 
 
-INPUTS_DIRPATH = 'inputs'
+INPUTS_FILENAME = 'inputs.csv'
 
-CSV_INPUTS_FILENAME = 'farquharwheat_in.csv'
-
-OUTPUTS_DIRPATH = 'outputs'
-
-CSV_OUTPUTS_FILENAME = 'farquharwheat_out.csv'
+OUTPUTS_FILENAME = 'outputs.csv'
 
 OUTPUTS_PRECISION = 6
 
@@ -48,7 +44,7 @@ if __name__ == '__main__':
     # create a simulation
     simulation_ = simulation.Simulation()
     # read inputs from Pandas dataframe
-    inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, CSV_INPUTS_FILENAME))
+    inputs_df = pd.read_csv(INPUTS_FILENAME)
     # convert the dataframe to simulation inputs format
     inputs = converter.from_dataframe(inputs_df)
     # initialize the simulation with the inputs
@@ -58,5 +54,5 @@ if __name__ == '__main__':
     # convert the outputs to Pandas dataframe
     outputs_df = converter.to_dataframe(simulation_.outputs)
     # write the dataframe to CSV
-    outputs_df.to_csv(os.path.join(OUTPUTS_DIRPATH, CSV_OUTPUTS_FILENAME), index=False, na_rep='NA', float_format='%.{}f'.format(OUTPUTS_PRECISION)) 
+    outputs_df.to_csv(OUTPUTS_FILENAME, index=False, na_rep='NA', float_format='%.{}f'.format(OUTPUTS_PRECISION)) 
     

@@ -93,7 +93,7 @@ class Simulation(object):
         """
         self.outputs.clear()
         for (element_id, element_inputs) in self.inputs.iteritems():
-            organ_label = element_inputs['organ_label']
+            organ_label = element_inputs['label']
             surfacic_nitrogen = element_inputs['surfacic_nitrogen']
             width = element_inputs['width']
             height = element_inputs['height']

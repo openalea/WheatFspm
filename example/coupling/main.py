@@ -30,11 +30,8 @@ import os
 
 from farquharwheat import simulation, converter
 
-INPUTS_DIRPATH = 'inputs'
 
-OUTPUTS_DIRPATH = 'outputs'
-
-CSV_OUTPUTS_FILENAME = 'farquharwheat_out.csv'
+OUTPUTS_FILENAME = 'outputs.csv'
 
 OUTPUTS_PRECISION = 6
 
@@ -51,66 +48,54 @@ def setup_MTG():
     random.seed(1234)
     np.random.seed(1234)
     
-    PROPERTIES_FILENAME = 'properties.csv'
+    INPUTS_FILENAME = 'inputs.csv'
     
-    properties_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, PROPERTIES_FILENAME))
+    inputs_df = pd.read_csv(INPUTS_FILENAME)
     
     g, wheat, domain_area, domain, convUnit = initialise_stand(1500)
     
     # add the properties which do not exist yet
-    if not 'exposed_area' in g.properties():
-        g.add_property('exposed_area')
-    if not 'width' in g.properties():
-        g.add_property('width')
-    if not 'surfacic_nitrogen' in g.properties():
-        g.add_property('surfacic_nitrogen')
+    for property_ in converter.MTG_PROPERTIES_NEEDED_BY_FARQUHARWHEAT:
+        if property_ not in g.properties():
+            g.add_property(property_)
     
-    plants_indexes_in_properties_df = properties_df.plant.unique()
+    plants_indexes_in_inputs_df = inputs_df.plant.unique()
     # traverse the MTG recursively from top
     for plant_vid in g.components_iter(g.root):
         plant_index = int(g.index(plant_vid))
-        if plant_index not in plants_indexes_in_properties_df:
+        if plant_index not in plants_indexes_in_inputs_df:
             # TODO: remove plant_vid and all its components
             continue
-        plant_properties_df = properties_df[properties_df['plant'] == plant_index]
+        plant_inputs_df = inputs_df[inputs_df['plant'] == plant_index]
         for axis_vid in g.components_iter(plant_vid):
             axis_id = g.label(axis_vid)
-            if axis_id not in plant_properties_df.axis.unique():
+            if axis_id not in plant_inputs_df.axis.unique():
                 # TODO: remove axis_vid and all its components
                 continue
-            axis_properties_df = plant_properties_df[plant_properties_df['axis'] == axis_id]
+            axis_inputs_df = plant_inputs_df[plant_inputs_df['axis'] == axis_id]
             for metamer_vid in g.components(axis_vid): 
                 metamer_index = int(g.index(metamer_vid))
-                if metamer_index not in axis_properties_df['metamer'].unique():
+                if metamer_index not in axis_inputs_df['metamer'].unique():
                     # TODO: remove metamer_vid and all its components
                     continue
-                metamer_properties_df = axis_properties_df[axis_properties_df['metamer'] == metamer_index]
+                metamer_inputs_df = axis_inputs_df[axis_inputs_df['metamer'] == metamer_index]
                 for organ_vid in g.components_iter(metamer_vid):
                     organ_label = g.label(organ_vid)
-                    if organ_label not in converter.ORGANS_NAMES_SET:
+                    if organ_label not in converter.MTG_ORGANS_NAMES_SET:
                         continue
-                    if organ_label not in metamer_properties_df['organ'].unique():
+                    if organ_label not in metamer_inputs_df['organ'].unique():
                         # TODO: remove organ_vid and all its components
                         continue
-                    organ_properties_df = metamer_properties_df[metamer_properties_df['organ'] == organ_label]
-                    # width
-                    g.property('width')[organ_vid] = organ_properties_df['width'][organ_properties_df.first_valid_index()]
+                    organ_inputs_df = metamer_inputs_df[metamer_inputs_df['organ'] == organ_label]
                     for element_vid in g.components_iter(organ_vid):
-                        vertex_properties = g.get_vertex_property(element_vid)
                         element_label = g.label(element_vid)
-                        if element_label.startswith('Hidden'):
-                            element_type = 'enclosed'
-                        else:
-                            element_type = 'exposed'
-                        if element_type not in organ_properties_df['element'].unique():
+                        if element_label not in organ_inputs_df['element'].unique():
                             # TODO: remove element_vid and all its components
                             continue
-                        element_df = organ_properties_df[organ_properties_df['element'] == element_type]
-                        # exposed_area
-                        element_area = vertex_properties['area'] / 10000.0 # conversion from cm2 to m2
-                        element_STAR = element_df['STAR'][element_df.first_valid_index()]
-                        g.property('exposed_area')[element_vid] = element_STAR * element_area
-                        g.property('surfacic_nitrogen')[element_vid] = element_df['SLN'][element_df.first_valid_index()]
+                        element_df = organ_inputs_df[organ_inputs_df['element'] == element_label]
+                        element_series = element_df.loc[element_df.first_valid_index()]
+                        for property_ in converter.MTG_ELEMENTS_PROPERTIES_NEEDED_BY_FARQUHARWHEAT:
+                            g.property(property_)[element_vid] = element_series[property_]
     return g
 
 if __name__ == '__main__':
@@ -128,6 +113,6 @@ if __name__ == '__main__':
     # format Farquhar-Wheat outputs to Pandas dataframe
     outputs_df = converter.to_dataframe(simulation_.outputs)
     # write the dataframe to CSV
-    outputs_df.to_csv(os.path.join(OUTPUTS_DIRPATH, CSV_OUTPUTS_FILENAME), index=False, na_rep='NA', float_format='%.{}f'.format(OUTPUTS_PRECISION)) 
+    outputs_df.to_csv(OUTPUTS_FILENAME, index=False, na_rep='NA', float_format='%.{}f'.format(OUTPUTS_PRECISION)) 
 
 
