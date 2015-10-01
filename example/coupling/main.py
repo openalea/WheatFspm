@@ -30,9 +30,13 @@
 
 import os
 
+import pandas as pd
+
 from farquharwheat import simulation, converter
 
 INPUTS_FILENAME = 'inputs.csv'
+PAR_FILENAME = 'PAR.csv'
+
 OUTPUTS_FILENAME = 'outputs.csv'
 
 OUTPUTS_PRECISION = 6
@@ -106,8 +110,14 @@ if __name__ == '__main__':
     g = setup_MTG()
     # convert the MTG to Farquhar-Wheat inputs and initialize the simulation
     simulation_.initialize(converter.from_MTG(g))
+    # get the PAR from dataframe
+    PAR_df = pd.read_csv(PAR_FILENAME, index_col=converter.ELEMENTS_TOPOLOGY_COLUMNS)
+    # compute incident PAR
+    PARi_df = PAR_df
+    PARi_df.PAR *= 0.9 * 0.95
+    PARi_dict = PARi_df.to_dict()['PAR']
     # run the simulation
-    simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.68, Ur=3.171, PARi=2262400)
+    simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.68, Ur=3.171, PARi_dict=PARi_dict)
     # update the MTG from Farquhar-Wheat outputs
     converter.update_MTG(simulation_.outputs, g)
     # format Farquhar-Wheat outputs to Pandas dataframe

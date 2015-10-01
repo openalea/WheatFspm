@@ -34,6 +34,7 @@ import pandas as pd
 from farquharwheat import model, simulation, converter 
 
 INPUTS_FILENAME = 'inputs.csv'
+PAR_FILENAME = 'PAR.csv'
 
 OUTPUTS_FILENAME = 'outputs.csv'
 
@@ -49,8 +50,14 @@ if __name__ == '__main__':
     inputs = converter.from_dataframe(inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
+    # get the PAR from dataframe
+    PAR_df = pd.read_csv(PAR_FILENAME, index_col=converter.ELEMENTS_TOPOLOGY_COLUMNS)
+    # compute incident PAR
+    PARi_df = PAR_df
+    PARi_df.PAR *= 0.9 * 0.95
+    PARi_dict = PARi_df.to_dict()['PAR']
     # run the simulation
-    simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.68, Ur=3.171, PARi=2262400)
+    simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.68, Ur=3.171, PARi_dict=PARi_dict)
     # convert the outputs to Pandas dataframe
     outputs_df = converter.to_dataframe(simulation_.outputs)
     # write the dataframe to CSV

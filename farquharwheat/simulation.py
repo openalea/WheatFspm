@@ -73,7 +73,7 @@ class Simulation(object):
         self.inputs.update(inputs)
 
 
-    def run(self, Ta, ambient_CO2, RH, Ur, PARi):
+    def run(self, Ta, ambient_CO2, RH, Ur, PARi_dict):
         """
         Compute Farquhar variables for each element in :attr:`inputs` and put 
         the results in :attr:`outputs`.
@@ -88,7 +88,7 @@ class Simulation(object):
 
             - `Ur` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
             
-            - `PARi` (:class:`float`) - the incident PAR (µmol m-2 s-1)
+            - `PARi_dict` (:class:`float`) - the incident PAR by element (µmol m-2 s-1)
             
         """
         self.outputs.clear()
@@ -98,7 +98,7 @@ class Simulation(object):
             width = element_inputs['width']
             height = element_inputs['height']
             STAR = element_inputs['STAR']
-            PAR = STAR * PARi
-            Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_label)
+            PARi = STAR * PARi_dict[element_id]
+            Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen, width, height, PARi, Ta, ambient_CO2, RH, Ur, organ_label)
             self.outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
     
