@@ -3,13 +3,15 @@
     test_senescwheat
     ~~~~~~~~~~~~~~~
 
-    Test the test_senescwheat model.
+    Test the model Senesc-Wheat.
 
     You must first install :mod:`senescwheat` (and add it to your PYTHONPATH)
     before running this script with the command `python`.
 
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
+    
+    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -20,45 +22,73 @@
         $URL$
         $Id$
 """
-import pandas as pd
-import os
-from senescwheat import model
 
+import os
+
+import numpy as np
+import pandas as pd
+
+from senescwheat import model, simulation, converter
 
 INPUTS_DIRPATH = 'inputs'
-GREEN_AREA_FILENAME = 'green_area.csv'
+ROOTS_INPUTS_FILENAME = 'roots_inputs.csv'
+ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
 
-def assert_close(actual, desired, tolerance=0.01):
-    assert abs(actual - desired) < tolerance * (abs(desired) + 1)
+OUTPUTS_DIRPATH = 'outputs'
+DESIRED_ROOTS_OUTPUTS_FILENAME = 'desired_roots_outputs.csv'
+DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
+ACTUAL_ROOTS_OUTPUTS_FILENAME = 'actual_roots_outputs.csv'
+ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
 
-def test_calculate_senescwheat():
-    green_area_filepath = os.path.join(INPUTS_DIRPATH, GREEN_AREA_FILENAME)
-    green_area_df = pd.read_csv(green_area_filepath).groupby(['t', 'plant', 'axis', 'phytomer', 'organ', 'element'])
-    group_id = (500, 1, 'MS', 3, 'Lamina', 'exposed')
-    prev_green_area = 0.00228
-    prev_mstruct = 0.05
-    prev_Nstruct = 0.00053
-    nitrates=0
-    amino_acids=6
-    proteins=85
-    max_proteins={}
-    sucrose = 90
-    delta_t = 3600
 
-    actual_senescence = {}
+PRECISION = 6
+RELATIVE_TOLERANCE = 10**-PRECISION
+ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
-    _, actual_senescence['relative_delta_green_area'], _ = model.SenescenceModel.calculate_relative_delta_green_area(group_id, prev_green_area, proteins, max_proteins, delta_t)
-    actual_senescence['delta_mstruct_shoot'], actual_senescence['delta_Nstruct_shoot'] = model.SenescenceModel.calculate_delta_mstruct_shoot(actual_senescence['relative_delta_green_area'], prev_mstruct, prev_Nstruct)
-    actual_senescence['surfacic_nitrogen'] = model.SenescenceModel.calculate_surfacic_nitrogen(nitrates, amino_acids, proteins, prev_Nstruct, prev_green_area)
-    _, actual_senescence['mstruct_growth'], actual_senescence['Nstruct_growth'], _ = model.SenescenceModel.calculate_roots_mstruct_growth(sucrose, amino_acids, prev_mstruct, delta_t)
-    actual_senescence['mstruct_senescence'], actual_senescence['Nstruct_senescence'] = model.SenescenceModel.calculate_roots_senescence(prev_mstruct, prev_Nstruct, delta_t)
-    actual_senescence['delta_mstruct_roots'], actual_senescence['delta_Nstruct_roots'],_ = model.SenescenceModel.calculate_delta_mstruct_roots(actual_senescence['mstruct_growth'], actual_senescence['Nstruct_growth'], actual_senescence['mstruct_senescence'], actual_senescence['Nstruct_senescence'], prev_mstruct)
 
-    desired_senescence = {'relative_delta_green_area': 0, 'delta_mstruct_shoot': 0.05, 'delta_Nstruct_shoot': 0.0005, 'surfacic_nitrogen': 0.7912, 'mstruct_growth': 5.4946E-5, 'Nstruct_growth': 1.0989E-6, 'mstruct_senescence': 6.3e-05,
-                          'Nstruct_senescence': 6.678E-7, 'delta_mstruct_roots': -8.0537E-6, 'delta_Nstruct_roots': 4.3113E-7}
+def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):
+    # read desired data
+    desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
+    desired_data_df = pd.read_csv(desired_data_filepath)
 
-    for senesc, desired_senesc in desired_senescence.iteritems():
-        assert_close(actual_senescence[senesc], desired_senesc, tolerance=1e-3)
+    if actual_data_filename is not None:
+        actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
+        actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
+
+    # keep only numerical data
+    for column in ('axis', 'organ', 'element'):
+        if column in desired_data_df.columns:
+            del desired_data_df[column]
+            del actual_data_df[column]
+
+    # compare to the desired data
+    np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
+
+
+def test_run():
+
+    # create a simulation
+    simulation_ = simulation.Simulation()
+    # read inputs from Pandas dataframe
+    roots_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOTS_INPUTS_FILENAME))
+    elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))
+    # convert the dataframe to simulation inputs format
+    inputs = converter.from_dataframe(roots_inputs_df, elements_inputs_df)
+    # initialize the simulation with the inputs
+    simulation_.initialize(inputs)
+    # convert the inputs to Pandas dataframe
+    roots_inputs_reconverted_df, elements_inputs_reconverted_df = converter.to_dataframe(simulation_.inputs)
+    # compare inputs
+    compare_actual_to_desired('inputs', roots_inputs_reconverted_df, ROOTS_INPUTS_FILENAME)
+    compare_actual_to_desired('inputs', elements_inputs_reconverted_df, ELEMENTS_INPUTS_FILENAME)
+    # run the simulation
+    simulation_.run()
+    # convert the outputs to Pandas dataframe
+    roots_outputs_df, elements_outputs_df = converter.to_dataframe(simulation_.outputs)
+    # compare outputs
+    compare_actual_to_desired('outputs', roots_outputs_df, DESIRED_ROOTS_OUTPUTS_FILENAME, ACTUAL_ROOTS_OUTPUTS_FILENAME)
+    compare_actual_to_desired('outputs', elements_outputs_df, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME)
+
 
 if __name__ == '__main__':
-    test_calculate_senescwheat()
+    test_run()

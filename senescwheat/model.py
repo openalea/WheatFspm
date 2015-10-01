@@ -7,10 +7,21 @@ from __future__ import division # use '//' to do integer division
     senescwheat.model
     ~~~~~~~~~~~~~~~~~~~
 
-    Model of senescenece.
+    Model of senescence.
 
-    :copyright: Copyright 2015 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
+    
+    .. seealso:: Barillot et al. 2015.
+"""
+
+"""
+    Information about this versioned file:
+        $LastChangedBy$
+        $LastChangedDate$
+        $LastChangedRevision$
+        $URL$
+        $Id$
 """
 
 import pandas as pd
@@ -42,7 +53,7 @@ class SenescenceModel(object):
 
 
     @classmethod
-    def calculate_relative_delta_green_area(cls, group_id, prev_green_area, proteins, max_proteins, DELTA_T):
+    def calculate_relative_delta_green_area(cls, prev_green_area, proteins, max_proteins, DELTA_T):
         """relative green_area variation due to senescence
 
         : Parameters:
@@ -59,17 +70,17 @@ class SenescenceModel(object):
         fraction_N_max = 0.55
 
         # First run
-        if max_proteins.has_key(group_id)==False:
-            max_proteins[group_id] = proteins
+        if max_proteins is None:
+            max_proteins = proteins
             new_green_area = prev_green_area
             relative_delta_green_area = 0
         # Overwrite max proteins
-        elif max_proteins[group_id] < proteins:
-            max_proteins[group_id] = proteins
+        if max_proteins < proteins:
+            max_proteins = proteins
             new_green_area = prev_green_area
             relative_delta_green_area = 0
         # Senescence if (actual proteins/max_proteins) < fraction_N_max
-        elif (proteins / max_proteins[group_id]) < fraction_N_max :
+        elif (proteins / max_proteins) < fraction_N_max :
             senesced_area = min(prev_green_area, senescence_max_rate * DELTA_T)
             new_green_area = max(0, prev_green_area - senesced_area)
             relative_delta_green_area = senesced_area / prev_green_area

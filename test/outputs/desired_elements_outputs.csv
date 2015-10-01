@@ -1,0 +1,14 @@
+plant,axis,metamer,organ,element,starch,amino_acids,proteins,Nstruct,mstruct,fructan,sucrose,green_area,cytokinines
+1,MS,1,blade,LeafElement1,0.0,16.0,380.0,0.00102,0.14,0.0,420.0,0.00346,3.5
+1,MS,1,internode,HiddenElement,0.0,17.0,66.0,0.00064,0.1415,0.0,424.5,0.00113,0.35
+1,MS,1,internode,StemElement,0.0,5.0,22.0,0.00021,0.0465,0.0,139.5,0.00037,0.5
+1,MS,1,sheath,StemElement,0.0,12.0,128.0,0.0006799999999999999,0.10300000000000001,0.0,309.0,0.0006,0.5
+1,MS,2,blade,LeafElement1,0.0,10.0,210.0,0.0008300000000000001,0.09,0.0,270.0,0.0034,1.8
+1,MS,2,internode,HiddenElement,0.0,21.0,20.0,0.00033,0.18,0.0,540.0,0.0004,0.15
+1,MS,2,sheath,StemElement,0.0,8.0,47.0,0.00021,0.069,0.0,207.0,0.0005,0.2
+1,MS,3,blade,LeafElement1,0.0,6.0,85.0,0.00053,0.05,0.0,150.0,0.00228,0.85
+1,MS,3,internode,HiddenElement,0.0,18.0,20.0,0.00014,0.154,0.0,462.0,0.00025,0.1
+1,MS,3,sheath,StemElement,0.0,5.0,13.0,0.00011,0.043,0.0,129.0,0.0004,0.15
+1,MS,4,peduncle,HiddenElement,0.0,20.0,120.0,0.00086,0.17,0.0,510.0,0.00159,0.7
+1,MS,4,peduncle,StemElement,0.0,10.0,61.0,0.00044,0.087,0.0,260.5,0.00081,0.85
+1,MS,5,ear,StemElement,0.0,25.0,260.0,0.00107,0.21,0.0,630.0,0.00075,1.1

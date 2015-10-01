@@ -5,8 +5,10 @@
 
     The model Senesc-Wheat
 
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
+    
+    .. seealso:: Barillot et al. 2015.
 """
 
 """
