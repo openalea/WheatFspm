@@ -12,10 +12,10 @@
     You must first install :mod:`farquharwheat` and its dependencies 
     before running this script with the command `python`.
 
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2014.
+    .. seealso:: Barillot et al. 2015.
 '''
 
 '''

@@ -4,16 +4,18 @@
     main
     ~~~~
 
-    An example to show to couple Farquhar-Wheat with others models, using MTG format 
-    to share data between the models. 
+    An example to show how to:
+        
+        * initialize and run the model Farquhar-Wheat from an MTG,
+        * format the outputs of Farquhar-Wheat to both MTG and Pandas dataframes.
 
     You must first install :mod:`farquharwheat` and its dependencies 
     before running this script with the command `python`.
     
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2014.
+    .. seealso:: Barillot et al. 2015.
     
 '''
 
@@ -30,7 +32,7 @@ import os
 
 from farquharwheat import simulation, converter
 
-
+INPUTS_FILENAME = 'inputs.csv'
 OUTPUTS_FILENAME = 'outputs.csv'
 
 OUTPUTS_PRECISION = 6
@@ -48,14 +50,12 @@ def setup_MTG():
     random.seed(1234)
     np.random.seed(1234)
     
-    INPUTS_FILENAME = 'inputs.csv'
-    
     inputs_df = pd.read_csv(INPUTS_FILENAME)
     
     g, wheat, domain_area, domain, convUnit = initialise_stand(1500)
     
     # add the properties which do not exist yet
-    for property_ in converter.MTG_PROPERTIES_NEEDED_BY_FARQUHARWHEAT:
+    for property_ in converter.FARQUHARWHEAT_INPUTS:
         if property_ not in g.properties():
             g.add_property(property_)
     
@@ -81,7 +81,7 @@ def setup_MTG():
                 metamer_inputs_df = axis_inputs_df[axis_inputs_df['metamer'] == metamer_index]
                 for organ_vid in g.components_iter(metamer_vid):
                     organ_label = g.label(organ_vid)
-                    if organ_label not in converter.MTG_ORGANS_NAMES_SET:
+                    if organ_label not in converter.FARQUHARWHEAT_ORGANS_NAMES:
                         continue
                     if organ_label not in metamer_inputs_df['organ'].unique():
                         # TODO: remove organ_vid and all its components
@@ -94,7 +94,7 @@ def setup_MTG():
                             continue
                         element_df = organ_inputs_df[organ_inputs_df['element'] == element_label]
                         element_series = element_df.loc[element_df.first_valid_index()]
-                        for property_ in converter.MTG_ELEMENTS_PROPERTIES_NEEDED_BY_FARQUHARWHEAT:
+                        for property_ in converter.FARQUHARWHEAT_ELEMENTS_INPUTS:
                             g.property(property_)[element_vid] = element_series[property_]
     return g
 
