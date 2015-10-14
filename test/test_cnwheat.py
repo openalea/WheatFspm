@@ -13,8 +13,10 @@
 
     CSV files must contain only ASCII characters and ',' as separator.
 
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
+    
+    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -85,7 +87,7 @@ def test_run():
     formatted_inputs_dataframes[ELEMENTS_INPUTS_FILENAME] = converter.to_dataframes(population)
     # compare inputs
     for inputs_filename, inputs_df in formatted_inputs_dataframes.iteritems():
-        tools.compare_actual_to_desired(INPUTS_DIRPATH, inputs_df, inputs_filename)
+        tools.compare_actual_to_desired(INPUTS_DIRPATH, inputs_df, inputs_filename, inputs_filename + '_actual.csv')
         
     # Get photosynthesis data
     photosynthesis_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_DATA_FILENAME)
@@ -119,7 +121,7 @@ def test_run():
                 group = senescence_data_grouped.get_group((t, plant_index, axis_id, 0, 'Roots', 'enclosed'))
                 senescence_data_to_use = group.loc[group.first_valid_index(), simulation.Simulation.ORGANS_STATE].dropna().to_dict()
                 axis.roots.__dict__.update(senescence_data_to_use)
-                phytomer_index = 1
+                phytomer_index = 9
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:

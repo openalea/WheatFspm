@@ -4,15 +4,16 @@
     main
     ~~~~
 
-    An example to show how to couple models CN-Wheat, Farquhar-Wheat, Respi-Wheat and Senesc-Wheat.
+    An example to show how to couple models CN-Wheat, Farquhar-Wheat and Senesc-Wheat.
+    This example uses the format MTG to exchange data between the models. 
 
     You must first install :mod:`cnwheat` and :mod:`farquharwheat` (and add them to your PYTHONPATH)
     before running this script with the command `python`.
 
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2014.
+    .. seealso:: Barillot et al. 2015.
 '''
 
 '''
@@ -34,37 +35,28 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from cnwheat import simulation, parameters, converter, tools
-from cnwheat import model as cnwheat_model
-from farquharwheat import model as photosynthesis_model
-from senescwheat.model import SenescenceModel
+from cnwheat import simulation as cnwheat_simulation, model as cnwheat_model, parameters as cnwheat_parameters, converter as cnwheat_converter, tools as cnwheat_tools
+from farquharwheat import simulation as farquharwheat_simulation, model as farquharwheat_model, converter as farquharwheat_converter
+from senescwheat import simulation as senescwheat_simulation, model as senescwheat_model, converter as senescwheat_converter
 
 INPUTS_DIRPATH = 'inputs'
-
-PLANTS_INPUTS_FILENAME = 'plants_inputs.csv'
-AXES_INPUTS_FILENAME = 'axes_inputs.csv'
-PHYTOMERS_INPUTS_FILENAME = 'phytomers_inputs.csv'
-ORGANS_INPUTS_FILENAME = 'organs_inputs.csv'
-ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
-
-DIMENSIONS_FILENAME = 'dimensions.csv'
+PLANTS_INPUTS_FILENAME = 'plants_inputs.csv' # TODO: load plants inputs from MTG file
+AXES_INPUTS_FILENAME = 'axes_inputs.csv' # TODO: load axes inputs from MTG file 
+PHYTOMERS_INPUTS_FILENAME = 'phytomers_inputs.csv' # TODO: load phytomers inputs from MTG file
+ORGANS_INPUTS_OUTPUTS_FILENAME = 'organs_inputs_outputs.csv' # TODO: load organs inputs from MTG file ; TODO: store the state of system in a MTG
+ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv' # TODO: load elements inputs from MTG file
 
 PAR_FILENAME = 'PAR_Clermont_rebuild.csv'
-
 METEO_FILENAME = 'meteo_Clermont_rebuild.csv'
 
-OUTPUTS_DIRPATH = 'outputs'
-
-GRAPHS_DIRPATH = 'graphs' # GRAPHS_DIRPATH must be an existing directory
-
+OUTPUTS_DIRPATH = 'outputs' # the outputs dataframes also include inputs
 PLANTS_OUTPUTS_FILENAME = 'plants_outputs.csv'
 AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
 PHYTOMERS_OUTPUTS_FILENAME = 'phytomers_outputs.csv'
 ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
 ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
 
-ORGANS_COUPLING_VARIABLES_FILENAME = 'organs_coupling_variables.csv'
-ELEMENTS_COUPLING_VARIABLES_FILENAME = 'elements_coupling_variables.csv'
+GRAPHS_DIRPATH = 'graphs'
 
 OUTPUTS_PRECISION = 6
 
@@ -72,7 +64,74 @@ LOGGING_CONFIG_FILEPATH = os.path.join('..', 'logging.json')
 
 LOGGING_LEVEL = logging.INFO # set to logging.DEBUG for debugging or logging.INFO for INFO level
 
-tools.setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL, log_model=False, log_compartments=False, log_derivatives=False)
+cnwheat_tools.setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL, log_model=False, log_compartments=False, log_derivatives=False)
+
+
+def setup_MTG():
+    """Construct and fill a valid MTG.
+    TODO: add roots, phloem, grains and soil to the MTG.
+    TODO: load the fulfilled MTG from file. 
+    """
+    import random
+    import numpy as np
+    import pandas as pd
+    from alinea.adel.astk_interface import initialise_stand
+    
+    random.seed(1234)
+    np.random.seed(1234)
+    
+    elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))
+    
+    g, wheat, domain_area, domain, convUnit = initialise_stand(1500)
+    
+    MTG_INPUTS_PROPERTIES = set(senescwheat_converter.SENESCWHEAT_INPUTS).union(set(farquharwheat_converter.FARQUHARWHEAT_INPUTS) - set(senescwheat_converter.SENESCWHEAT_INPUTS_OUTPUTS)).union(set(cnwheat_converter.CNWHEAT_INPUTS) - set(senescwheat_converter.SENESCWHEAT_INPUTS_OUTPUTS) - set(farquharwheat_converter.FARQUHARWHEAT_INPUTS_OUTPUTS))
+    
+    property_names = g.property_names()
+    for cnwheat_variable_name in MTG_INPUTS_PROPERTIES:
+        if cnwheat_variable_name not in property_names:
+            g.add_property(cnwheat_variable_name)
+
+    MTG_ELEMENTS_INPUTS_PROPERTIES = set(senescwheat_converter.SENESCWHEAT_ELEMENTS_INPUTS).union(set(farquharwheat_converter.FARQUHARWHEAT_ELEMENTS_INPUTS) - set(senescwheat_converter.SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS)).union(set(cnwheat_simulation.Simulation.ELEMENTS_STATE) - set(senescwheat_converter.SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS) - set(farquharwheat_converter.FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS)) 
+    
+    # traverse the MTG recursively from top
+    for plant_vid in g.components_iter(g.root):
+        plant_index = int(g.index(plant_vid))
+        current_plant_group = elements_inputs_df[elements_inputs_df['plant'] == plant_index]
+        if len(current_plant_group) == 0:
+            # TODO: remove plant_vid and all its components
+            continue
+        for axis_vid in g.components_iter(plant_vid):
+            axis_id = g.label(axis_vid)
+            current_axis_group = current_plant_group[current_plant_group['axis'] == axis_id]
+            if len(current_axis_group) == 0:
+                # TODO: remove axis_vid and all its components
+                continue
+            for metamer_vid in g.components(axis_vid): 
+                metamer_index = int(g.index(metamer_vid))
+                current_metamer_group = current_axis_group[current_axis_group['phytomer'] == metamer_index]
+                if len(current_metamer_group) == 0:
+                    # TODO: remove metamer_vid and all its components
+                    continue
+                for organ_vid in g.components_iter(metamer_vid):
+                    organ_label = g.label(organ_vid)
+                    if organ_label not in cnwheat_converter.MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_NAMES_MAPPING:
+                        continue
+                    current_organ_group = current_metamer_group[current_metamer_group['organ'] == organ_label]
+                    if len(current_organ_group) == 0:
+                        # TODO: remove organ_vid and all its components
+                        continue
+                    for element_vid in g.components_iter(organ_vid):
+                        element_label = g.label(element_vid)
+                        if element_label not in cnwheat_converter.MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING:
+                            continue
+                        current_element_group = current_organ_group[current_organ_group['element'] == element_label]
+                        if len(current_element_group) == 0:
+                            # TODO: remove element_vid and all its components
+                            continue
+                        current_element_series = current_element_group.loc[current_element_group.first_valid_index()]
+                        for property_ in MTG_ELEMENTS_INPUTS_PROPERTIES:
+                            g.property(property_)[element_vid] = current_element_series[property_]
+    return g
 
 
 def compute_CN_distrib(run_simu=True, make_graphs=True):
@@ -83,211 +142,133 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
     organs_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ORGANS_OUTPUTS_FILENAME)
     elements_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME)
     
-    organs_coupling_variables_filepath = os.path.join(OUTPUTS_DIRPATH, ORGANS_COUPLING_VARIABLES_FILENAME)
-    elements_coupling_variables_filepath = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_COUPLING_VARIABLES_FILENAME)
-
+    meteo_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t')
+    PAR_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, PAR_FILENAME), index_col=farquharwheat_converter.ELEMENTS_TOPOLOGY_COLUMNS)
+    PARi_df = PAR_df.copy()
+    # compute incident PAR ; TODO: why don't we read PARi directly ?
+    PARi_df.PAR *= 0.9 * 0.95
+    
     if run_simu:
 
         t0 = time.time()
         
-        # create the simulation
-        simulation_ = simulation.Simulation()
-        # read inputs from Pandas dataframes
-        inputs_dataframes = {}
-        for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, PHYTOMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME):
-            inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
-        # convert inputs to a population of plants
-        population = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FILENAME], 
-                                               inputs_dataframes[AXES_INPUTS_FILENAME],
-                                               inputs_dataframes[PHYTOMERS_INPUTS_FILENAME],
-                                               inputs_dataframes[ORGANS_INPUTS_FILENAME],
-                                               inputs_dataframes[ELEMENTS_INPUTS_FILENAME])
+        # define the time step of each simulator 
+        senescwheat_ts = 2
+        farquharwheat_ts = 2
+        cnwheat_ts = 1
         
-        # initialize the simulation from the population
-        simulation_.initialize(population)
+        g = setup_MTG()
+        
+        # create the simulators
+        senescwheat_simulation_ = senescwheat_simulation.Simulation(time_step=senescwheat_ts)
+        farquharwheat_simulation_ = farquharwheat_simulation.Simulation()
+        cnwheat_simulation_ = cnwheat_simulation.Simulation()
+        
+        all_organs_inputs_ouputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ORGANS_INPUTS_OUTPUTS_FILENAME)) # TODO: remove this code as soon as :mod:`openalea.mtg` permits to add/remove components.
 
-        # get the dimensions
-        dimensions_filepath = os.path.join(INPUTS_DIRPATH, DIMENSIONS_FILENAME)
-        dimensions_df = pd.read_csv(dimensions_filepath)
-        dimensions_grouped = dimensions_df.groupby(simulation.Simulation.ELEMENTS_INPUTS_INDEXES)
-        
-        # Get PAR data
-        PAR_filepath = os.path.join(INPUTS_DIRPATH, PAR_FILENAME)
-        PAR_df = pd.read_csv(PAR_filepath)
-        PAR_grouped = PAR_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
+        PARi_grouped = PARi_df.groupby('t')
 
-        # get meteo data
-        meteo_df = tools.read_t_data(INPUTS_DIRPATH, METEO_FILENAME)
-        
-        # run the models
+        # define the time grid of the simulators
         start_time = 0
-        stop_time = 960 # 960
-        photosynthesis_model_ts = 2
-        cn_model_ts = 1#1
-        ratio_ts = photosynthesis_model_ts/cn_model_ts
+        stop_time = 960
 
-        all_plants_df_list = []
-        all_axes_df_list = []
-        all_phytomers_df_list = []
-        all_organs_df_list = []
-        all_elements_df_list = []
+        all_plants_inputs_ouputs_df_list = []
+        all_axes_inputs_ouputs_df_list = []
+        all_phytomers_inputs_ouputs_df_list = []
+        all_organs_inputs_ouputs_df_list = []
+        all_elements_inputs_ouputs_df_list = []
 
-        max_proteins = {}
-        
-        organs_coupling_variables_mapping = {}
-        elements_coupling_variables_mapping = {}
+        # TODO: this is to avoid converting error ; TODO: to remove as soon as :mod:`openalea.mtg` permits to add/remove components.
+        elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME)).astype(str)
+        available_components = set(elements_inputs_df.groupby(cnwheat_simulation.Simulation.PLANTS_INPUTS_INDEXES).groups.keys() + \
+                                   elements_inputs_df.groupby(cnwheat_simulation.Simulation.AXES_INPUTS_INDEXES).groups.keys() + \
+                                   elements_inputs_df.groupby(cnwheat_simulation.Simulation.PHYTOMERS_INPUTS_INDEXES).groups.keys() + \
+                                   elements_inputs_df.groupby(cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES).groups.keys() + \
+                                   elements_inputs_df.groupby(cnwheat_simulation.Simulation.ELEMENTS_INPUTS_INDEXES).groups.keys())
 
-        for t_photosynthesis_model in xrange(start_time, stop_time, photosynthesis_model_ts):
-            # run the model of photosynthesis and update the population
-            plant_index = 1
-            for plant in simulation_.population.plants:
-                axis_index = 0
-                for axis in plant.axes:
-                    axis_id = cnwheat_model.Axis.get_axis_id(axis_index)
-                    # Root growth and death
-                    organs_coupling_variables_mapping[(t_photosynthesis_model, plant_index, axis_id, None, 'Roots')] = {}
-                    mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = SenescenceModel.calculate_roots_mstruct_growth(axis.roots.sucrose, axis.roots.amino_acids, axis.roots.mstruct, 3600*photosynthesis_model_ts) #3600 is temporary, will be moved
-                    axis.roots.mstruct_C_growth = mstruct_C_growth/ratio_ts
-                    axis.roots.Nstruct_N_growth = Nstruct_N_growth/ratio_ts
-                    mstruct_death, Nstruct_death = SenescenceModel.calculate_roots_senescence(axis.roots.mstruct, axis.roots.Nstruct, 3600*photosynthesis_model_ts)
-                    organs_coupling_variables_mapping[(t_photosynthesis_model, plant_index, axis_id, None, 'Roots')]['mstruct_death'] = mstruct_death/ratio_ts
-                    delta_mstruct, delta_Nstruct, relative_delta_mstruct = SenescenceModel.calculate_delta_mstruct_roots(mstruct_growth, Nstruct_growth, mstruct_death, Nstruct_death, axis.roots.mstruct)
-                    axis.roots.mstruct += delta_mstruct
-                    axis.roots.Nstruct += delta_Nstruct
-                    loss_cytokinines = SenescenceModel.calculate_remobilisation(axis.roots.cytokinines, relative_delta_mstruct)
-                    axis.roots.cytokinines -= loss_cytokinines
+        for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
 
-                    phytomer_index = 1
-                    for phytomer in axis.phytomers:
-                        for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
-                            if organ is None:
-                                continue
-                            organ_type = organ.__class__.__name__
-                            for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
-                                if element is None:
-                                    continue
-                                outputs_group_id = (t_photosynthesis_model, plant_index, axis_id, phytomer_index, organ_type, element_type)
-                                elements_coupling_variables_mapping[outputs_group_id] = {}
-                                # Senescence
-                                inputs_group_id = (plant_index, axis_id, phytomer_index, organ_type, element_type)
-                                new_green_area, relative_delta_green_area, max_proteins = SenescenceModel.calculate_relative_delta_green_area(inputs_group_id, element.green_area, (element.proteins/element.mstruct), max_proteins, 3600*photosynthesis_model_ts)
-                                new_mstruct, new_Nstruct = SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element.mstruct, element.Nstruct)
-                                new_SLN = SenescenceModel.calculate_surfacic_nitrogen(element.nitrates, element.amino_acids, element.proteins, element.Nstruct, new_green_area)
-                                element.green_area = new_green_area
-                                element.mstruct = new_mstruct
-                                element.Nstruct = new_Nstruct
-                                elements_coupling_variables_mapping[outputs_group_id]['surfacic_nitrogen'] = new_SLN
-                                # Remobilisation
-                                remob_starch = SenescenceModel.calculate_remobilisation(element.starch, relative_delta_green_area)
-                                remob_fructan = SenescenceModel.calculate_remobilisation(element.fructan, relative_delta_green_area)
-                                remob_proteins = SenescenceModel.calculate_remobilisation(element.proteins, relative_delta_green_area)
-                                loss_cytokinines = SenescenceModel.calculate_remobilisation(element.cytokinines, relative_delta_green_area)
-                                element.starch -= remob_starch
-                                element.sucrose += remob_starch
-                                element.fructan -= remob_fructan
-                                element.sucrose += remob_fructan
-                                element.proteins -= remob_proteins
-                                element.amino_acids += remob_proteins
-                                element.cytokinines -= loss_cytokinines
-
-                                # PAR and photosynthesis
-                                PAR = PAR_grouped.get_group(outputs_group_id).PAR.values[0]*0.9*0.95
-                                elements_coupling_variables_mapping[outputs_group_id]['PAR'] = PAR
-                                dimensions_group = dimensions_grouped.get_group(inputs_group_id)
-                                element_width = dimensions_group.loc[dimensions_group.first_valid_index(), 'width']
-                                element_height = dimensions_group.loc[dimensions_group.first_valid_index(), 'height']
-                                Ag, An, Rd, Tr, Ts, gs = photosynthesis_model.Model.calculate_An(new_SLN, element_width, element_height, PAR, meteo_df['air_temperature'][t_photosynthesis_model],
-                                    meteo_df['ambient_CO2'][t_photosynthesis_model], meteo_df['humidity'][t_photosynthesis_model],
-                                    meteo_df['Wind'][t_photosynthesis_model], organ_type)
-                                element.Ag = Ag
-                                elements_coupling_variables_mapping[outputs_group_id]['An'] = An
-                                element.Rd = Rd
-                                element.Tr = Tr
-                                element.Ts = Ts
-                                elements_coupling_variables_mapping[outputs_group_id]['gs'] = gs
-
-                                # Element death and suppression from population
-                                min_green_area = 1E-4 # Minimal green area below which the organ is suppressed (m²)
-                                if element.green_area < min_green_area:
-                                    if isinstance(organ, cnwheat_model.Chaff):
-                                        if element_type == 'exposed':
-                                            phytomer.chaff.exposed_element = None
-                                        else:
-                                            phytomer.chaff.enclosed_element = None
-
-                                    elif isinstance(organ, cnwheat_model.Peduncle):
-                                        if element_type == 'exposed':
-                                            phytomer.peduncle.exposed_element = None
-                                        else:
-                                             phytomer.peduncle.enclosed_element = None
-
-                                    elif isinstance(organ, cnwheat_model.Lamina):
-                                        if element_type == 'exposed':
-                                            phytomer.lamina.exposed_element = None
-                                        else:
-                                             phytomer.lamina.enclosed_element = None
-
-                                    elif isinstance(organ, cnwheat_model.Internode):
-                                        if element_type == 'exposed':
-                                            phytomer.internode.exposed_element = None
-                                        else:
-                                             phytomer.internode.enclosed_element = None
-
-                                    elif isinstance(organ, cnwheat_model.Sheath):
-                                        if element_type == 'exposed':
-                                            phytomer.sheath.exposed_element = None
-                                        else:
-                                             phytomer.sheath.enclosed_element = None
-                                             
-                        phytomer_index += 1
-                    axis_index += 1
-                plant_index += 1
-                
-            for t_cn_model in xrange(t_photosynthesis_model, t_photosynthesis_model + photosynthesis_model_ts, cn_model_ts):
-                # run the model of CN exchanges ; the population is internally updated by the model of CN exchanges
-                simulation_.run(start_time=t_cn_model, stop_time=t_cn_model+cn_model_ts, number_of_output_steps=cn_model_ts+1)
-                
-                # run post-processings
-                all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.postprocessings()
+            senescwheat_roots_inputs_df = all_organs_inputs_ouputs_df.loc[all_organs_inputs_ouputs_df.organ == 'Roots'].dropna(axis=1).drop('organ', axis=1)
+            senescwheat_simulation_.initialize(senescwheat_converter.from_MTG(g, senescwheat_roots_inputs_df, available_components))
+            senescwheat_simulation_.run()
+            senescwheat_roots_outputs_df, senescwheat_elements_outputs_df = senescwheat_converter.to_dataframes(senescwheat_simulation_.outputs)
+            senescwheat_converter.update_MTG(senescwheat_simulation_.outputs, g, senescwheat_roots_outputs_df, available_components)
+            all_organs_inputs_ouputs_df.loc[all_organs_inputs_ouputs_df.organ == 'Roots', senescwheat_roots_outputs_df.columns] = senescwheat_roots_outputs_df.loc[:, senescwheat_roots_outputs_df.columns].values
+            _, senescwheat_elements_inputs_df = senescwheat_converter.to_dataframes(senescwheat_simulation_.inputs)
+            senescwheat_elements_inputs_outputs_df = senescwheat_elements_outputs_df.combine_first(senescwheat_elements_inputs_df)
             
-                all_plants_df_list.append(all_plants_df)
-                all_axes_df_list.append(all_axes_df)
-                all_phytomers_df_list.append(all_phytomers_df)
-                all_organs_df_list.append(all_organs_df)
-                all_elements_df_list.append(all_elements_df)
-
-        global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
-        global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
+            for t_farquharwheat in xrange(t_senescwheat, t_senescwheat + senescwheat_ts, farquharwheat_ts):
+                
+                farquharwheat_simulation_.initialize(farquharwheat_converter.from_MTG(g, available_components))
+                Ta, ambient_CO2, RH, Ur = meteo_df.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', ]]
+                PARi_at_t_farquharwheat = PARi_grouped.get_group(t_farquharwheat).to_dict()['PAR']
+                farquharwheat_simulation_.run(Ta, ambient_CO2, RH, Ur, PARi_at_t_farquharwheat)
+                farquharwheat_converter.update_MTG(farquharwheat_simulation_.outputs, g, available_components)
+                farquharwheat_elements_inputs_df = farquharwheat_converter.to_dataframe(farquharwheat_simulation_.inputs)
+                farquharwheat_elements_outputs_df = farquharwheat_converter.to_dataframe(farquharwheat_simulation_.outputs)
+                farquharwheat_elements_inputs_outputs_df = farquharwheat_elements_outputs_df.combine_first(farquharwheat_elements_inputs_df)
+                senescwheat_farquharwheat_elements_inputs_outputs_combined_df = farquharwheat_elements_inputs_outputs_df.combine_first(senescwheat_elements_inputs_outputs_df) 
+                
+                for t_cnwheat in xrange(t_farquharwheat, t_farquharwheat + farquharwheat_ts, cnwheat_ts):
+                    
+                    cnwheat_simulation_.initialize(cnwheat_converter.from_MTG(g, all_organs_inputs_ouputs_df, available_components))
+                    cnwheat_simulation_.run(start_time=t_cnwheat, stop_time=t_cnwheat+cnwheat_ts, number_of_output_steps=cnwheat_ts+1)
+                    _, _, _, cnwheat_organs_inputs_outputs_df, _ = cnwheat_converter.to_dataframes(cnwheat_simulation_.population)
+                    cnwheat_converter.update_MTG(cnwheat_simulation_.population, g, cnwheat_organs_inputs_outputs_df, available_components)
+                    
+                    (cnwheat_plants_postprocessing_df, 
+                     cnwheat_axes_postprocessing_df,
+                     cnwheat_phytomers_postprocessing_df,
+                     cnwheat_organs_postprocessing_df,
+                     cnwheat_elements_postprocessing_df) = cnwheat_simulation_.postprocessings()
+                    
+                    all_plants_inputs_ouputs_df = cnwheat_plants_postprocessing_df
+                    all_axes_inputs_ouputs_df = cnwheat_axes_postprocessing_df
+                    all_phytomers_inputs_ouputs_df = cnwheat_phytomers_postprocessing_df
+                    
+                    cnwheat_organs_postprocessing_df = cnwheat_organs_postprocessing_df.loc[cnwheat_organs_postprocessing_df.t == t_cnwheat, :].reset_index(drop=True)
+                    all_organs_inputs_ouputs_df = cnwheat_organs_postprocessing_df.combine_first(cnwheat_organs_inputs_outputs_df).combine_first(all_organs_inputs_ouputs_df)
+                    
+                    cnwheat_elements_postprocessing_df = cnwheat_elements_postprocessing_df.loc[cnwheat_elements_postprocessing_df.t == t_cnwheat, :]
+                    senescwheat_farquharwheat_elements_inputs_outputs_combined_df.rename_axis({'metamer': 'phytomer'}, axis=1, inplace=True) # TODO: should we standardize the names of the variables? 
+                    senescwheat_farquharwheat_elements_inputs_outputs_combined_df.replace({'HiddenElement': 'enclosed', 'StemElement': 'exposed', 'LeafElement1': 'exposed'}, inplace=True) # TODO: should we standardize the names of the variables?
+                    senescwheat_farquharwheat_elements_inputs_outputs_combined_df.replace({'internode': 'Internode', 'blade': 'Lamina', 'sheath': 'Sheath', 'ear': 'Chaff', 'peduncle': 'Peduncle'}, inplace=True) # TODO: should we standardize the names of the variables?
+                    senescwheat_farquharwheat_elements_inputs_outputs_combined_df.sort_index(by=cnwheat_simulation.Simulation.ELEMENTS_INPUTS_INDEXES, inplace=True)
+                    senescwheat_farquharwheat_elements_inputs_outputs_combined_df.reset_index(drop=True, inplace=True)
+                    all_elements_inputs_ouputs_df = cnwheat_elements_postprocessing_df.combine_first(senescwheat_farquharwheat_elements_inputs_outputs_combined_df)
+                    
+                    all_plants_inputs_ouputs_df_list.append(all_plants_inputs_ouputs_df)
+                    all_axes_inputs_ouputs_df_list.append(all_axes_inputs_ouputs_df)
+                    all_phytomers_inputs_ouputs_df_list.append(all_phytomers_inputs_ouputs_df)
+                    all_organs_inputs_ouputs_df_list.append(all_organs_inputs_ouputs_df)
+                    all_elements_inputs_ouputs_df_list.append(all_elements_inputs_ouputs_df)
+                    
+        
+        global_plants_df = pd.concat(all_plants_inputs_ouputs_df_list, ignore_index=True)
+        global_plants_df.drop_duplicates(subset=cnwheat_simulation.Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
         global_plants_df.to_csv(plants_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
-        global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
-        global_axes_df.drop_duplicates(subset=simulation.Simulation.AXES_OUTPUTS_INDEXES, inplace=True)
+        global_axes_df = pd.concat(all_axes_inputs_ouputs_df_list, ignore_index=True)
+        global_axes_df.drop_duplicates(subset=cnwheat_simulation.Simulation.AXES_OUTPUTS_INDEXES, inplace=True)
         global_axes_df.to_csv(axes_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
-        global_phytomers_df = pd.concat(all_phytomers_df_list, ignore_index=True)
-        global_phytomers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
+        global_phytomers_df = pd.concat(all_phytomers_inputs_ouputs_df_list, ignore_index=True)
+        global_phytomers_df.drop_duplicates(subset=cnwheat_simulation.Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
         global_phytomers_df.to_csv(phytomers_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
-        global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
-        global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
+        global_organs_df = pd.concat(all_organs_inputs_ouputs_df_list, ignore_index=True)
+        global_organs_df.drop_duplicates(subset=cnwheat_simulation.Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
         global_organs_df.to_csv(organs_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
-        global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
-        global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
+        global_elements_df = pd.concat(all_elements_inputs_ouputs_df_list, ignore_index=True)
+        global_elements_df.drop_duplicates(subset=cnwheat_simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
+        all_elements_inputs_outputs_variables = [column for column in global_elements_df.columns if column not in cnwheat_simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES]
+        global_elements_df = global_elements_df.reindex_axis(cnwheat_simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES + all_elements_inputs_outputs_variables, axis=1, copy=False)
+        global_elements_df.sort_index(by=cnwheat_simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
+        global_elements_df.reset_index(drop=True, inplace=True)
+#         global_elements_df = global_elements_df.convert_objects(copy=False)
+#         global_elements_df[['plant', 'phytomer']] = global_elements_df[['plant', 'phytomer']].astype(int)
         global_elements_df.to_csv(elements_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
-        
-        def dict_to_dataframe(dict_, ids_columns):
-            ids_df = pd.DataFrame(dict_.keys(), columns=ids_columns)
-            data_df = pd.DataFrame(dict_.values())
-            df = pd.concat([ids_df, data_df], axis=1)
-            df.sort_index(by=ids_columns, inplace=True)
-            return df
-        
-        organs_coupling_variables_df = dict_to_dataframe(organs_coupling_variables_mapping, simulation.Simulation.ORGANS_OUTPUTS_INDEXES)
-        organs_coupling_variables_df.to_csv(organs_coupling_variables_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
-        
-        elements_coupling_variables_df = dict_to_dataframe(elements_coupling_variables_mapping, simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
-        elements_coupling_variables_df.to_csv(elements_coupling_variables_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
         
         execution_time = int(time.time()-t0)
         print '\n', 'Model executed in ', str(datetime.timedelta(seconds=execution_time))
@@ -295,14 +276,14 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
     ######POST-PROCESSING##
     if make_graphs:
         
+        if not os.path.isdir(GRAPHS_DIRPATH):
+            os.mkdir(GRAPHS_DIRPATH)
+        
         x_name = 't'
         x_label='Time (Hour)'
         
         # 1) Photosynthetic organs
-        elements_coupling_variables_df = pd.read_csv(elements_coupling_variables_filepath)
-        elements_coupling_variables_df_without_keys = elements_coupling_variables_df.drop(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, axis=1)
         ph_elements_output_df = pd.read_csv(elements_outputs_filepath)
-        ph_elements_output_df = pd.concat([ph_elements_output_df, elements_coupling_variables_df_without_keys], axis=1)
 
         graph_variables_ph_elements = {'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
                            'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
@@ -318,7 +299,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         for org_ph in (['Lamina'], ['Sheath'], ['Internode'], ['Peduncle', 'Chaff']):
             for variable_name, variable_label in graph_variables_ph_elements.iteritems():
                 graph_name = variable_name + '_' + '_'.join(org_ph) + '.PNG'
-                tools.plot_cnwheat_ouputs(ph_elements_output_df,
+                cnwheat_tools.plot_cnwheat_ouputs(ph_elements_output_df,
                               x_name = x_name,
                               y_name = variable_name,
                               x_label=x_label,
@@ -328,10 +309,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
                               explicit_label=False)
 
         # 2) Roots, grains and phloem
-        organs_coupling_variables_df = pd.read_csv(organs_coupling_variables_filepath)
-        organs_coupling_variables_df_without_keys = organs_coupling_variables_df.drop(simulation.Simulation.ORGANS_OUTPUTS_INDEXES, axis=1)
         organs_output_df = pd.read_csv(organs_outputs_filepath)
-        organs_output_df = pd.concat([organs_output_df, organs_coupling_variables_df_without_keys], axis=1)
 
         graph_variables_organs = {'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Dry_Mass':'Dry mass (g)',
                             'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Proteins_N_Mass': u'[N Proteins] (g)',
@@ -347,7 +325,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         for org in (['Roots'], ['Grains'], ['Phloem']):
             for variable_name, variable_label in graph_variables_organs.iteritems():
                 graph_name = variable_name + '_' + '_'.join(org) + '.PNG'
-                tools.plot_cnwheat_ouputs(organs_output_df,
+                cnwheat_tools.plot_cnwheat_ouputs(organs_output_df,
                               x_name = x_name,
                               y_name = variable_name,
                               x_label=x_label,
@@ -358,7 +336,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         # 3) Soil
         graph_name = 'Conc_Nitrates_Soil.PNG'
-        tools.plot_cnwheat_ouputs(organs_output_df,
+        cnwheat_tools.plot_cnwheat_ouputs(organs_output_df,
                               x_name = x_name,
                               y_name = 'Conc_Nitrates',
                               x_label=x_label,
@@ -398,13 +376,13 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         ## Photosynthetic organs
         org_ph = ph_elements_output_df.groupby('t').sum()
-        sum_dry_mass_org_ph =  ((org_ph['triosesP'] * 1E-6*parameters.OrganParameters.C_MOLAR_MASS)/TRIOSESP_MOLAR_MASS_C_RATIO +
-                                (org_ph['sucrose'] * 1E-6*parameters.OrganParameters.C_MOLAR_MASS)/SUCROSE_MOLAR_MASS_C_RATIO +
-                                (org_ph['starch'] * 1E-6*parameters.OrganParameters.C_MOLAR_MASS)/HEXOSE_MOLAR_MASS_C_RATIO +
-                                (org_ph['fructan'] * 1E-6*parameters.OrganParameters.C_MOLAR_MASS)/HEXOSE_MOLAR_MASS_C_RATIO +
-                                (org_ph['nitrates'] * 1E-6*parameters.OrganParameters.N_MOLAR_MASS)/NITRATES_MOLAR_MASS_N_RATIO +
-                                (org_ph['amino_acids'] * 1E-6*parameters.OrganParameters.N_MOLAR_MASS)/AMINO_ACIDS_MOLAR_MASS_N_RATIO +
-                                (org_ph['proteins'] * 1E-6*parameters.OrganParameters.N_MOLAR_MASS)/AMINO_ACIDS_MOLAR_MASS_N_RATIO +
+        sum_dry_mass_org_ph =  ((org_ph['triosesP'] * 1E-6*cnwheat_parameters.OrganParameters.C_MOLAR_MASS)/TRIOSESP_MOLAR_MASS_C_RATIO +
+                                (org_ph['sucrose'] * 1E-6*cnwheat_parameters.OrganParameters.C_MOLAR_MASS)/SUCROSE_MOLAR_MASS_C_RATIO +
+                                (org_ph['starch'] * 1E-6*cnwheat_parameters.OrganParameters.C_MOLAR_MASS)/HEXOSE_MOLAR_MASS_C_RATIO +
+                                (org_ph['fructan'] * 1E-6*cnwheat_parameters.OrganParameters.C_MOLAR_MASS)/HEXOSE_MOLAR_MASS_C_RATIO +
+                                (org_ph['nitrates'] * 1E-6*cnwheat_parameters.OrganParameters.N_MOLAR_MASS)/NITRATES_MOLAR_MASS_N_RATIO +
+                                (org_ph['amino_acids'] * 1E-6*cnwheat_parameters.OrganParameters.N_MOLAR_MASS)/AMINO_ACIDS_MOLAR_MASS_N_RATIO +
+                                (org_ph['proteins'] * 1E-6*cnwheat_parameters.OrganParameters.N_MOLAR_MASS)/AMINO_ACIDS_MOLAR_MASS_N_RATIO +
                                 [org_ph['mstruct'][0]]*len(org_ph.index))
 
         ax1.plot(sum_dry_mass_org_ph.index, sum_dry_mass_org_ph, label = r'$\sum$ (tp,i)', linestyle = '-', color = 'g')
@@ -412,9 +390,9 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         ## Roots
         roots = organs_output_df[organs_output_df['organ']=='Roots'].groupby('t').sum()
-        sum_dry_mass_roots =    ((roots['sucrose'] * 1E-6*parameters.OrganParameters.C_MOLAR_MASS)/SUCROSE_MOLAR_MASS_C_RATIO +
-                                (roots['nitrates'] * 1E-6*parameters.OrganParameters.N_MOLAR_MASS)/NITRATES_MOLAR_MASS_N_RATIO +
-                                (roots['amino_acids'] * 1E-6*parameters.OrganParameters.N_MOLAR_MASS)/AMINO_ACIDS_MOLAR_MASS_N_RATIO +
+        sum_dry_mass_roots =    ((roots['sucrose'] * 1E-6*cnwheat_parameters.OrganParameters.C_MOLAR_MASS)/SUCROSE_MOLAR_MASS_C_RATIO +
+                                (roots['nitrates'] * 1E-6*cnwheat_parameters.OrganParameters.N_MOLAR_MASS)/NITRATES_MOLAR_MASS_N_RATIO +
+                                (roots['amino_acids'] * 1E-6*cnwheat_parameters.OrganParameters.N_MOLAR_MASS)/AMINO_ACIDS_MOLAR_MASS_N_RATIO +
                                 roots['mstruct'])
 
         ax1.plot(sum_dry_mass_roots.index, sum_dry_mass_roots, label = 'Roots', linestyle = '-', color = 'k')
@@ -429,8 +407,8 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         ## Phloem
         phloem = organs_output_df[organs_output_df['organ']=='Phloem'].groupby('t').sum()
-        sum_dry_mass_phloem =    ((phloem['sucrose'] * 1E-6*parameters.OrganParameters.C_MOLAR_MASS)/SUCROSE_MOLAR_MASS_C_RATIO +
-                                 (phloem['amino_acids'] * 1E-6*parameters.OrganParameters.N_MOLAR_MASS)/AMINO_ACIDS_MOLAR_MASS_N_RATIO)
+        sum_dry_mass_phloem =    ((phloem['sucrose'] * 1E-6*cnwheat_parameters.OrganParameters.C_MOLAR_MASS)/SUCROSE_MOLAR_MASS_C_RATIO +
+                                 (phloem['amino_acids'] * 1E-6*cnwheat_parameters.OrganParameters.N_MOLAR_MASS)/AMINO_ACIDS_MOLAR_MASS_N_RATIO)
 
         ax1.plot(sum_dry_mass_phloem.index, sum_dry_mass_phloem, label = 'Phloem', linestyle = '-', color = 'b')
         ax1.plot(sum_dry_mass_org_ph.index, (sum_dry_mass_org_ph + sum_dry_mass_phloem), label = r'$\sum$ (tp,i) + phloem', linestyle = '--', color = 'g')
@@ -442,7 +420,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         ## Formatting
         ax1.set_ylabel('Dry mass (g)')
         ax1.legend(prop={'size':12}, bbox_to_anchor=(0.05, .6, 0.9, .5), loc='upper center', ncol=4, mode="expand", borderaxespad=0.)
-        ax1.axvline(parameters.GrainsParameters.FILLING_INIT, color='k', linestyle='--')
+        ax1.axvline(cnwheat_parameters.GrainsParameters.FILLING_INIT, color='k', linestyle='--')
         ax1.set_xlabel('Time from flowering (hour)')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Total_dry_mass.PNG'), format='PNG', bbox_inches='tight')
         plt.close()
@@ -462,7 +440,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         ax1.plot(day, dry_mass_production, linestyle = '-')
         ax1.set_ylabel('Dry mass production (g day$^{-1}$)')
-        ax1.axvline(parameters.GrainsParameters.FILLING_INIT//24, color='k', linestyle='--')
+        ax1.axvline(cnwheat_parameters.GrainsParameters.FILLING_INIT//24, color='k', linestyle='--')
         ax1.set_xlabel('Time from flowering (day)')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Dry_mass_production.PNG'), format='PNG', bbox_inches='tight')
         plt.close()
@@ -472,9 +450,9 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         ## Photosynthetic organs
         org_ph = ph_elements_output_df.groupby('t').sum()
-        sum_N_org_ph =  ((org_ph['nitrates'] * 1E-3*parameters.OrganParameters.N_MOLAR_MASS) +
-                         (org_ph['amino_acids'] * 1E-3*parameters.OrganParameters.N_MOLAR_MASS) +
-                         (org_ph['proteins'] * 1E-3*parameters.OrganParameters.N_MOLAR_MASS) +
+        sum_N_org_ph =  ((org_ph['nitrates'] * 1E-3*cnwheat_parameters.OrganParameters.N_MOLAR_MASS) +
+                         (org_ph['amino_acids'] * 1E-3*cnwheat_parameters.OrganParameters.N_MOLAR_MASS) +
+                         (org_ph['proteins'] * 1E-3*cnwheat_parameters.OrganParameters.N_MOLAR_MASS) +
                          [org_ph['Nstruct'][0]*1E3]*len(org_ph.index))
 
         ax1.plot(sum_N_org_ph.index, sum_N_org_ph, label = r'$\sum$ (tp,i)', linestyle = '-', color = 'g')
@@ -483,15 +461,15 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         ## Roots
         roots = organs_output_df[organs_output_df['organ']=='Roots'].groupby('t').sum()
-        sum_N_roots =    ((roots['nitrates'] * 1E-3*parameters.OrganParameters.N_MOLAR_MASS) +
-                          (roots['amino_acids'] * 1E-3*parameters.OrganParameters.N_MOLAR_MASS) +
+        sum_N_roots =    ((roots['nitrates'] * 1E-3*cnwheat_parameters.OrganParameters.N_MOLAR_MASS) +
+                          (roots['amino_acids'] * 1E-3*cnwheat_parameters.OrganParameters.N_MOLAR_MASS) +
                           (roots['Nstruct'] * 1E3))
 
         ax1.plot(sum_N_roots.index, sum_N_roots, label = 'Roots', linestyle = '-', color = 'k')
 
         ## Grains
         grains = organs_output_df[organs_output_df['organ']=='Grains'].groupby('t').sum()
-        sum_N_grains = grains['proteins'] * 1E-3*parameters.OrganParameters.N_MOLAR_MASS
+        sum_N_grains = grains['proteins'] * 1E-3*cnwheat_parameters.OrganParameters.N_MOLAR_MASS
 
         ax1.plot(sum_N_grains.index, sum_N_grains, label = 'Grains', linestyle = '-', color = 'y')
         ax1.plot(t_NEMA, N_mass_grains_NEMA_H3, label= 'H3', marker = 'v', color = 'y', linestyle = '')
@@ -499,7 +477,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         ## Phloem
         phloem = organs_output_df[organs_output_df['organ']=='Phloem'].groupby('t').sum()
-        sum_N_phloem = phloem['amino_acids'] * 1E-3*parameters.OrganParameters.N_MOLAR_MASS
+        sum_N_phloem = phloem['amino_acids'] * 1E-3*cnwheat_parameters.OrganParameters.N_MOLAR_MASS
 
         ax1.plot(sum_N_phloem.index, sum_N_phloem, label = 'Phloem', linestyle = '-', color = 'b')
 
@@ -510,7 +488,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         ## Formatting
         ax1.set_ylabel('N mass (mg)')
         ax1.legend(prop={'size':12}, bbox_to_anchor=(0.05, .6, 0.9, .5), loc='upper center', ncol=4, mode="expand", borderaxespad=0.)
-        ax1.axvline(parameters.GrainsParameters.FILLING_INIT, color='k', linestyle='--')
+        ax1.axvline(cnwheat_parameters.GrainsParameters.FILLING_INIT, color='k', linestyle='--')
         ax1.set_xlabel('Time from flowering (hour)')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Total_N_mass.PNG'), format='PNG', bbox_inches='tight')
         plt.close()
@@ -582,16 +560,17 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         plt.close()
 
         # 7) PAR interception
-        meteo_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME))
+        PARi_df_t = PARi_df.loc[PARi_df.t.isin(ph_elements_output_df.t), :]
+        meteo_df_t = meteo_df.loc[ph_elements_output_df.t, :]
         ph_elements_output_df['day'] = ph_elements_output_df['t']//24
         days = ph_elements_output_df['day'].unique()
-        ph_elements_output_df['integrated_PAR'] = ph_elements_output_df['PAR'] * ph_elements_output_df['green_area'] *3600
+        ph_elements_output_df['integrated_PAR'] = PARi_df_t['PAR'].values * ph_elements_output_df['green_area'].values * 3600
         PAR_absorbed_cumul = ph_elements_output_df.groupby('day')['integrated_PAR'].sum()*410
-        meteo_df['day'] = meteo_df['t']//24
-        PAR_incident_cumul = meteo_df.groupby('day')['PAR_incident'].sum()
+        meteo_df_t.loc[:, 'day'] = meteo_df_t.index // 24
+        PAR_incident_cumul = meteo_df_t.groupby('day')['PAR_incident'].sum()
         ratio_PAR_absorbed = PAR_absorbed_cumul/PAR_incident_cumul
         fig, (ax1) = plt.subplots(1)
-        ax1.plot(meteo_df['day'].unique(), ratio_PAR_absorbed, label = 'Absorbed PAR', linestyle = '-', color = 'k', marker='o')
+        ax1.plot(meteo_df_t['day'].unique(), ratio_PAR_absorbed, label = 'Absorbed PAR', linestyle = '-', color = 'k', marker='o')
 
         ## Formatting
         ax1.set_ylabel(u'Fraction of incident PAR absorbed by the tiller')
@@ -629,9 +608,12 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
         ax1.set_position([box.x0, box.y0, box.width * 0.85, box.height])
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'green_area_Lamina_comparison.PNG'), dpi=200, format='PNG')
         plt.close()
-
+        
+        
 if __name__ == '__main__':
     compute_CN_distrib(run_simu=True, make_graphs=True)
+#     compute_CN_distrib(run_simu=False, make_graphs=True)
+
 ##    # Profiling
 ##    filename = 'profile.pstats'
 ##    profile.run('compute_CN_distrib(make_graphs=True)', filename)

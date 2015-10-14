@@ -8,10 +8,10 @@ from __future__ import division # use "//" to do integer division
 
     The module :mod:`cnwheat.simulation` is the front-end to run the CN-Wheat model.
 
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2014.
+    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -34,7 +34,6 @@ import model, tools
 
 class SimulationError(Exception): pass
 class SimulationRunError(SimulationError): pass
-class SimulationInputsError(SimulationError): pass
 
 class Simulation(object):
     """
@@ -358,7 +357,7 @@ class Simulation(object):
                     if organ is None:
                         continue
                     i = update_rows(organ, [t, plant_index, axis_id, 'NA', organ.__class__.__name__], all_rows[model.Organ], i)
-                phytomer_index = 1    
+                phytomer_index = 9 # TODO: replace by 1
                 for phytomer in axis.phytomers:
                     i = update_rows(phytomer, [t, plant_index, axis_id, phytomer_index], all_rows[model.Phytomer], i)
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
@@ -724,8 +723,11 @@ class Simulation(object):
                 organs_df['plant'] = plant_index
                 organs_df['axis'] = axis_id
                 organs_df['organ'] = axis.soil.__class__.__name__
-                conc_nitrates_soil = axis.soil.calculate_conc_nitrates(solver_output_transposed[self.initial_conditions_mapping[axis.soil]['nitrates']])
-                organs_df['Conc_Nitrates'] = conc_nitrates_soil
+                organs_df['volume'] = axis.soil.volume
+                organs_df['nitrates'] = solver_output_transposed[self.initial_conditions_mapping[axis.soil]['nitrates']]
+                organs_df['Tsoil'] = axis.soil.Tsoil
+                conc_nitrates_soil = axis.soil.calculate_conc_nitrates(organs_df['nitrates'])
+                organs_df['Conc_Nitrates_Soil'] = conc_nitrates_soil
                 Tsoil = axis.soil.Tsoil
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
 
@@ -778,7 +780,7 @@ class Simulation(object):
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
 
                 # format photosynthetic organs elements outputs
-                phytomer_index = 1
+                phytomer_index = 9 # TODO: replace by 1
                 for phytomer in axis.phytomers:
                     phytomers_df = pd.DataFrame(columns=all_phytomers_df.columns)
                     phytomers_df['t'] = self._time_grid
@@ -919,6 +921,12 @@ class Simulation(object):
         all_phytomers_df[['plant', 'phytomer']] = all_phytomers_df[['plant', 'phytomer']].astype(int)
         all_organs_df['plant'] = all_organs_df['plant'].astype(int)
         all_elements_df[['plant', 'phytomer']] = all_elements_df[['plant', 'phytomer']].astype(int)
+        
+        all_plants_df.reset_index(drop=True, inplace=True)
+        all_axes_df.reset_index(drop=True, inplace=True)
+        all_phytomers_df.reset_index(drop=True, inplace=True)
+        all_organs_df.reset_index(drop=True, inplace=True)
+        all_elements_df.reset_index(drop=True, inplace=True)
 
         logger.debug('Formatting of outputs DONE')
 

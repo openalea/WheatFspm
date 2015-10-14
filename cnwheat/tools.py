@@ -5,8 +5,10 @@
 
     This module provides tools to validate the outputs of the model CN-Wheat.
 
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
+    
+    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -305,28 +307,6 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
     logging.getLogger('cnwheat.model').disabled = not log_model # set to False to log messages from cnwheat.model
     logging.getLogger('cnwheat.compartments').disabled = not log_compartments # set to False to log the compartments
     logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives # set to False to log the derivatives
-
-
-def read_t_data(data_dirpath, data_filename):
-    """
-    Read data from CSV file with a  column 't', and return a Pandas DataFrame indexed on this 't'.
-
-    :Parameters:
-
-        - `data_dirpath` (:class:`str`) - The directory of the CSV file.
-
-        - `data_filename` (:class:`str`) - The name of the CSV file.
-
-    :Returns:
-
-        A :class:`dataframe <pandas.DataFrame>` indexed on the column 't'.
-
-    :Returns Type:
-        :class:`pandas.DataFrame`
-
-    """
-    data_filepath = os.path.join(data_dirpath, data_filename)
-    return pd.read_csv(data_filepath, sep=None, index_col='t', engine = 'python')
 
 
 def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):

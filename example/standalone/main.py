@@ -9,10 +9,10 @@
     You must first install :mod:`cnwheat` (and add it to your PYTHONPATH)
     before running this script with the command `python`.
 
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2014.
+    .. seealso:: Barillot et al. 2015.
 '''
 
 '''
@@ -93,7 +93,7 @@ senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEME
 
 # Define the time grid
 start_time = 0
-stop_time = 48
+stop_time = 8
 timestep = 1
 
 # Initialize the lists of outputs. There is one list per type of outputs.

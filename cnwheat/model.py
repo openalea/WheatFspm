@@ -8,10 +8,10 @@ from __future__ import division # use "//" to do integer division
 
     The module :mod:`cnwheat.model` defines the equations of the CN exchanges in a population of plants.
 
-    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
+    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2014.
+    .. seealso:: Barillot et al. 2015.
 """
 
 """
