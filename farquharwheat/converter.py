@@ -178,12 +178,16 @@ def from_MTG(g, available_components):
     
     # traverse the MTG recursively from top ...
     for plant_vertex_id in g.components_iter(g.root):
+        if g.index(plant_vertex_id) not in available_components: continue
         plant_index = int(g.index(plant_vertex_id))
         for axis_vertex_id in g.components_iter(plant_vertex_id):
+            if (g.index(plant_vertex_id), g.label(axis_vertex_id)) not in available_components: continue
             axis_id = g.label(axis_vertex_id)
             for metamer_vertex_id in g.components_iter(axis_vertex_id):
+                if (g.index(plant_vertex_id), g.label(axis_vertex_id), g.index(metamer_vertex_id)) not in available_components: continue
                 metamer_index = int(g.index(metamer_vertex_id))
                 for organ_vertex_id in g.components_iter(metamer_vertex_id):
+                    if (g.index(plant_vertex_id), g.label(axis_vertex_id), g.index(metamer_vertex_id), g.label(organ_vertex_id)) not in available_components: continue
                     organ_label = g.label(organ_vertex_id)
                     if organ_label not in FARQUHARWHEAT_ORGANS_NAMES:
                         warnings.warn(NotModeledComponentWarning(organ_label, organ_vertex_id))

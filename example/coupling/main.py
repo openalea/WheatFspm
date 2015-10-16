@@ -110,7 +110,12 @@ if __name__ == '__main__':
     # setup a MTG 
     g = setup_MTG()
     # convert the MTG to Farquhar-Wheat inputs and initialize the simulation
-    available_components = set(pd.read_csv(INPUTS_FILENAME).astype(str).groupby(converter.ELEMENTS_TOPOLOGY_COLUMNS).groups.keys())
+    inputs_df = pd.read_csv(INPUTS_FILENAME).astype(str)
+    available_components = set(inputs_df.groupby(['plant']).groups.keys() + \
+                               inputs_df.groupby(['plant', 'axis']).groups.keys() + \
+                               inputs_df.groupby(['plant', 'axis', 'metamer']).groups.keys() + \
+                               inputs_df.groupby(['plant', 'axis', 'metamer', 'organ']).groups.keys() + \
+                               inputs_df.groupby(converter.ELEMENTS_TOPOLOGY_COLUMNS).groups.keys())
     simulation_.initialize(converter.from_MTG(g, available_components))
     # get the PAR from dataframe
     PAR_df = pd.read_csv(PAR_FILENAME, index_col=converter.ELEMENTS_TOPOLOGY_COLUMNS)
