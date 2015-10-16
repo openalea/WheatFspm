@@ -30,26 +30,42 @@ import warnings
 
 import pandas as pd
 
+
 class ConverterWarning(UserWarning): pass
 
-class PropertyNotFoundWarning(ConverterWarning):
-    '''Property not found in a vertex of a MTG.'''
-    def __init__(self, property_, vertex_id):
-        self.message = 'Property "{0}" not found in vertex {1}.'.format(property_, vertex_id)
+
+class NotModeledComponentWarning(ConverterWarning):
+    '''MTG component not modeled by FarquharWheat.
+    '''
+    def __init__(self, component_label, component_vertex_id):
+        self.message = 'MTG component "{0}" is not modeled by FarquharWheat (vertex {1}).'.format(component_label, component_vertex_id)
     def __str__(self):
         return repr(self.message)
-    
+
+
 warnings.simplefilter('always', ConverterWarning)
-    
-    
+
+
 class ConverterError(Exception): pass
 
-class InvalidMTGError(ConverterError):
-    '''The input MTG does not contain the required properties.'''
-    def __init__(self, required_properties):
-        self.message = 'The input MTG does not contain the required properties ({}).'.format(required_properties)
+
+class PropertyNotFoundError(ConverterError):
+    '''Property not found in a vertex of a MTG.
+    '''
+    def __init__(self, vertex_property, vertex_id):
+        self.message = 'Property "{0}" not found in vertex {1}.'.format(vertex_property, vertex_id)
     def __str__(self):
         return repr(self.message)
+    
+    
+class MismatchedTopologiesError(ConverterError):
+    '''Topologies mismatched between FarquharWheat and MTG.
+    '''
+    def __init__(self, farquharwheat_id, vertex_id):
+        self.message = 'Topologies mismatched between FarquharWheat and MTG: no mapping between FarquharWheat object {0} and vertex {1}.'.format(farquharwheat_id, vertex_id)
+    def __str__(self):
+        return repr(self.message)
+    
 
 #: the name of the organs modeled by FarquharWheat 
 FARQUHARWHEAT_ORGANS_NAMES = set(['internode', 'blade', 'sheath', 'peduncle', 'ear'])
@@ -63,11 +79,23 @@ FARQUHARWHEAT_ELEMENTS_INPUTS = ['surfacic_nitrogen', 'width', 'height', 'STAR']
 #: the inputs needed by FarquharWheat
 FARQUHARWHEAT_INPUTS = FARQUHARWHEAT_ORGANS_INPUTS + FARQUHARWHEAT_ELEMENTS_INPUTS
 
+#: the outputs computed by FarquharWheat at organ scale
+FARQUHARWHEAT_ORGANS_OUTPUTS = []
+
 #: the outputs computed by FarquharWheat at element scale
 FARQUHARWHEAT_ELEMENTS_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs']
 
+#: the outputs computed by FarquharWheat
+FARQUHARWHEAT_OUTPUTS = FARQUHARWHEAT_ORGANS_OUTPUTS + FARQUHARWHEAT_ELEMENTS_OUTPUTS
+
+#: the inputs and outputs of FarquharWheat at elements scale
+FARQUHARWHEAT_ORGANS_INPUTS_OUTPUTS = FARQUHARWHEAT_ORGANS_INPUTS + FARQUHARWHEAT_ORGANS_OUTPUTS
+
+#: the inputs and outputs of FarquharWheat at organs scale
+FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS = FARQUHARWHEAT_ELEMENTS_INPUTS + FARQUHARWHEAT_ELEMENTS_OUTPUTS
+
 #: the inputs and outputs of FarquharWheat. 
-FARQUHARWHEAT_INPUTS_OUTPUTS = FARQUHARWHEAT_ORGANS_INPUTS + FARQUHARWHEAT_ELEMENTS_INPUTS + FARQUHARWHEAT_ELEMENTS_OUTPUTS
+FARQUHARWHEAT_INPUTS_OUTPUTS = FARQUHARWHEAT_INPUTS + FARQUHARWHEAT_OUTPUTS
 
 #: the columns which define the topology of an element in the input/output dataframe
 ELEMENTS_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ', 'element']
@@ -122,17 +150,20 @@ def to_dataframe(data_dict):
     data_df.sort_index(by=ELEMENTS_TOPOLOGY_COLUMNS, inplace=True)
     columns_sorted = ELEMENTS_TOPOLOGY_COLUMNS + [input_output for input_output in FARQUHARWHEAT_INPUTS_OUTPUTS if input_output in data_df.columns]
     data_df = data_df.reindex_axis(columns_sorted, axis=1, copy=False)
+    data_df.reset_index(drop=True, inplace=True)
     return data_df
 
 
-def from_MTG(g):
+def from_MTG(g, available_components):
     """
     Convert a MTG to Farquhar-Wheat inputs. 
     
     :Parameters:
         
             - g (:class:`openalea.mtg.mtg.MTG`) - A MTG which contains the inputs
-              of Farquhar-Wheat. These inputs are: :mod:`FARQUHARWHEAT_INPUTS`. 
+              of Farquhar-Wheat. These inputs are: :mod:`FARQUHARWHEAT_INPUTS`.
+              
+            - `available_components` - TODO: remove this argument 
               
     :Returns:
         The inputs of Farquhar-Wheat.
@@ -145,50 +176,39 @@ def from_MTG(g):
     """
     inputs = {}
     
-    # check needed properties
-    if not set(FARQUHARWHEAT_ORGANS_INPUTS).issubset(g.properties()):
-        raise InvalidMTGError(FARQUHARWHEAT_ORGANS_INPUTS)
-    
     # traverse the MTG recursively from top ...
-    for plant_vid in g.components_iter(g.root):
-        plant_index = int(g.index(plant_vid))
-        for axis_vid in g.components_iter(plant_vid):
-            axis_id = g.label(axis_vid)
-            for metamer_vid in g.components_iter(axis_vid):
-                metamer_index = int(g.index(metamer_vid))
-                for organ_vid in g.components_iter(metamer_vid):
-                    organ_label = g.label(organ_vid)
+    for plant_vertex_id in g.components_iter(g.root):
+        plant_index = int(g.index(plant_vertex_id))
+        for axis_vertex_id in g.components_iter(plant_vertex_id):
+            axis_id = g.label(axis_vertex_id)
+            for metamer_vertex_id in g.components_iter(axis_vertex_id):
+                metamer_index = int(g.index(metamer_vertex_id))
+                for organ_vertex_id in g.components_iter(metamer_vertex_id):
+                    organ_label = g.label(organ_vertex_id)
                     if organ_label not in FARQUHARWHEAT_ORGANS_NAMES:
+                        warnings.warn(NotModeledComponentWarning(organ_label, organ_vertex_id))
                         continue
-                    vertex_properties = g.get_vertex_property(organ_vid)
+                    vertex_properties = g.get_vertex_property(organ_vertex_id)
                     organ_inputs = {}
-                    is_missing = False
-                    for mtg_property in FARQUHARWHEAT_ORGANS_INPUTS:
-                        if mtg_property not in vertex_properties:
-                            warnings.warn(PropertyNotFoundWarning(mtg_property, organ_vid))
-                            is_missing = True
-                            break
-                        organ_inputs[mtg_property] = vertex_properties[mtg_property]
-                    if is_missing:
-                        continue
-                    for element_vid in g.components_iter(organ_vid):
-                        vertex_properties = g.get_vertex_property(element_vid)
-                        element_label = g.label(element_vid)
+                    for organ_input in FARQUHARWHEAT_ORGANS_INPUTS:
+                        if organ_input not in vertex_properties:
+                            raise PropertyNotFoundError(organ_input, organ_vertex_id)
+                        organ_inputs[organ_input] = vertex_properties[organ_input]
+                    for element_vertex_id in g.components_iter(organ_vertex_id):
+                        if (g.index(plant_vertex_id), g.label(axis_vertex_id), g.index(metamer_vertex_id), g.label(organ_vertex_id), g.label(element_vertex_id)) not in available_components: continue
+                        vertex_properties = g.get_vertex_property(element_vertex_id)
+                        element_label = g.label(element_vertex_id)
                         current_inputs = organ_inputs.copy()
-                        for mtg_property in FARQUHARWHEAT_ELEMENTS_INPUTS:
-                            if mtg_property not in vertex_properties:
-                                warnings.warn(PropertyNotFoundWarning(mtg_property, element_vid))
-                                is_missing = True
-                                break
-                            current_inputs[mtg_property] = vertex_properties[mtg_property]
-                        if is_missing:
-                            continue
+                        for element_input in FARQUHARWHEAT_ELEMENTS_INPUTS:
+                            if element_input not in vertex_properties:
+                                raise PropertyNotFoundError(element_input, element_vertex_id)
+                            current_inputs[element_input] = vertex_properties[element_input]
                         # ... and set the inputs
                         inputs[(plant_index, axis_id, metamer_index, organ_label, element_label)] = current_inputs
     return inputs
 
 
-def update_MTG(outputs, g):
+def update_MTG(outputs, g, available_components):
     """
     Update a MTG from Farquhar-Wheat outputs.
     
@@ -199,32 +219,40 @@ def update_MTG(outputs, g):
         
             - `g` (:class:`openalea.mtg.mtg.MTG`) - The MTG to update from the outputs of FarquharWheat.
             
+            - `available_components` - TODO: remove this argument
+            
     .. seealso:: see :attr:`simulation.Simulation.outputs` for the structure of Farquhar-Wheat outputs.
             
     """
     # add the properties if needed
-    properties = g.properties()
-    for farquharwheat_output_name in FARQUHARWHEAT_ELEMENTS_OUTPUTS:
-        if farquharwheat_output_name not in properties:
+    property_names = g.property_names()
+    for farquharwheat_output_name in FARQUHARWHEAT_OUTPUTS:
+        if farquharwheat_output_name not in property_names:
             g.add_property(farquharwheat_output_name)
     # traverse the MTG recursively from top ...
-    for plant_vid in g.components_iter(g.root):
-        plant_index = int(g.index(plant_vid))
-        for axis_vid in g.components_iter(plant_vid):
-            axis_id = g.label(axis_vid)
-            for metamer_vid in g.components(axis_vid): 
-                metamer_index = int(g.index(metamer_vid))
-                for organ_vid in g.components_iter(metamer_vid):
-                    organ_label = g.label(organ_vid)
+    for plant_vertex_id in g.components_iter(g.root):
+        if g.index(plant_vertex_id) not in available_components: continue
+        plant_index = int(g.index(plant_vertex_id))
+        for axis_vertex_id in g.components_iter(plant_vertex_id):
+            if (g.index(plant_vertex_id), g.label(axis_vertex_id)) not in available_components: continue
+            axis_id = g.label(axis_vertex_id)
+            for metamer_vertex_id in g.components(axis_vertex_id): 
+                if (g.index(plant_vertex_id), g.label(axis_vertex_id), g.index(metamer_vertex_id)) not in available_components: continue
+                metamer_index = int(g.index(metamer_vertex_id))
+                for organ_vertex_id in g.components_iter(metamer_vertex_id):
+                    if (g.index(plant_vertex_id), g.label(axis_vertex_id), g.index(metamer_vertex_id), g.label(organ_vertex_id)) not in available_components: continue
+                    organ_label = g.label(organ_vertex_id)
                     if organ_label not in FARQUHARWHEAT_ORGANS_NAMES:
+                        warnings.warn(NotModeledComponentWarning(organ_label, organ_vertex_id))
                         continue
-                    for element_vid in g.components_iter(organ_vid):
-                        element_label = g.label(element_vid)
+                    for element_vertex_id in g.components_iter(organ_vertex_id):
+                        if (g.index(plant_vertex_id), g.label(axis_vertex_id), g.index(metamer_vertex_id), g.label(organ_vertex_id), g.label(element_vertex_id)) not in available_components: continue
+                        element_label = g.label(element_vertex_id)
                         element_id = (plant_index, axis_id, metamer_index, organ_label, element_label)
                         if element_id not in outputs:
-                            continue
+                            raise MismatchedTopologiesError(element_id, element_vertex_id)
                         element_outputs = outputs[element_id]
                         for output_name, output_value in element_outputs.iteritems():
                             # ... and set the properties
-                            g.property(output_name)[element_vid] = output_value
+                            g.property(output_name)[element_vertex_id] = output_value
 

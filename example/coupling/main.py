@@ -59,9 +59,10 @@ def setup_MTG():
     g, wheat, domain_area, domain, convUnit = initialise_stand(1500)
     
     # add the properties which do not exist yet
-    for property_ in converter.FARQUHARWHEAT_INPUTS:
-        if property_ not in g.properties():
-            g.add_property(property_)
+    property_names = g.property_names()
+    for farquharwheat_input_name in converter.FARQUHARWHEAT_INPUTS:
+        if farquharwheat_input_name not in property_names:
+            g.add_property(farquharwheat_input_name)
     
     plants_indexes_in_inputs_df = inputs_df.plant.unique()
     # traverse the MTG recursively from top
@@ -109,7 +110,8 @@ if __name__ == '__main__':
     # setup a MTG 
     g = setup_MTG()
     # convert the MTG to Farquhar-Wheat inputs and initialize the simulation
-    simulation_.initialize(converter.from_MTG(g))
+    available_components = set(pd.read_csv(INPUTS_FILENAME).astype(str).groupby(converter.ELEMENTS_TOPOLOGY_COLUMNS).groups.keys())
+    simulation_.initialize(converter.from_MTG(g, available_components))
     # get the PAR from dataframe
     PAR_df = pd.read_csv(PAR_FILENAME, index_col=converter.ELEMENTS_TOPOLOGY_COLUMNS)
     # compute incident PAR
@@ -119,7 +121,7 @@ if __name__ == '__main__':
     # run the simulation
     simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.68, Ur=3.171, PARi_dict=PARi_dict)
     # update the MTG from Farquhar-Wheat outputs
-    converter.update_MTG(simulation_.outputs, g)
+    converter.update_MTG(simulation_.outputs, g, available_components)
     # format Farquhar-Wheat outputs to Pandas dataframe
     outputs_df = converter.to_dataframe(simulation_.outputs)
     # write the dataframe to CSV
