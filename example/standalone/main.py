@@ -57,13 +57,13 @@ if __name__ == '__main__':
     roots_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOTS_INPUTS_FILENAME))
     elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))
     # convert the dataframes to simulation inputs format
-    inputs = converter.from_dataframe(roots_inputs_df, elements_inputs_df)
+    inputs = converter.from_dataframes(roots_inputs_df, elements_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
     # run the simulation
     simulation_.run()
     # convert the outputs to Pandas dataframes
-    roots_outputs_df, elements_outputs_df = converter.to_dataframe(simulation_.outputs)
+    roots_outputs_df, elements_outputs_df = converter.to_dataframes(simulation_.outputs)
     # write the dataframes to CSV
     roots_outputs_df.to_csv(os.path.join(OUTPUTS_DIRPATH, ROOTS_OUTPUTS_FILENAME), index=False, na_rep='NA')
     elements_outputs_df.to_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME), index=False, na_rep='NA') 

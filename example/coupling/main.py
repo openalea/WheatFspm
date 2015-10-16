@@ -61,9 +61,10 @@ def setup_MTG():
     g, wheat, domain_area, domain, convUnit = initialise_stand(1500)
     
     # add the properties which do not exist yet
-    for property_ in converter.SENESCWHEAT_ELEMENTS_INPUTS:
-        if property_ not in g.properties():
-            g.add_property(property_)
+    property_names = g.property_names()
+    for input_name in converter.SENESCWHEAT_ELEMENTS_INPUTS:
+        if input_name not in property_names:
+            g.add_property(input_name)
     
     # traverse the MTG recursively from top
     for plant_vid in g.components_iter(g.root):
@@ -109,14 +110,19 @@ if __name__ == '__main__':
     g = setup_MTG()
     # convert the MTG to Senesc-Wheat inputs and initialize the simulation
     roots_inputs = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOTS_INPUTS_FILENAME)) #TODO: remove this code as soon as :mod:`openalea.mtg` permits to add/remove components.
-    simulation_.initialize(converter.from_MTG(g, roots_inputs))
+    elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME)).astype(str)
+    available_components = set(elements_inputs_df.groupby(['plant']).groups.keys() + \
+                               elements_inputs_df.groupby(['plant', 'axis']).groups.keys() + \
+                               elements_inputs_df.groupby(['plant', 'axis', 'metamer']).groups.keys() + \
+                               elements_inputs_df.groupby(['plant', 'axis', 'metamer', 'organ']).groups.keys() + \
+                               elements_inputs_df.groupby(converter.ELEMENTS_TOPOLOGY_COLUMNS).groups.keys())
+    simulation_.initialize(converter.from_MTG(g, roots_inputs, available_components))
     # run the simulation
     simulation_.run()
-    # update the MTG from Senesc-Wheat outputs
-    roots_outputs = pd.DataFrame(index=roots_inputs.index, columns=converter.ROOTS_TOPOLOGY_COLUMNS + converter.SENESCWHEAT_ROOTS_OUTPUTS) #TODO: remove this code as soon as :mod:`openalea.mtg` permits to add/remove components.
-    converter.update_MTG(simulation_.outputs, g, roots_outputs)
     # format Senesc-Wheat outputs to Pandas dataframe
-    roots_outputs_df, elements_outputs_df = converter.to_dataframe(simulation_.outputs)
+    roots_outputs_df, elements_outputs_df = converter.to_dataframes(simulation_.outputs)
+    # update the MTG from Senesc-Wheat outputs
+    converter.update_MTG(simulation_.outputs, g, roots_outputs_df, available_components)
     # write the dataframe to CSV
     roots_outputs_df.to_csv(os.path.join(OUTPUTS_DIRPATH, ROOTS_OUTPUTS_FILENAME), index=False, na_rep='NA')
     elements_outputs_df.to_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME), index=False, na_rep='NA')  

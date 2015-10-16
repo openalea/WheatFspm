@@ -78,6 +78,7 @@ class Simulation(object):
             loss_cytokinines = model.SenescenceModel.calculate_remobilisation(roots_inputs_dict['cytokinines'], relative_delta_mstruct)
             all_roots_outputs[roots_inputs_id] = {'mstruct_C_growth': mstruct_C_growth/self.time_step, 
                                                   'Nstruct_N_growth': Nstruct_N_growth/self.time_step,
+                                                  'mstruct_death': mstruct_death,
                                                   'mstruct': roots_inputs_dict['mstruct'] + delta_mstruct,
                                                   'Nstruct': roots_inputs_dict['Nstruct'] + delta_Nstruct,
                                                   'cytokinines': roots_inputs_dict['cytokinines'] - loss_cytokinines}
@@ -96,8 +97,8 @@ class Simulation(object):
             loss_cytokinines = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['cytokinines'], relative_delta_green_area)
 
             # Element death and suppression from population
-            min_green_area = 1E-4 # Minimal green area below which the organ is suppressed (m²)
-            if new_green_area >= min_green_area:
+            min_green_area = 0.0 # Minimal green area below which the organ is suppressed (m²) ; TODO: set to 1E-4 when it will be possible to suppress component in the MTG
+            if new_green_area >= min_green_area: 
                 all_elements_outputs[elements_inputs_id] = {'green_area': new_green_area,
                                                             'mstruct': new_mstruct,
                                                             'Nstruct': new_Nstruct,
@@ -106,6 +107,8 @@ class Simulation(object):
                                                             'fructan': elements_inputs_dict['fructan'] - remob_fructan,
                                                             'proteins': elements_inputs_dict['proteins'] - remob_proteins,
                                                             'amino_acids': elements_inputs_dict['amino_acids'] + remob_proteins,
-                                                            'cytokinines': elements_inputs_dict['cytokinines'] - loss_cytokinines}
+                                                            'cytokinines': elements_inputs_dict['cytokinines'] - loss_cytokinines,
+                                                            'max_proteins': max_proteins, 
+                                                            'surfacic_nitrogen': new_SLN}
                                                       
         
