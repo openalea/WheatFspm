@@ -33,33 +33,28 @@ import pandas as pd
 
 from farquharwheat import model, simulation, converter 
 
-INPUTS_FILENAME = 'inputs.csv'
-PAR_FILENAME = 'PAR.csv'
+ORGANS_INPUTS_FILENAME = 'organs_inputs.csv'
+ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
 
-OUTPUTS_FILENAME = 'outputs.csv'
+ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
 
 OUTPUTS_PRECISION = 6
 
 if __name__ == '__main__':
     
-    # create a simulation
+    # create a simulation and a converter
     simulation_ = simulation.Simulation()
     # read inputs from Pandas dataframe
-    inputs_df = pd.read_csv(INPUTS_FILENAME)
+    organs_inputs_df = pd.read_csv(ORGANS_INPUTS_FILENAME)
+    elements_inputs_df = pd.read_csv(ELEMENTS_INPUTS_FILENAME)
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframe(inputs_df)
+    inputs = converter.from_dataframe(organs_inputs_df, elements_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
-    # get the PAR from dataframe
-    PAR_df = pd.read_csv(PAR_FILENAME, index_col=converter.ELEMENTS_TOPOLOGY_COLUMNS)
-    # compute incident PAR
-    PARi_df = PAR_df
-    PARi_df.PAR *= 0.9 * 0.95
-    PARi_dict = PARi_df.to_dict()['PAR']
     # run the simulation
-    simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.68, Ur=3.171, PARi_dict=PARi_dict)
-    # convert the outputs to Pandas dataframe
-    outputs_df = converter.to_dataframe(simulation_.outputs)
+    simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.530000, Ur=2.200000, PARi=3838000)
+    # convert the outputs to Pandas dataframes
+    _, elements_outputs_df = converter.to_dataframe(simulation_.outputs)
     # write the dataframe to CSV
-    outputs_df.to_csv(OUTPUTS_FILENAME, index=False, na_rep='NA', float_format='%.{}f'.format(OUTPUTS_PRECISION)) 
+    elements_outputs_df.to_csv(ELEMENTS_OUTPUTS_FILENAME, index=False, na_rep='NA', float_format='%.{}f'.format(OUTPUTS_PRECISION)) 
     

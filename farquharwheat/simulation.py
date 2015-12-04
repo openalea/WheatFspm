@@ -33,47 +33,42 @@ class Simulation(object):
     """
     
     def __init__(self):
-        #: The inputs by element.
+        
+        #: The inputs of Farquhar-Wheat.
         #:
-        #: `inputs` is a dictionary of dictionaries: {element1_id: element1_inputs, element2_id: element2_inputs, ..., elementN_id: elementN_inputs}, where: 
-        #:     * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_label, element_type),
-        #:     * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
-        #: 
+        #: `inputs` is a dictionary of dictionaries: 
+        #:     {'organs': {(plant_index, axis_label): {organs_input_name: organs_input_value, ...}, ...},
+        #:      'elements': {(plant_index, axis_label, metamer_index, organ_label, element_label): {element_input_name: element_input_value, ...}, ...}}
         #: See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
         #: for more information about the inputs.  
         self.inputs = {}
-        #: The outputs by element. 
+        
+        #: The outputs of Farquhar-Wheat.
         #: 
-        #: `outputs` is a dictionary of dictionaries: {element1_id: element1_outputs, element2_id: element2_outputs, ..., elementN_id: elementN_outputs}, where: 
-        #:     * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_label, element_type),
-        #:     * and elementi_outputs is a dictionary: {'elementi_output1_name': elementi_output1_value, 'elementi_output2_name': elementi_output2_value, ..., 'elementi_outputN_name': elementi_outputN_value}.
-        #: 
+        #: `outputs` is a dictionary of dictionaries: 
+        #:     {'organs': {(plant_index, axis_label): {organs_output_name: organs_output_value, ...}, ...},
+        #:      'elements': {(plant_index, axis_label, metamer_index, organ_label, element_label): {element_output_name: element_output_value, ...}, ...}}
         #: See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
-        #: for more information about the outputs.
+        #: for more information about the outputs. 
         self.outputs = {}
-    
-    
+        
     def initialize(self, inputs):
         """
         Initialize :attr:`inputs` from `inputs`. 
         
         :Parameters:
         
-            - `inputs` (:class:`dict`) - The inputs by element.
-               Inputs must be a dictionary of dictionaries: {element1_id: element1_inputs, element2_id: element2_inputs, ..., elementN_id: elementN_inputs}, where:
-                 
-                   * elementi_id is a tuple: (plant_index, axis_id, metamer_index, organ_label, element_type),
-                   * and elementi_inputs is a dictionary: {'elementi_input1_name': elementi_input1_value, 'elementi_input2_name': elementi_input2_value, ..., 'elementi_inputN_name': elementi_inputN_value}.
-                    
-               See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
-               for more information about the inputs.  
-            
+            - `inputs` (:class:`dict`) - The inputs by organ and element.
+              `inputs` must be a dictionary with the same structure as :attr:`inputs`.
+              
+            See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>` 
+               for more information about the inputs.
         """
         self.inputs.clear()
         self.inputs.update(inputs)
 
 
-    def run(self, Ta, ambient_CO2, RH, Ur, PARi_dict):
+    def run(self, Ta, ambient_CO2, RH, Ur, PARi):
         """
         Compute Farquhar variables for each element in :attr:`inputs` and put 
         the results in :attr:`outputs`.
@@ -88,17 +83,23 @@ class Simulation(object):
 
             - `Ur` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
             
-            - `PARi_dict` (:class:`float`) - the incident PAR by element (µmol m-2 s-1)
+            - `PARi` (:class:`float`) - the incident PAR above the canopy (µmol m-2 s-1)
             
         """
-        self.outputs.clear()
-        for (element_id, element_inputs) in self.inputs.iteritems():
-            organ_label = element_inputs['label']
+        self.outputs.update({inputs_type: {} for inputs_type in self.inputs.iterkeys()})
+        organs_inputs = self.inputs['organs']
+        organs_outputs = self.outputs['organs']
+        elements_inputs = self.inputs['elements']
+        elements_outputs = self.outputs['elements']
+        for (element_id, element_inputs) in elements_inputs.iteritems():
+            organ_id = tuple(element_id[:-1])
+            organ_label = organs_inputs[organ_id]['label']
             surfacic_nitrogen = element_inputs['surfacic_nitrogen']
             width = element_inputs['width']
             height = element_inputs['height']
-            STAR = element_inputs['STAR']
-            PARi = STAR * PARi_dict[element_id]
-            Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen, width, height, PARi, Ta, ambient_CO2, RH, Ur, organ_label)
-            self.outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
+            STAR = element_inputs['STAR'] # TODO: check whether absorbed STAR or not.
+            PARa = STAR * PARi
+            Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen, width, height, PARa, Ta, ambient_CO2, RH, Ur, organ_label)
+            organs_outputs[organ_id] = {}
+            elements_outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
     
