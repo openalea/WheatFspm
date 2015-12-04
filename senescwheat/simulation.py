@@ -38,15 +38,15 @@ class Simulation(object):
         #: The inputs of Senesc-Wheat.
         #:
         #: `inputs` is a dictionary of dictionaries: 
-        #:     {'roots': {(plant_index, axis_id): {roots_input_name: roots_input_value, ...}, ...},
-        #:      'elements': {(plant_index, axis_id, metamer_index, organ_label, element_label): {element_input_name: element_input_value, ...}, ...}} 
+        #:     {'roots': {(plant_index, axis_label): {roots_input_name: roots_input_value, ...}, ...},
+        #:      'elements': {(plant_index, axis_label, metamer_index, organ_label, element_label): {element_input_name: element_input_value, ...}, ...}} 
         self.inputs = {}
         
         #: The outputs of Senesc-Wheat.
         #: 
         #: `outputs` is a dictionary of dictionaries: 
-        #:     {'roots': {(plant_index, axis_id): {roots_output_name: roots_output_value, ...}, ...},
-        #:      'elements': {(plant_index, axis_id, metamer_index, organ_label, element_label): {element_output_name: element_output_value, ...}, ...}} 
+        #:     {'roots': {(plant_index, axis_label): {roots_output_name: roots_output_value, ...}, ...},
+        #:      'elements': {(plant_index, axis_label, metamer_index, organ_label, element_label): {element_output_name: element_output_value, ...}, ...}} 
         self.outputs = {}
     
     
@@ -56,7 +56,7 @@ class Simulation(object):
         
         :Parameters:
         
-            - `inputs` (:class:`dict`) - The inputs by element.
+            - `inputs` (:class:`dict`) - The inputs by roots and element.
               `inputs` must be a dictionary with the same structure as :attr:`inputs`.  
         """
         self.inputs.clear()
@@ -96,19 +96,16 @@ class Simulation(object):
             remob_proteins = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['proteins'], relative_delta_green_area)
             loss_cytokinines = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['cytokinines'], relative_delta_green_area)
 
-            # Element death and suppression from population
-            min_green_area = 0.0 # Minimal green area below which the organ is suppressed (m²) ; TODO: set to 1E-4 when it will be possible to suppress component in the MTG
-            if new_green_area >= min_green_area: 
-                all_elements_outputs[elements_inputs_id] = {'green_area': new_green_area,
-                                                            'mstruct': new_mstruct,
-                                                            'Nstruct': new_Nstruct,
-                                                            'starch': elements_inputs_dict['starch'] - remob_starch,
-                                                            'sucrose': elements_inputs_dict['sucrose'] + remob_starch + remob_fructan,
-                                                            'fructan': elements_inputs_dict['fructan'] - remob_fructan,
-                                                            'proteins': elements_inputs_dict['proteins'] - remob_proteins,
-                                                            'amino_acids': elements_inputs_dict['amino_acids'] + remob_proteins,
-                                                            'cytokinines': elements_inputs_dict['cytokinines'] - loss_cytokinines,
-                                                            'max_proteins': max_proteins, 
-                                                            'surfacic_nitrogen': new_SLN}
+            all_elements_outputs[elements_inputs_id] = {'green_area': new_green_area,
+                                                        'mstruct': new_mstruct,
+                                                        'Nstruct': new_Nstruct,
+                                                        'starch': elements_inputs_dict['starch'] - remob_starch,
+                                                        'sucrose': elements_inputs_dict['sucrose'] + remob_starch + remob_fructan,
+                                                        'fructan': elements_inputs_dict['fructan'] - remob_fructan,
+                                                        'proteins': elements_inputs_dict['proteins'] - remob_proteins,
+                                                        'amino_acids': elements_inputs_dict['amino_acids'] + remob_proteins,
+                                                        'cytokinines': elements_inputs_dict['cytokinines'] - loss_cytokinines,
+                                                        'max_proteins': max_proteins, 
+                                                        'surfacic_nitrogen': new_SLN}
                                                       
         
