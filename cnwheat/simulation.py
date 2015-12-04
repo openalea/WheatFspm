@@ -53,7 +53,8 @@ class Simulation(object):
                                 model.Phytomer: [],
                                 model.Organ: ['sucrose', 'amino_acids', 'nitrates', 'structure', 'starch', 'proteins', 'mstruct', 'Nstruct', 'cytokinines'],
                                 model.PhotosyntheticOrganElement: ['nitrates', 'starch', 'amino_acids', 'proteins',
-                                                                   'sucrose', 'triosesP', 'fructan', 'mstruct', 'Nstruct', 'cytokinines']}
+                                                                   'sucrose', 'triosesP', 'fructan', 'mstruct', 'Nstruct', 'cytokinines'],
+                                model.Soil: ['nitrates']}
 
     T_INDEX = 't'
     
@@ -79,7 +80,7 @@ class Simulation(object):
     AXES_POSTPROCESSING_VARIABLES = []
     AXES_ALL_VARIABLES = AXES_RUN_VARIABLES + AXES_POSTPROCESSING_VARIABLES
 
-    PHYTOMERS_INPUTS_INDEXES = ['plant', 'axis', 'phytomer']
+    PHYTOMERS_INPUTS_INDEXES = ['plant', 'axis', 'metamer']
     PHYTOMERS_OUTPUTS_INDEXES = [T_INDEX] + PHYTOMERS_INPUTS_INDEXES
     PHYTOMERS_STATE_PARAMETERS = []
     PHYTOMERS_STATE = PHYTOMERS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Phytomer, [])
@@ -90,11 +91,11 @@ class Simulation(object):
     PHYTOMERS_POSTPROCESSING_VARIABLES = []
     PHYTOMERS_ALL_VARIABLES = PHYTOMERS_RUN_VARIABLES + PHYTOMERS_POSTPROCESSING_VARIABLES
 
-    ORGANS_INPUTS_INDEXES = ['plant', 'axis', 'phytomer', 'organ']
+    ORGANS_INPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ']
     ORGANS_OUTPUTS_INDEXES = [T_INDEX] + ORGANS_INPUTS_INDEXES
-    ORGANS_STATE_PARAMETERS = ['volume', 'Tsoil', 'mstruct_C_growth', 'Nstruct_N_growth']
+    ORGANS_STATE_PARAMETERS = ['mstruct_C_growth', 'Nstruct_N_growth']
     ORGANS_STATE = ORGANS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Organ, [])
-    ORGANS_INTERMEDIATE_VARIABLES = ['Conc_Nitrates_Soil', 'RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual', 'R_maintenance', 'R_grain_growth_struct', 'R_grain_growth_starch', 'R_growth',
+    ORGANS_INTERMEDIATE_VARIABLES = ['RGR_Structure', 'R_Nnit_upt', 'R_Nnit_red', 'R_residual', 'R_maintenance', 'R_grain_growth_struct', 'R_grain_growth_starch', 'R_growth',
                                      'C_exudation', 'N_exudation', 'regul_transpiration', 'HATS_LATS']
     ORGANS_FLUXES = ['Unloading_Sucrose', 'Export_Nitrates', 'Export_Amino_Acids', 'S_Proteins', 'S_Amino_Acids', 'Unloading_Amino_Acids',
                      'S_grain_starch', 'Uptake_Nitrates', 'S_grain_structure', 'S_cytokinines', 'D_cytokinines', 'Export_cytokinines']
@@ -103,7 +104,7 @@ class Simulation(object):
     ORGANS_POSTPROCESSING_VARIABLES = ['Conc_Nitrates', 'Conc_Amino_Acids', 'Dry_Mass', 'Conc_Sucrose', 'Proteins_N_Mass', 'Conc_cytokinines']
     ORGANS_ALL_VARIABLES = ORGANS_RUN_VARIABLES + ORGANS_POSTPROCESSING_VARIABLES
 
-    ELEMENTS_INPUTS_INDEXES = ['plant', 'axis', 'phytomer', 'organ', 'element']
+    ELEMENTS_INPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
     ELEMENTS_OUTPUTS_INDEXES = [T_INDEX] + ELEMENTS_INPUTS_INDEXES
     ELEMENTS_STATE_PARAMETERS = ['green_area', 'Ag', 'Rd', 'Tr', 'Ts']
     ELEMENTS_STATE = ELEMENTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, [])
@@ -115,24 +116,43 @@ class Simulation(object):
                                          'SLN', 'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids', 'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids', 
                                          'Conc_cytokinines', 'D_cytokinines', 'cytokinines_import', 'k_proteins', 'Rd_total']
     ELEMENTS_ALL_VARIABLES = ELEMENTS_RUN_VARIABLES + ELEMENTS_POSTPROCESSING_VARIABLES
+    
+    SOILS_INPUTS_INDEXES = ['plant', 'axis']
+    SOILS_OUTPUTS_INDEXES = [T_INDEX] + SOILS_INPUTS_INDEXES
+    SOILS_STATE_PARAMETERS = ['volume', 'Tsoil']
+    SOILS_STATE = SOILS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Soil, [])
+    SOILS_INTERMEDIATE_VARIABLES = ['Conc_Nitrates_Soil']
+    SOILS_FLUXES = []
+    SOILS_INTEGRATIVE_VARIABLES = []
+    SOILS_RUN_VARIABLES = SOILS_OUTPUTS_INDEXES + SOILS_STATE + SOILS_INTERMEDIATE_VARIABLES + SOILS_FLUXES + SOILS_INTEGRATIVE_VARIABLES
+    SOILS_POSTPROCESSING_VARIABLES = []
+    SOILS_ALL_VARIABLES = SOILS_RUN_VARIABLES + SOILS_POSTPROCESSING_VARIABLES
 
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
                                       model.Axis: 'cnwheat.compartments.axes',
                                       model.Phytomer: 'cnwheat.compartments.phytomers',
                                       model.Organ: 'cnwheat.compartments.organs',
-                                      model.PhotosyntheticOrganElement: 'cnwheat.compartments.elements'},
+                                      model.PhotosyntheticOrganElement: 'cnwheat.compartments.elements', 
+                                      model.Soil: 'cnwheat.compartments.soils'},
                      'derivatives': {model.Plant: 'cnwheat.derivatives.plants',
                                      model.Axis: 'cnwheat.derivatives.axes',
                                      model.Phytomer: 'cnwheat.derivatives.phytomers',
                                      model.Organ: 'cnwheat.derivatives.organs',
-                                     model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements'}}
+                                     model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements', 
+                                     model.Soil: 'cnwheat.derivatives.soils'}}
 
 
     def __init__(self):
 
         self.population = model.Population() #: the population to simulate on
         
-        self.initial_conditions = [] #: the initial conditions of the compartments in the population
+        #: The inputs of the soils.
+        #:
+        #: `soils` is a dictionary of objects of type :class:`model.Soil`: 
+        #:     {(plant_index, axis_label): soil_object, ...}
+        self.soils = {}
+        
+        self.initial_conditions = [] #: the initial conditions of the compartments in the population and the soils
         self.initial_conditions_mapping = {} #: dictionary to map the compartments to their indexes in :attr:`initial_conditions`
         
         self._time_grid = np.array([]) #: the time grid of the simulation
@@ -142,19 +162,23 @@ class Simulation(object):
         self.show_progressbar = False #: True: show the progress bar ; False: DO NOT show the progress bar
 
 
-    def initialize(self, population):
+    def initialize(self, population, soils):
         """
         Initialize:
             
             * :attr:`population`, 
+            * :attr:`soils`,
             * :attr:`initial_conditions_mapping`, 
             * and :attr:`initial_conditions`
         
-        from `population`.
+        from `population` and `soils`.
         
         :Parameters:
             
             - `population` (:class:`model.Population`) - a population of plants.
+            
+            - `soils` (:class:`dict`) - the soils of each axis.
+              `soils` must be a dictionary with the same structure as :attr:`soils`.
             
         """
         
@@ -164,10 +188,12 @@ class Simulation(object):
         
         # clean the attributes of the simulation
         del self.population.plants[:]
+        self.soils.clear()
         del self.initial_conditions[:]
         self.initial_conditions_mapping.clear()
         
         self.population.plants.extend(population.plants)
+        self.soils.update(soils)
             
         # initialize initial conditions
         def _init_initial_conditions(model_object, i):
@@ -186,12 +212,15 @@ class Simulation(object):
             return i
 
         i = 0
+        
+        for soil in soils.itervalues():
+            i = _init_initial_conditions(soil, i)
 
         for plant in self.population.plants:
             i = _init_initial_conditions(plant, i)
             for axis in plant.axes:
                 i = _init_initial_conditions(axis, i)
-                for organ in (axis.roots, axis.soil, axis.phloem, axis.grains):
+                for organ in (axis.roots, axis.phloem, axis.grains):
                     if organ is None:
                         continue
                     i = _init_initial_conditions(organ, i)
@@ -206,13 +235,13 @@ class Simulation(object):
                                 continue
                             i = _init_initial_conditions(element, i)
         
-        #TODO: check the consistency of the population
+        #TODO: check the consistency of population and soils
         logger.info('Initialization of the simulation DONE')
 
 
     def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=0, show_progressbar=False):
         """
-        Compute CN exchanges in :attr:`population` from `start_time` to `stop_time`, for `number_of_output_steps` steps.
+        Compute CN exchanges in :attr:`population` and :attr:`soils` from `start_time` to `stop_time`, for `number_of_output_steps` steps.
 
         :Parameters:
 
@@ -264,6 +293,8 @@ class Simulation(object):
                 organs_compartments_logger.debug(sep.join(Simulation.ORGANS_OUTPUTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
                 elements_compartments_logger = logging.getLogger('cnwheat.compartments.elements')
                 elements_compartments_logger.debug(sep.join(Simulation.ELEMENTS_OUTPUTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
+                soils_compartments_logger = logging.getLogger('cnwheat.compartments.soils')
+                soils_compartments_logger.debug(sep.join(Simulation.SOILS_OUTPUTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
             if derivatives_logger.isEnabledFor(logging.DEBUG):
                 plants_derivatives_logger = logging.getLogger('cnwheat.derivatives.plants')
                 plants_derivatives_logger.debug(sep.join(Simulation.PLANTS_OUTPUTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Plant]))
@@ -273,8 +304,8 @@ class Simulation(object):
                 phytomers_derivatives_logger.debug(sep.join(Simulation.PHYTOMERS_OUTPUTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
                 organs_derivatives_logger = logging.getLogger('cnwheat.derivatives.organs')
                 organs_derivatives_logger.debug(sep.join(Simulation.ORGANS_OUTPUTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
-                elements_derivatives_logger = logging.getLogger('cnwheat.derivatives.elements')
-                elements_derivatives_logger.debug(sep.join(Simulation.ELEMENTS_OUTPUTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
+                soils_derivatives_logger = logging.getLogger('cnwheat.derivatives.soils')
+                soils_derivatives_logger.debug(sep.join(Simulation.SOILS_OUTPUTS_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
 
         self._update_initial_conditions()
 
@@ -306,7 +337,7 @@ class Simulation(object):
             raise SimulationRunError(message)
         
         last_compartments_values = self._solver_output[-1]
-        self._update_population(last_compartments_values)
+        self._update_model(last_compartments_values)
 
         self.population.calculate_integrative_variables()
 
@@ -316,7 +347,7 @@ class Simulation(object):
 
 
     def _update_initial_conditions(self):
-        """Update the compartments values in :attr:`initial_conditions` from the compartments values of :attr:`population`.
+        """Update the compartments values in :attr:`initial_conditions` from the compartments values of :attr:`population` and :attr:`soils`.
         """
         for model_object, compartments in self.initial_conditions_mapping.iteritems():
             for compartment_name, compartment_index in compartments.iteritems():
@@ -346,31 +377,28 @@ class Simulation(object):
 
         i = 0
         all_rows = dict([(class_, []) for class_ in loggers_names])
-        plant_index = 1
+        
+        for soil_id, soil in self.soils.iteritems():
+            i = update_rows(soil, soil_id, all_rows[model.Soil], i)
+        
         for plant in self.population.plants:
-            i = update_rows(plant, [t, plant_index], all_rows[model.Plant], i)
-            axis_index = 0
+            i = update_rows(plant, [t, plant.index], all_rows[model.Plant], i)
             for axis in plant.axes:
-                axis_id = model.Axis.get_axis_id(axis_index)
-                i = update_rows(axis, [t, plant_index, axis_id], all_rows[model.Axis], i)
-                for organ in (axis.roots, axis.soil, axis.phloem, axis.grains):
+                i = update_rows(axis, [t, plant.index, axis.label], all_rows[model.Axis], i)
+                for organ in (axis.roots, axis.phloem, axis.grains):
                     if organ is None:
                         continue
-                    i = update_rows(organ, [t, plant_index, axis_id, 'NA', organ.__class__.__name__], all_rows[model.Organ], i)
-                phytomer_index = 9 # TODO: replace by 1
+                    i = update_rows(organ, [t, plant.index, axis.label, 'NA', organ.label], all_rows[model.Organ], i)
                 for phytomer in axis.phytomers:
-                    i = update_rows(phytomer, [t, plant_index, axis_id, phytomer_index], all_rows[model.Phytomer], i)
+                    i = update_rows(phytomer, [t, plant.index, axis.label, phytomer.index], all_rows[model.Phytomer], i)
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
-                        i = update_rows(organ, [t, plant_index, axis_id, phytomer_index, organ.__class__.__name__], all_rows[model.Organ], i)
-                        for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
+                        i = update_rows(organ, [t, plant.index, axis.label, phytomer.index, organ.label], all_rows[model.Organ], i)
+                        for element in (organ.exposed_element, organ.enclosed_element):
                             if element is None:
                                 continue
-                            i = update_rows(element, [t, plant_index, axis_id, phytomer_index, organ.__class__.__name__, element_type], all_rows[model.PhotosyntheticOrganElement], i)
-                    phytomer_index += 1
-                axis_index += 1
-            plant_index += 1
+                            i = update_rows(element, [t, plant.index, axis.label, phytomer.index, organ.label, element.label], all_rows[model.PhotosyntheticOrganElement], i)
 
         row_sep = '\n'
         column_sep = ','
@@ -454,7 +482,8 @@ class Simulation(object):
                 # test
                 axis.roots.cytokinines = y[self.initial_conditions_mapping[axis.roots]['cytokinines']]
 
-                axis.soil.nitrates = y[self.initial_conditions_mapping[axis.soil]['nitrates']]
+                soil = self.soils[(plant.index, axis.label)]
+                soil.nitrates = y[self.initial_conditions_mapping[soil]['nitrates']]
                 phloem_contributors.append(axis.roots)
 
                 # compute the total transpiration at t_inf
@@ -473,7 +502,7 @@ class Simulation(object):
                 total_surfacic_transpiration = total_transpiration/total_green_area #: total transpiration rate of plant per unit area (mmol m-2 s-1)
 
                 # compute the flows from/to the roots to/from photosynthetic organs
-                conc_nitrates_soil = axis.soil.calculate_conc_nitrates(axis.soil.nitrates)
+                conc_nitrates_soil = soil.calculate_conc_nitrates(soil.nitrates)
                 roots_uptake_nitrate, _, _ = axis.roots.calculate_uptake_nitrates(conc_nitrates_soil, axis.roots.nitrates, total_surfacic_transpiration, axis.roots.sucrose)
                 R_Nnit_upt = RespirationModel.R_Nnit_upt(roots_uptake_nitrate, axis.roots.sucrose)
                 roots_export_nitrates = axis.roots.calculate_export_nitrates(axis.roots.nitrates, total_surfacic_transpiration)
@@ -578,7 +607,7 @@ class Simulation(object):
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['proteins']] = proteins_derivative
 
                 # compute the derivative of each compartment of roots and soil
-                y_derivatives[self.initial_conditions_mapping[axis.soil]['nitrates']] = axis.soil.calculate_nitrates_derivative(roots_uptake_nitrate)
+                y_derivatives[self.initial_conditions_mapping[soil]['nitrates']] = soil.calculate_nitrates_derivative(roots_uptake_nitrate)
 
                 mstruct_C_growth = axis.roots.mstruct_C_growth
                 Nstruct_N_growth = axis.roots.Nstruct_N_growth
@@ -597,7 +626,7 @@ class Simulation(object):
 
                 # compartments derivatives
                 axis.roots.total_organic_nitrogen = axis.roots.calculate_total_organic_nitrogen(axis.roots.amino_acids, axis.roots.Nstruct)
-                R_residual,_ = RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA, axis.roots.total_organic_nitrogen, axis.roots.PARAMETERS.DELTA_T, axis.soil.Tsoil)
+                R_residual,_ = RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA, axis.roots.total_organic_nitrogen, axis.roots.PARAMETERS.DELTA_T, soil.Tsoil)
                 R_roots_growth = RespirationModel.R_growth(mstruct_C_growth, axis.roots.mstruct)
                 sum_respi = R_Nnit_upt + R_Nnit_red + R_residual + R_roots_growth
                 sucrose_derivative = axis.roots.calculate_sucrose_derivative(axis.roots.unloading_sucrose, axis.roots.s_amino_acids, mstruct_C_growth, C_exudated, sum_respi)
@@ -625,24 +654,24 @@ class Simulation(object):
         return y_derivatives
 
 
-    def _update_population(self, compartments_values):
-        """Update the state of :attr:`population` from the values in `compartments_values`.
+    def _update_model(self, compartments_values):
+        """Update the state of :attr:`population` and :attr:`soils` from the values in `compartments_values`.
         """
         logger = logging.getLogger(__name__)
-        logger.debug('Updating the state of the population...')
+        logger.debug('Updating the state of the population and soils...')
         for model_object, compartments in self.initial_conditions_mapping.iteritems():
             for compartment_name, compartment_index in compartments.iteritems():
                 setattr(model_object, compartment_name, compartments_values[compartment_index])
-        logger.debug('Updating the state of the population DONE')
+        logger.debug('Updating the state of the population and soils DONE')
         
     
     def postprocessings(self):
         """
         Compute:
         
-            * intermediate variables (see :attr:`Simulation:PLANTS_INTERMEDIATE_VARIABLES`, :attr:`Simulation:AXES_INTERMEDIATE_VARIABLES`, :attr:`Simulation:PHYTOMERS_INTERMEDIATE_VARIABLES`, :attr:`Simulation:ORGANS_INTERMEDIATE_VARIABLES` and :attr:`Simulation:ELEMENTS_INTERMEDIATE_VARIABLES`),
-            * fluxes (see :attr:`Simulation:PLANTS_FLUXES`, :attr:`Simulation:AXES_FLUXES`, :attr:`Simulation:PHYTOMERS_FLUXES`, :attr:`Simulation:ORGANS_FLUXES` and :attr:`Simulation:ELEMENTS_FLUXES`),
-            * and integrative variables (see :attr:`Simulation:PLANTS_INTEGRATIVE_VARIABLES`, :attr:`Simulation:AXES_INTEGRATIVE_VARIABLES`, :attr:`Simulation:PHYTOMERS_INTEGRATIVE_VARIABLES`, :attr:`Simulation:ORGANS_INTEGRATIVE_VARIABLES` and :attr:`Simulation:ELEMENTS_INTEGRATIVE_VARIABLES`),
+            * intermediate variables (see :attr:`Simulation:PLANTS_INTERMEDIATE_VARIABLES`, :attr:`Simulation:AXES_INTERMEDIATE_VARIABLES`, :attr:`Simulation:PHYTOMERS_INTERMEDIATE_VARIABLES`, :attr:`Simulation:ORGANS_INTERMEDIATE_VARIABLES`, :attr:`Simulation:ELEMENTS_INTERMEDIATE_VARIABLES` and :attr:`Simulation:SOILS_INTERMEDIATE_VARIABLES`),
+            * fluxes (see :attr:`Simulation:PLANTS_FLUXES`, :attr:`Simulation:AXES_FLUXES`, :attr:`Simulation:PHYTOMERS_FLUXES`, :attr:`Simulation:ORGANS_FLUXES`, :attr:`Simulation:ELEMENTS_FLUXES` and :attr:`Simulation:SOILS_FLUXES`),
+            * and integrative variables (see :attr:`Simulation:PLANTS_INTEGRATIVE_VARIABLES`, :attr:`Simulation:AXES_INTEGRATIVE_VARIABLES`, :attr:`Simulation:PHYTOMERS_INTEGRATIVE_VARIABLES`, :attr:`Simulation:ORGANS_INTEGRATIVE_VARIABLES`, :attr:`Simulation:ELEMENTS_INTEGRATIVE_VARIABLES` and :attr:`Simulation:SOILS_INTEGRATIVE_VARIABLES`),
             
         from :attr:`_solver_output` and format them to :class:`dataframes <pandas.DataFrame>`.
         
@@ -651,9 +680,10 @@ class Simulation(object):
 
                 * plant (see :attr:`Simulation:PLANTS_ALL_VARIABLES`) 
                 * axis (see :attr:`Simulation:AXES_ALL_VARIABLES`)
-                * phytomer (see :attr:`Simulation:PHYTOMERS_ALL_VARIABLES`)
+                * metamer (see :attr:`Simulation:PHYTOMERS_ALL_VARIABLES`)
                 * organ (see :attr:`Simulation:ORGANS_ALL_VARIABLES`)
-                * and element (see :attr:`Simulation:ELEMENTS_ALL_VARIABLES`)
+                * element (see :attr:`Simulation:ELEMENTS_ALL_VARIABLES`)
+                * and soil (see :attr:`Simulation:SOILS_ALL_VARIABLES`)
                 
         :Returns Type:
             :class:`tuple` of :class:`pandas.DataFrame`
@@ -666,25 +696,23 @@ class Simulation(object):
 
         all_plants_df = pd.DataFrame(columns=Simulation.PLANTS_ALL_VARIABLES)
         all_axes_df = pd.DataFrame(columns=Simulation.AXES_ALL_VARIABLES)
-        all_phytomers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_ALL_VARIABLES)
+        all_metamers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_ALL_VARIABLES)
         all_organs_df = pd.DataFrame(columns=Simulation.ORGANS_ALL_VARIABLES)
         all_elements_df = pd.DataFrame(columns=Simulation.ELEMENTS_ALL_VARIABLES)
+        all_soils_df = pd.DataFrame(columns=Simulation.SOILS_ALL_VARIABLES)
         
-        plant_index = 1
         for plant in self.population.plants:
 
             plants_df = pd.DataFrame(columns=all_plants_df.columns)
             plants_df['t'] = self._time_grid
-            plants_df['plant'] = plant_index
+            plants_df['plant'] = plant.index
             
-            axis_index = 0
             for axis in plant.axes:
 
                 axes_df = pd.DataFrame(columns=all_axes_df.columns)
                 axes_df['t'] = self._time_grid
-                axes_df['plant'] = plant_index
-                axis_id = model.Axis.get_axis_id(axis_index)
-                axes_df['axis'] = axis_id
+                axes_df['plant'] = plant.index
+                axes_df['axis'] = axis.label
 
                 # compute the total transpiration
                 total_transpiration = np.zeros_like(self._time_grid)
@@ -705,10 +733,10 @@ class Simulation(object):
                 # format phloem outputs
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = self._time_grid
-                organs_df['plant'] = plant_index
-                organs_df['axis'] = axis_id
-                organs_df['phytomer'] = np.nan
-                organs_df['organ'] = axis.phloem.__class__.__name__
+                organs_df['plant'] = plant.index
+                organs_df['axis'] = axis.label
+                organs_df['metamer'] = np.nan
+                organs_df['organ'] = axis.phloem.label
                 phloem_sucrose = solver_output_transposed[self.initial_conditions_mapping[axis.phloem]['sucrose']]
                 organs_df['sucrose'] = phloem_sucrose
                 phloem_amino_acids = solver_output_transposed[self.initial_conditions_mapping[axis.phloem]['amino_acids']]
@@ -718,26 +746,25 @@ class Simulation(object):
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
 
                 # format soil output
-                organs_df = pd.DataFrame(columns=all_organs_df.columns)
-                organs_df['t'] = self._time_grid
-                organs_df['plant'] = plant_index
-                organs_df['axis'] = axis_id
-                organs_df['organ'] = axis.soil.__class__.__name__
-                organs_df['volume'] = axis.soil.volume
-                organs_df['nitrates'] = solver_output_transposed[self.initial_conditions_mapping[axis.soil]['nitrates']]
-                organs_df['Tsoil'] = axis.soil.Tsoil
-                conc_nitrates_soil = axis.soil.calculate_conc_nitrates(organs_df['nitrates'])
-                organs_df['Conc_Nitrates_Soil'] = conc_nitrates_soil
-                Tsoil = axis.soil.Tsoil
-                all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
+                soils_df = pd.DataFrame(columns=all_soils_df.columns)
+                soils_df['t'] = self._time_grid
+                soils_df['plant'] = plant.index
+                soils_df['axis'] = axis.label
+                soil = self.soils[(plant.index, axis.label)]
+                soils_df['volume'] = soil.volume
+                soils_df['nitrates'] = solver_output_transposed[self.initial_conditions_mapping[soil]['nitrates']]
+                soils_df['Tsoil'] = soil.Tsoil
+                conc_nitrates_soil = soil.calculate_conc_nitrates(soils_df['nitrates'])
+                soils_df['Conc_Nitrates_Soil'] = conc_nitrates_soil
+                all_soils_df = all_soils_df.append(soils_df, ignore_index=True)
 
                 # format roots outputs
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = self._time_grid
-                organs_df['plant'] = plant_index
-                organs_df['axis'] = axis_id
-                organs_df['phytomer'] = np.nan
-                organs_df['organ'] = axis.roots.__class__.__name__
+                organs_df['plant'] = plant.index
+                organs_df['axis'] = axis.label
+                organs_df['metamer'] = np.nan
+                organs_df['organ'] = axis.roots.label
                 organs_df['sucrose'] = solver_output_transposed[self.initial_conditions_mapping[axis.roots]['sucrose']]
                 organs_df['nitrates'] = solver_output_transposed[self.initial_conditions_mapping[axis.roots]['nitrates']]
                 organs_df['amino_acids'] = solver_output_transposed[self.initial_conditions_mapping[axis.roots]['amino_acids']]
@@ -761,7 +788,7 @@ class Simulation(object):
                 organs_df['R_Nnit_red'], organs_df['S_Amino_Acids'] = output_respi_model[:,0], output_respi_model[:,1]
                 total_organic_nitrogen =  map(axis.roots.calculate_total_organic_nitrogen, organs_df['amino_acids'], [axis.roots.Nstruct] * len(self._time_grid))
                 organs_df['total_organic_nitrogen'] = total_organic_nitrogen
-                R_residual = np.array(map(RespirationModel.R_residual, organs_df['sucrose'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(self._time_grid), total_organic_nitrogen, [axis.roots.PARAMETERS.DELTA_T]*len(self._time_grid), [Tsoil] * len(self._time_grid)))
+                R_residual = np.array(map(RespirationModel.R_residual, organs_df['sucrose'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(self._time_grid), total_organic_nitrogen, [axis.roots.PARAMETERS.DELTA_T]*len(self._time_grid), [soil.Tsoil] * len(self._time_grid)))
                 organs_df['R_residual'], organs_df['R_maintenance'] = R_residual[:,0], R_residual[:,1]
                 organs_df['mstruct_C_growth'] = axis.roots.mstruct_C_growth
                 organs_df['R_growth'] = map(RespirationModel.R_growth, organs_df['mstruct_C_growth'], [axis.roots.mstruct*axis.roots.PARAMETERS.ALPHA] * len(self._time_grid))
@@ -780,28 +807,27 @@ class Simulation(object):
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
 
                 # format photosynthetic organs elements outputs
-                phytomer_index = 9 # TODO: replace by 1
                 for phytomer in axis.phytomers:
-                    phytomers_df = pd.DataFrame(columns=all_phytomers_df.columns)
-                    phytomers_df['t'] = self._time_grid
-                    phytomers_df['plant'] = plant_index
-                    phytomers_df['axis'] = axis_id
-                    phytomers_df['phytomer'] = phytomer_index
+                    metamers_df = pd.DataFrame(columns=all_metamers_df.columns)
+                    metamers_df['t'] = self._time_grid
+                    metamers_df['plant'] = plant.index
+                    metamers_df['axis'] = axis.label
+                    metamers_df['metamer'] = phytomer.index
 
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
-                        for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
+                        for element in (organ.exposed_element, organ.enclosed_element):
                             if element is None:
                                 continue
 
                             elements_df = pd.DataFrame(columns=all_elements_df.columns)
                             elements_df['t'] = self._time_grid
-                            elements_df['plant'] = plant_index
-                            elements_df['axis'] = axis_id
-                            elements_df['phytomer'] = phytomer_index
-                            elements_df['organ'] = organ.__class__.__name__
-                            elements_df['element'] = element_type
+                            elements_df['plant'] = plant.index
+                            elements_df['axis'] = axis.label
+                            elements_df['metamer'] = phytomer.index
+                            elements_df['organ'] = organ.label
+                            elements_df['element'] = element.label
                             elements_df['green_area'] = element.green_area
                             elements_df['mstruct'] = element.mstruct
                             elements_df['Nstruct'] = element.Nstruct
@@ -861,8 +887,7 @@ class Simulation(object):
 
                             all_elements_df = all_elements_df.append(elements_df, ignore_index=True)
 
-                    all_phytomers_df = all_phytomers_df.append(phytomers_df, ignore_index=True)
-                    phytomer_index += 1
+                    all_metamers_df = all_metamers_df.append(metamers_df, ignore_index=True)
 
                 # format grains outputs
                 if axis.grains is None:
@@ -870,10 +895,10 @@ class Simulation(object):
 
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
                 organs_df['t'] = self._time_grid
-                organs_df['plant'] = plant_index
-                organs_df['axis'] = axis_id
-                organs_df['phytomer'] = np.nan
-                organs_df['organ'] = axis.grains.__class__.__name__
+                organs_df['plant'] = plant.index
+                organs_df['axis'] = axis.label
+                organs_df['metamer'] = np.nan
+                organs_df['organ'] = axis.grains.label
                 organs_df['structure'] = solver_output_transposed[self.initial_conditions_mapping[axis.grains]['structure']]
                 organs_df['starch'] = solver_output_transposed[self.initial_conditions_mapping[axis.grains]['starch']]
                 organs_df['proteins'] = solver_output_transposed[self.initial_conditions_mapping[axis.grains]['proteins']]
@@ -889,46 +914,49 @@ class Simulation(object):
 
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
                 all_axes_df = all_axes_df.append(axes_df, ignore_index=True)
-                axis_index += 1
 
             all_plants_df = all_plants_df.append(plants_df, ignore_index=True)
-            plant_index += 1
 
         # set the order of the columns
         all_plants_df = all_plants_df.reindex_axis(Simulation.PLANTS_ALL_VARIABLES, axis=1, copy=False)
         all_axes_df = all_axes_df.reindex_axis(Simulation.AXES_ALL_VARIABLES, axis=1, copy=False)
-        all_phytomers_df = all_phytomers_df.reindex_axis(Simulation.PHYTOMERS_ALL_VARIABLES, axis=1, copy=False)
+        all_metamers_df = all_metamers_df.reindex_axis(Simulation.PHYTOMERS_ALL_VARIABLES, axis=1, copy=False)
         all_organs_df = all_organs_df.reindex_axis(Simulation.ORGANS_ALL_VARIABLES, axis=1, copy=False)
         all_elements_df = all_elements_df.reindex_axis(Simulation.ELEMENTS_ALL_VARIABLES, axis=1, copy=False)
+        all_soils_df = all_soils_df.reindex_axis(Simulation.SOILS_ALL_VARIABLES, axis=1, copy=False)
 
         # sort the rows by the columns
         all_plants_df.sort_index(by=Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
         all_axes_df.sort_index(by=Simulation.AXES_OUTPUTS_INDEXES, inplace=True)
-        all_phytomers_df.sort_index(by=Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
+        all_metamers_df.sort_index(by=Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
         all_organs_df.sort_index(by=Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
         all_elements_df.sort_index(by=Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
+        all_soils_df.sort_index(by=Simulation.SOILS_OUTPUTS_INDEXES, inplace=True)
 
         # infer the right types of the columns
         all_plants_df = all_plants_df.convert_objects(copy=False)
         all_axes_df = all_axes_df.convert_objects(copy=False)
-        all_phytomers_df = all_phytomers_df.convert_objects(copy=False)
+        all_metamers_df = all_metamers_df.convert_objects(copy=False)
         all_organs_df = all_organs_df.convert_objects(copy=False)
         all_elements_df = all_elements_df.convert_objects(copy=False)
+        all_soils_df = all_soils_df.convert_objects(copy=False)
 
-        # convert the indexes of plants, phytomers and elements to integers
+        # convert the indexes of plants and metamers to integers
         all_plants_df['plant'] = all_plants_df['plant'].astype(int)
         all_axes_df['plant'] = all_axes_df['plant'].astype(int)
-        all_phytomers_df[['plant', 'phytomer']] = all_phytomers_df[['plant', 'phytomer']].astype(int)
+        all_metamers_df[['plant', 'metamer']] = all_metamers_df[['plant', 'metamer']].astype(int)
         all_organs_df['plant'] = all_organs_df['plant'].astype(int)
-        all_elements_df[['plant', 'phytomer']] = all_elements_df[['plant', 'phytomer']].astype(int)
+        all_elements_df[['plant', 'metamer']] = all_elements_df[['plant', 'metamer']].astype(int)
+        all_soils_df[['plant']] = all_soils_df[['plant']].astype(int)
         
         all_plants_df.reset_index(drop=True, inplace=True)
         all_axes_df.reset_index(drop=True, inplace=True)
-        all_phytomers_df.reset_index(drop=True, inplace=True)
+        all_metamers_df.reset_index(drop=True, inplace=True)
         all_organs_df.reset_index(drop=True, inplace=True)
         all_elements_df.reset_index(drop=True, inplace=True)
+        all_soils_df.reset_index(drop=True, inplace=True)
 
         logger.debug('Formatting of outputs DONE')
 
-        return all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df
+        return all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_elements_df, all_soils_df
 

@@ -36,27 +36,31 @@ INPUTS_DIRPATH = 'inputs'
 
 PLANTS_INPUTS_FILENAME = 'plants_inputs.csv'
 AXES_INPUTS_FILENAME = 'axes_inputs.csv'
-PHYTOMERS_INPUTS_FILENAME = 'phytomers_inputs.csv'
+METAMERS_INPUTS_FILENAME = 'metamers_inputs.csv'
 ORGANS_INPUTS_FILENAME = 'organs_inputs.csv'
 ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
+SOILS_INPUTS_FILENAME = 'soils_inputs.csv'
 
-PHOTOSYNTHESIS_DATA_FILENAME = 'photosynthesis_data.csv'
-SENESCENCE_DATA_FILENAME = 'senescence_data.csv'
+PHOTOSYNTHESIS_ELEMENTS_DATA_FILENAME = 'photosynthesis_elements_data.csv'
+SENESCENCE_ROOTS_DATA_FILENAME = 'senescence_roots_data.csv'
+SENESCENCE_ELEMENTS_DATA_FILENAME = 'senescence_elements_data.csv'
 
 # outputs paths
 OUTPUTS_DIRPATH = 'outputs'
 
 PLANTS_OUTPUTS_FILENAME = 'plants_outputs.csv'
 AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
-PHYTOMERS_OUTPUTS_FILENAME = 'phytomers_outputs.csv'
+METAMERS_OUTPUTS_FILENAME = 'metamers_outputs.csv'
 ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
 ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
+SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
 
-plants_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, PLANTS_OUTPUTS_FILENAME)
-axes_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, AXES_OUTPUTS_FILENAME)
-phytomers_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, PHYTOMERS_OUTPUTS_FILENAME)
-organs_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ORGANS_OUTPUTS_FILENAME)
-elements_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME)
+PLANTS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, PLANTS_OUTPUTS_FILENAME)
+AXES_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, AXES_OUTPUTS_FILENAME)
+METAMERS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, METAMERS_OUTPUTS_FILENAME)
+ORGANS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, ORGANS_OUTPUTS_FILENAME)
+ELEMENTS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME)
+SOILS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, SOILS_OUTPUTS_FILENAME)
 
 # precision of floats in the output CSV files
 OUTPUTS_PRECISION = 6
@@ -66,27 +70,31 @@ OUTPUTS_PRECISION = 6
 
 # Read CN exchange inputs
 inputs_dataframes = {}
-for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, PHYTOMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME):
+for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, METAMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):
     inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
     
 # Initialize a simulation from CN exchange inputs
 simulation_ = simulation.Simulation()
-population = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FILENAME], 
-                                       inputs_dataframes[AXES_INPUTS_FILENAME],
-                                       inputs_dataframes[PHYTOMERS_INPUTS_FILENAME],
-                                       inputs_dataframes[ORGANS_INPUTS_FILENAME],
-                                       inputs_dataframes[ELEMENTS_INPUTS_FILENAME])
-simulation_.initialize(population)
+population, soils = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FILENAME], 
+                                              inputs_dataframes[AXES_INPUTS_FILENAME],
+                                              inputs_dataframes[METAMERS_INPUTS_FILENAME],
+                                              inputs_dataframes[ORGANS_INPUTS_FILENAME],
+                                              inputs_dataframes[ELEMENTS_INPUTS_FILENAME],
+                                              inputs_dataframes[SOILS_INPUTS_FILENAME])
+simulation_.initialize(population, soils)
 
 # Read photosynthesis inputs
-photosynthesis_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_DATA_FILENAME)
-photosynthesis_data_df = pd.read_csv(photosynthesis_data_filepath)
-photosynthesis_data_grouped = photosynthesis_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
+photosynthesis_elements_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_ELEMENTS_DATA_FILENAME)
+photosynthesis_elements_data_df = pd.read_csv(photosynthesis_elements_data_filepath)
+photosynthesis_elements_data_grouped = photosynthesis_elements_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
 
 # Read senescence and growth inputs
-senescence_data_filepath = os.path.join(INPUTS_DIRPATH, SENESCENCE_DATA_FILENAME)
-senescence_data_df = pd.read_csv(senescence_data_filepath)
-senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
+senescence_roots_data_filepath = os.path.join(INPUTS_DIRPATH, SENESCENCE_ROOTS_DATA_FILENAME)
+senescence_roots_data_df = pd.read_csv(senescence_roots_data_filepath)
+senescence_roots_data_grouped = senescence_roots_data_df.groupby(simulation.Simulation.AXES_OUTPUTS_INDEXES)
+senescence_elements_data_filepath = os.path.join(INPUTS_DIRPATH, SENESCENCE_ELEMENTS_DATA_FILENAME)
+senescence_elements_data_df = pd.read_csv(senescence_elements_data_filepath)
+senescence_elements_data_grouped = senescence_elements_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
 
 
 ### 2. Run the simulation
@@ -94,83 +102,75 @@ senescence_data_grouped = senescence_data_df.groupby(simulation.Simulation.ELEME
 # Define the time grid
 start_time = 0
 stop_time = 8
-timestep = 1
+time_step = 1
 
 # Initialize the lists of outputs. There is one list per type of outputs.
 all_plants_df_list = []
 all_axes_df_list = []
-all_phytomers_df_list = []
+all_metamers_df_list = []
 all_organs_df_list = []
 all_elements_df_list = []
+all_soils_df_list = []
 
 # Start the execution loop
-for t in xrange(start_time, stop_time, timestep):
-    # Update the population
-    plant_index = 1
+for t in xrange(start_time, stop_time, time_step):
+    # force the senescence and photosynthesis of the population
     for plant in simulation_.population.plants:
-        axis_index = 0
         for axis in plant.axes:
-            axis_id = model.Axis.get_axis_id(axis_index)
-
-            # Update the state of roots from senescence and growth data
-            group = senescence_data_grouped.get_group((t, plant_index, axis_id, 0, 'Roots', 'enclosed'))
+            group = senescence_roots_data_grouped.get_group((t, plant.index, axis.label))
             senescence_data_to_use = group.loc[group.first_valid_index(), simulation.Simulation.ORGANS_STATE].dropna().to_dict()
             axis.roots.__dict__.update(senescence_data_to_use)
-
-            # Update the state of each photosynthetic element from senescence and photosynthesis data
-            phytomer_index = 1
             for phytomer in axis.phytomers:
                 for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                     if organ is None:
                         continue
-                    organ_type = organ.__class__.__name__
-                    for element, element_type in ((organ.exposed_element, 'exposed'), (organ.enclosed_element, 'enclosed')):
+                    for element in (organ.exposed_element, organ.enclosed_element):
                         if element is None:
                             continue
-                        # Senescence
-                        group_senesc = senescence_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
+                        group_senesc = senescence_elements_data_grouped.get_group((t, plant.index, axis.label, phytomer.index, organ.label, element.label))
                         senescence_data_to_use = group_senesc.loc[group_senesc.first_valid_index(), simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
                         element.__dict__.update(senescence_data_to_use)
-                        # Photosynthesis
-                        group_photo = photosynthesis_data_grouped.get_group((t, plant_index, axis_id, phytomer_index, organ_type, element_type))
-                        photosynthesis_data_to_use = group_photo.loc[group_photo.first_valid_index(), simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
-                        element.__dict__.update(photosynthesis_data_to_use)
-                phytomer_index += 1
-            axis_index += 1
-        plant_index += 1
-    # Run the model ; the population is internally updated by the model
-    simulation_.run(start_time=t, stop_time=t+timestep, number_of_output_steps=timestep+1)
+                        group_photo = photosynthesis_elements_data_grouped.get_group((t, plant.index, axis.label, phytomer.index, organ.label, element.label))
+                        photosynthesis_elements_data_to_use = group_photo.loc[group_photo.first_valid_index(), simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
+                        element.__dict__.update(photosynthesis_elements_data_to_use)
+                        
+    # run the model of CN exchanges ; the population is internally updated by the model
+    simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
     
-    # Run post-processings
-    all_plants_df, all_axes_df, all_phytomers_df, all_organs_df, all_elements_df = simulation_.postprocessings()
+    # run post-processings
+    all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_elements_df, all_soils_df = simulation_.postprocessings()
     
-    # Update the lists of outputs 
     all_plants_df_list.append(all_plants_df)
     all_axes_df_list.append(all_axes_df)
-    all_phytomers_df_list.append(all_phytomers_df)
+    all_metamers_df_list.append(all_metamers_df)
     all_organs_df_list.append(all_organs_df)
     all_elements_df_list.append(all_elements_df)
+    all_soils_df_list.append(all_soils_df)
 
 
 ### 3. Write the outputs to CSV files
 
 global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
 global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
-global_plants_df.to_csv(plants_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+global_plants_df.to_csv(PLANTS_OUTPUTS_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
 global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
 global_axes_df.drop_duplicates(subset=simulation.Simulation.AXES_OUTPUTS_INDEXES, inplace=True)
-global_axes_df.to_csv(axes_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+global_axes_df.to_csv(AXES_OUTPUTS_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
-global_phytomers_df = pd.concat(all_phytomers_df_list, ignore_index=True)
-global_phytomers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
-global_phytomers_df.to_csv(phytomers_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+global_metamers_df = pd.concat(all_metamers_df_list, ignore_index=True)
+global_metamers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
+global_metamers_df.to_csv(METAMERS_OUTPUTS_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
 global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
 global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
-global_organs_df.to_csv(organs_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+global_organs_df.to_csv(ORGANS_OUTPUTS_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
 global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
 global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
-global_elements_df.to_csv(elements_outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+global_elements_df.to_csv(ELEMENTS_OUTPUTS_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+
+global_soils_df = pd.concat(all_soils_df_list, ignore_index=True)
+global_soils_df.drop_duplicates(subset=simulation.Simulation.SOILS_OUTPUTS_INDEXES, inplace=True)
+global_soils_df.to_csv(SOILS_OUTPUTS_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 

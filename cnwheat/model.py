@@ -58,7 +58,8 @@ class Plant(object):
 
     PARAMETERS = parameters.PlantParameters #: the internal parameters of the plants
 
-    def __init__(self, axes=None):
+    def __init__(self, index=None, axes=None):
+        self.index = index #: the index of the plant
         if axes is None:
             axes = []
         self.axes = axes #: the list of axes
@@ -83,11 +84,11 @@ class Axis(object):
 
     PARAMETERS = parameters.AxisParameters #: the internal parameters of the axes
 
-    def __init__(self, roots=None, phloem=None, grains=None, soil=None, phytomers=None):
+    def __init__(self, label=None, roots=None, phloem=None, grains=None, phytomers=None):
+        self.label = label #: the label of the axis
         self.roots = roots #: the roots
         self.phloem = phloem #: the phloem
         self.grains = grains #: the grains
-        self.soil = soil #: the soil
         if phytomers is None:
             phytomers = []
         self.phytomers = phytomers #: the list of phytomers
@@ -101,19 +102,9 @@ class Axis(object):
             self.phloem.calculate_integrative_variables()
         if self.grains is not None:
             self.grains.calculate_integrative_variables()
-        if self.soil is not None:
-            self.soil.calculate_integrative_variables()
         for phytomer in self.phytomers:
             phytomer.calculate_integrative_variables()
             
-    @classmethod
-    def get_axis_id(cls, axis_index):
-        if axis_index == 0:
-            axis_id = 'MS'
-        else:
-            axis_id = 'T' + str(axis_index)
-        return axis_id
-
 
 class Phytomer(object):
     """
@@ -127,7 +118,8 @@ class Phytomer(object):
 
     PARAMETERS = parameters.PhytomerParameters #: the internal parameters of the phytomers
 
-    def __init__(self, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None):
+    def __init__(self, index=None, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None):
+        self.index = index #: the index of the phytomer
         self.chaff = chaff #: the chaff
         self.peduncle = peduncle #: the peduncle
         self.lamina = lamina #: the lamina
@@ -158,6 +150,9 @@ class Organ(object):
 
     PARAMETERS = parameters.OrganParameters #: the internal parameters of the organs
     
+    def __init__(self, label):
+        self.label = label #: the label of the organ
+    
     def initialize(self):
         """Initialize the derived attributes of the organ.
         """
@@ -176,7 +171,9 @@ class Phloem(Organ):
 
     PARAMETERS = parameters.PhloemParameters #: the internal parameters of the phloems
 
-    def __init__(self, sucrose=None, amino_acids=None):
+    def __init__(self, label=None, sucrose=None, amino_acids=None):
+
+        super(Phloem, self).__init__(label) 
 
         # state variables
         self.sucrose = sucrose          #: µmol C sucrose
@@ -260,7 +257,9 @@ class Grains(Organ):
 
     PARAMETERS = parameters.GrainsParameters #: the internal parameters of the grains
 
-    def __init__(self, starch=None, structure=None, proteins=None):
+    def __init__(self, label=None, starch=None, structure=None, proteins=None):
+
+        super(Grains, self).__init__(label)
 
         # state variables
         self.starch = starch                     #: µmol of C starch
@@ -452,8 +451,10 @@ class Roots(Organ):
 
     PARAMETERS = parameters.RootsParameters #: the internal parameters of the roots
 
-    def __init__(self, mstruct=None, Nstruct=None, sucrose=None, nitrates=None, amino_acids=None, cytokinines=None, mstruct_C_growth=None,
+    def __init__(self, label=None, mstruct=None, Nstruct=None, sucrose=None, nitrates=None, amino_acids=None, cytokinines=None, mstruct_C_growth=None,
                  Nstruct_N_growth=None):
+
+        super(Roots, self).__init__(label)
 
         # state parameters
         self.mstruct_C_growth = mstruct_C_growth #: Growth of root structural dry mass (µmol C)
@@ -802,49 +803,6 @@ class Roots(Organ):
         return (s_cytokinines - d_cytokinines)*self.mstruct - export_cytokinines
 
 
-class Soil(Organ):
-    """
-    The class :class:`Soil` defines the amount of nitrogen in the volume of soil explored by roots.
-    """
-
-    PARAMETERS = parameters.SoilParameters #: the internal parameters of the soil
-
-    def __init__(self, volume=None, nitrates=None, Tsoil=None):
-
-        # variables
-        self.volume = volume                   #: Volume of soil explored by roots (m3)
-        self.nitrates = nitrates               #: µmol N nitrates
-        self.Tsoil = Tsoil                     #: soil temperature (°C)
-
-    # VARIABLES
-
-    def calculate_conc_nitrates(self, nitrates):
-        """Nitrate concentration in soil.
-
-        :Parameters:
-            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
-        :Returns:
-            Nitrate concentration (µmol nitrates m-3)
-        :Returns Type:
-            :class:`float`
-        """
-        return (nitrates/self.volume)
-
-    # COMPARTMENTS
-
-    def calculate_nitrates_derivative(self, uptake_nitrates):
-        """delta soil nitrates.
-
-        :Parameters:
-            - `uptake_nitrates` (:class:`float`) - Nitrate uptake (µmol N nitrates)
-        :Returns:
-            delta nitrates (µmol N nitrates)
-        :Returns Type:
-            :class:`float`
-        """
-        return -uptake_nitrates
-
-
 class PhotosyntheticOrgan(Organ):
     """
     The class :class:`PhotosyntheticOrgan` defines the CN exchanges in a photosynthetic organ.
@@ -854,7 +812,10 @@ class PhotosyntheticOrgan(Organ):
 
     PARAMETERS = parameters.PhotosyntheticOrganParameters #: the internal parameters of the photosynthetic organs
 
-    def __init__(self, exposed_element=None, enclosed_element=None):
+    def __init__(self, label, exposed_element, enclosed_element):
+        
+        super(PhotosyntheticOrgan, self).__init__(label)
+        
         self.exposed_element = exposed_element #: the exposed element
         self.enclosed_element = enclosed_element #: the enclosed element
 
@@ -880,8 +841,8 @@ class Chaff(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.ChaffParameters #: the internal parameters of the chaffs
 
-    def __init__(self, exposed_element=None, enclosed_element=None):
-        super(Chaff, self).__init__(exposed_element, enclosed_element)
+    def __init__(self, label=None, exposed_element=None, enclosed_element=None):
+        super(Chaff, self).__init__(label, exposed_element, enclosed_element)
 
 
 class Lamina(PhotosyntheticOrgan):
@@ -891,8 +852,8 @@ class Lamina(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.LaminaParameters #: the internal parameters of the laminae
 
-    def __init__(self, exposed_element=None, enclosed_element=None):
-        super(Lamina, self).__init__(exposed_element, enclosed_element)
+    def __init__(self, label=None, exposed_element=None, enclosed_element=None):
+        super(Lamina, self).__init__(label, exposed_element, enclosed_element)
 
 
 class Internode(PhotosyntheticOrgan):
@@ -902,8 +863,8 @@ class Internode(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.InternodeParameters #: the internal parameters of the internodes
 
-    def __init__(self, exposed_element=None, enclosed_element=None):
-        super(Internode, self).__init__(exposed_element, enclosed_element)
+    def __init__(self, label=None, exposed_element=None, enclosed_element=None):
+        super(Internode, self).__init__(label, exposed_element, enclosed_element)
 
 
 class Peduncle(PhotosyntheticOrgan):
@@ -913,8 +874,8 @@ class Peduncle(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.PeduncleParameters #: the internal parameters of the peduncles
 
-    def __init__(self, exposed_element=None, enclosed_element=None):
-        super(Peduncle, self).__init__(exposed_element, enclosed_element)
+    def __init__(self, label=None, exposed_element=None, enclosed_element=None):
+        super(Peduncle, self).__init__(label, exposed_element, enclosed_element)
 
 
 class Sheath(PhotosyntheticOrgan):
@@ -924,8 +885,8 @@ class Sheath(PhotosyntheticOrgan):
 
     PARAMETERS = parameters.SheathParameters #: the internal parameters of the sheaths
 
-    def __init__(self, exposed_element=None, enclosed_element=None):
-        super(Sheath, self).__init__(exposed_element, enclosed_element)
+    def __init__(self, label=None, exposed_element=None, enclosed_element=None):
+        super(Sheath, self).__init__(label, exposed_element, enclosed_element)
 
 
 class PhotosyntheticOrganElement(object):
@@ -937,9 +898,11 @@ class PhotosyntheticOrganElement(object):
 
     PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
 
-    def __init__(self, green_area=None, mstruct=None, Nstruct=None, triosesP=None, starch=None,
+    def __init__(self, label=None, green_area=None, mstruct=None, Nstruct=None, triosesP=None, starch=None,
                  sucrose=None, fructan=None, nitrates=None, amino_acids=None, proteins=None, cytokinines=None,
                  Tr=None, Ag=None, Rd=None, Ts=None):
+
+        self.label = label #: the label of the element
 
         # state parameters
         self.green_area = green_area         #: green area (m-2)
@@ -1554,3 +1517,45 @@ class SheathElement(PhotosyntheticOrganElement):
 
     PARAMETERS = parameters.SheathElementParameters #: the internal parameters of the sheaths elements
 
+
+class Soil(object):
+    """
+    The class :class:`Soil` defines the amount of nitrogen in the volume of soil explored by roots.
+    """
+
+    PARAMETERS = parameters.SoilParameters #: the internal parameters of the soil
+
+    def __init__(self, volume=None, nitrates=None, Tsoil=None):
+
+        # variables
+        self.volume = volume                   #: Volume of soil explored by roots (m3)
+        self.nitrates = nitrates               #: µmol N nitrates
+        self.Tsoil = Tsoil                     #: soil temperature (°C)
+
+    # VARIABLES
+
+    def calculate_conc_nitrates(self, nitrates):
+        """Nitrate concentration in soil.
+
+        :Parameters:
+            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
+        :Returns:
+            Nitrate concentration (µmol nitrates m-3)
+        :Returns Type:
+            :class:`float`
+        """
+        return (nitrates/self.volume)
+
+    # COMPARTMENTS
+
+    def calculate_nitrates_derivative(self, uptake_nitrates):
+        """delta soil nitrates.
+
+        :Parameters:
+            - `uptake_nitrates` (:class:`float`) - Nitrate uptake (µmol N nitrates)
+        :Returns:
+            delta nitrates (µmol N nitrates)
+        :Returns Type:
+            :class:`float`
+        """
+        return -uptake_nitrates

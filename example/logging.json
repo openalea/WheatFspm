@@ -78,6 +78,15 @@
             "mode": "w",
             "formatter": "simple"
         },
+        "soils_compartments_file": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "soils_compartments.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
+            "mode": "w",
+            "formatter": "simple"
+        },
         "plants_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
@@ -118,6 +127,15 @@
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
             "filename": "elements_derivatives.csv",
+            "maxBytes": 10485760,
+            "backupCount": 20,
+            "mode": "w",
+            "formatter": "simple"
+        },
+        "soils_derivatives_file": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "soils_derivatives.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -166,6 +184,11 @@
                 "elements_compartments_file"
             ]
         },
+        "cnwheat.compartments.soils": {
+            "handlers": [
+                "soils_compartments_file"
+            ]
+        },
         "cnwheat.derivatives": {
             "propagate": false
         },
@@ -192,6 +215,11 @@
         "cnwheat.derivatives.elements": {
             "handlers": [
                 "elements_derivatives_file"
+            ]
+        },
+        "cnwheat.derivatives.soils": {
+            "handlers": [
+                "soils_derivatives_file"
             ]
         }
     }

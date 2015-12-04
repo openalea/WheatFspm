@@ -38,7 +38,7 @@ PRECISION = 5
 RELATIVE_TOLERANCE = 10**-PRECISION
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
-OUTPUTS_INDEXES = ['t', 'plant', 'axis', 'phytomer', 'organ', 'element'] #: All the possible indexes of CN-Wheat outputs.
+OUTPUTS_INDEXES = ['t', 'plant', 'axis', 'metamer', 'organ', 'element'] #: All the possible indexes of CN-Wheat outputs.
 
 class DataWarning(UserWarning):
     '''No data to plot for a variable.'''
@@ -339,7 +339,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(PRECISION))
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'element', 'PAR'):
+    for column in ('axis', 'organ', 'element'):
         if column in desired_data_df.columns:
             del desired_data_df[column]
             del actual_data_df[column]

@@ -1,0 +1,14 @@
+plant,axis,metamer,organ,element,surfacic_nitrogen,width,height,STAR
+1,MS,10,blade,LeafElement1,1.594690,0.018000,0.600000,0.000002
+1,MS,10,internode,HiddenElement,1.589189,0.002570,0.300000,0.000000
+1,MS,10,internode,StemElement,1.897110,0.002570,0.400000,0.000001
+1,MS,10,sheath,StemElement,4.400000,0.001100,0.500000,0.000000
+1,MS,11,blade,LeafElement1,2.260000,0.014000,0.380000,0.000006
+1,MS,11,internode,HiddenElement,1.150000,0.000990,0.180000,0.000000
+1,MS,11,sheath,StemElement,1.960000,0.000910,0.300000,0.000001
+1,MS,12,blade,LeafElement1,2.688000,0.012500,0.240000,0.000026
+1,MS,12,internode,HiddenElement,0.791228,0.000930,0.080000,0.000000
+1,MS,12,sheath,StemElement,0.905000,0.000510,0.180000,0.000007
+1,MS,13,peduncle,HiddenElement,1.773585,0.003490,0.650000,0.000001
+1,MS,13,peduncle,StemElement,1.770370,0.003490,0.500000,0.000013
+1,MS,14,ear,StemElement,6.746667,0.002650,0.700000,0.000030
