@@ -32,6 +32,8 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
     
+    MIN_GREEN_AREA = 1E-4 #: Minimal green area of an element (m2). Below the area, we do not run Farquhar model on the element, and all outputs are set to 0. 
+    
     def __init__(self):
         
         #: The inputs of Farquhar-Wheat.
@@ -92,14 +94,24 @@ class Simulation(object):
         elements_inputs = self.inputs['elements']
         elements_outputs = self.outputs['elements']
         for (element_id, element_inputs) in elements_inputs.iteritems():
-            organ_id = tuple(element_id[:-1])
-            organ_label = organs_inputs[organ_id]['label']
-            surfacic_nitrogen = element_inputs['surfacic_nitrogen']
-            width = element_inputs['width']
-            height = element_inputs['height']
-            STAR = element_inputs['STAR'] # TODO: check whether absorbed STAR or not.
-            PARa = STAR * PARi
-            Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen, width, height, PARa, Ta, ambient_CO2, RH, Ur, organ_label)
-            organs_outputs[organ_id] = {}
-            elements_outputs[element_id] = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
-    
+            organ_outputs = {}
+            if element_inputs['green_area'] < Simulation.MIN_GREEN_AREA:
+                element_outputs = dict.fromkeys(['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs'], 0.0)
+            else:
+                organ_id = tuple(element_id[:-1])
+                organ_label = organs_inputs[organ_id]['label']
+                STAR = element_inputs['STAR'] # TODO: check whether absorbed STAR or not.
+                PARa = STAR * PARi
+                surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'], 
+                                                                            element_inputs['amino_acids'], 
+                                                                            element_inputs['proteins'], 
+                                                                            element_inputs['Nstruct'], 
+                                                                            element_inputs['green_area'])
+                Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen, 
+                                                                  element_inputs['width'], 
+                                                                  element_inputs['height'], 
+                                                                  PARa, Ta, ambient_CO2, RH, Ur, organ_label)
+                element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
+                
+            organs_outputs[organ_id] = organ_outputs
+            elements_outputs[element_id] = element_outputs

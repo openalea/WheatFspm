@@ -84,6 +84,8 @@ class Model(object):
     KELVIN_DEGREE = 273.15                #: Conversion factor from degree C to Kelvin
 
     DELTA_CONVERGENCE = 0.01 #: The relative delta for Ci and Ts convergence.
+    
+    N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
 
     @classmethod
     def _organ_temperature(cls, w, z, Zh, Ur, PAR, gsw, Ta, Ts, RH, organ_name):
@@ -295,6 +297,27 @@ class Model(object):
         An = Ag - Rd
 
         return Ag, An, Rd
+    
+    
+    @classmethod
+    def calculate_surfacic_nitrogen(cls, nitrates, amino_acids, proteins, Nstruct, green_area):
+        """Surfacic content of nitrogen
+
+        : Parameters:
+            - `nitrates` (:class:`float`) - amount of nitrates (µmol N)
+            - `amino_acids` (:class:`float`) - amount of amino_acids (µmol N)
+            - `proteins` (:class:`float`) - amount of proteins (µmol N)
+            - `Nstruct` (:class:`float`) - structural N (g)
+            - `green_area` (:class:`float`) - green area (m-2)
+
+        : Returns:
+            Surfacic nitrogen (g m-2)
+
+        :Returns Type:
+            :class:`float`
+        """
+        mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * cls.N_MOLAR_MASS + Nstruct
+        return (mass_N_tot / green_area)
 
 
     @classmethod
@@ -371,4 +394,5 @@ class Model(object):
 
         if organ_name != 'blade':
             Ag = Ag*0.75
+            
         return Ag, An, Rd, Tr, Ts, gsw

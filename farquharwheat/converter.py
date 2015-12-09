@@ -38,7 +38,7 @@ FARQUHARWHEAT_ORGANS_NAMES = set(['internode', 'blade', 'sheath', 'peduncle', 'e
 FARQUHARWHEAT_ORGANS_INPUTS = ['label']
 
 #: the inputs needed by FarquharWheat at element scale
-FARQUHARWHEAT_ELEMENTS_INPUTS = ['surfacic_nitrogen', 'width', 'height', 'STAR']
+FARQUHARWHEAT_ELEMENTS_INPUTS = ['width', 'height', 'STAR', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
 
 #: the inputs needed by FarquharWheat
 FARQUHARWHEAT_INPUTS = FARQUHARWHEAT_ORGANS_INPUTS + FARQUHARWHEAT_ELEMENTS_INPUTS
