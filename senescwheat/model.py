@@ -117,28 +117,6 @@ class SenescenceModel(object):
         """
         return metabolite * relative_delta_structure
 
-    @classmethod
-    def calculate_surfacic_nitrogen(cls, nitrates, amino_acids, proteins, Nstruct, green_area):
-        # TODO: to be moved in a particular model (shouldn't be included in SenescenceModel)
-
-        """Surfacic content of nitrogen
-
-        : Parameters:
-            - `nitrates` (:class:`float`) - amount of nitrates (µmol N)
-            - `amino_acids` (:class:`float`) - amount of amino_acids (µmol N)
-            - `proteins` (:class:`float`) - amount of proteins (µmol N)
-            - `Nstruct` (:class:`float`) - structural N (g)
-            - `green_area` (:class:`float`) - green area (m-2)
-
-        : Returns:
-            Surfacic nitrogen (g m-2)
-
-        :Returns Type:
-            :class:`float`
-        """
-        mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * cls.N_MOLAR_MASS + Nstruct
-        return (mass_N_tot / green_area)
-
     # Roots
     @classmethod
     def calculate_roots_mstruct_growth(cls, sucrose, amino_acids, mstruct, DELTA_T):

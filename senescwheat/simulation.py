@@ -88,8 +88,7 @@ class Simulation(object):
         for elements_inputs_id, elements_inputs_dict in all_elements_inputs.iteritems():
             # Senescence
             new_green_area, relative_delta_green_area, max_proteins = model.SenescenceModel.calculate_relative_delta_green_area(elements_inputs_dict['green_area'], elements_inputs_dict['proteins'] / elements_inputs_dict['mstruct'], elements_inputs_dict['max_proteins'], 3600*self.time_step)
-            new_mstruct, new_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, elements_inputs_dict['mstruct'], elements_inputs_dict['Nstruct'])
-            new_SLN = model.SenescenceModel.calculate_surfacic_nitrogen(elements_inputs_dict['nitrates'], elements_inputs_dict['amino_acids'], elements_inputs_dict['proteins'], elements_inputs_dict['Nstruct'], new_green_area)
+            new_mstruct, new_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, elements_inputs_dict['mstruct'], elements_inputs_dict['Nstruct'])            
             # Remobilisation
             remob_starch = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['starch'], relative_delta_green_area)
             remob_fructan = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['fructan'], relative_delta_green_area)
@@ -105,7 +104,6 @@ class Simulation(object):
                                                         'proteins': elements_inputs_dict['proteins'] - remob_proteins,
                                                         'amino_acids': elements_inputs_dict['amino_acids'] + remob_proteins,
                                                         'cytokinines': elements_inputs_dict['cytokinines'] - loss_cytokinines,
-                                                        'max_proteins': max_proteins, 
-                                                        'surfacic_nitrogen': new_SLN}
+                                                        'max_proteins': max_proteins}
                                                       
         

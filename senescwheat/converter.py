@@ -51,7 +51,7 @@ SENESCWHEAT_INPUTS = SENESCWHEAT_ROOTS_INPUTS + SENESCWHEAT_ELEMENTS_INPUTS
 SENESCWHEAT_ROOTS_OUTPUTS = ['mstruct_C_growth', 'Nstruct_N_growth', 'mstruct_death', 'mstruct', 'Nstruct', 'cytokinines']
 
 #: the outputs computed by SenescWheat at elements scale
-SENESCWHEAT_ELEMENTS_OUTPUTS = ['green_area', 'mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinines', 'surfacic_nitrogen']
+SENESCWHEAT_ELEMENTS_OUTPUTS = ['green_area', 'mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinines']
 
 #: the outputs computed by SenescWheat
 SENESCWHEAT_OUTPUTS = SENESCWHEAT_ROOTS_OUTPUTS + SENESCWHEAT_ELEMENTS_OUTPUTS
@@ -177,16 +177,22 @@ def from_MTG(g, roots_inputs, elements_inputs):
         for axis_vid in g.components_iter(plant_vid):
             axis_label = g.label(axis_vid)
             axis_components_iter = g.components_iter(axis_vid)
-            # get the first component of axis_vid
+            
             first_axis_component_vid = next(axis_components_iter)
+            second_axis_component_vid = next(axis_components_iter)
+            
+            first_and_second_axis_components = {g.label(first_axis_component_vid): first_axis_component_vid, 
+                                                g.label(second_axis_component_vid): second_axis_component_vid}
+            
             roots_id = (plant_index, axis_label)
             if roots_id in roots_inputs_grouped.groups:
                 roots_inputs_group = roots_inputs_grouped.get_group(roots_id)
                 roots_inputs_group_series = roots_inputs_group.loc[roots_inputs_group.first_valid_index(), SENESCWHEAT_ROOTS_INPUTS]
             else:
                 roots_inputs_group_series = pd.Series()
-            if g.label(first_axis_component_vid) == 'roots':
-                roots_vid = first_axis_component_vid
+                
+            if 'roots' in first_and_second_axis_components:
+                roots_vid = first_and_second_axis_components['roots']
                 vertex_properties = g.get_vertex_property(roots_vid)
                 roots_inputs_dict = {}
                 is_valid_roots = True
@@ -207,10 +213,10 @@ def from_MTG(g, roots_inputs, elements_inputs):
                 roots_inputs_group_dict = roots_inputs_group_series.to_dict()
                 if set(roots_inputs_group_dict).issuperset(SENESCWHEAT_ROOTS_INPUTS):
                     all_roots_inputs_dict[roots_id] = roots_inputs_group_dict
-                axis_components_iter = g.components_iter(axis_vid)
             
-            metamers_iter = axis_components_iter
-            for metamer_vid in metamers_iter:
+            for axis_component_vid in g.components_iter(axis_vid):
+                if not g.label(axis_component_vid).startswith('metamer'): continue
+                metamer_vid = axis_component_vid
                 metamer_index = int(g.index(metamer_vid))
                 for organ_vid in g.components_iter(metamer_vid):
                     organ_label = g.label(organ_vid)
@@ -280,23 +286,22 @@ def update_MTG(inputs, outputs, g):
             
             roots_id = (plant_index, axis_label)
             if roots_id not in roots_outputs_dict: continue
-            axis_components_iter = g.components_iter(axis_vid)
-            axis_components_vid = next(axis_components_iter)
             
-            if g.label(axis_components_vid) == 'roots':
-                roots_vid = axis_components_vid
+            axis_components_iter = g.components_iter(axis_vid)
+            
+            first_axis_component_vid = next(axis_components_iter)
+            second_axis_component_vid = next(axis_components_iter)
+            
+            first_and_second_axis_components = {g.label(first_axis_component_vid): first_axis_component_vid, 
+                                                g.label(second_axis_component_vid): second_axis_component_vid}
+            
+            if 'roots' in first_and_second_axis_components:
+                roots_vid = first_and_second_axis_components['roots']
             else:
-                
-                ### Note: temporary patch
-                # Insert a vertex "phloem"
-                axis_components_vid = insert_parent_at_all_scales(g, axis_components_vid, label='phloem')[0]
-                g = fat_mtg(g)
-                # TODO: change that as soon as MTG permits to insert a vertex "roots" and then a vertex "phloem" AFTER the vertex "roots"!
-                ### Note: end of the temporary patch
-                
                 # insert a roots in the MTG
-                roots_vid = insert_parent_at_all_scales(g, axis_components_vid, label='roots')[0]
+                roots_vid = insert_parent_at_all_scales(g, first_axis_component_vid, label='roots')[0]
                 g = fat_mtg(g)
+                
             # update the roots in the MTG
             roots_inputs = roots_inputs_dict[roots_id]
             for roots_input_name, roots_input_value in roots_inputs.iteritems():
@@ -305,7 +310,7 @@ def update_MTG(inputs, outputs, g):
             for roots_output_name, roots_output_value in roots_outputs.iteritems():
                 g.property(roots_output_name)[roots_vid] = roots_output_value
             
-            for axis_component_vid in g.components_iter(axis_components_iter):
+            for axis_component_vid in g.components_iter(axis_vid):
                 if not g.label(axis_component_vid).startswith('metamer'): continue
                 metamer_vid = axis_component_vid
                 metamer_index = int(g.index(metamer_vid))
