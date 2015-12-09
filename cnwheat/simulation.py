@@ -113,7 +113,7 @@ class Simulation(object):
     ELEMENTS_INTEGRATIVE_VARIABLES = ['total_organic_nitrogen']
     ELEMENTS_RUN_VARIABLES = ELEMENTS_OUTPUTS_INDEXES + ELEMENTS_STATE + ELEMENTS_INTERMEDIATE_VARIABLES + ELEMENTS_FLUXES + ELEMENTS_INTEGRATIVE_VARIABLES
     ELEMENTS_POSTPROCESSING_VARIABLES = ['Conc_TriosesP', 'Conc_Starch', 'Conc_Sucrose', 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Amino_Acids', 'Conc_Proteins',
-                                         'SLN', 'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids', 'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids', 
+                                         'Nitrates_import', 'Amino_Acids_import', 'S_Amino_Acids', 'S_Proteins', 'D_Proteins', 'Loading_Amino_Acids', 
                                          'Conc_cytokinines', 'D_cytokinines', 'cytokinines_import', 'k_proteins', 'Rd_total']
     ELEMENTS_ALL_VARIABLES = ELEMENTS_RUN_VARIABLES + ELEMENTS_POSTPROCESSING_VARIABLES
     
@@ -863,7 +863,6 @@ class Simulation(object):
                             elements_df['Conc_Nitrates'] = element.calculate_conc_nitrates(elements_df['nitrates'])
                             elements_df['Conc_Amino_Acids'] = element.calculate_conc_amino_acids(elements_df['amino_acids'])
                             elements_df['Conc_Proteins'] = element.calculate_conc_proteins(elements_df['proteins'])
-                            elements_df['SLN'] = map(element.calculate_surfacic_nitrogen, elements_df['nitrates'], elements_df['amino_acids'], elements_df['proteins'], [element.Nstruct] * len(self._time_grid), [element.green_area] * len(self._time_grid))
                             elements_df['S_Starch'] = map(element.calculate_s_starch, elements_df['triosesP'])
                             elements_df['D_Starch'] = map(element.calculate_d_starch, elements_df['starch'])
                             elements_df['S_Sucrose'] = map(element.calculate_s_sucrose, elements_df['triosesP'])

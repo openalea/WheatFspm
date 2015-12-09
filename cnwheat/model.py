@@ -1095,23 +1095,6 @@ class PhotosyntheticOrganElement(object):
         """
         return amino_acids + proteins + (Nstruct / PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS)*1E6
 
-    def calculate_surfacic_nitrogen(self, nitrates, amino_acids, proteins, Nstruct, green_area):
-        """Surfacic content of nitrogen.
-
-        :Parameters:
-            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
-            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
-            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
-            - `Nstruct` (:class:`float`) -  Structural N mass (g)
-            - `green_area` (:class:`float`) -  Green area (m2)
-        :Returns:
-            Surfacic content of nitrogen (g m-2)
-        :Returns Type:
-            :class:`float`
-        """
-        mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * PhotosyntheticOrgan.PARAMETERS.N_MOLAR_MASS + Nstruct
-        return (mass_N_tot / green_area)
-
     def calculate_conc_cytokinines(self, cytokinines):
         """Cytokinines concentration.
 

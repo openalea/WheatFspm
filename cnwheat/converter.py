@@ -85,39 +85,6 @@ POPULATION_STATE_VARIABLE = set(simulation.Simulation.PLANTS_STATE + simulation.
                                 simulation.Simulation.ELEMENTS_STATE)
 
 
-# #: the inputs needed by CNWheat
-# CNWHEAT_INPUTS = set(simulation.Simulation.PLANTS_STATE + simulation.Simulation.AXES_STATE + simulation.Simulation.PHYTOMERS_STATE + simulation.Simulation.ORGANS_STATE + simulation.Simulation.ELEMENTS_STATE)
-# 
-# #: the class corresponding to each organ modeled by CNWheat and which belongs to an axis
-# CNWHEAT_AXES_ORGANS_MAPPING = {'grains': model.Grains, 'phloem': model.Phloem, 'roots': model.Roots, 
-#                                'soil': model.Soil}
-# 
-# #: the class corresponding to each organ modeled by CNWheat and which belongs to a phytomer
-# CNWHEAT_PHYTOMERS_ORGANS_MAPPING = {'internode': model.Internode, 'lamina': model.Lamina, 
-#                                     'sheath': model.Sheath, 'peduncle': model.Peduncle, 'chaff': model.Chaff}
-# 
-# #: the mapping of the names of the attributes which designate the elements in the organ to the type of the elements
-# CNWHEAT_ELEMENTS_ATTRIBUTES_NAMES_TO_ELEMENTS_TYPES_MAPPING = {'enclosed_element': 'enclosed', 'exposed_element': 'exposed'}
-# 
-# #: the mapping of the name of each organ, from MTG to CNWheat, for organs which belong to an axis 
-# MTG_TO_CNWHEAT_AXES_ORGANS_NAMES_MAPPING = {'grains': 'grains', 'phloem': 'phloem', 'roots': 'roots', 
-#                                             'soil': 'soil'}
-# 
-# #: the mapping of the name of each organ, from MTG to CNWheat, for organs which belong to a phytomer 
-# MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_NAMES_MAPPING = {'internode': 'internode', 'blade': 'lamina', 'sheath': 'sheath', 
-#                                                  'peduncle': 'peduncle', 'ear': 'chaff'}
-# 
-# #: the mapping of the name of each element, from CNWheat to MTG
-# CNWHEAT_TO_MTG_ELEMENTS_NAMES_MAPPING = {'exposed_element': {model.Lamina: 'LeafElement1', model.Internode: 'StemElement', model.Sheath: 'StemElement', 
-#                                                              model.Peduncle: 'StemElement', model.Chaff: 'StemElement'}, 
-#                                          'enclosed_element': {model.Lamina: 'HiddenElement', model.Internode: 'HiddenElement', model.Sheath: 'HiddenElement', 
-#                                                               model.Peduncle: 'HiddenElement', model.Chaff: 'HiddenElement'}}
-# 
-# #: the mapping of organ names to element classes in CNWheat 
-# CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING = {'internode': model.InternodeElement, 'lamina': model.LaminaElement, 'sheath': model.SheathElement, 
-#                                       'peduncle': model.PeduncleElement, 'chaff': model.ChaffElement}
-
-
 def from_dataframes(plants_inputs=None, axes_inputs=None, metamers_inputs=None, organs_inputs=None, elements_inputs=None, soils_inputs=None):
     """
     If `plants_inputs`, `axes_inputs`, `metamers_inputs`, `organs_inputs` and `elements_inputs` are not `None`, convert `plants_inputs`, 
@@ -390,11 +357,15 @@ def from_MTG(g, organs_inputs, elements_inputs):
             axis = model.Axis(axis_label)
             axis_components_iter = g.components_iter(axis_vid)
             
+            first_axis_component_vid = next(axis_components_iter)
+            second_axis_component_vid = next(axis_components_iter)
+            
+            first_and_second_axis_components = {g.label(first_axis_component_vid): first_axis_component_vid, 
+                                                g.label(second_axis_component_vid): second_axis_component_vid}
+            
             is_valid_axis = True
-            organs_available_in_the_mtg = []
             # create and initialize a roots and a phloem
             for organ_class in (model.Roots, model.Phloem):
-                axis_component_vid = next(axis_components_iter)
                 organ_label = CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[organ_class]
                 organ_id = (plant_index, axis_label, organ_label)
                 organ = MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING[organ_label](organ_label)
@@ -405,8 +376,8 @@ def from_MTG(g, organs_inputs, elements_inputs):
                 else:
                     organ_inputs_group_series = pd.Series()
                 is_valid_organ = True
-                if g.label(axis_component_vid) == organ_label:
-                    organs_available_in_the_mtg.append(organ_label)
+                if organ_label in first_and_second_axis_components:
+                    axis_component_vid = first_and_second_axis_components[organ_label]
                     organ_vid = axis_component_vid
                     vertex_properties = g.get_vertex_property(organ_vid)
                     organ_inputs_dict = {}
@@ -433,11 +404,7 @@ def from_MTG(g, organs_inputs, elements_inputs):
                     is_valid_axis = False
                     break
             
-            if is_valid_axis:
-                axis_components_iter = g.components_iter(axis_vid)
-                for _ in organs_available_in_the_mtg:
-                    next(axis_components_iter)
-            else:
+            if not is_valid_axis:
                 continue
             
             mtg_has_grains = False
@@ -584,32 +551,25 @@ def update_MTG(population, g):
             
             axis_components_iter = g.components_iter(axis_vid)
             
-            # insert a roots if needed, and update it
-            axis_component_vid = next(axis_components_iter)
-            roots = axis.roots
-            roots_label = roots.label
-            if g.label(axis_component_vid) == roots_label:
-                roots_vid = axis_component_vid
-            else:
-                roots_vid = insert_parent_at_all_scales(g, axis_component_vid, label=roots_label)[0]
-                g = fat_mtg(g)
-            roots_property_names = [property_name for property_name in simulation.Simulation.ORGANS_STATE if hasattr(roots, property_name)]
-            for roots_property_name in roots_property_names:
-                g.property(roots_property_name)[roots_vid] = getattr(roots, roots_property_name)
+            first_axis_component_vid = next(axis_components_iter)
+            second_axis_component_vid = next(axis_components_iter)
             
-            # insert a phloem if needed, and update it
-            axis_component_vid = next(axis_components_iter)
-            phloem = axis.phloem
-            phloem_label = phloem.label
-            if g.label(axis_component_vid) == phloem_label:
-                phloem_vid = axis_component_vid
-            else:
-                phloem_vid = insert_parent_at_all_scales(g, axis_component_vid, label=phloem_label)[0]
-                g = fat_mtg(g)
-            phloem_property_names = [property_name for property_name in simulation.Simulation.ORGANS_STATE if hasattr(phloem, property_name)]
-            for phloem_property_name in phloem_property_names:
-                g.property(phloem_property_name)[phloem_vid] = getattr(phloem, phloem_property_name)
+            first_and_second_axis_components = {g.label(first_axis_component_vid): first_axis_component_vid, 
+                                                g.label(second_axis_component_vid): second_axis_component_vid}
             
+            # insert a roots and a phloem if needed, and update them
+            for organ_class in (model.Roots, model.Phloem):
+                organ = getattr(axis, CNWHEAT_ATTRIBUTES_MAPPING[organ_class])
+                organ_label = organ.label
+                if organ_label in first_and_second_axis_components:
+                    organ_vid = first_and_second_axis_components[organ_label]
+                else:
+                    first_axis_component_vid = organ_vid = insert_parent_at_all_scales(g, first_axis_component_vid, label=organ_label)[0]
+                    g = fat_mtg(g)
+                organ_property_names = [property_name for property_name in simulation.Simulation.ORGANS_STATE if hasattr(organ, property_name)]
+                for organ_property_name in organ_property_names:
+                    g.property(organ_property_name)[organ_vid] = getattr(organ, organ_property_name)
+                
             # update the metamers
             for phytomer in axis.phytomers:
                 phytomer_index = phytomer.index

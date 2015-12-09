@@ -136,7 +136,6 @@ elements_inputs_ouputs_df.loc[:, cnwheat_simulation.Simulation.ELEMENTS_INPUTS_I
 
 # run the simulators 
 for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
-
     print 'run senescwheat at', t_senescwheat
     # initialize and run senescwheat, and update the global mtg
     senescwheat_simulation_.initialize(senescwheat_converter.from_MTG(g, senescwheat_roots_inputs_df, senescwheat_elements_inputs_df))
@@ -187,6 +186,7 @@ for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
             axes_inputs_ouputs_df = cnwheat_axes_postprocessing_df.loc[cnwheat_axes_postprocessing_df.t == t_cnwheat, :].reset_index(drop=True)
             cnwheat_organs_postprocessing_df = cnwheat_organs_postprocessing_df.loc[cnwheat_organs_postprocessing_df.t == t_cnwheat, :].reset_index(drop=True)
             organs_inputs_ouputs_df.loc[organs_inputs_ouputs_df.organ.isin(cnwheat_converter.MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING), cnwheat_simulation.Simulation.ORGANS_ALL_VARIABLES] = cnwheat_organs_postprocessing_df.loc[:, cnwheat_simulation.Simulation.ORGANS_ALL_VARIABLES].values
+            organs_inputs_ouputs_df.loc[:, cnwheat_simulation.Simulation.T_INDEX] = t_cnwheat
             cnwheat_elements_postprocessing_df = cnwheat_elements_postprocessing_df.loc[cnwheat_elements_postprocessing_df.t == t_cnwheat, :].reset_index(drop=True)
             elements_inputs_ouputs_df = cnwheat_elements_postprocessing_df.combine_first(elements_inputs_ouputs_df)
             soils_inputs_ouputs_df = cnwheat_soils_postprocessing_df.loc[cnwheat_soils_postprocessing_df.t == t_cnwheat, :].reset_index(drop=True)
@@ -195,6 +195,9 @@ for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
             organs_inputs_ouputs_df_list.append(organs_inputs_ouputs_df)
             elements_inputs_ouputs_df_list.append(elements_inputs_ouputs_df)
             soils_inputs_ouputs_df_list.append(soils_inputs_ouputs_df)
+            
+            organs_inputs_ouputs_df = organs_inputs_ouputs_df.copy()
+            elements_inputs_ouputs_df = elements_inputs_ouputs_df.copy()
 
 global_axes_df = pd.concat(axes_inputs_ouputs_df_list, ignore_index=True)
 axes_inputs_outputs_variable_names = sorted([column for column in global_axes_df.columns if column not in cnwheat_simulation.Simulation.AXES_OUTPUTS_INDEXES])
