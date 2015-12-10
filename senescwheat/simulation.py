@@ -30,6 +30,8 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
     
+    MIN_GREEN_AREA = 1E-4 #: Minimal green area of an element (m2). Below this area, set green_area to 0.0.
+    
     def __init__(self, time_step=1):
         
         #: the time step of the simulation
@@ -88,6 +90,9 @@ class Simulation(object):
         for elements_inputs_id, elements_inputs_dict in all_elements_inputs.iteritems():
             # Senescence
             new_green_area, relative_delta_green_area, max_proteins = model.SenescenceModel.calculate_relative_delta_green_area(elements_inputs_dict['green_area'], elements_inputs_dict['proteins'] / elements_inputs_dict['mstruct'], elements_inputs_dict['max_proteins'], 3600*self.time_step)
+            if new_green_area < Simulation.MIN_GREEN_AREA:
+                new_green_area = 0.0
+            
             new_mstruct, new_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, elements_inputs_dict['mstruct'], elements_inputs_dict['Nstruct'])            
             # Remobilisation
             remob_starch = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['starch'], relative_delta_green_area)
