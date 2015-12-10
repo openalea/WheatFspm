@@ -159,8 +159,8 @@ for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
         farquharwheat_simulation_.run(Ta, ambient_CO2, RH, Ur, PARi)
         farquharwheat_converter.update_MTG(farquharwheat_simulation_.inputs, farquharwheat_simulation_.outputs, g)
         # fill the global dataframes for post-processings
-        farquharwheat_organs_inputs_df, farquharwheat_elements_inputs_df = farquharwheat_converter.to_dataframe(farquharwheat_simulation_.inputs)
-        farquharwheat_organs_outputs_df, farquharwheat_elements_outputs_df = farquharwheat_converter.to_dataframe(farquharwheat_simulation_.outputs)
+        farquharwheat_organs_inputs_df, farquharwheat_elements_inputs_df = farquharwheat_converter.to_dataframes(farquharwheat_simulation_.inputs)
+        farquharwheat_organs_outputs_df, farquharwheat_elements_outputs_df = farquharwheat_converter.to_dataframes(farquharwheat_simulation_.outputs)
         farquharwheat_organs_inputs_outputs_df = farquharwheat_organs_outputs_df.combine_first(farquharwheat_organs_inputs_df)
         farquharwheat_elements_inputs_outputs_df = farquharwheat_elements_outputs_df.combine_first(farquharwheat_elements_inputs_df)
         organs_inputs_ouputs_df.loc[organs_inputs_ouputs_df.organ.isin(farquharwheat_converter.FARQUHARWHEAT_ORGANS_NAMES), farquharwheat_converter.FARQUHARWHEAT_ORGANS_INPUTS_OUTPUTS] = farquharwheat_organs_inputs_outputs_df.loc[:, farquharwheat_converter.FARQUHARWHEAT_ORGANS_INPUTS_OUTPUTS].values
