@@ -69,18 +69,18 @@ def test_run():
     organs_inputs_df = pd.read_csv(ORGANS_INPUTS_FILENAME)
     elements_inputs_df = pd.read_csv(ELEMENTS_INPUTS_FILENAME)
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframe(organs_inputs_df, elements_inputs_df)
+    inputs = converter.from_dataframes(organs_inputs_df, elements_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
     # convert the inputs to Pandas dataframe
-    reconverted_organs_inputs, reconverted_elements_inputs = converter.to_dataframe(simulation_.inputs)
+    reconverted_organs_inputs, reconverted_elements_inputs = converter.to_dataframes(simulation_.inputs)
     # compare inputs
     compare_actual_to_desired('.', reconverted_organs_inputs, ORGANS_INPUTS_FILENAME)
     compare_actual_to_desired('.', reconverted_elements_inputs, ELEMENTS_INPUTS_FILENAME)
     # run the simulation
     simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.530000, Ur=2.200000, PARi=3838000)
     # convert the outputs to Pandas dataframe
-    _, elements_outputs_df = converter.to_dataframe(simulation_.outputs)
+    _, elements_outputs_df = converter.to_dataframes(simulation_.outputs)
     # compare outputs
     compare_actual_to_desired('.', elements_outputs_df, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME)
 

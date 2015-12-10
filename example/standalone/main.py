@@ -48,13 +48,13 @@ if __name__ == '__main__':
     organs_inputs_df = pd.read_csv(ORGANS_INPUTS_FILENAME)
     elements_inputs_df = pd.read_csv(ELEMENTS_INPUTS_FILENAME)
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframe(organs_inputs_df, elements_inputs_df)
+    inputs = converter.from_dataframes(organs_inputs_df, elements_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
     # run the simulation
     simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.530000, Ur=2.200000, PARi=3838000)
     # convert the outputs to Pandas dataframes
-    _, elements_outputs_df = converter.to_dataframe(simulation_.outputs)
+    _, elements_outputs_df = converter.to_dataframes(simulation_.outputs)
     # write the dataframe to CSV
     elements_outputs_df.to_csv(ELEMENTS_OUTPUTS_FILENAME, index=False, na_rep='NA', float_format='%.{}f'.format(OUTPUTS_PRECISION)) 
     

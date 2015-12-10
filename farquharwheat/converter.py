@@ -68,7 +68,7 @@ ORGANS_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ']
 ELEMENTS_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ', 'element']
 
 
-def from_dataframe(organs_inputs, elements_inputs):
+def from_dataframes(organs_inputs, elements_inputs):
     """
     Convert inputs/outputs from Pandas dataframes to Farquhar-Wheat format.
     The column names of the dataframe respect the naming convention of AdelWheat.
@@ -102,7 +102,7 @@ def from_dataframe(organs_inputs, elements_inputs):
     return {'organs': all_organs_dict, 'elements': all_elements_dict}
     
 
-def to_dataframe(data_dict):
+def to_dataframes(data_dict):
     """
     Convert inputs/outputs from Farquhar-Wheat format to Pandas dataframe.
     The column names of the dataframe respect the naming convention of AdelWheat.
