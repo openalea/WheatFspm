@@ -32,8 +32,6 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
     
-    MIN_GREEN_AREA = 1E-4 #: Minimal green area of an element (m2). Below the area, we do not run Farquhar model on the element, and all outputs are set to 0. 
-    
     def __init__(self):
         
         #: The inputs of Farquhar-Wheat.
@@ -95,7 +93,7 @@ class Simulation(object):
         elements_outputs = self.outputs['elements']
         for (element_id, element_inputs) in elements_inputs.iteritems():
             organ_outputs = {}
-            if element_inputs['green_area'] < Simulation.MIN_GREEN_AREA:
+            if element_inputs['green_area'] == 0.0:
                 element_outputs = dict.fromkeys(['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs'], 0.0)
             else:
                 organ_id = tuple(element_id[:-1])
