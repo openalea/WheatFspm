@@ -1,7 +1,6 @@
 plant,axis,metamer,organ,element,width,height,STAR
 1,MS,10,blade,LeafElement1,0.018000,0.600000,0.000002
 1,MS,10,internode,HiddenElement,0.002570,0.300000,0.000000
-1,MS,10,internode,StemElement,0.002570,0.400000,0.000001
 1,MS,10,sheath,StemElement,0.001100,0.500000,0.000000
 1,MS,11,blade,LeafElement1,0.014000,0.380000,0.000006
 1,MS,11,internode,HiddenElement,0.000990,0.180000,0.000000

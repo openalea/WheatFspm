@@ -55,7 +55,6 @@ class OrganParameters:
     """
     MSTRUCT_AXIS = 2.1                      #: Structural mass  of a plant (g) (Bertheloot, 2011)
     ALPHA_AXIS = 1                          #: Proportion of the structural mass containing the substrates
-    DELTA_T = 3600                          #: Timestep of the model (s)
 
     C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
     NB_C_TRIOSEP = 3                        #: Number of C in 1 mol of trioseP

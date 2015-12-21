@@ -74,7 +74,7 @@ for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, METAMERS_I
     inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
     
 # Initialize a simulation from CN exchange inputs
-simulation_ = simulation.Simulation()
+simulation_ = simulation.Simulation(delta_t=3600)
 population, soils = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FILENAME], 
                                               inputs_dataframes[AXES_INPUTS_FILENAME],
                                               inputs_dataframes[METAMERS_INPUTS_FILENAME],

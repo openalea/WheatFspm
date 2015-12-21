@@ -176,8 +176,10 @@ def from_dataframes(plants_inputs=None, axes_inputs=None, metamers_inputs=None, 
                             if len(element_inputs) == 0:
                                 continue
                             element_inputs = element_inputs.loc[:, simulation.Simulation.ELEMENTS_STATE]
-                            # create a new element
                             element_dict = element_inputs.loc[element_inputs.first_valid_index()].to_dict()
+                            if element_dict['green_area'] == 0.0:
+                                continue
+                            # create a new element
                             element = phytomer_attribute_element_class(mtg_element_label, **element_dict)
                             setattr(organ, cnwheat_element_name, element)
                             
@@ -468,6 +470,8 @@ def from_MTG(g, organs_inputs, elements_inputs):
                                 if element_input_name in vertex_properties:
                                     # use the properties of the vertex
                                     element_inputs[element_input_name] = vertex_properties[element_input_name]
+                                    if element_input_name == 'green_area':
+                                        element_inputs[element_input_name] /= 10000.0 # convert from cm2 to m2 ; TODO: homogenize the units between the models 
                                 else:
                                     # use the value in elements_inputs
                                     if element_input_name in elements_inputs_group_series:
@@ -475,6 +479,9 @@ def from_MTG(g, organs_inputs, elements_inputs):
                                     else:
                                         is_valid_element = False
                                         break
+                                if element_input_name == 'green_area' and element_inputs[element_input_name] == 0.0:
+                                    is_valid_element = False
+                                    break
                             if is_valid_element:
                                 has_valid_element = True
                                 element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[organ_class](element_label, **element_inputs)
@@ -595,7 +602,10 @@ def update_MTG(population, g):
                         element = getattr(organ, MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[element_label])
                         element_property_names = [property_name for property_name in simulation.Simulation.ELEMENTS_STATE if hasattr(element, property_name)]
                         for element_property_name in element_property_names:
-                            g.property(element_property_name)[element_vid] = getattr(element, element_property_name)
+                            element_property_value = getattr(element, element_property_name)
+                            if element_property_name == 'green_area':
+                                element_property_value *= 10000.0 # convert from m2 to cm2 ; TODO: homogenize the units between the models 
+                            g.property(element_property_name)[element_vid] = element_property_value
                     
             # insert a grains in the MTG if needed, and update it
             grains = axis.grains

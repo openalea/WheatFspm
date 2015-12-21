@@ -1,7 +1,6 @@
 t,plant,axis,metamer,organ,element,green_area,mstruct,Nstruct
 0,1,MS,10,blade,LeafElement1,0.003460,0.140000,0.001020
 0,1,MS,10,internode,HiddenElement,0.001129,0.141500,0.000640
-0,1,MS,10,internode,StemElement,0.000371,0.046500,0.000210
 0,1,MS,10,sheath,StemElement,0.000600,0.103000,0.000680
 0,1,MS,11,blade,LeafElement1,0.003400,0.090000,0.000830
 0,1,MS,11,internode,HiddenElement,0.000400,0.180000,0.000330
@@ -14,7 +13,6 @@ t,plant,axis,metamer,organ,element,green_area,mstruct,Nstruct
 0,1,MS,14,ear,StemElement,0.000750,0.210000,0.001070
 1,1,MS,10,blade,LeafElement1,0.003460,0.140000,0.001020
 1,1,MS,10,internode,HiddenElement,0.001129,0.141500,0.000640
-1,1,MS,10,internode,StemElement,0.000371,0.046500,0.000210
 1,1,MS,10,sheath,StemElement,0.000600,0.103000,0.000680
 1,1,MS,11,blade,LeafElement1,0.003400,0.090000,0.000830
 1,1,MS,11,internode,HiddenElement,0.000400,0.180000,0.000330
@@ -27,7 +25,6 @@ t,plant,axis,metamer,organ,element,green_area,mstruct,Nstruct
 1,1,MS,14,ear,StemElement,0.000750,0.210000,0.001070
 2,1,MS,10,blade,LeafElement1,0.003460,0.140000,0.001020
 2,1,MS,10,internode,HiddenElement,0.001129,0.141500,0.000640
-2,1,MS,10,internode,StemElement,0.000371,0.046500,0.000210
 2,1,MS,10,sheath,StemElement,0.000600,0.103000,0.000680
 2,1,MS,11,blade,LeafElement1,0.003400,0.090000,0.000830
 2,1,MS,11,internode,HiddenElement,0.000400,0.180000,0.000330
@@ -40,7 +37,6 @@ t,plant,axis,metamer,organ,element,green_area,mstruct,Nstruct
 2,1,MS,14,ear,StemElement,0.000750,0.210000,0.001070
 3,1,MS,10,blade,LeafElement1,0.003460,0.140000,0.001020
 3,1,MS,10,internode,HiddenElement,0.001129,0.141500,0.000640
-3,1,MS,10,internode,StemElement,0.000371,0.046500,0.000210
 3,1,MS,10,sheath,StemElement,0.000600,0.103000,0.000680
 3,1,MS,11,blade,LeafElement1,0.003400,0.090000,0.000830
 3,1,MS,11,internode,HiddenElement,0.000400,0.180000,0.000330
@@ -53,7 +49,6 @@ t,plant,axis,metamer,organ,element,green_area,mstruct,Nstruct
 3,1,MS,14,ear,StemElement,0.000750,0.210000,0.001070
 4,1,MS,10,blade,LeafElement1,0.003460,0.140000,0.001020
 4,1,MS,10,internode,HiddenElement,0.001129,0.141500,0.000640
-4,1,MS,10,internode,StemElement,0.000371,0.046500,0.000210
 4,1,MS,10,sheath,StemElement,0.000600,0.103000,0.000680
 4,1,MS,11,blade,LeafElement1,0.003400,0.090000,0.000830
 4,1,MS,11,internode,HiddenElement,0.000400,0.180000,0.000330
@@ -66,7 +61,6 @@ t,plant,axis,metamer,organ,element,green_area,mstruct,Nstruct
 4,1,MS,14,ear,StemElement,0.000750,0.210000,0.001070
 5,1,MS,10,blade,LeafElement1,0.003460,0.140000,0.001020
 5,1,MS,10,internode,HiddenElement,0.001129,0.141500,0.000640
-5,1,MS,10,internode,StemElement,0.000371,0.046500,0.000210
 5,1,MS,10,sheath,StemElement,0.000600,0.103000,0.000680
 5,1,MS,11,blade,LeafElement1,0.003400,0.090000,0.000830
 5,1,MS,11,internode,HiddenElement,0.000400,0.180000,0.000330
@@ -79,7 +73,6 @@ t,plant,axis,metamer,organ,element,green_area,mstruct,Nstruct
 5,1,MS,14,ear,StemElement,0.000750,0.210000,0.001070
 6,1,MS,10,blade,LeafElement1,0.003460,0.140000,0.001020
 6,1,MS,10,internode,HiddenElement,0.001129,0.141500,0.000640
-6,1,MS,10,internode,StemElement,0.000371,0.046500,0.000210
 6,1,MS,10,sheath,StemElement,0.000600,0.103000,0.000680
 6,1,MS,11,blade,LeafElement1,0.003400,0.090000,0.000830
 6,1,MS,11,internode,HiddenElement,0.000400,0.180000,0.000330
@@ -92,7 +85,6 @@ t,plant,axis,metamer,organ,element,green_area,mstruct,Nstruct
 6,1,MS,14,ear,StemElement,0.000750,0.210000,0.001070
 7,1,MS,10,blade,LeafElement1,0.003460,0.140000,0.001020
 7,1,MS,10,internode,HiddenElement,0.001129,0.141500,0.000640
-7,1,MS,10,internode,StemElement,0.000371,0.046500,0.000210
 7,1,MS,10,sheath,StemElement,0.000600,0.103000,0.000680
 7,1,MS,11,blade,LeafElement1,0.003400,0.090000,0.000830
 7,1,MS,11,internode,HiddenElement,0.000400,0.180000,0.000330
@@ -105,7 +97,6 @@ t,plant,axis,metamer,organ,element,green_area,mstruct,Nstruct
 7,1,MS,14,ear,StemElement,0.000750,0.210000,0.001070
 8,1,MS,10,blade,LeafElement1,0.003460,0.140000,0.001020
 8,1,MS,10,internode,HiddenElement,0.001129,0.141500,0.000640
-8,1,MS,10,internode,StemElement,0.000371,0.046500,0.000210
 8,1,MS,10,sheath,StemElement,0.000600,0.103000,0.000680
 8,1,MS,11,blade,LeafElement1,0.003400,0.090000,0.000830
 8,1,MS,11,internode,HiddenElement,0.000400,0.180000,0.000330

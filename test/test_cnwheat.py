@@ -67,7 +67,7 @@ ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
 def test_run():
     
     # create the simulation
-    simulation_ = simulation.Simulation()
+    simulation_ = simulation.Simulation(3600)
     # read inputs from Pandas dataframes
     inputs_dataframes = {}
     for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, METAMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):

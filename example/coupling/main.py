@@ -74,7 +74,7 @@ INPUTS_OUTPUTS_PRECISION = 6
 
 LOGGING_CONFIG_FILEPATH = os.path.join('..', 'logging.json')
 
-LOGGING_LEVEL = logging.WARNING # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOGGING_LEVEL = logging.INFO # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 cnwheat_tools.setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL, log_model=False, log_compartments=False, log_derivatives=False)
 
@@ -83,15 +83,16 @@ meteo_df = pd.read_csv(METEO_FILEPATH, index_col='t')
     
 current_time_of_the_system = time.time()
 
-# define the time step of each simulator 
+# define the time step in hours for each simulator 
 senescwheat_ts = 2
 farquharwheat_ts = 2
 cnwheat_ts = 1
 
+hour_to_second_conversion_factor = 3600
 # create the simulators
-senescwheat_simulation_ = senescwheat_simulation.Simulation(time_step=senescwheat_ts)
+senescwheat_simulation_ = senescwheat_simulation.Simulation(senescwheat_ts * hour_to_second_conversion_factor)
 farquharwheat_simulation_ = farquharwheat_simulation.Simulation()
-cnwheat_simulation_ = cnwheat_simulation.Simulation()
+cnwheat_simulation_ = cnwheat_simulation.Simulation(cnwheat_ts * hour_to_second_conversion_factor)
 
 # read adelwheat inputs at t0
 adel_wheat = astk_interface.AdelWheat(seed=1234)
@@ -110,7 +111,7 @@ farquharwheat_elements_inputs_df = pd.read_csv(FARQUHARWHEAT_ELEMENTS_INPUTS_FIL
 senescwheat_roots_inputs_df = pd.read_csv(SENESCWHEAT_ROOTS_INPUTS_FILEPATH)
 senescwheat_elements_inputs_df = pd.read_csv(SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH)
 
-# define the start and the end of the whole simulation
+# define the start and the end of the whole simulation (in hours)
 start_time = 0
 stop_time = 960
 
