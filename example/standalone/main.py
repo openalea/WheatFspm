@@ -52,7 +52,7 @@ elements_outputs_filepath = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILEN
 if __name__ == '__main__':
     
     # create a simulation
-    simulation_ = simulation.Simulation()
+    simulation_ = simulation.Simulation(delta_t=3600)
     # read inputs from Pandas dataframes
     roots_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOTS_INPUTS_FILENAME))
     elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))

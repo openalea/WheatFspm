@@ -31,7 +31,7 @@ class SenescenceModel(object):
 
     N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
     SENESCENCE_ROOTS = 3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997).
-
+    
     @classmethod
     def calculate_forced_relative_delta_green_area(cls, green_area_df, group_id, prev_green_area):
         """relative green_area variation due to senescence
@@ -53,7 +53,7 @@ class SenescenceModel(object):
 
 
     @classmethod
-    def calculate_relative_delta_green_area(cls, prev_green_area, proteins, max_proteins, DELTA_T):
+    def calculate_relative_delta_green_area(cls, prev_green_area, proteins, max_proteins, delta_t):
         """relative green_area variation due to senescence
 
         : Parameters:
@@ -81,7 +81,7 @@ class SenescenceModel(object):
             relative_delta_green_area = 0
         # Senescence if (actual proteins/max_proteins) < fraction_N_max
         elif (proteins / max_proteins) < fraction_N_max :
-            senesced_area = min(prev_green_area, senescence_max_rate * DELTA_T)
+            senesced_area = min(prev_green_area, senescence_max_rate * delta_t)
             new_green_area = max(0, prev_green_area - senesced_area)
             relative_delta_green_area = senesced_area / prev_green_area
         else:
@@ -111,7 +111,7 @@ class SenescenceModel(object):
 
     @classmethod
     def calculate_remobilisation(cls, metabolite, relative_delta_structure):
-        """Metabolite remobilisation due to senescence over delta_t (µmol).
+        """Metabolite remobilisation due to senescence over DELTA_T (µmol).
         : Parameters:
             - `relative_delta_structure` (:class:`float`) - could be relative variation of a photosynthetic element green area or relative variation of mstruct
         """
@@ -119,7 +119,7 @@ class SenescenceModel(object):
 
     # Roots
     @classmethod
-    def calculate_roots_mstruct_growth(cls, sucrose, amino_acids, mstruct, DELTA_T):
+    def calculate_roots_mstruct_growth(cls, sucrose, amino_acids, mstruct, delta_t):
         # TODO: to be moved in a particular model (shouldn't be included in SenescenceModel)
 
         """Root structural dry matter growth
@@ -127,7 +127,6 @@ class SenescenceModel(object):
         : Parameters:
             - `sucrose` (:class:`float`) - amount of sucrose (µmol C)
             - `mstruct` (:class:`float`) - structural mass (g)
-            - `DELTA_T` (:class:`float`) - value of the timestep (s)
 
         : Returns:
             mstruct_C_growth (µmol C), mstruct_growth (g), Nstruct_growth (g), Nstruct_N_growth (µmol N)
@@ -142,7 +141,7 @@ class SenescenceModel(object):
         RATIO_C_MSTRUCT = 0.384         #: Mean contribution of carbon to structural dry mass (g C g-1 Mstruct)
         RATIO_N_MSTRUCT = 0.02          #: Mean contribution of nitrogen to structural dry mass (g N g-1 Mstruct)
 
-        mstruct_C_growth = (((max(0, sucrose)/(mstruct*ALPHA)) * VMAX_GROWTH) / ((max(0, sucrose)/(mstruct*ALPHA)) + K_GROWTH)) * DELTA_T * mstruct     #: root growth in C (µmol of C)
+        mstruct_C_growth = (((max(0, sucrose)/(mstruct*ALPHA)) * VMAX_GROWTH) / ((max(0, sucrose)/(mstruct*ALPHA)) + K_GROWTH)) * delta_t * mstruct     #: root growth in C (µmol of C)
         mstruct_growth = (mstruct_C_growth*1E-6 * C_MOLAR_MASS) / RATIO_C_MSTRUCT                                                                       #: root growth (g of structural dry mass)
         Nstruct_growth = mstruct_growth*RATIO_N_MSTRUCT                                                                                                 #: root growth in nitrogen (g)
         Nstruct_N_growth = min(amino_acids, (Nstruct_growth/cls.N_MOLAR_MASS)*1E6)                                                                      #: root growth in nitrogen (µmol N)
@@ -150,13 +149,12 @@ class SenescenceModel(object):
         return mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth
 
     @classmethod
-    def calculate_roots_senescence(cls, mstruct, Nstruct, DELTA_T):
+    def calculate_roots_senescence(cls, mstruct, Nstruct, delta_t):
         """Root senescence
 
         : Parameters:
             - `mstruct` (:class:`float`) - structural mass (g)
             - `Nstruct` (:class:`float`) - structural N (g)
-            - `DELTA_T` (:class:`float`) - value of the timestep (s)
 
         : Returns:
             Amount of C lost by root senescence over DELTA_T (g mstruct), amount of N lost by root senescence over DELTA_T (g Nstruct)
@@ -164,7 +162,7 @@ class SenescenceModel(object):
         :Returns Type:
             :class:`float`
         """
-        return mstruct * cls.SENESCENCE_ROOTS * DELTA_T, Nstruct * cls.SENESCENCE_ROOTS * DELTA_T         #: Structral mass lost by turn_over (g)
+        return mstruct * cls.SENESCENCE_ROOTS * delta_t, Nstruct * cls.SENESCENCE_ROOTS * delta_t         #: Structral mass lost by turn_over (g)
 
 
     @classmethod

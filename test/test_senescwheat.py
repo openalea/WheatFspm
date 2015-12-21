@@ -67,7 +67,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
 def test_run():
 
     # create a simulation
-    simulation_ = simulation.Simulation()
+    simulation_ = simulation.Simulation(delta_t=3600)
     # read inputs from Pandas dataframe
     roots_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOTS_INPUTS_FILENAME))
     elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))

@@ -32,10 +32,7 @@ class Simulation(object):
     
     MIN_GREEN_AREA = 1E-4 #: Minimal green area of an element (m2). Below this area, set green_area to 0.0.
     
-    def __init__(self, time_step=1):
-        
-        #: the time step of the simulation
-        self.time_step = time_step
+    def __init__(self, delta_t=1):
         
         #: The inputs of Senesc-Wheat.
         #:
@@ -51,6 +48,9 @@ class Simulation(object):
         #:      'elements': {(plant_index, axis_label, metamer_index, organ_label, element_label): {element_output_name: element_output_value, ...}, ...}} 
         self.outputs = {}
     
+        #: the delta t of the simulation (in seconds)
+        self.delta_t = delta_t
+        
     
     def initialize(self, inputs):
         """
@@ -74,12 +74,12 @@ class Simulation(object):
         all_roots_inputs = self.inputs['roots']
         all_roots_outputs = self.outputs['roots']
         for roots_inputs_id, roots_inputs_dict in all_roots_inputs.iteritems():
-            mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = model.SenescenceModel.calculate_roots_mstruct_growth(roots_inputs_dict['sucrose'], roots_inputs_dict['amino_acids'], roots_inputs_dict['mstruct'], 3600*self.time_step) #3600 is temporary, will be moved
-            mstruct_death, Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'], 3600*self.time_step)
+            mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = model.SenescenceModel.calculate_roots_mstruct_growth(roots_inputs_dict['sucrose'], roots_inputs_dict['amino_acids'], roots_inputs_dict['mstruct'], self.delta_t)
+            mstruct_death, Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'], self.delta_t)
             delta_mstruct, delta_Nstruct, relative_delta_mstruct = model.SenescenceModel.calculate_delta_mstruct_roots(mstruct_growth, Nstruct_growth, mstruct_death, Nstruct_death, roots_inputs_dict['mstruct'])
             loss_cytokinines = model.SenescenceModel.calculate_remobilisation(roots_inputs_dict['cytokinines'], relative_delta_mstruct)
-            all_roots_outputs[roots_inputs_id] = {'mstruct_C_growth': mstruct_C_growth/self.time_step, 
-                                                  'Nstruct_N_growth': Nstruct_N_growth/self.time_step,
+            all_roots_outputs[roots_inputs_id] = {'mstruct_C_growth': mstruct_C_growth/self.delta_t, 
+                                                  'Nstruct_N_growth': Nstruct_N_growth/self.delta_t,
                                                   'mstruct_death': mstruct_death,
                                                   'mstruct': roots_inputs_dict['mstruct'] + delta_mstruct,
                                                   'Nstruct': roots_inputs_dict['Nstruct'] + delta_Nstruct,
@@ -87,28 +87,31 @@ class Simulation(object):
             
         all_elements_inputs = self.inputs['elements']
         all_elements_outputs = self.outputs['elements']
-        for elements_inputs_id, elements_inputs_dict in all_elements_inputs.iteritems():
+        for element_inputs_id, element_inputs_dict in all_elements_inputs.iteritems():
             # Senescence
-            new_green_area, relative_delta_green_area, max_proteins = model.SenescenceModel.calculate_relative_delta_green_area(elements_inputs_dict['green_area'], elements_inputs_dict['proteins'] / elements_inputs_dict['mstruct'], elements_inputs_dict['max_proteins'], 3600*self.time_step)
-            if new_green_area < Simulation.MIN_GREEN_AREA:
-                new_green_area = 0.0
-            
-            new_mstruct, new_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, elements_inputs_dict['mstruct'], elements_inputs_dict['Nstruct'])            
-            # Remobilisation
-            remob_starch = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['starch'], relative_delta_green_area)
-            remob_fructan = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['fructan'], relative_delta_green_area)
-            remob_proteins = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['proteins'], relative_delta_green_area)
-            loss_cytokinines = model.SenescenceModel.calculate_remobilisation(elements_inputs_dict['cytokinines'], relative_delta_green_area)
+            if element_inputs_dict['green_area'] < Simulation.MIN_GREEN_AREA:
+                element_outputs_dict = element_inputs_dict.copy()
+                element_outputs_dict['green_area'] = 0.0
+            else:
+                new_green_area, relative_delta_green_area, max_proteins = model.SenescenceModel.calculate_relative_delta_green_area(element_inputs_dict['green_area'], element_inputs_dict['proteins'] / element_inputs_dict['mstruct'], element_inputs_dict['max_proteins'], self.delta_t)
+                new_mstruct, new_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element_inputs_dict['mstruct'], element_inputs_dict['Nstruct'])            
+                # Remobilisation
+                remob_starch = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['starch'], relative_delta_green_area)
+                remob_fructan = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['fructan'], relative_delta_green_area)
+                remob_proteins = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['proteins'], relative_delta_green_area)
+                loss_cytokinines = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['cytokinines'], relative_delta_green_area)
 
-            all_elements_outputs[elements_inputs_id] = {'green_area': new_green_area,
-                                                        'mstruct': new_mstruct,
-                                                        'Nstruct': new_Nstruct,
-                                                        'starch': elements_inputs_dict['starch'] - remob_starch,
-                                                        'sucrose': elements_inputs_dict['sucrose'] + remob_starch + remob_fructan,
-                                                        'fructan': elements_inputs_dict['fructan'] - remob_fructan,
-                                                        'proteins': elements_inputs_dict['proteins'] - remob_proteins,
-                                                        'amino_acids': elements_inputs_dict['amino_acids'] + remob_proteins,
-                                                        'cytokinines': elements_inputs_dict['cytokinines'] - loss_cytokinines,
-                                                        'max_proteins': max_proteins}
+                element_outputs_dict = {'green_area': new_green_area,
+                                        'mstruct': new_mstruct,
+                                        'Nstruct': new_Nstruct,
+                                        'starch': element_inputs_dict['starch'] - remob_starch,
+                                        'sucrose': element_inputs_dict['sucrose'] + remob_starch + remob_fructan,
+                                        'fructan': element_inputs_dict['fructan'] - remob_fructan,
+                                        'proteins': element_inputs_dict['proteins'] - remob_proteins,
+                                        'amino_acids': element_inputs_dict['amino_acids'] + remob_proteins,
+                                        'cytokinines': element_inputs_dict['cytokinines'] - loss_cytokinines,
+                                        'max_proteins': max_proteins}
+            
+            all_elements_outputs[element_inputs_id] = element_outputs_dict
                                                       
         

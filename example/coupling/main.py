@@ -57,7 +57,7 @@ SENESCWHEAT_ELEMENTS_OUTPUTS_FILEPATH = os.path.join(SENESCWHEAT_OUTPUTS_DIRPATH
 if __name__ == '__main__':
     
     # create a simulation
-    simulation_ = simulation.Simulation()
+    simulation_ = simulation.Simulation(delta_t=3600)
     # read adelwheat inputs
     adel_wheat = astk_interface.AdelWheat(seed=1234)
     g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)[0]
