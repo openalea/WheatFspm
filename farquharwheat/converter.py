@@ -215,6 +215,8 @@ def from_MTG(g, organs_inputs, elements_inputs):
                             if element_input_name in vertex_properties:
                                 # use the properties of the vertex
                                 element_inputs[element_input_name] = vertex_properties[element_input_name]
+                                if element_input_name == 'green_area':
+                                    element_inputs[element_input_name] /= 10000.0 # convert from cm2 to m2 ; TODO: homogenize the units between the models 
                             else:
                                 # use the value in elements_inputs
                                 if element_input_name in elements_inputs_group_series:
@@ -289,6 +291,8 @@ def update_MTG(inputs, outputs, g):
                         # update the element in the MTG
                         element_inputs = elements_inputs_dict[element_id]
                         for element_input_name, element_input_value in element_inputs.iteritems():
+                            if element_input_name == 'green_area':
+                                element_input_value *= 10000.0 # convert from m2 to cm2 ; TODO: homogenize the units between the models
                             g.property(element_input_name)[element_vid] = element_input_value
                         element_outputs = elements_outputs_dict[element_id]
                         for element_output_name, element_output_value in element_outputs.iteritems():

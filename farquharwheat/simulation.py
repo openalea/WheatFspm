@@ -92,11 +92,10 @@ class Simulation(object):
         elements_inputs = self.inputs['elements']
         elements_outputs = self.outputs['elements']
         for (element_id, element_inputs) in elements_inputs.iteritems():
-            organ_outputs = {}
+            organ_id = tuple(element_id[:-1])
             if element_inputs['green_area'] == 0.0:
                 element_outputs = dict.fromkeys(['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs'], 0.0)
             else:
-                organ_id = tuple(element_id[:-1])
                 organ_label = organs_inputs[organ_id]['label']
                 STAR = element_inputs['STAR'] # TODO: check whether absorbed STAR or not.
                 PARa = STAR * PARi
@@ -111,5 +110,5 @@ class Simulation(object):
                                                                   PARa, Ta, ambient_CO2, RH, Ur, organ_label)
                 element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
                 
-            organs_outputs[organ_id] = organ_outputs
+            organs_outputs[organ_id] = {}
             elements_outputs[element_id] = element_outputs
