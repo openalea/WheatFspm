@@ -31,6 +31,8 @@ class SenescenceModel(object):
 
     N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
     SENESCENCE_ROOTS = 3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997).
+    FRACTION_N_MAX = {'blade': 0.5, 'stem': 0.425}
+    SENESCENCE_MAX_RATE = 0.2E-8 # maximal senescence m² s-1
     
     @classmethod
     def calculate_forced_relative_delta_green_area(cls, green_area_df, group_id, prev_green_area):
@@ -53,35 +55,40 @@ class SenescenceModel(object):
 
 
     @classmethod
-    def calculate_relative_delta_green_area(cls, prev_green_area, proteins, max_proteins, delta_t):
+    def calculate_relative_delta_green_area(cls, organ_name, prev_green_area, proteins, max_proteins, delta_t, update_max_protein):
         """relative green_area variation due to senescence
 
         : Parameters:
-            - `group_id` (:class:`tuple`) - the group id to be used to select data in the DataFrame
+            - `organ_name` (:class:`string`) - name of the organ to which belongs the element (used to distinguish lamina from stem organs)
             - `prev_green_area` (:class:`float`) - previous value of an organ green area (m-2)
-
+            - `proteins` (:class:`float`) - protein concentration (µmol N proteins g-1 mstruct)
+            - `max_proteins` (:class:`dict`) - a dictionnary where the maximal protein concentrations are stored by organ id
+            - `delta_t` (:class:`float`) - value of the timestep (s)
+            - `update_max_protein` (:class:`bool`) - whether to update the max proteins or not. 
+        
         : Returns:
             new_green_area (m-2), relative_delta_green_area (dimensionless)
 
         :Returns Type:
             :class:`float`
+            
+        .. todo:: remove update_max_protein
+        
         """
-        senescence_max_rate = 0.5E-8 # maximal senescence m² s-1
-        fraction_N_max = 0.55
 
-        # First run
-        if max_proteins is None:
-            max_proteins = proteins
-            new_green_area = prev_green_area
-            relative_delta_green_area = 0
+        if organ_name == 'blade':
+            fraction_N_max = cls.FRACTION_N_MAX['blade']
+        else:
+            fraction_N_max = cls.FRACTION_N_MAX['stem']
+
         # Overwrite max proteins
         if max_proteins < proteins:
             max_proteins = proteins
             new_green_area = prev_green_area
             relative_delta_green_area = 0
         # Senescence if (actual proteins/max_proteins) < fraction_N_max
-        elif (proteins / max_proteins) < fraction_N_max :
-            senesced_area = min(prev_green_area, senescence_max_rate * delta_t)
+        elif (proteins / max_proteins) < fraction_N_max and update_max_protein:
+            senesced_area = min(prev_green_area, cls.SENESCENCE_MAX_RATE * delta_t)
             new_green_area = max(0, prev_green_area - senesced_area)
             relative_delta_green_area = senesced_area / prev_green_area
         else:

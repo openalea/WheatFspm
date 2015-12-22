@@ -65,9 +65,16 @@ class Simulation(object):
         self.inputs.update(inputs)
 
 
-    def run(self):
+    def run(self, forced_max_protein_elements=None):
         """
         Compute Senesc-Wheat outputs from :attr:`inputs`, and update :attr:`outputs`.
+        
+        :Parameters:
+        
+            - `forced_max_protein_elements` (:class:`set`) - The elements ids with fixed max proteins.
+        
+        .. todo:: remove forced_max_protein_elements
+        
         """
         self.outputs.update({inputs_type: {} for inputs_type in self.inputs.iterkeys()})
         
@@ -93,7 +100,8 @@ class Simulation(object):
                 element_outputs_dict = element_inputs_dict.copy()
                 element_outputs_dict['green_area'] = 0.0
             else:
-                new_green_area, relative_delta_green_area, max_proteins = model.SenescenceModel.calculate_relative_delta_green_area(element_inputs_dict['green_area'], element_inputs_dict['proteins'] / element_inputs_dict['mstruct'], element_inputs_dict['max_proteins'], self.delta_t)
+                update_max_protein = forced_max_protein_elements is None or not element_inputs_id in forced_max_protein_elements
+                new_green_area, relative_delta_green_area, max_proteins = model.SenescenceModel.calculate_relative_delta_green_area(element_inputs_id[3], element_inputs_dict['green_area'], element_inputs_dict['proteins'] / element_inputs_dict['mstruct'], element_inputs_dict['max_proteins'], self.delta_t, update_max_protein)
                 new_mstruct, new_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element_inputs_dict['mstruct'], element_inputs_dict['Nstruct'])            
                 # Remobilisation
                 remob_starch = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['starch'], relative_delta_green_area)
