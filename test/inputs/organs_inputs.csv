@@ -1,4 +1,4 @@
-plant,axis,metamer,organ,mstruct_C_growth,Nstruct_N_growth,sucrose,amino_acids,nitrates,structure,starch,proteins,mstruct,Nstruct,cytokinines
-1,MS,NA,grains,NA,NA,NA,NA,NA,4000.000000,0.000000,170.000000,NA,NA,NA
-1,MS,NA,phloem,NA,NA,0.000000,0.000000,NA,NA,NA,NA,NA,NA,NA
-1,MS,NA,roots,16.009412,0.788641,900.000000,60.000000,250.000000,NA,NA,NA,0.504000,0.010000,25.000000
+plant,axis,organ,mstruct_C_growth,Nstruct_N_growth,sucrose,amino_acids,nitrates,structure,starch,proteins,mstruct,Nstruct,cytokinins
+1,MS,grains,NA,NA,NA,NA,NA,2450.00000,0.00000,107.00000,NA,NA,NA
+1,MS,phloem,NA,NA,831.00000,161.00000,NA,NA,NA,NA,NA,NA,NA
+1,MS,roots,16.00941,0.78864,740.00000,60.00000,250.00000,NA,NA,NA,0.50400,0.01000,2.50000

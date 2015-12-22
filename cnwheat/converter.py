@@ -153,8 +153,6 @@ def from_dataframes(plants_inputs=None, axes_inputs=None, metamers_inputs=None, 
                     phytomer = model.Phytomer(metamer_index)
                     axis.phytomers.append(phytomer)
                     
-                    curr_organs_inputs = organs_inputs[(organs_inputs['plant'] == plant_index) & (organs_inputs['axis'] == axis_label) & (organs_inputs['metamer'] == metamer_index)]
-                    
                     for phytomer_attribute_name, phytomer_attribute_class, phytomer_attribute_element_class in \
                         (('chaff', model.Chaff, model.ChaffElement), 
                          ('lamina', model.Lamina, model.LaminaElement), 
@@ -164,7 +162,7 @@ def from_dataframes(plants_inputs=None, axes_inputs=None, metamers_inputs=None, 
                         
                         organ_label = CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[phytomer_attribute_class]
                         curr_elements_inputs = elements_inputs[(elements_inputs['plant'] == plant_index) & (elements_inputs['axis'] == axis_label) & (elements_inputs['metamer'] == metamer_index) & (elements_inputs['organ'] == organ_label)]
-                        if organ_label not in curr_organs_inputs.organ.values and organ_label not in curr_elements_inputs.organ.values:
+                        if organ_label not in curr_elements_inputs.organ.values:
                             continue
                         # create a new organ
                         organ = phytomer_attribute_class(organ_label)
@@ -221,7 +219,7 @@ def to_dataframes(population=None, soils=None):
             * plant scale: plant index, state parameters and compartments of each plant (see :attr:`Simulation:PLANTS_STATE_VARIABLES`) 
             * axis scale: plant index, axis id, state parameters and compartments of each axis (see :attr:`Simulation:AXES_STATE_VARIABLES`)
             * metamer scale: plant index, axis id, metamer index, state parameters and compartments of each metamer (see :attr:`Simulation:PHYTOMERS_STATE_VARIABLES`)
-            * organ scale: plant index, axis id, metamer index, organ type, state parameters and compartments of each organ (see :attr:`Simulation:ORGANS_STATE_VARIABLES`)
+            * organ scale: plant index, axis id, organ type, state parameters and compartments of each organ (see :attr:`Simulation:ORGANS_STATE_VARIABLES`)
             * and element scale: plant index, axis id, metamer index, organ type, element type, state parameters and compartments of each element (see :attr:`Simulation:ELEMENTS_STATE_VARIABLES`),
         
         and/or
@@ -244,10 +242,7 @@ def to_dataframes(population=None, soils=None):
         attributes_values = []
         for attribute_name in attributes_names:
             attributes_values.append(getattr(model_object, attribute_name, np.nan))
-        if len(attributes_values) == 0 \
-            or any(attribute_value is None for attribute_value in attributes_values) \
-            or not np.isnan([attribute_value for attribute_value in attributes_values if attribute_value is not None]).all():
-            inputs_df.loc[len(inputs_df),:] = indexes + attributes_values
+        inputs_df.loc[len(inputs_df),:] = indexes + attributes_values
     
     if convert_population_to_dataframes:
         # initialize the dataframes
@@ -263,13 +258,12 @@ def to_dataframes(population=None, soils=None):
             for axis in plant.axes:
                 append_row(axis, [plant.index, axis.label], simulation.Simulation.AXES_STATE, all_axes_df)
                 for organ in (axis.roots, axis.phloem, axis.grains):
-                    append_row(organ, [plant.index, axis.label, np.nan, organ.label], simulation.Simulation.ORGANS_STATE, all_organs_df)
+                    append_row(organ, [plant.index, axis.label, organ.label], simulation.Simulation.ORGANS_STATE, all_organs_df)
                 for phytomer in axis.phytomers:
                     append_row(phytomer, [plant.index, axis.label, phytomer.index], simulation.Simulation.PHYTOMERS_STATE, all_metamers_df)
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
-                        append_row(organ, [plant.index, axis.label, phytomer.index, organ.label], simulation.Simulation.ORGANS_STATE, all_organs_df)
                         for element in (organ.exposed_element, organ.enclosed_element):
                             if element is None:
                                 continue

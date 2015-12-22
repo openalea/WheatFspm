@@ -109,7 +109,7 @@ def test_run():
     senescence_elements_data_grouped = senescence_elements_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
 
     start_time = 0
-    stop_time = 8
+    stop_time = 48
     time_step = 4
 
     all_plants_df_list = []

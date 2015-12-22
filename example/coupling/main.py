@@ -54,8 +54,7 @@ CNWHEAT_SOILS_INPUTS_FILEPATH = os.path.join(CNWHEAT_INPUTS_DIRPATH, 'soils_inpu
 
 # farquharwheat inputs at t0
 FARQUHARWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'farquharwheat')
-FARQUHARWHEAT_ORGANS_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'organs_inputs.csv')
-FARQUHARWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'elements_inputs.csv')
+FARQUHARWHEAT_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'inputs.csv')
 METEO_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'meteo_Clermont_rebuild.csv')
 
 # senescwheat inputs at t0
@@ -104,8 +103,7 @@ cnwheat_elements_inputs_df = pd.read_csv(CNWHEAT_ELEMENTS_INPUTS_FILEPATH)
 cnwheat_soils_inputs_df = pd.read_csv(CNWHEAT_SOILS_INPUTS_FILEPATH)
 
 # read farquharwheat inputs at t0
-farquharwheat_organs_inputs_df = pd.read_csv(FARQUHARWHEAT_ORGANS_INPUTS_FILEPATH)
-farquharwheat_elements_inputs_df = pd.read_csv(FARQUHARWHEAT_ELEMENTS_INPUTS_FILEPATH)
+farquharwheat_inputs_df = pd.read_csv(FARQUHARWHEAT_INPUTS_FILEPATH)
 
 # read senescwheat inputs at t0
 senescwheat_roots_inputs_df = pd.read_csv(SENESCWHEAT_ROOTS_INPUTS_FILEPATH)
@@ -113,7 +111,7 @@ senescwheat_elements_inputs_df = pd.read_csv(SENESCWHEAT_ELEMENTS_INPUTS_FILEPAT
 
 # define the start and the end of the whole simulation (in hours)
 start_time = 0
-stop_time = 960
+stop_time = 8
 
 # define lists of dataframes to store the inputs and outputs of cnwheat, farquharwheat and senescwheat at each step, and use them for postprocessings
 axes_inputs_ouputs_df_list = []
@@ -123,19 +121,18 @@ soils_inputs_ouputs_df_list = []
 
 # Initialize dataframes to store the inputs and outputs of cnwheat, farquharwheat and senescwheat at a given step.
 # Since the topology is static, these dataframes keep the same shape during all the simulation.
-organs_inputs_ouputs_df = pd.DataFrame(index=range(len(cnwheat_organs_inputs_df.index) + len(farquharwheat_organs_inputs_df.index)), 
-                                       columns=cnwheat_simulation.Simulation.ORGANS_OUTPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.ORGANS_STATE + cnwheat_simulation.Simulation.ORGANS_INTERMEDIATE_VARIABLES + cnwheat_simulation.Simulation.ORGANS_FLUXES + cnwheat_simulation.Simulation.ORGANS_INTEGRATIVE_VARIABLES + cnwheat_simulation.Simulation.ORGANS_POSTPROCESSING_VARIABLES + farquharwheat_converter.FARQUHARWHEAT_ORGANS_INPUTS_OUTPUTS + senescwheat_converter.SENESCWHEAT_ROOTS_INPUTS_OUTPUTS)))
-cnwheat_organs_inputs_indexes = cnwheat_organs_inputs_df.loc[:, cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES]
-farquharwheat_organs_inputs_indexes = farquharwheat_organs_inputs_df.loc[:, cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES]
-organs_inputs_indexes = cnwheat_organs_inputs_indexes.append(farquharwheat_organs_inputs_indexes, ignore_index=True)
+organs_inputs_ouputs_df = pd.DataFrame(index=range(len(cnwheat_organs_inputs_df.index)), 
+                                       columns=cnwheat_simulation.Simulation.ORGANS_OUTPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.ORGANS_STATE + cnwheat_simulation.Simulation.ORGANS_INTERMEDIATE_VARIABLES + cnwheat_simulation.Simulation.ORGANS_FLUXES + cnwheat_simulation.Simulation.ORGANS_INTEGRATIVE_VARIABLES + cnwheat_simulation.Simulation.ORGANS_POSTPROCESSING_VARIABLES + senescwheat_converter.SENESCWHEAT_ROOTS_INPUTS_OUTPUTS)))
+organs_inputs_indexes = cnwheat_organs_inputs_df.loc[:, cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES]
 organs_inputs_indexes.sort_index(by=cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES, inplace=True)
 organs_inputs_indexes.reset_index(drop=True, inplace=True)
 organs_inputs_ouputs_df.loc[:, cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES] = organs_inputs_indexes.loc[:, cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES]
+
 elements_inputs_ouputs_df = pd.DataFrame(index=cnwheat_elements_inputs_df.index, 
-                                         columns=cnwheat_simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.ELEMENTS_STATE + cnwheat_simulation.Simulation.ELEMENTS_INTERMEDIATE_VARIABLES + cnwheat_simulation.Simulation.ELEMENTS_FLUXES + cnwheat_simulation.Simulation.ELEMENTS_INTEGRATIVE_VARIABLES + cnwheat_simulation.Simulation.ELEMENTS_POSTPROCESSING_VARIABLES + farquharwheat_converter.FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS + senescwheat_converter.SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS)))
+                                         columns=cnwheat_simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.ELEMENTS_STATE + cnwheat_simulation.Simulation.ELEMENTS_INTERMEDIATE_VARIABLES + cnwheat_simulation.Simulation.ELEMENTS_FLUXES + cnwheat_simulation.Simulation.ELEMENTS_INTEGRATIVE_VARIABLES + cnwheat_simulation.Simulation.ELEMENTS_POSTPROCESSING_VARIABLES + farquharwheat_converter.FARQUHARWHEAT_INPUTS_OUTPUTS + senescwheat_converter.SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS)))
 elements_inputs_ouputs_df.loc[:, cnwheat_simulation.Simulation.ELEMENTS_INPUTS_INDEXES] = cnwheat_elements_inputs_df.loc[:, cnwheat_simulation.Simulation.ELEMENTS_INPUTS_INDEXES]
 
-# run the simulators 
+# run the simulators
 for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
     print 'run senescwheat at', t_senescwheat
     # initialize and run senescwheat, and update the global mtg
@@ -156,16 +153,14 @@ for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
         # get the meteo of the current step
         Ta, ambient_CO2, RH, Ur, PARi = meteo_df.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
         # initialize and run farquharwheat, and update the global mtg
-        farquharwheat_simulation_.initialize(farquharwheat_converter.from_MTG(g, farquharwheat_organs_inputs_df, farquharwheat_elements_inputs_df))
+        farquharwheat_simulation_.initialize(farquharwheat_converter.from_MTG(g, farquharwheat_inputs_df))
         farquharwheat_simulation_.run(Ta, ambient_CO2, RH, Ur, PARi)
         farquharwheat_converter.update_MTG(farquharwheat_simulation_.inputs, farquharwheat_simulation_.outputs, g)
         # fill the global dataframes for post-processings
-        farquharwheat_organs_inputs_df, farquharwheat_elements_inputs_df = farquharwheat_converter.to_dataframes(farquharwheat_simulation_.inputs)
-        farquharwheat_organs_outputs_df, farquharwheat_elements_outputs_df = farquharwheat_converter.to_dataframes(farquharwheat_simulation_.outputs)
-        farquharwheat_organs_inputs_outputs_df = farquharwheat_organs_outputs_df.combine_first(farquharwheat_organs_inputs_df)
-        farquharwheat_elements_inputs_outputs_df = farquharwheat_elements_outputs_df.combine_first(farquharwheat_elements_inputs_df)
-        organs_inputs_ouputs_df.loc[organs_inputs_ouputs_df.organ.isin(farquharwheat_converter.FARQUHARWHEAT_ORGANS_NAMES), farquharwheat_converter.FARQUHARWHEAT_ORGANS_INPUTS_OUTPUTS] = farquharwheat_organs_inputs_outputs_df.loc[:, farquharwheat_converter.FARQUHARWHEAT_ORGANS_INPUTS_OUTPUTS].values
-        elements_inputs_ouputs_df.loc[:, farquharwheat_converter.FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS] = farquharwheat_elements_inputs_outputs_df.loc[:, farquharwheat_converter.FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS].values
+        farquharwheat_inputs_df = farquharwheat_converter.to_dataframe(farquharwheat_simulation_.inputs)
+        farquharwheat_outputs_df = farquharwheat_converter.to_dataframe(farquharwheat_simulation_.outputs)
+        farquharwheat_inputs_outputs_df = farquharwheat_outputs_df.combine_first(farquharwheat_inputs_df)
+        elements_inputs_ouputs_df.loc[:, farquharwheat_converter.FARQUHARWHEAT_INPUTS_OUTPUTS] = farquharwheat_inputs_outputs_df.loc[:, farquharwheat_converter.FARQUHARWHEAT_INPUTS_OUTPUTS].values
         
         for t_cnwheat in xrange(t_farquharwheat, t_farquharwheat + farquharwheat_ts, cnwheat_ts):
             

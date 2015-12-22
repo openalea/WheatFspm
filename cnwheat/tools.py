@@ -345,6 +345,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
             del actual_data_df[column]
 
     # compare to the desired data
+    # actual_data_df = actual_data_df.astype(np.float)
     np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
 
 

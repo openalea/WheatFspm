@@ -6,10 +6,10 @@
 
     The module :mod:`cnwheat.parameters` defines the constant parameters in a population of plants.
 
-    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
+    :copyright: Copyright 2014 INRA-EGC, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
+    .. seealso:: Barillot et al. 2014.
 """
 
 """
@@ -53,7 +53,7 @@ class OrganParameters:
     """
     Internal parameters common to all the organs.
     """
-    MSTRUCT_AXIS = 2.1                      #: Structural mass  of a plant (g) (Bertheloot, 2011)
+    MSTRUCT_AXIS = 2.5                      #: Structural mass of a plant (g)
     ALPHA_AXIS = 1                          #: Proportion of the structural mass containing the substrates
 
     C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
@@ -67,8 +67,6 @@ class OrganParameters:
     AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
     N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
-    RATIO_EXPORT_NITRATES_ROOTS = 0.25      #: Proportion of absorbed nitrates directly imported in shoot (1-RATIO_EXPORT_NITRATES_ROOTS = part of nitrates staying in roots)
-
 
 class PhloemParameters(OrganParameters):
     """
@@ -85,28 +83,31 @@ class GrainsParameters(OrganParameters):
     AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.136      #: Mean contribution of N in amino acids mass contained in gluten (Glu, Gln and Pro)
 
     # Structure parameters
-    VMAX_RGR = 1.2e-06#1.5e-06                          #: Maximal value of the Relative Growth Rate of grain structure (s-1)
+    VMAX_RGR = 1.5e-06                          #: Maximal value of the Relative Growth Rate of grain structure (s-1)
     K_RGR = 300                                 #: Affinity coefficient of the Relative Growth Rate of grain structure (µmol C)
 
     # Starch parameters
-    VMAX_STARCH = 0.125#0.15                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
+    VMAX_STARCH = 0.35                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
     K_STARCH = 400                              #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
 
     FILLING_INIT = 360                          #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
-    FILLING_END = 840                           #: Time (h) at which grains filling stops.
+    FILLING_END = 900                           #: Time (h) at which grains filling stops. (Bertheloot et al., 2011)
 
 
 class RootsParameters(OrganParameters):
     """
     Internal parameters of roots.
     """
-    ALPHA = 1                                   #: Proportion of structural mass containing substrate
+    ALPHA = 1                       #: Proportion of structural mass containing substrate
 
-    VMAX_SUCROSE_UNLOADING = 0.03#0.04               #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
-    K_SUCROSE_UNLOADING = 500                   #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C sucrose g-1 MS)
+    VMAX_SUCROSE_UNLOADING = 0.03   #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
+    K_SUCROSE_UNLOADING = 1000      #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C sucrose g-1 MS)
 
-    # Regulation function by transpiration
+    # Regulation function by transpiration of nitrate uptake
     K_TRANSPIRATION = 1             #: Affinity coefficient for the regulation function by culm transpiration (mmol H20 m-2 s-1)
+
+    # Regulation function by C in roots of nitrate uptake
+    K_C = 4000                      #: Affinity coefficient for the regulation function by root C (µmol C sucrose g-1 MS)
 
     # Nitrate uptake
     NET_INFLUX_UPTAKE_RATIO = 0.6   #: ratio (net uptake : nitrate influx)
@@ -117,23 +118,26 @@ class RootsParameters(OrganParameters):
     A_LATS = 4.614E-09              #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (dimensionless)
     LAMBDA_LATS = 1.6517E-03        #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (m3 µmol-1 s-1)
 
+
     # Nitrate export
-    K_NITRATE_EXPORT = 1E-5         #: Relative rate of nitrate export from roots (s-1)
+    K_NITRATE_EXPORT = 1E-6         #: Relative rate of nitrate export from roots (s-1)
 
     # Amino acids
     VMAX_AMINO_ACIDS = 0.001        #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
     K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
-    K_AMINO_ACIDS_SUCROSE = 300     #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
-    K_AMINO_ACIDS_EXPORT = 2E-5     #: Relative rate of amino acids export from roots (s-1)
+    K_AMINO_ACIDS_SUCROSE = 350     #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
+    K_AMINO_ACIDS_EXPORT = 3E-5     #: Relative rate of amino acids export from roots (s-1)
 
     # Exudation
     C_EXUDATION = 0.20              #: Proportion of C exudated from C sucrose unloaded to roots (Keith et al., 1986)
 
     # Cytokinines
-    VMAX_S_CYTOKININES = 4E-4       #: Maximal rate of cytokinines synthesis (UA g-1 mstruct s-1)
-    K_S_CYTOKININES = 500           #: Affinity coefficient of cytokinines synthesis (UA g-1 mstruct)
-    DELTA_D_CYTOKININES = 4E-7      #: Relative degradation rate of cytokinines (s-1)
-    K_CYTOKININES_EXPORT = 2E-5     #: Relative rate of cytokinines export from roots (s-1)
+    VMAX_S_CYTOKININES = 4.5E-04    #: Maximal rate of cytokinins synthesis (UA g-1 mstruct s-1)
+    K_NITRATES_CYTOKININES = 200    #: Affinity coefficient of cytokinins synthesis for nitrates (µmol N nitrates g-1 mstruct)
+    K_SUCROSE_CYTOKININES = 1250    #: Affinity coefficient of cytokinins synthesis for sucrose (µmol C sucrose g-1 mstruct)
+    N_SUC_CYTOKININES = 10          #: A parameter for cytokinins synthesis (dimensionless)
+    N_NIT_CYTOKININES = 0.7         #: A parameter for cytokinins synthesis (dimensionless)
+    K_CYTOKININES_EXPORT = 2E-4     #: Relative rate of cytokinins export from roots (s-1)
 
 
 class PhotosyntheticOrganParameters(OrganParameters):
@@ -150,17 +154,15 @@ class PhotosyntheticOrganParameters(OrganParameters):
     DELTA_DSTARCH = 0.0001          #: Relative rate of starch degradation (s-1)
 
     # Fructans
-    VMAX_SFRUCTAN = 0.01#0.10            #: Maximal rate of fructan synthesis (µmol C s-1 g-1 MS)
+    VMAX_SFRUCTAN_POT = 0.015       #: Potential maximal rate of fructan synthesis (µmol C s-1 g-1 MS)
     K_SFRUCTAN = 5000               #: Affinity coefficient of fructan synthesis (µmol C g-1 MS)
-    N_SFRUCTAN = 2.5                #: Number of "substrates" for fructan synthesis (dimensionless)
-    #VMAX_REGUL_SFRUCTAN = 1         #: Maximal value of the regulation function of fructan synthesis (dimensionless)
-    K_REGUL_SFRUCTAN = 0.001#5            #: Affinity coefficient of the regulation function of fructan synthesis (µmol)
+    K_REGUL_SFRUCTAN = 0.001        #: Affinity coefficient of the regulation function of fructan synthesis (µmol g-1 MS)
     N_REGUL_SFRUCTAN = 3            #: Parameter of the regulation function of fructan synthesis (dimensionless)
     VMAX_DFRUCTAN = 0.035           #: Maximal rate of fructan degradation (µmol C s-1 g-1 MS)
     K_DFRUCTAN = 100                #: Affinity coefficient of fructan degradation (µmol C g-1 MS)
 
     # Loading sucrose and amino acids
-    SIGMA_SUCROSE = 2e-08#2e-08           #: Conductivity of an organ-phloem pathway (g2 µmol-1 m-2 s-1) ; used to compute the sucrose loaded to the phloem
+    SIGMA_SUCROSE = 1e-08           #: Conductivity of an organ-phloem pathway (g2 µmol-1 m-2 s-1) ; used to compute the sucrose loaded to the phloem
     SIGMA_AMINO_ACIDS = 1e-07       #: Conductivity of an organ-phloem pathway (g2 µmol-1 m-2 s-1) ; used to compute the amino acids loaded to the phloem
     BETA = 1                        #: Kind of volumetric mass density at power -2/3 ((g m-3)**(-2/3))
 
@@ -170,14 +172,14 @@ class PhotosyntheticOrganParameters(OrganParameters):
     K_AMINO_ACIDS_TRIOSESP = 0.2    #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
 
     # Proteins
-    VMAX_SPROTEINS = 0.002          #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
+    VMAX_SPROTEINS = 0.0015         #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
     K_SPROTEINS = 100               #: Affinity coefficient of protein synthesis (µmol N g-1 MS)
-    VMAX_DPROTEINS = 2E-6           #: Maximal rate of protein degradation (µmol g-1 mstruct s-1)
-    K_DPROTEINS = 25                #: Affinity coefficient with cytokinines for protein degradation (UA g-1 mstruct)
-    N_DPROTEINS = 7                 #: A coefficient for the regulation of protein degradation by cytokines (dimensionless)
+    VMAX_DPROTEINS = 2.5E-6         #: Maximal rate of protein degradation (µmol g-1 mstruct s-1)
+    K_DPROTEINS = 50                #: Affinity coefficient with cytokinins for protein degradation (UA g-1 mstruct)
+    N_DPROTEINS = 2.1               #: A coefficient for the regulation of protein degradation by cytokines (dimensionless)
 
-    # cytokinines
-    DELTA_D_CYTOKININES = 1.5E-5      #: Relative rate of cytokinines degradation (s-1)
+    # cytokinins
+    DELTA_D_CYTOKININES = 3.E-6     #: Relative rate of cytokinins degradation (s-1)
 
 class ChaffParameters(PhotosyntheticOrganParameters):
     """
@@ -260,4 +262,5 @@ class SoilParameters:
     """
     Internal parameters of soil.
     """
-    pass
+    CULM_DENSITY = 410                      # culms m-2
+    MINERALISATION_RATE = 2.05E-6           # Mineralisation rate (µmol N nitrates m-3 s-1)
