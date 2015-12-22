@@ -21,7 +21,7 @@ class RespirationModel(object):
 
     ### R_growth###
     YG = 0.80             # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
-    YG_GRAINS = 0.70             # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
+    YG_GRAINS = 0.71      # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
 
     ### R_phloem###
     CPHLOEM = 0.006       # Units C respired per unit C substrate loaded into the phloem
@@ -101,12 +101,7 @@ class RespirationModel(object):
         :Returns Type:
             :class:`float`
         """
-
-#        if sucrose >0:
         _R_phloem = max(0, cls.CPHLOEM * sucrose_loading * mstruct) #: Do not count a respiratory cost for negative loading i.e. unloading (assumed to be passive)
-##        else:
-##            _R_phloem = 0
-##            sucrose_loading = min(0, sucrose_loading)                   #: If sucrose is null, neither respiration nor sucrose loading occur. Unloading is maintained.
         return _R_phloem, sucrose_loading
 
     @classmethod

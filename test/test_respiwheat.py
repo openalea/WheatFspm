@@ -56,7 +56,7 @@ def test_calculate_respiwheat():
     actual_respirations['R_min_upt'] =  model.RespirationModel.R_min_upt(delta_BMstruct)
     actual_respirations['R_residual'] =  model.RespirationModel.R_residual(sucrose, mstruct, Ntot, delta_t, Ts)[0]
 
-    desired_respirations = {'R_growth' : 2.5, 'R_grain_growth_struct' : 4.29, 'R_grain_growth_starch' :  4.29, 'R_phloem' : 0.06, 'R_Namm' : 1.98, 'R_Nnit' : 3.97, 'R_Nnit_red_shoot' : 9.9,
+    desired_respirations = {'R_growth' : 2.5, 'R_grain_growth_struct' : 4.085, 'R_grain_growth_starch' :  4.085, 'R_phloem' : 0.06, 'R_Namm' : 1.98, 'R_Nnit' : 3.97, 'R_Nnit_red_shoot' : 9.9,
                             'R_Nnit_red_roots' : 19.8, 'R_N2fix' : 60, 'R_min_upt' : 1250, 'R_residual' : 0.00088}
 
     for R, desired_R in desired_respirations.iteritems():
