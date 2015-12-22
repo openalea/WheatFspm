@@ -47,7 +47,7 @@ class Model(object):
     #:         * Rdark25: µmol CO2 g-1 N s-1
     #:     * surfacic_nitrogen_min: minimum amount of nitrogen below which photosynthesis rate is zero (g (N) m-2)
     #:     * beta: intercept parameter of the relation between alpha and surfacic_nitrogen (mol e- mol-1 photons)
-    #:     * delta1 and delta2: parameters of m (scaling factor of gs) dependance to surfacic_nitrogen (m2 g-1 and dimensionless respectively)
+    #:     * delta1 and delta2: parameters of m (scaling factor of gs) dependance to surfacic_nitrogen (m2 g-1 and dimensionless, respectively)
 
     PARAM_N = {'S_surfacic_nitrogen': {'Vc_max25': 84.965, 'Jmax25': 117.6, 'alpha': 0.0413, 'TPU25': 9.25, 'Rdark25': 0.493}, 'surfacic_nitrogen_min': {'Vc_max25': 0.17, 'Jmax25': 0.17, 'TPU25': 0.229, 'Rdark25': 0.118},
                'beta': 0.2101, 'delta1': 14.7, 'delta2': -0.548}
@@ -83,6 +83,7 @@ class Model(object):
                   'Tref': 298.15, 'R': 8.3145E-03}
     KELVIN_DEGREE = 273.15                #: Conversion factor from degree C to Kelvin
 
+    EFFICENCY_STEM = 0.78
     DELTA_CONVERGENCE = 0.01 #: The relative delta for Ci and Ts convergence.
     
     N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
@@ -103,7 +104,7 @@ class Model(object):
             - `Ta` (:class:`float`) - air temperature (degree C)
             - `Ts` (:class:`float`) - organ temperature (degree C). Ts = Ta at the first iteration of the numeric resolution
             - `RH` (:class:`float`) - Relative humidity (decimal fraction)
-            - `organ_name` (:class:`string`) - organ name (used to distinguish lamina from cylindric organs)
+            - `organ_name` (:class:`string`) - name of the organ to which belongs the element (used to distinguish lamina from cylindric organs)
 
         :Returns:
             Ts (organ temperature, degree C), Tr (organ transpiration rate, mm s-1)
@@ -152,7 +153,6 @@ class Model(object):
         rbw = 0.96 * rbh                                                   #: Boundary layer resistance for water (s m-1)
         gsw_physic = (gsw * cls.R * (Ts+cls.KELVIN_DEGREE)) / cls.PATM   #: Stomatal conductance to water in physical units (m s-1). Relation given by A. Tuzet (2003)
         rswp = 1/gsw_physic                                                #: Stomatal resistance for water (s m-1)
-
         Tr = max(0, (s * Rn + (cls.RHOCP * VPDa)/(rbh + ra)) / (cls.LAMBDA * (s + cls.GAMMA*((rbw + ra + rswp)/(rbh + ra))))) # mm s-1
 
         #: Organ temperature
@@ -218,7 +218,7 @@ class Model(object):
         Tk = T + cls.KELVIN_DEGREE
         deltaHa = cls.PARAM_TEMP['deltaHa'][pname]                  #: Enthalpie of activation of parameter pname (kJ mol-1)
         Tref = cls.PARAM_TEMP['Tref']
-        R = cls.PARAM_TEMP['R']
+        R = cls.PARAM_TEMP['R'] # TODO: a modifier
 
         f_activation = exp((deltaHa * (Tk - Tref))/(R * Tref * Tk)) #: Energy of activation (normalized to unity)
 
@@ -292,10 +292,11 @@ class Model(object):
         Rd = Rdark * (0.33 + (1-0.33)*(0.5)**(PAR/15))                                      # Found in Muller et al. (2005), eq. 19 (µmol m-2 s-1)
 
         #: Net C assimilation (µmol m-2 s-1)
-        if Ag <= 0: # Occurs when Ci is lower than Gamma, in these cases there is no net assimilation (Farquhar, 1980; Caemmerer, 2000), so I set Ag = Rd
-            Ag = Rd
-        An = Ag - Rd
-
+        if Ag <= 0: # Occurs when Ci is lower than Gamma, in these cases there is no net assimilation (Farquhar, 1980; Caemmerer, 2000)
+            Ag, An = 0, 0
+        else:
+            An = Ag - Rd
+        
         return Ag, An, Rd
     
     
@@ -346,7 +347,7 @@ class Model(object):
             - `Ur` (:class:`float`) - Ur: wind at the reference height (zr) (m s-1), e.g. top of the canopy + 2m
                (in the case of wheat, Ur can be approximated as the wind speed at 2m from soil)
 
-            - `organ_name` (:class:`string`) - type of the organ (e.g. "blade", "sheath", etc.)
+            - `organ_name` (:class:`string`) - name of the organ to which belongs the element (used to distinguish lamina from cylindric organs)
 
         :Returns:
             Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1), Tr (mmol m-2 s-1), Ts (°C) and  gsw (mol m-2 s-1)
@@ -359,7 +360,7 @@ class Model(object):
             surfacic_nitrogen = cls.NA_0
 
         #: Organ parameters
-        H_CANOPY = 0.8                              #: m, temporary
+        H_CANOPY = 0.78                              #: m, temporary
 
         ### Iterations to find organ temperature and Ci ###
         Ci, Ts = 0.7*ambient_CO2, Ta # Initial values
@@ -384,15 +385,13 @@ class Model(object):
                 if abs((Ts - prec_Ts)/prec_Ts) >= cls.DELTA_CONVERGENCE:
                     print '{}, Ts cannot converge, prec_Ts= {}, Ts= {}'.format(organ_name, prec_Ts, Ts)
                 break
-                #Ci = cls._calculate_Ci(ambient_CO2, An, gsw)
 
             if abs((Ci - prec_Ci)/prec_Ci) < cls.DELTA_CONVERGENCE and abs((Ts - prec_Ts)/prec_Ts) < cls.DELTA_CONVERGENCE:
                 break
 
         #: Conversion of Tr from mm s-1 to mmol m-2 s-1 (more suitable for further use of Tr)
         Tr = (Tr * 1E6) / cls.MM_WATER # Using 1 mm = 1kg m-2
-
-        if organ_name != 'blade':
-            Ag = Ag*0.75
-            
+        #: Decrease efficency of non-lamina organs
+        if organ_name not in ('blade'):
+            Ag = Ag * cls.EFFICENCY_STEM
         return Ag, An, Rd, Tr, Ts, gsw
