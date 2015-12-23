@@ -11,7 +11,7 @@ from __future__ import division # use '//' to do integer division
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
-    
+
     .. seealso:: Barillot et al. 2015.
 """
 
@@ -31,9 +31,9 @@ class SenescenceModel(object):
 
     N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
     SENESCENCE_ROOTS = 3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997).
-    FRACTION_N_MAX = {'blade': 0.5, 'stem': 0.425}
+    FRACTION_N_MAX = {'blade': 0.5, 'stem': 0.425} # Threshold of ([proteins]/[proteins]max) below which tissue death is triggered
     SENESCENCE_MAX_RATE = 0.2E-8 # maximal senescence m² s-1
-    
+
     @classmethod
     def calculate_forced_relative_delta_green_area(cls, green_area_df, group_id, prev_green_area):
         """relative green_area variation due to senescence
@@ -64,16 +64,16 @@ class SenescenceModel(object):
             - `proteins` (:class:`float`) - protein concentration (µmol N proteins g-1 mstruct)
             - `max_proteins` (:class:`dict`) - a dictionnary where the maximal protein concentrations are stored by organ id
             - `delta_t` (:class:`float`) - value of the timestep (s)
-            - `update_max_protein` (:class:`bool`) - whether to update the max proteins or not. 
-        
+            - `update_max_protein` (:class:`bool`) - whether to update the max proteins or not.
+
         : Returns:
             new_green_area (m-2), relative_delta_green_area (dimensionless)
 
         :Returns Type:
             :class:`float`
-            
+
         .. todo:: remove update_max_protein
-        
+
         """
 
         if organ_name == 'blade':

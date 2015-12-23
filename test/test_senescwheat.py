@@ -10,7 +10,7 @@
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
-    
+
     .. seealso:: Barillot et al. 2015.
 """
 
@@ -61,7 +61,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
             del actual_data_df[column]
 
     # compare to the desired data
-    #np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
+    np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
 
 
 def test_run():
