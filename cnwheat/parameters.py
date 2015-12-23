@@ -131,13 +131,13 @@ class RootsParameters(OrganParameters):
     # Exudation
     C_EXUDATION = 0.20              #: Proportion of C exudated from C sucrose unloaded to roots (Keith et al., 1986)
 
-    # Cytokinines
-    VMAX_S_CYTOKININES = 4.5E-04    #: Maximal rate of cytokinins synthesis (UA g-1 mstruct s-1)
-    K_NITRATES_CYTOKININES = 200    #: Affinity coefficient of cytokinins synthesis for nitrates (µmol N nitrates g-1 mstruct)
-    K_SUCROSE_CYTOKININES = 1250    #: Affinity coefficient of cytokinins synthesis for sucrose (µmol C sucrose g-1 mstruct)
-    N_SUC_CYTOKININES = 10          #: A parameter for cytokinins synthesis (dimensionless)
-    N_NIT_CYTOKININES = 0.7         #: A parameter for cytokinins synthesis (dimensionless)
-    K_CYTOKININES_EXPORT = 2E-4     #: Relative rate of cytokinins export from roots (s-1)
+    # Cytokinins
+    VMAX_S_CYTOKININS = 4.5E-04     #: Maximal rate of cytokinins synthesis (UA g-1 mstruct s-1)
+    K_NITRATES_CYTOKININS = 200     #: Affinity coefficient of cytokinins synthesis for nitrates (µmol N nitrates g-1 mstruct)
+    K_SUCROSE_CYTOKININS = 1250     #: Affinity coefficient of cytokinins synthesis for sucrose (µmol C sucrose g-1 mstruct)
+    N_SUC_CYTOKININS = 10           #: A parameter for cytokinins synthesis (dimensionless)
+    N_NIT_CYTOKININS = 0.7          #: A parameter for cytokinins synthesis (dimensionless)
+    K_CYTOKININS_EXPORT = 2E-4      #: Relative rate of cytokinins export from roots (s-1)
 
 
 class PhotosyntheticOrganParameters(OrganParameters):
@@ -179,7 +179,7 @@ class PhotosyntheticOrganParameters(OrganParameters):
     N_DPROTEINS = 2.1               #: A coefficient for the regulation of protein degradation by cytokines (dimensionless)
 
     # cytokinins
-    DELTA_D_CYTOKININES = 3.E-6     #: Relative rate of cytokinins degradation (s-1)
+    DELTA_D_CYTOKININS = 3.E-6      #: Relative rate of cytokinins degradation (s-1)
 
 class ChaffParameters(PhotosyntheticOrganParameters):
     """
