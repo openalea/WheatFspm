@@ -1,2 +1,2 @@
-plant,axis,metamer,organ,element,starch,max_proteins,amino_acids,proteins,Nstruct,cytokinins,mstruct,fructan,green_area,sucrose
-1,MS,10,blade,LeafElement1,0.0,5000,6.26842105263,84.7315789474,0.000528326315789,3.48894736842,0.0498421052632,0.0,0.0022728,90.0
+plant,axis,metamer,organ,element,Nstruct,amino_acids,cytokinins,fructan,green_area,max_proteins,mstruct,proteins,starch,sucrose
+1,MS,10,blade,LeafElement1,0.0005283263157894736,6.268421052631579,3.488947368421053,0.0,0.0022727999999999997,5000,0.049842105263157896,84.73157894736842,0.0,90.0
