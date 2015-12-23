@@ -13,7 +13,7 @@ from __future__ import division # use '//' to do integer division
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
-    
+
     .. seealso:: Barillot et al. 2015.
 """
 
@@ -75,17 +75,15 @@ class Model(object):
     #:     * deltaHa, deltaHd: enthalpie of activation and deactivation respectively (kJ mol-1)
     #:     * deltaS: entropy term (kJ mol-1 K-1)
     #:     * Tref: reference temperature (K)
-    #:     * R: universal gas constant (kJ mol-1 K-1)
 
     PARAM_TEMP = {'deltaHa': {'Vc_max': 89.7, 'Jmax': 48.9, 'TPU': 47., 'Kc': 79.43, 'Ko': 36.38, 'Gamma': 35., 'Rdark': 46.39},
                   'deltaHd': {'Vc_max': 149.3, 'Jmax': 152.3, 'TPU': 152.3},
-                  'deltaS': {'Vc_max': 0.486, 'Jmax': 0.495, 'TPU': 0.495},
-                  'Tref': 298.15, 'R': 8.3145E-03}
+                  'deltaS': {'Vc_max': 0.486, 'Jmax': 0.495, 'TPU': 0.495}, 'Tref': 298.15}
     KELVIN_DEGREE = 273.15                #: Conversion factor from degree C to Kelvin
 
     EFFICENCY_STEM = 0.78
     DELTA_CONVERGENCE = 0.01 #: The relative delta for Ci and Ts convergence.
-    
+
     N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
 
     @classmethod
@@ -218,14 +216,13 @@ class Model(object):
         Tk = T + cls.KELVIN_DEGREE
         deltaHa = cls.PARAM_TEMP['deltaHa'][pname]                  #: Enthalpie of activation of parameter pname (kJ mol-1)
         Tref = cls.PARAM_TEMP['Tref']
-        R = cls.PARAM_TEMP['R'] # TODO: a modifier
 
-        f_activation = exp((deltaHa * (Tk - Tref))/(R * Tref * Tk)) #: Energy of activation (normalized to unity)
+        f_activation = exp((deltaHa * (Tk - Tref))/(cls.R*1E-3 * Tref * Tk)) #: Energy of activation (normalized to unity)
 
         if pname in ('Vc_max', 'Jmax', 'TPU'):
             deltaS = cls.PARAM_TEMP['deltaS'][pname]                #: entropy term of parameter pname (kJ mol-1 K-1)
             deltaHd = cls.PARAM_TEMP['deltaHd'][pname]              #: Enthalpie of deactivation of parameter pname (kJ mol-1)
-            f_deactivation = (1 + exp((Tref*deltaS - deltaHd) / (Tref*R))) / (1 + exp((Tk*deltaS - deltaHd) / (Tk*R))) #: Energy of deactivation (normalized to unity)
+            f_deactivation = (1 + exp((Tref*deltaS - deltaHd) / (Tref*cls.R*1E-3))) / (1 + exp((Tk*deltaS - deltaHd) / (Tk*cls.R*1E-3))) #: Energy of deactivation (normalized to unity)
         else:
             f_deactivation = 1
 
@@ -296,10 +293,10 @@ class Model(object):
             Ag, An = 0, 0
         else:
             An = Ag - Rd
-        
+
         return Ag, An, Rd
-    
-    
+
+
     @classmethod
     def calculate_surfacic_nitrogen(cls, nitrates, amino_acids, proteins, Nstruct, green_area):
         """Surfacic content of nitrogen
