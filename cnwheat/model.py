@@ -457,8 +457,8 @@ class Roots(Organ):
         super(Roots, self).__init__(label)
 
         # state parameters
-        self.mstruct_C_growth = mstruct_C_growth #: Growth of root structural dry mass (µmol C)
-        self.Nstruct_N_growth = Nstruct_N_growth #: Growth of root structural N mass (µmol N)
+        self.mstruct_C_growth = mstruct_C_growth #: Growth rate of root structural dry mass (µmol C s-1)
+        self.Nstruct_N_growth = Nstruct_N_growth #: Growth rate of root structural N mass (µmol N s-1)
 
         # state variables
         self.mstruct = mstruct                 #: Structural mass (g)
@@ -695,6 +695,19 @@ class Roots(Organ):
             N_exudated = (amino_acids_roots/sucrose_roots) * C_exudated
         return C_exudated, N_exudated
 
+    def calculate_mstruct_growth_cost(self, mstruct_C_growth, Nstruct_N_growth, delta_t):
+        """Integrate over delta t the consumption of C and N for the growth of root mstruct
+
+        :Parameters:
+            - `mstruct_C_growth` (:class:`float`) - rate of C consumption for the growth of root mstruct (µmol C s-1)
+            - `Nstruct_N_growth` (:class:`float`) - rate of N consumption for the growth of root mstruct (µmol N s-1)
+        :Returns:
+            total_mstruct_C_growth, total_mstruct_N_growth (µmol C, µmol N)
+        :Returns Type:
+            :class:`float`
+        """
+        return mstruct_C_growth * delta_t, Nstruct_N_growth * delta_t
+
     def calculate_s_cytokinins(self, sucrose_roots, nitrates_roots, delta_t):
         """ Rate of cytokinin synthesis integrated over delta_t (AU cytokinins g-1 mstruct s-1 * delta_t).
         Cytokinin synthesis regulated by both root sucrose and nitrates. As a signal molecule, cytokinins are assumed have a neglected effect on sucrose. Thus, no cost in C is applied to the sucrose pool.
@@ -736,13 +749,13 @@ class Roots(Organ):
 
     # COMPARTMENTS
 
-    def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids, mstruct_C_growth, C_exudated, sum_respi):
+    def calculate_sucrose_derivative(self, unloading_sucrose, s_amino_acids, mstruct_C_growth_tot, C_exudated, sum_respi):
         """delta root sucrose.
 
         :Parameters:
             - `unloading_sucrose` (:class:`float`) - Sucrose unloading (µmol C g-1 mstruct)
             - `s_amino_acids` (:class:`float`) - Amino acids synthesis (µmol N g-1 mstruct)
-            - `mstruct_C_growth` (:class:`float`) - Growth of root structural dry mass (µmol C)
+            - `mstruct_C_growth_tot` (:class:`float`) - Growth of root structural dry mass integrated over delta t (µmol C)
             - `C_exudated` (:class:`float`) - C exudation (µmol C g-1 mstruct)
             - `sum_respi` (:class:`float`) - Sum of respirations for roots i.e. related to N uptake, amino acids synthesis, mstruct growth and residual (µmol C)
         :Returns:
@@ -751,7 +764,7 @@ class Roots(Organ):
             :class:`float`
         """
         sucrose_consumption_AA = (s_amino_acids / Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) * Organ.PARAMETERS.AMINO_ACIDS_C_RATIO      #: Contribution of sucrose to the synthesis of amino_acids
-        return (unloading_sucrose - sucrose_consumption_AA - C_exudated) * self.mstruct - sum_respi - mstruct_C_growth
+        return (unloading_sucrose - sucrose_consumption_AA - C_exudated) * self.mstruct - sum_respi - mstruct_C_growth_tot
 
     def calculate_nitrates_derivative(self, uptake_nitrates, export_nitrates, s_amino_acids):
         """delta root nitrates.
@@ -769,21 +782,21 @@ class Roots(Organ):
         nitrate_reduction_AA = s_amino_acids                                                                                        #: Contribution of nitrates to the synthesis of amino_acids
         return import_nitrates_roots - export_nitrates - nitrate_reduction_AA*self.mstruct
 
-    def calculate_amino_acids_derivative(self, unloading_amino_acids, s_amino_acids, export_amino_acids, Nstruct_N_growth, N_exudated):
+    def calculate_amino_acids_derivative(self, unloading_amino_acids, s_amino_acids, export_amino_acids, Nstruct_N_growth_tot, N_exudated):
         """delta root amino acids.
 
         :Parameters:
             - `unloading_amino_acids` (:class:`float`) - Amino acids unloading (µmol N g-1 mstruct)
             - `s_amino_acids` (:class:`float`) - Amino acids synthesis (µmol N g-1 mstruct)
             - `export_amino_acids` (:class:`float`) - Export of amino acids (µmol N)
-            - `Nstruct_N_growth` (:class:`float`) - Growth of root structural N mass (µmol N)
+            - `Nstruct_N_growth_tot` (:class:`float`) - Growth of root structural N mass integrated over delta t (µmol N)
             - `N_exudated` (:class:`float`) - N exudated (µmol g-1 mstruct)
         :Returns:
             delta root amino acids (µmol N amino acids)
         :Returns Type:
             :class:`float`
         """
-        return (unloading_amino_acids + s_amino_acids- N_exudated)*self.mstruct - export_amino_acids - Nstruct_N_growth
+        return (unloading_amino_acids + s_amino_acids- N_exudated)*self.mstruct - export_amino_acids - Nstruct_N_growth_tot
 
     def calculate_cytokinins_derivative(self, s_cytokinins, export_cytokinins):
         """delta root cytokinins.

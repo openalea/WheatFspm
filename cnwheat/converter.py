@@ -175,8 +175,6 @@ def from_dataframes(plants_inputs=None, axes_inputs=None, metamers_inputs=None, 
                                 continue
                             element_inputs = element_inputs.loc[:, simulation.Simulation.ELEMENTS_STATE]
                             element_dict = element_inputs.loc[element_inputs.first_valid_index()].to_dict()
-                            if element_dict['green_area'] == 0.0:
-                                continue
                             # create a new element
                             element = phytomer_attribute_element_class(mtg_element_label, **element_dict)
                             setattr(organ, cnwheat_element_name, element)
@@ -473,9 +471,6 @@ def from_MTG(g, organs_inputs, elements_inputs):
                                     else:
                                         is_valid_element = False
                                         break
-                                if element_input_name == 'green_area' and element_inputs[element_input_name] == 0.0:
-                                    is_valid_element = False
-                                    break
                             if is_valid_element:
                                 has_valid_element = True
                                 element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[organ_class](element_label, **element_inputs)
