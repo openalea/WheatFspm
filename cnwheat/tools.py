@@ -345,9 +345,60 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
             del actual_data_df[column]
 
     # compare to the desired data
-    # actual_data_df = actual_data_df.astype(np.float)
+    #actual_data_df = actual_data_df.astype(np.float)
     np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
 
+
+def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
+    from alinea.adel.mtg import to_plantgl
+    from openalea.plantgl.all import Viewer,Vector3
+
+    def color_map(N):
+        if 0 <= N <= 0.5: # TODO: organe senescent (prendre prop)
+            color_map = [150, 100, 0]
+        elif 0.5 < N < 5: # Fvertes
+            color_map = [int(255 - N*51), int(255 - N*20), 50]
+        else:
+            color_map = [0,155,0]
+        return color_map
+
+    def calculate_total_organic_nitrogen(amino_acids, proteins, Nstruct):
+        """Total amount of organic N (amino acids + proteins + Nstruct).
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
+            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
+            - `Nstruct` (:class:`float`) - Structural N mass (g)
+        :Returns:
+            Total amount of organic N (mg)
+        :Returns Type:
+            :class:`float`
+        """
+        return (amino_acids + proteins)*14E-3 + Nstruct*1E3
+
+    colors = {}
+
+    groups_df = df.groupby(['plant', 'axis', 'metamer', 'organ', 'element'])
+    for vid in g.components_at_scale(g.root, scale=5):
+        pid = int(g.index(g.complex_at_scale(vid, scale =1)))
+        axid = g.property('label')[g.complex_at_scale(vid, scale =2)]
+        mid = int(g.index(g.complex_at_scale(vid, scale =3)))
+        org = g.property('label')[g.complex_at_scale(vid, scale =4)]
+        elid = g.property('label')[vid]
+        id_map = (pid, axid, mid, org, elid)
+        if groups_df.groups.has_key(id_map):
+            N = (g.property('proteins')[vid]*14E-3) / groups_df.get_group(id_map)['mstruct'].iloc[0]
+            #N = (calculate_total_organic_nitrogen(g.property('amino_acids')[vid], g.property('proteins')[vid], g.property('Nstruct')[vid])) / g.property('mstruct')[vid]
+            colors[vid] = color_map(N)
+        else:
+            g.property('geometry')[vid] = None
+
+    # plantgl
+    s = to_plantgl(g, colors=colors)[0]
+    Viewer.add(s)
+    Viewer.camera.setPosition(Vector3(83.883,12.3239,93.4706))
+    Viewer.camera.lookAt(Vector3(0.,0,50))
+    Viewer.saveSnapshot(os.path.join(SCREENSHOT_DIRPATH, 'Day_{}.png'.format(t/24+1)))
 
 class ProgressBarError(Exception): pass
 
