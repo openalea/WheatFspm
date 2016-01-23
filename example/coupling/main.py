@@ -134,7 +134,6 @@ elements_inputs_ouputs_df.loc[:, cnwheat_simulation.Simulation.ELEMENTS_INPUTS_I
 
 # run the simulators
 for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
-    print 'run senescwheat at', t_senescwheat
     # initialize and run senescwheat, and update the global mtg
     senescwheat_simulation_.initialize(senescwheat_converter.from_MTG(g, senescwheat_roots_inputs_df, senescwheat_elements_inputs_df))
     senescwheat_simulation_.run()
@@ -148,8 +147,6 @@ for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
     elements_inputs_ouputs_df.loc[:, senescwheat_converter.SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS] = senescwheat_elements_inputs_outputs_df.loc[:, senescwheat_converter.SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS].values
 
     for t_farquharwheat in xrange(t_senescwheat, t_senescwheat + senescwheat_ts, farquharwheat_ts):
-
-        print 'run farquharwheat at', t_farquharwheat
         # get the meteo of the current step
         Ta, ambient_CO2, RH, Ur, PARi = meteo_df.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
         # initialize and run farquharwheat, and update the global mtg
@@ -163,8 +160,6 @@ for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
         elements_inputs_ouputs_df.loc[:, farquharwheat_converter.FARQUHARWHEAT_INPUTS_OUTPUTS] = farquharwheat_inputs_outputs_df.loc[:, farquharwheat_converter.FARQUHARWHEAT_INPUTS_OUTPUTS].values
 
         for t_cnwheat in xrange(t_farquharwheat, t_farquharwheat + farquharwheat_ts, cnwheat_ts):
-
-            print 'run cnwheat at', t_cnwheat
             # initialize and run cnwheat, and update the global mtg
             cnwheat_simulation_.initialize(cnwheat_converter.from_MTG(g, cnwheat_organs_inputs_df, cnwheat_elements_inputs_df),
                                            cnwheat_converter.from_dataframes(soils_inputs=cnwheat_soils_inputs_df))
@@ -217,4 +212,3 @@ global_soils_df.to_csv(SOILS_INPUTS_OUTPUTS_FILEPATH, na_rep='NA', index=False, 
 
 execution_time = int(time.time() - current_time_of_the_system)
 print '\n', 'Model executed in ', str(datetime.timedelta(seconds=execution_time))
-
