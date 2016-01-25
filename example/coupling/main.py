@@ -176,7 +176,8 @@ for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
             # fill the global dataframes for post-processings
             axes_inputs_ouputs_df = cnwheat_axes_postprocessing_df.loc[cnwheat_axes_postprocessing_df.t == t_cnwheat, :].reset_index(drop=True)
             cnwheat_organs_postprocessing_df = cnwheat_organs_postprocessing_df.loc[cnwheat_organs_postprocessing_df.t == t_cnwheat, :].reset_index(drop=True)
-            organs_inputs_ouputs_df.loc[organs_inputs_ouputs_df.organ.isin(cnwheat_converter.MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING), cnwheat_simulation.Simulation.ORGANS_ALL_VARIABLES] = cnwheat_organs_postprocessing_df.loc[:, cnwheat_simulation.Simulation.ORGANS_ALL_VARIABLES].values
+            cnwheat_organs_postprocessing_df.index = organs_inputs_ouputs_df.loc[organs_inputs_ouputs_df.organ.isin(cnwheat_converter.MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING)].index
+            organs_inputs_ouputs_df.update(cnwheat_organs_postprocessing_df.loc[:, cnwheat_simulation.Simulation.ORGANS_ALL_VARIABLES])
             organs_inputs_ouputs_df.loc[:, cnwheat_simulation.Simulation.T_INDEX] = t_cnwheat
             cnwheat_elements_postprocessing_df = cnwheat_elements_postprocessing_df.loc[cnwheat_elements_postprocessing_df.t == t_cnwheat, :].reset_index(drop=True)
             elements_inputs_ouputs_df = cnwheat_elements_postprocessing_df.combine_first(elements_inputs_ouputs_df)
