@@ -106,7 +106,7 @@ class Axis(object):
             phytomer.calculate_integrative_variables()
 
 
-class Phytomer(object):
+class Phytomer(object): #: TODO: mettre a jour la doc
     """
     The class :class:`Phytomer` defines the CN exchanges at the phytomers scale.
 
@@ -118,13 +118,14 @@ class Phytomer(object):
 
     PARAMETERS = parameters.PhytomerParameters #: the internal parameters of the phytomers
 
-    def __init__(self, index=None, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None):
+    def __init__(self, index=None, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None, hiddengrowingzone=None):
         self.index = index #: the index of the phytomer
         self.chaff = chaff #: the chaff
         self.peduncle = peduncle #: the peduncle
         self.lamina = lamina #: the lamina
         self.internode = internode #: the internode
         self.sheath = sheath #: the sheath
+        self.hiddengrowingzone = hiddengrowingzone #: the hidden growing zone
 
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the phytomer recursively.
@@ -163,13 +164,232 @@ class Organ(object):
         """
         pass
 
+class HiddenGrowingZone(Organ):
+    """
+    The class :class:`HiddenGrowingZone` defines the CN exchanges in the hidden growing zone.
+    """
+
+    PARAMETERS = parameters.HiddenGrowingZoneParameters #: the internal parameters of the hidden growing zone
+
+    def __init__(self, label=None, sucrose=None, fructan=None, mstruct=None, amino_acids=None, proteins=None):
+
+        super(HiddenGrowingZone, self).__init__(label)
+
+        # state variables
+        self.sucrose = sucrose                       #: µmol C
+        self.fructan = fructan                       #: µmol C
+        self.mstruct = mstruct                       #: g of CN # TODO: homogeniser avec mstruct reste modele
+        self.amino_acids = amino_acids               #: µmol N
+        self.proteins = proteins                     #: µmol N
+
+        # FLUX PHLOEME?
+
+    # variables
+    def calculate_conc_sucrose(self, sucrose, mstruct):
+        """Sucrose concentration (µmol C sucrose g-1 mstruct)
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - C sucrose (µmol C)
+            - `mstruct` (:class:`float`) - Structural mass (g)
+        :Returns:
+            Sucrose concentration (µmol C g-1)
+        :Returns Type:
+            :class:`float`
+        """
+        return sucrose/mstruct
+
+    def calculate_conc_amino_acids(self, amino_acids, mstruct):
+        """Amino acid concentration (µmol N amino acids g-1 mstruct)
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - N amino acids (µmol N)
+            - `mstruct` (:class:`float`) - Structural mass (g)
+        :Returns:
+            Amino acid concentration (µmol N g-1)
+        :Returns Type:
+            :class:`float`
+        """
+        return amino_acids/mstruct
+
+    def calculate_conc_fructan(self, fructan, mstruct):
+        """Fructan concentration (µmol C fructan g-1 mstruct)
+
+        :Parameters:
+            - `fructan` (:class:`float`) - C fructan (µmol C)
+            - `mstruct` (:class:`float`) - Structural mass (g)
+        :Returns:
+            Fructan concentration (µmol C g-1)
+        :Returns Type:
+            :class:`float`
+        """
+        return fructan/mstruct
+
+    def calculate_conc_protein(self, proteins, mstruct):
+        """Proteins concentration (µmol N amino acids g-1 mstruct)
+
+        :Parameters:
+            - `proteins` (:class:`float`) - N proteins (µmol N)
+            - `mstruct` (:class:`float`) - Structural mass (g)
+        :Returns:
+            Proteins concentration (µmol N g-1)
+        :Returns Type:
+            :class:`float`
+        """
+        return proteins/mstruct
+
+    def Regul_Sfructanes(self, Unloading_Csuc_phlo):
+        return (parameters.HiddenGrowingZoneParameters.Vmax_Regul_Sfructans*parameters.HiddenGrowingZoneParameters.K_Regul_Sfructans**parameters.HiddenGrowingZoneParameters.n_Regul_Sfructans)/(parameters.HiddenGrowingZoneParameters.K_Regul_Sfructans**parameters.HiddenGrowingZoneParameters.n_Regul_Sfructans + (max(0,(-Unloading_Csuc_phlo))**parameters.HiddenGrowingZoneParameters.n_Regul_Sfructans))
+
+    # fluxes
+    def calculate_unloading_sucrose(self, conc_sucrose_hidden_growing_zone, conc_sucrose_phloem, delta_t):
+        """Sucrose unloading from phloem to the hidden growing zone integrated over delta_t (µmol C sucrose unloaded g-1 mstruct s-1 * delta_t).
+        Transport-resistance equation
+
+        :Parameters:
+            - `conc_sucrose_hidden_growing_zone` (:class:`float`) - Sucrose concentration in the hidden growing zone (µmol C g-1 mstruct)
+            - `conc_sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
+        :Returns:
+            Sucrose unloading (µmol C)
+        :Returns Type:
+            :class:`float`
+        """
+        conductance = parameters.HiddenGrowingZoneParameters.SIGMA * parameters.PhotosyntheticOrganParameters.BETA * self.mstruct**(2/3)
+        return (conc_sucrose_phloem - conc_sucrose_hidden_growing_zone) * conductance * delta_t
+
+    def calculate_unloading_amino_acids(self, conc_amino_acids_hidden_growing_zone, conc_amino_acids_phloem, delta_t):
+        """Amino acids unloading from phloem to the hidden growing zone integrated over delta_t (µmol N amino acids unloaded g-1 mstruct s-1 * delta_t).
+        Transport-resistance equation
+
+        :Parameters:
+            - `conc_amino_acids_hidden_growing_zone` (:class:`float`) - Amino_acids concentration in the hidden growing zone (µmol N g-1 mstruct)
+            - `conc_amino_acids_phloem` (:class:`float`) - Amino_acids concentration in phloem (µmol N g-1 mstruct)
+        :Returns:
+            Amino_acids unloading (µmol N)
+        :Returns Type:
+            :class:`float`
+        """
+        conductance = parameters.HiddenGrowingZoneParameters.SIGMA * parameters.PhotosyntheticOrganParameters.BETA * self.mstruct**(2/3)
+        return (conc_amino_acids_phloem - conc_amino_acids_hidden_growing_zone) * conductance * delta_t
+
+    def calculate_s_fructan(self, conc_sucrose, Regul_Sfructanes_gaine, delta_t):
+        """Rate of fructan synthesis (µmol C fructan g-1 mstruct s-1 * delta_t).
+        Sigmoïdal function of sucrose.
+
+        :Parameters:
+            - `conc_sucrose` (:class:`float`) - Sucrose concentration in the hidden growing zone (µmol C g-1 mstruct)
+            - `Regul_Sfructanes_gaine` (:class:`float`) - TODO
+        :Returns:
+            Fructan synthesis (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        return (((max(0, conc_sucrose)) ** parameters.PhotosyntheticOrganParameters.N_REGUL_SFRUCTAN) * parameters.HiddenGrowingZoneParameters.Vmax_Sfructans)/ ( (max(0, conc_sucrose)) ** parameters.PhotosyntheticOrganParameters.N_REGUL_SFRUCTAN + parameters.PhotosyntheticOrganParameters.K_SFRUCTAN**parameters.PhotosyntheticOrganParameters.N_REGUL_SFRUCTAN) * delta_t * Regul_Sfructanes_gaine
+
+    def calculate_d_fructan(self, conc_sucrose, conc_fructan, delta_t):
+        """Rate of fructan degradation (µmol C fructan g-1 mstruct s-1 * delta_t).
+        Inhibition function by the end product i.e. sucrose (Bancal et al., 2012).
+
+        :Parameters:
+            - `conc_sucrose` (:class:`float`) - Sucrose concentration in the hidden growing zone (µmol C g-1 mstruct)
+            - `conc_fructan` (:class:`float`) - Fructan concentration in the hidden growing zone (µmol C g-1 mstruct)
+        :Returns:
+            Fructan degradation (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        fc = (conc_fructan / (conc_fructan + 1))**2
+        D_fructan_pot = ((parameters.PhotosyntheticOrganParameters.K_DFRUCTAN * parameters.PhotosyntheticOrganParameters.VMAX_DFRUCTAN)/(conc_sucrose + parameters.PhotosyntheticOrganParameters.K_DFRUCTAN)) * delta_t * fc
+        return D_fructan_pot
+
+    def calculate_s_proteins(self, conc_amino_acids,delta_t):
+        """Rate of protein synthesis (µmol N proteins s-1 g-1 MS * delta_t).
+        Michaelis-Menten function of amino acids.
+
+        :Parameters:
+            - `conc_amino_acids` (:class:`float`) - Amino acid concentration in the hidden growing zone (µmol N g-1 mstruct).
+        :Returns:
+            Protein synthesis (µmol N g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        return (parameters.PhotosyntheticOrganParameters.VMAX_SPROTEINS*max(0,conc_amino_acids))/(parameters.PhotosyntheticOrganParameters.K_SPROTEINS + max(0, conc_amino_acids)) * delta_t
+
+    def calculate_d_proteins(self, conc_proteins, delta_t):
+        """Rate of protein degradation (µmol N proteins s-1 g-1 MS * delta_t).
+        First order kinetic
+
+        :Parameters:
+            - `conc_proteins` (:class:`float`) - Protein concentration in the hidden growing zone (µmol N g-1 mstruct).
+        :Returns:
+            Protein degradation (µmol N g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        return max(0,(parameters.HiddenGrowingZoneParameters.delta_Dproteins * conc_proteins)) * delta_t
+
+    # compartments
+    def calculate_sucrose_derivative(self, unloading_sucrose, s_fructan, d_fructan, hgz_loading_sucrose_contribution):
+        """delta sucrose of hidden growing zone.
+
+        :Parameters:
+            - `unloading_sucrose` (:class:`float`) - Sucrose unloaded (µmol C)
+            - `s_fructan` (:class:`float`) - Fructan synthesis (µmol C g-1 mstruct)
+            - `d_fructan` (:class:`float`) - Fructan degradation (µmol C g-1 mstruct)
+            - `hgz_loading_sucrose_contribution` (:class:`float`) - Sucrose imported from the emerged lamina (µmol C)
+        :Returns:
+            delta sucrose (µmol C sucrose)
+        :Returns Type:
+            :class:`float`
+        """
+        return unloading_sucrose  + (d_fructan - s_fructan) * self.mstruct + hgz_loading_sucrose_contribution
+
+    def calculate_amino_acids_derivative(self, unloading_amino_acids, s_proteins, d_proteins, hgz_loading_amino_acids_contribution):
+        """delta amino acids of hidden growing zone.
+
+        :Parameters:
+            - `unloading_amino_acids` (:class:`float`) - Amino acids unloaded (µmol N)
+            - `s_proteins` (:class:`float`) - Protein synthesis (µmol N g-1 mstruct)
+            - `d_proteins` (:class:`float`) - Protein degradation (µmol N g-1 mstruct)
+            - `hgz_loading_amino_acids_contribution` (:class:`float`) - Amino acids imported from the emerged lamina (µmol N)
+        :Returns:
+            delta amino acids (µmol N amino acids)
+        :Returns Type:
+            :class:`float`
+        """
+        return unloading_amino_acids + (d_proteins - s_proteins) * self.mstruct + hgz_loading_amino_acids_contribution
+
+    def calculate_fructan_derivative(self, s_fructan, d_fructan):
+        """delta fructans of hidden growing zone.
+
+        :Parameters:
+            - `s_fructan` (:class:`float`) - Fructans synthesis (µmol C g-1 mstruct)
+            - `d_fructan` (:class:`float`) - Fructans degradation (µmol C g-1 mstruct)
+        :Returns:
+            delta fructans (µmol C fructans)
+        :Returns Type:
+            :class:`float`
+        """
+        return (s_fructan - d_fructan) * self.mstruct
+
+    def calculate_proteins_derivative(self, s_proteins, d_proteins):
+        """delta proteins of hidden growing zone.
+
+        :Parameters:
+            - `s_proteins` (:class:`float`) - Protein synthesis (µmol N g-1 mstruct)
+            - `d_proteins` (:class:`float`) - Protein degradation (µmol N g-1 mstruct)
+        :Returns:
+            delta proteins (µmol N proteins)
+        :Returns Type:
+            :class:`float`
+        """
+        return (s_proteins - d_proteins) * self.mstruct
 
 class Phloem(Organ):
     """
     The class :class:`Phloem` defines the CN exchanges in a phloem.
     """
 
-    PARAMETERS = parameters.PhloemParameters #: the internal parameters of the phloems
+    PARAMETERS = parameters.PhloemParameters #: the internal parameters of the phloem
 
     def __init__(self, label=None, sucrose=None, amino_acids=None):
 
@@ -226,6 +446,8 @@ class Phloem(Organ):
                 sucrose_derivative -= contributor.s_grain_structure + (contributor.s_grain_starch * contributor.structural_dry_mass)
             elif isinstance(contributor, Roots):
                 sucrose_derivative -= contributor.unloading_sucrose * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
+            elif isinstance(contributor, HiddenGrowingZone):
+                sucrose_derivative -= contributor.unloading_sucrose
 
         return sucrose_derivative
 
@@ -247,8 +469,10 @@ class Phloem(Organ):
                 amino_acids_derivative -= contributor.s_proteins
             elif isinstance(contributor, Roots):
                 amino_acids_derivative -= contributor.unloading_amino_acids * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
-        return amino_acids_derivative
+            elif isinstance(contributor, HiddenGrowingZone):
+                amino_acids_derivative -= contributor.unloading_amino_acids
 
+        return amino_acids_derivative
 
 class Grains(Organ):
     """
@@ -909,19 +1133,20 @@ class PhotosyntheticOrganElement(object):
 
     def __init__(self, label=None, green_area=None, mstruct=None, Nstruct=None, triosesP=None, starch=None,
                  sucrose=None, fructan=None, nitrates=None, amino_acids=None, proteins=None, cytokinins=None,
-                 Tr=None, Ag=None, Ts=None):
+                 Tr=None, Ag=None, Ts=None, is_growing=None):
 
         self.label = label #: the label of the element
 
         # state parameters
+        self.mstruct = mstruct               #: Structural dry mass (g)
+        self.Nstruct = Nstruct               #: Structural N mass (g)
+        self.is_growing = is_growing
         self.green_area = green_area         #: green area (m-2)
         self.Tr = Tr                         #: Transpiration rate (mmol m-2 s-1)
         self.Ag = Ag                         #: Gross assimilation (µmol m-2 s-1)
         self.Ts = Ts                         #: Organ temperature (°C)
 
         # state variables
-        self.mstruct = mstruct               #: Structural dry mass (g)
-        self.Nstruct = Nstruct               #: Structural N mass (g)
         self.triosesP = triosesP             #: µmol C
         self.starch = starch                 #: µmol C
         self.sucrose = sucrose               #: µmol C
@@ -929,7 +1154,7 @@ class PhotosyntheticOrganElement(object):
         self.nitrates = nitrates             #: µmol N
         self.amino_acids = amino_acids       #: µmol N
         self.proteins = proteins             #: µmol N
-        self.cytokinins = cytokinins       #: AU
+        self.cytokinins = cytokinins         #: AU
 
         # fluxes to phloem
         self.loading_sucrose = None          #: current rate of sucrose loading to phloem
@@ -1153,14 +1378,37 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
+        conc_sucrose_element = sucrose / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        conc_sucrose_phloem  = sucrose_phloem / (PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS * parameters.OrganParameters.ALPHA_AXIS)
         #: Driving compartment (µmol C g-1 mstruct)
-        driving_sucrose_compartment = max(sucrose / (self.mstruct*self.__class__.PARAMETERS.ALPHA), sucrose_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS))
+        driving_sucrose_compartment = max(conc_sucrose_element, conc_sucrose_phloem)
         #: Gradient of sucrose between the element and the phloem (µmol C g-1 mstruct)
-        diff_sucrose = sucrose/(self.mstruct*self.__class__.PARAMETERS.ALPHA) - sucrose_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS)
+        diff_sucrose = conc_sucrose_element - conc_sucrose_phloem
         #: Conductance depending on mstruct (g2 µmol-1 s-1)
         conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_SUCROSE * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
 
         return driving_sucrose_compartment * diff_sucrose * conductance * delta_t
+
+    def calculate_export_sucrose(self, sucrose, conc_sucrose_hgz, delta_t):
+        """Rate of sucrose exportation to hidden growing zone (µmol C sucrose s-1 * delta_t).
+        Transport-resistance model.
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - Amount of sucrose in the element (µmol C)
+            - `conc_sucrose_hgz` (:class:`float`) - Sucrose concentration in the hidden growing zone (µmol C g-1 mstruct)
+        :Returns:
+            Sucrose export (µmol C)
+        :Returns Type:
+            :class:`float`
+        """
+        conc_sucrose_element = sucrose / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        #: Gradient of sucrose between the element and the hidden growing zone (µmol C g-1 mstruct)
+        diff_sucrose = conc_sucrose_element - conc_sucrose_hgz
+        #: Conductance depending on mstruct
+        conductance = HiddenGrowingZone.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
+
+        return diff_sucrose * conductance * delta_t
+
 
     def calculate_s_fructan(self, sucrose, regul_s_fructan, delta_t):
         """Rate of fructan synthesis (µmol C fructan g-1 mstruct s-1 * delta_t).
@@ -1302,7 +1550,26 @@ class PhotosyntheticOrganElement(object):
 
         return driving_amino_acids_compartment * diff_amino_acids * conductance * delta_t
 
-    # test
+    def calculate_export_amino_acids(self, amino_acids, conc_amino_acids_hgz, delta_t):
+        """Rate of amino acids exportation to hidden growing zone (µmol N amino acids s-1 * delta_t).
+        Transport-resistance model.
+
+        :Parameters:
+            - `amino_acids` (:class:`float`) - Amount of amino acids in the element (µmol N)
+            - `conc_amino_acids_hgz` (:class:`float`) - Amino acids concentration in the hidden growing zone (µmol N g-1 mstruct)
+        :Returns:
+            Amino acids export (µmol N)
+        :Returns Type:
+            :class:`float`
+        """
+        conc_amino_acids_element = amino_acids / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        #: Gradient of amino acids between the element and the hidden growing zone (µmol N g-1 mstruct)
+        diff_amino_acids = conc_amino_acids_element - conc_amino_acids_hgz
+        #: Conductance depending on mstruct
+        conductance = HiddenGrowingZone.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
+
+        return diff_amino_acids * conductance * delta_t
+
     def calculate_cytokinins_import(self, roots_exported_cytokinins, element_transpiration, total_transpiration):
         """Import of cytokinins (AU cytokinins integrated over delta_t).
         Cytokinin exported by roots are distributed according to the contribution of the element to culm transpiration.
@@ -1466,7 +1733,6 @@ class LaminaElement(PhotosyntheticOrganElement):
     """
 
     PARAMETERS = parameters.LaminaElementParameters #: the internal parameters of the laminae elements
-
 
 class InternodeElement(PhotosyntheticOrganElement):
     """

@@ -1,0 +1,4 @@
+plant,axis,metamer,leaf_is_growing,leaf_L,leaf_Lmax,leaf_Lem_prev,leaf_Lem,lamina_Lmax,sheath_Lmax,leaf_Lwmax,leaf_Wmax,leaf_Wlig,leaf_SSLW,t_prev_leaf_emerged,leaf_is_emerged,sucrose,amino_acids,conc_fructan_em_prev,fructan,mstruct,proteins
+1,MS,11,True,46.63625166,135,1,46,118.226,16.774,61.4777,7.89356,4.73614,2.76E-05,100,True,10,1.5,2500,0.15,5.00E-03,0.5
+1,MS,12,True,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,False,0.03,0.003,NA,0.03,1.30E-05,150
+1,MS,13,True,0.04,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,False,0.001,0.0002,NA,0,6.39E-08,0

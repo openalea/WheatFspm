@@ -52,8 +52,9 @@ class Simulation(object):
                                 model.Axis: [],
                                 model.Phytomer: [],
                                 model.Organ: ['sucrose', 'amino_acids', 'nitrates', 'structure', 'starch', 'proteins', 'mstruct', 'Nstruct', 'cytokinins'],
+                                model.HiddenGrowingZone: ['sucrose', 'fructan', 'mstruct', 'amino_acids', 'proteins'],
                                 model.PhotosyntheticOrganElement: ['nitrates', 'starch', 'amino_acids', 'proteins',
-                                                                   'sucrose', 'triosesP', 'fructan', 'mstruct', 'Nstruct', 'cytokinins'],
+                                                                   'sucrose', 'triosesP', 'fructan', 'cytokinins'],
                                 model.Soil: ['nitrates']}
 
     T_INDEX = 't'
@@ -104,9 +105,20 @@ class Simulation(object):
     ORGANS_POSTPROCESSING_VARIABLES = ['Conc_Nitrates', 'Conc_Amino_Acids', 'Dry_Mass', 'Conc_Sucrose', 'Proteins_N_Mass', 'Conc_cytokinins']
     ORGANS_ALL_VARIABLES = ORGANS_RUN_VARIABLES + ORGANS_POSTPROCESSING_VARIABLES
 
+    HIDDENGROWINGZONE_INPUTS_INDEXES = ['plant', 'axis', 'metamer']
+    HIDDENGROWINGZONE_OUTPUTS_INDEXES = [T_INDEX] + HIDDENGROWINGZONE_INPUTS_INDEXES
+    HIDDENGROWINGZONE_STATE_PARAMETERS = []
+    HIDDENGROWINGZONE_STATE = HIDDENGROWINGZONE_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.HiddenGrowingZone, [])
+    HIDDENGROWINGZONE_INTERMEDIATE_VARIABLES = []
+    HIDDENGROWINGZONE_FLUXES = []
+    HIDDENGROWINGZONE_INTEGRATIVE_VARIABLES = []
+    HIDDENGROWINGZONE_RUN_VARIABLES = HIDDENGROWINGZONE_OUTPUTS_INDEXES + HIDDENGROWINGZONE_STATE + HIDDENGROWINGZONE_INTERMEDIATE_VARIABLES + HIDDENGROWINGZONE_FLUXES + HIDDENGROWINGZONE_INTEGRATIVE_VARIABLES
+    HIDDENGROWINGZONE_POSTPROCESSING_VARIABLES = []
+    HIDDENGROWINGZONE_ALL_VARIABLES = HIDDENGROWINGZONE_RUN_VARIABLES + HIDDENGROWINGZONE_POSTPROCESSING_VARIABLES
+
     ELEMENTS_INPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
     ELEMENTS_OUTPUTS_INDEXES = [T_INDEX] + ELEMENTS_INPUTS_INDEXES
-    ELEMENTS_STATE_PARAMETERS = ['green_area', 'Ag', 'Tr', 'Ts']
+    ELEMENTS_STATE_PARAMETERS = ['mstruct', 'Nstruct', 'green_area', 'Ag', 'Tr', 'Ts', 'is_growing']
     ELEMENTS_STATE = ELEMENTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, [])
     ELEMENTS_INTERMEDIATE_VARIABLES = ['Transpiration', 'R_phloem_loading', 'R_Nnit_red', 'R_residual', 'R_maintenance', 'Photosynthesis']
     ELEMENTS_FLUXES = ['Loading_Sucrose', 'Regul_S_Fructan', 'S_Starch', 'D_Starch', 'S_Sucrose', 'S_Fructan', 'D_Fructan']
@@ -132,12 +144,14 @@ class Simulation(object):
                                       model.Axis: 'cnwheat.compartments.axes',
                                       model.Phytomer: 'cnwheat.compartments.phytomers',
                                       model.Organ: 'cnwheat.compartments.organs',
+                                      model.HiddenGrowingZone: 'growthwheat.compartments.HiddenGrowingZone',
                                       model.PhotosyntheticOrganElement: 'cnwheat.compartments.elements',
                                       model.Soil: 'cnwheat.compartments.soils'},
                      'derivatives': {model.Plant: 'cnwheat.derivatives.plants',
                                      model.Axis: 'cnwheat.derivatives.axes',
                                      model.Phytomer: 'cnwheat.derivatives.phytomers',
                                      model.Organ: 'cnwheat.derivatives.organs',
+                                     model.HiddenGrowingZone: 'growthwheat.derivatives.HiddenGrowingZone',
                                      model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements',
                                      model.Soil: 'cnwheat.derivatives.soils'}}
 
@@ -200,7 +214,9 @@ class Simulation(object):
         # initialize initial conditions
         def _init_initial_conditions(model_object, i):
             class_ = model_object.__class__
-            if issubclass(class_, model.Organ):
+            if issubclass(class_, model.HiddenGrowingZone):
+                class_ = model.HiddenGrowingZone
+            elif issubclass(class_, model.Organ):
                 class_ = model.Organ
             elif issubclass(class_, model.PhotosyntheticOrganElement):
                 class_ = model.PhotosyntheticOrganElement
@@ -228,10 +244,11 @@ class Simulation(object):
                     i = _init_initial_conditions(organ, i)
                 for phytomer in axis.phytomers:
                     i = _init_initial_conditions(phytomer, i)
-                    for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
+                    for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath, phytomer.hiddengrowingzone):
                         if organ is None:
                             continue
                         i = _init_initial_conditions(organ, i)
+                        if organ is phytomer.hiddengrowingzone: continue
                         for element in (organ.exposed_element, organ.enclosed_element):
                             if element is None:
                                 continue
@@ -459,7 +476,7 @@ class Simulation(object):
         # check that the solver is not crashed
         y_isnan = np.isnan(y)
         if y_isnan.any():
-            message = 'The solver did not manage to compute a compartment. See the logs.'
+            message = 'The solver did not manage to compute a compartment. See the logs. NaN found in y'
             logger.exception(message)
             raise SimulationRunError(message)
 
@@ -493,7 +510,7 @@ class Simulation(object):
                                     transpiration_mapping[element] = element.calculate_total_transpiration(element.Tr, element.green_area)
                                     total_transpiration += transpiration_mapping[element]
                                     total_green_area += element.green_area
-                                    phloem_contributors.append(element)
+
                 if total_green_area == 0.0:
                     total_surfacic_transpiration = 0.0
                 else:
@@ -512,6 +529,41 @@ class Simulation(object):
 
                 # compute the derivative of each photosynthetic organ element compartment
                 for phytomer in axis.phytomers:
+                    # Hidden growing zone
+                    hgz = phytomer.hiddengrowingzone
+                    if phytomer.hiddengrowingzone is not None:
+                        hgz.sucrose = y[self.initial_conditions_mapping[hgz]['sucrose']]
+                        hgz.fructan = y[self.initial_conditions_mapping[hgz]['fructan']]
+                        hgz.mstruct = y[self.initial_conditions_mapping[hgz]['mstruct']]
+                        hgz.amino_acids = y[self.initial_conditions_mapping[hgz]['amino_acids']]
+                        hgz.proteins = y[self.initial_conditions_mapping[hgz]['proteins']]
+                        phloem_contributors.append(hgz)
+
+                        # Unloading of sucrose from phloem
+                        conc_sucrose_hidden_growing_zone = hgz.calculate_conc_sucrose(hgz.sucrose, hgz.mstruct)
+                        conc_sucrose_phloem = axis.phloem.calculate_conc_sucrose(axis.phloem.sucrose)
+                        hgz.unloading_sucrose = hgz.calculate_unloading_sucrose(conc_sucrose_hidden_growing_zone, conc_sucrose_phloem, self.delta_t)
+
+                        # Unloading of AA from phloem
+                        conc_amino_acids_hidden_growing_zone = hgz.calculate_conc_amino_acids(hgz.amino_acids, hgz.mstruct)
+                        conc_amino_acids_phloem = axis.phloem.calculate_conc_amino_acids(axis.phloem.amino_acids)
+                        hgz.unloading_amino_acids = hgz.calculate_unloading_amino_acids(conc_amino_acids_hidden_growing_zone, conc_amino_acids_phloem, self.delta_t)
+
+                        # Fructan synthesis
+                        Regul_Sfructanes = hgz.Regul_Sfructanes(hgz.unloading_sucrose)
+                        s_fructan = hgz.calculate_s_fructan(conc_sucrose_hidden_growing_zone, Regul_Sfructanes, self.delta_t)
+
+                        # Fructan degradation
+                        conc_fructan = hgz.calculate_conc_fructan(hgz.fructan, hgz.mstruct)
+                        d_fructan = hgz.calculate_d_fructan(conc_sucrose_hidden_growing_zone, conc_fructan, self.delta_t)
+
+                        # Synthesis proteins
+                        s_proteins = hgz.calculate_s_proteins(conc_amino_acids_hidden_growing_zone, self.delta_t)
+
+                        # Degradation proteins
+                        conc_protein = hgz.calculate_conc_protein(hgz.proteins, hgz.mstruct)
+                        d_proteins = hgz.calculate_d_proteins(conc_protein, self.delta_t)
+
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
 
                         if organ is None:
@@ -535,10 +587,19 @@ class Simulation(object):
                             element_transpiration = transpiration_mapping[element] # mmol s-1
 
                             # flows
+                            if isinstance(element, model.LaminaElement) and element.is_growing: #: Export of sucrose and amino acids towards the hidden growing zone
+                                hgz_loading_sucrose_contribution = element.loading_sucrose = element.calculate_export_sucrose(element.sucrose, conc_sucrose_hidden_growing_zone, self.delta_t)
+                                hgz_loading_amino_acids_contribution = element.loading_amino_acids = element.calculate_export_amino_acids(element.amino_acids, conc_amino_acids_hidden_growing_zone, self.delta_t)
+                            else: #: Loading of sucrose and amino acids towards the phloem
+                                hgz_loading_sucrose_contribution = 0
+                                hgz_loading_amino_acids_contribution = 0
+                                phloem_contributors.append(element)
+                                element.loading_sucrose = element.calculate_loading_sucrose(element.sucrose, axis.phloem.sucrose, self.delta_t)
+                                element.loading_amino_acids = element.calculate_loading_amino_acids(element.amino_acids, axis.phloem.amino_acids, self.delta_t)
+
                             s_starch = element.calculate_s_starch(element.triosesP, self.delta_t)
                             d_starch = element.calculate_d_starch(element.starch, self.delta_t)
                             s_sucrose = element.calculate_s_sucrose(element.triosesP, self.delta_t)
-                            element.loading_sucrose = element.calculate_loading_sucrose(element.sucrose, axis.phloem.sucrose, self.delta_t)
                             R_phloem_loading, element.loading_sucrose = RespirationModel.R_phloem(element.loading_sucrose, element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA)
                             regul_s_fructan = element.calculate_regul_s_fructan(element.loading_sucrose, self.delta_t)
                             d_fructan = element.calculate_d_fructan(element.sucrose, element.fructan, self.delta_t)
@@ -549,7 +610,6 @@ class Simulation(object):
                             R_Nnit_red, s_amino_acids = RespirationModel.R_Nnit_red(s_amino_acids, element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA)
                             s_proteins = element.calculate_s_proteins(element.amino_acids, self.delta_t)
                             k, d_proteins = element.calculate_d_proteins(element.proteins, element.cytokinins, self.delta_t)
-                            element.loading_amino_acids = element.calculate_loading_amino_acids(element.amino_acids, axis.phloem.amino_acids, self.delta_t)
                             cytokinins_import = element.calculate_cytokinins_import(roots_export_cytokinins, element_transpiration, total_transpiration)
                             d_cytokinins = element.calculate_d_cytokinins(element.cytokinins, self.delta_t)
 
@@ -574,6 +634,13 @@ class Simulation(object):
                             y_derivatives[self.initial_conditions_mapping[element]['amino_acids']] = amino_acids_derivative
                             y_derivatives[self.initial_conditions_mapping[element]['proteins']] = proteins_derivative
                             y_derivatives[self.initial_conditions_mapping[element]['cytokinins']] = cytokinins_derivative
+
+                    if phytomer.hiddengrowingzone is not None: # TODO: test necessaire?
+                        # compute the derivatives of the hidden growing zone
+                        y_derivatives[self.initial_conditions_mapping[hgz]['sucrose']] = hgz.calculate_sucrose_derivative(hgz.unloading_sucrose, s_fructan, d_fructan, hgz_loading_sucrose_contribution)
+                        y_derivatives[self.initial_conditions_mapping[hgz]['amino_acids']] = hgz.calculate_amino_acids_derivative(hgz.unloading_amino_acids, s_proteins, d_proteins, hgz_loading_amino_acids_contribution)
+                        y_derivatives[self.initial_conditions_mapping[hgz]['fructan']] = hgz.calculate_fructan_derivative(s_fructan, d_fructan)
+                        y_derivatives[self.initial_conditions_mapping[hgz]['proteins']] = hgz.calculate_proteins_derivative(s_proteins, d_proteins)
 
                 if axis.grains is not None:
                     phloem_contributors.append(axis.grains)
@@ -656,7 +723,7 @@ class Simulation(object):
         logger.debug('Updating the state of the population and soils DONE')
 
 
-    def postprocessings(self):
+    def postprocessings(self): #TODO: update doc
         """
         Compute:
 
@@ -688,6 +755,7 @@ class Simulation(object):
         all_plants_df = pd.DataFrame(columns=Simulation.PLANTS_ALL_VARIABLES)
         all_axes_df = pd.DataFrame(columns=Simulation.AXES_ALL_VARIABLES)
         all_metamers_df = pd.DataFrame(columns=Simulation.PHYTOMERS_ALL_VARIABLES)
+        all_hgzs_df = pd.DataFrame(columns=Simulation.HIDDENGROWINGZONE_ALL_VARIABLES)
         all_organs_df = pd.DataFrame(columns=Simulation.ORGANS_ALL_VARIABLES)
         all_elements_df = pd.DataFrame(columns=Simulation.ELEMENTS_ALL_VARIABLES)
         all_soils_df = pd.DataFrame(columns=Simulation.SOILS_ALL_VARIABLES)
@@ -803,6 +871,21 @@ class Simulation(object):
                     metamers_df['axis'] = axis.label
                     metamers_df['metamer'] = phytomer.index
 
+                    # Hidden growing zones
+                    if phytomer.hiddengrowingzone is not None:
+                        hgzs_df = pd.DataFrame(columns=all_hgzs_df.columns)
+                        hgzs_df['t'] = self._time_grid
+                        hgzs_df['plant'] = plant.index
+                        hgzs_df['axis'] = axis.label
+                        hgzs_df['metamer'] = phytomer.index
+                        hgzs_df['amino_acids'] = solver_output_transposed[self.initial_conditions_mapping[phytomer.hiddengrowingzone]['amino_acids']]
+                        hgzs_df['fructan'] = solver_output_transposed[self.initial_conditions_mapping[phytomer.hiddengrowingzone]['fructan']]
+                        hgzs_df['mstruct'] = solver_output_transposed[self.initial_conditions_mapping[phytomer.hiddengrowingzone]['mstruct']]
+                        hgzs_df['proteins'] = solver_output_transposed[self.initial_conditions_mapping[phytomer.hiddengrowingzone]['proteins']]
+                        hgzs_df['sucrose'] = solver_output_transposed[self.initial_conditions_mapping[phytomer.hiddengrowingzone]['sucrose']]
+
+                        all_hgzs_df = all_hgzs_df.append(hgzs_df, ignore_index=True)
+
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is None:
                             continue
@@ -902,6 +985,7 @@ class Simulation(object):
         all_plants_df = all_plants_df.reindex_axis(Simulation.PLANTS_ALL_VARIABLES, axis=1, copy=False)
         all_axes_df = all_axes_df.reindex_axis(Simulation.AXES_ALL_VARIABLES, axis=1, copy=False)
         all_metamers_df = all_metamers_df.reindex_axis(Simulation.PHYTOMERS_ALL_VARIABLES, axis=1, copy=False)
+        all_hgzs_df = all_hgzs_df.reindex_axis(Simulation.HIDDENGROWINGZONE_ALL_VARIABLES, axis=1, copy=False)
         all_organs_df = all_organs_df.reindex_axis(Simulation.ORGANS_ALL_VARIABLES, axis=1, copy=False)
         all_elements_df = all_elements_df.reindex_axis(Simulation.ELEMENTS_ALL_VARIABLES, axis=1, copy=False)
         all_soils_df = all_soils_df.reindex_axis(Simulation.SOILS_ALL_VARIABLES, axis=1, copy=False)
@@ -910,6 +994,7 @@ class Simulation(object):
         all_plants_df.sort_index(by=Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
         all_axes_df.sort_index(by=Simulation.AXES_OUTPUTS_INDEXES, inplace=True)
         all_metamers_df.sort_index(by=Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
+        all_hgzs_df.sort_index(by=Simulation.HIDDENGROWINGZONE_OUTPUTS_INDEXES, inplace=True)
         all_organs_df.sort_index(by=Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
         all_elements_df.sort_index(by=Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
         all_soils_df.sort_index(by=Simulation.SOILS_OUTPUTS_INDEXES, inplace=True)
@@ -918,6 +1003,7 @@ class Simulation(object):
         all_plants_df = all_plants_df.convert_objects(copy=False)
         all_axes_df = all_axes_df.convert_objects(copy=False)
         all_metamers_df = all_metamers_df.convert_objects(copy=False)
+        all_hgzs_df = all_hgzs_df.convert_objects(copy=False)
         all_organs_df = all_organs_df.convert_objects(copy=False)
         all_elements_df = all_elements_df.convert_objects(copy=False)
         all_soils_df = all_soils_df.convert_objects(copy=False)
@@ -926,6 +1012,7 @@ class Simulation(object):
         all_plants_df['plant'] = all_plants_df['plant'].astype(int)
         all_axes_df['plant'] = all_axes_df['plant'].astype(int)
         all_metamers_df[['plant', 'metamer']] = all_metamers_df[['plant', 'metamer']].astype(int)
+        all_hgzs_df[['plant', 'metamer']] = all_hgzs_df[['plant', 'metamer']].astype(int)
         all_organs_df['plant'] = all_organs_df['plant'].astype(int)
         all_elements_df[['plant', 'metamer']] = all_elements_df[['plant', 'metamer']].astype(int)
         all_soils_df[['plant']] = all_soils_df[['plant']].astype(int)
@@ -933,11 +1020,13 @@ class Simulation(object):
         all_plants_df.reset_index(drop=True, inplace=True)
         all_axes_df.reset_index(drop=True, inplace=True)
         all_metamers_df.reset_index(drop=True, inplace=True)
+        all_hgzs_df.reset_index(drop=True, inplace=True)
         all_organs_df.reset_index(drop=True, inplace=True)
         all_elements_df.reset_index(drop=True, inplace=True)
         all_soils_df.reset_index(drop=True, inplace=True)
 
         logger.debug('Formatting of outputs DONE')
 
-        return all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_elements_df, all_soils_df
+        return all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_hgzs_df, all_elements_df, all_soils_df
+
 

@@ -53,7 +53,7 @@ class OrganParameters:
     """
     Internal parameters common to all the organs.
     """
-    MSTRUCT_AXIS = 2.5                      #: Structural mass of a plant (g)
+    MSTRUCT_AXIS = 2.5                      #: Structural mass of a plant (g): TODO: pas un param !!!
     ALPHA_AXIS = 1                          #: Proportion of the structural mass containing the substrates
 
     C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
@@ -67,6 +67,15 @@ class OrganParameters:
     AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
     AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
     N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
+
+
+class HiddenGrowingZoneParameters(OrganParameters):
+    SIGMA = 8e-05                           #: Coefficient de diffusion surfacique. Utilisé dans la loide Fick g/mm²/s
+    Vmax_Regul_Sfructans = 1
+    K_Regul_Sfructans = 0.5
+    n_Regul_Sfructans = 15
+    Vmax_Sfructans = 0.2 # µmol/g/s
+    delta_Dproteins = 1.85e-06
 
 class PhloemParameters(OrganParameters):
     """
