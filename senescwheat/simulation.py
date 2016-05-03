@@ -30,7 +30,7 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
 
-    MIN_GREEN_AREA = 1E-4 #: Minimal green area of an element (m2). Below this area, set green_area to 0.0.
+    MIN_GREEN_AREA = 0.5E-4 #: Minimal green area of an element (m2). Below this area, set green_area to 0.0.
 
     def __init__(self, delta_t=1):
 
@@ -87,7 +87,7 @@ class Simulation(object):
             loss_cytokinins = model.SenescenceModel.calculate_remobilisation(roots_inputs_dict['cytokinins'], relative_delta_mstruct)
             all_roots_outputs[roots_inputs_id] = {'mstruct_C_growth': mstruct_C_growth/self.delta_t,
                                                   'Nstruct_N_growth': Nstruct_N_growth/self.delta_t,
-                                                  'mstruct_death': mstruct_death,
+                                                  'mstruct_death': mstruct_death/self.delta_t,
                                                   'mstruct': roots_inputs_dict['mstruct'] + delta_mstruct,
                                                   'Nstruct': roots_inputs_dict['Nstruct'] + delta_Nstruct,
                                                   'cytokinins': roots_inputs_dict['cytokinins'] - loss_cytokinins}
