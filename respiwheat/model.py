@@ -62,7 +62,7 @@ class RespirationModel(object):
         :Returns Type:
             :class:`float`
         """
-        _R_growth = ((1 - cls.YG)/cls.YG) * (G*mstruct)
+        _R_growth = ((1 - cls.YG) / cls.YG) * (G * mstruct)
         return _R_growth
 
     @classmethod
