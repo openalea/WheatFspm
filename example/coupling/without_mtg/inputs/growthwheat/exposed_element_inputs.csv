@@ -1,0 +1,6 @@
+plant,axis,metamer,organ,length,width,area,is_growing,mstruct,sucrose,amino_acids
+1,MS,9,blade,0.1,0.01,0.0016,False,0.04,0,1
+1,MS,9,sheath,0.05,0.005,0.0002,False,0.058,319,3
+1,MS,10,blade,0.15,0.01,0.00228,False,0.05,120,8
+1,MS,10,sheath,0.08,0.005,0.0004,False,0.073,398,3
+1,MS,11,blade,0.08,0.01,0.0034,True,0.09,481,19
