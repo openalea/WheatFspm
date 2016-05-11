@@ -69,7 +69,7 @@ GROWTHWHEAT_EXPOSED_ELEMENT_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DI
 OUTPUTS_DIRPATH = 'outputs'
 AXES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'axes_states.csv')
 ORGANS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'organs_states.csv')
-HGZ_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hgzs_states.csv')
+HGZS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hgzs_states.csv')
 ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'elements_states.csv')
 SOILS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'soils_states.csv')
 
