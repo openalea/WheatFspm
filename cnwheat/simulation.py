@@ -924,6 +924,7 @@ class Simulation(object):
                             elements_df['R_residual'],  elements_df['R_maintenance'] = R_residual[:,0], R_residual[:,1]
                             elements_df['Tr'] = element.Tr
                             elements_df['Ts'] = element.Ts
+                            elements_df['is_growing'] = element.is_growing
                             elements_df['Photosynthesis'] = map(element.calculate_photosynthesis, [element.Ag] * len(self._time_grid), [element.green_area] * len(self._time_grid), delta_t_repeated)
                             elements_df['Transpiration'] = transpiration_mapping[element]
                             elements_df['Conc_TriosesP'] = element.calculate_conc_triosesP(elements_df['triosesP'])
