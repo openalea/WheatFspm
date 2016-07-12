@@ -11,8 +11,6 @@ from __future__ import division # use "//" to do integer division
         * convert :class:`dataframes <pandas.DataFrame>` to/from SenescWheat inputs or outputs format.
         * convert a :class:`MTG <openalea.mtg.mtg.MTG>` to/from SenescWheat inputs or outputs format.
 
-    Both dataframes and MTG follow AdelWheat naming convention.
-
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -30,7 +28,6 @@ from __future__ import division # use "//" to do integer division
 
 import numpy as np
 import pandas as pd
-from openalea.mtg import io, fat_mtg
 
 import simulation
 
@@ -75,7 +72,6 @@ ELEMENTS_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ', 'element']
 def from_dataframes(roots_inputs, elements_inputs):
     """
     Convert inputs/outputs from Pandas dataframes to Senesc-Wheat format.
-    The column names of the dataframe respect the naming convention of AdelWheat.
 
     :Parameters:
 
@@ -109,7 +105,6 @@ def from_dataframes(roots_inputs, elements_inputs):
 def to_dataframes(data_dict):
     """
     Convert inputs/outputs from Senesc-Wheat format to Pandas dataframe.
-    The column names of the dataframe respect the naming convention of AdelWheat.
 
     :Parameters:
 
@@ -145,7 +140,6 @@ def from_MTG(g, roots_inputs, elements_inputs):
     """
     Convert a MTG to Senesc-Wheat inputs.
     Use data in `roots_inputs` and `elements_inputs` if `g` is incomplete.
-    The property names in the MTG respect the naming convention of AdelWheat.
 
     :Parameters:
 
@@ -176,32 +170,23 @@ def from_MTG(g, roots_inputs, elements_inputs):
         plant_index = int(g.index(plant_vid))
         for axis_vid in g.components_iter(plant_vid):
             axis_label = g.label(axis_vid)
-            axis_components_iter = g.components_iter(axis_vid)
-
-            first_axis_component_vid = next(axis_components_iter)
-            second_axis_component_vid = next(axis_components_iter)
-
-            first_and_second_axis_components = {g.label(first_axis_component_vid): first_axis_component_vid,
-                                                g.label(second_axis_component_vid): second_axis_component_vid}
-
             roots_id = (plant_index, axis_label)
             if roots_id in roots_inputs_grouped.groups:
                 roots_inputs_group = roots_inputs_grouped.get_group(roots_id)
                 roots_inputs_group_series = roots_inputs_group.loc[roots_inputs_group.first_valid_index(), SENESCWHEAT_ROOTS_INPUTS]
             else:
                 roots_inputs_group_series = pd.Series()
-
-            if 'roots' in first_and_second_axis_components:
-                roots_vid = first_and_second_axis_components['roots']
-                vertex_properties = g.get_vertex_property(roots_vid)
+            axis_properties = g.get_vertex_property(axis_vid)
+            if 'roots' in axis_properties:
+                roots_properties = axis_properties['roots']
                 roots_inputs_dict = {}
                 is_valid_roots = True
                 for roots_input_name in SENESCWHEAT_ROOTS_INPUTS:
-                    if roots_input_name in vertex_properties:
-                        # use the properties of the vertex
-                        roots_inputs_dict[roots_input_name] = vertex_properties[roots_input_name]
+                    if roots_input_name in roots_properties:
+                        # use the input from the MTG
+                        roots_inputs_dict[roots_input_name] = roots_properties[roots_input_name]
                     else:
-                        # use the value in roots_inputs
+                        # use the input from the dataframe
                         if roots_input_name in roots_inputs_group_series:
                             roots_inputs_dict[roots_input_name] = roots_inputs_group_series[roots_input_name]
                         else:
@@ -214,9 +199,7 @@ def from_MTG(g, roots_inputs, elements_inputs):
                 if set(roots_inputs_group_dict).issuperset(SENESCWHEAT_ROOTS_INPUTS):
                     all_roots_inputs_dict[roots_id] = roots_inputs_group_dict
 
-            for axis_component_vid in g.components_iter(axis_vid):
-                if not g.label(axis_component_vid).startswith('metamer'): continue
-                metamer_vid = axis_component_vid
+            for metamer_vid in g.components_iter(axis_vid):
                 metamer_index = int(g.index(metamer_vid))
                 for organ_vid in g.components_iter(metamer_vid):
                     organ_label = g.label(organ_vid)
@@ -234,12 +217,12 @@ def from_MTG(g, roots_inputs, elements_inputs):
                         is_valid_element = True
                         for element_input_name in SENESCWHEAT_ELEMENTS_INPUTS:
                             if element_input_name in vertex_properties:
-                                # use the properties of the vertex
+                                # use the input from the MTG
                                 element_inputs[element_input_name] = vertex_properties[element_input_name]
                                 if element_input_name == 'green_area':
                                     element_inputs[element_input_name] /= 10000.0 # convert from cm2 to m2 ; TODO: homogenize the units between the models
                             else:
-                                # use the value in elements_inputs
+                                # use the input from the dataframe
                                 if element_input_name in elements_inputs_group_series:
                                     element_inputs[element_input_name] = elements_inputs_group_series[element_input_name]
                                 else:
@@ -254,7 +237,6 @@ def from_MTG(g, roots_inputs, elements_inputs):
 def update_MTG(inputs, outputs, g):
     """
     Update a MTG from Senesc-Wheat inputs and outputs.
-    The property names in the MTG respect the naming convention of AdelWheat.
 
     :Parameters:
 
@@ -274,6 +256,8 @@ def update_MTG(inputs, outputs, g):
     for senescwheat_output_name in SENESCWHEAT_INPUTS_OUTPUTS:
         if senescwheat_output_name not in property_names:
             g.add_property(senescwheat_output_name)
+    if 'roots' not in property_names:
+        g.add_property('roots')
 
     roots_inputs_dict = inputs['roots']
     elements_inputs_dict = inputs['elements']
@@ -285,36 +269,15 @@ def update_MTG(inputs, outputs, g):
         plant_index = int(g.index(plant_vid))
         for axis_vid in g.components_iter(plant_vid):
             axis_label = g.label(axis_vid)
-
             roots_id = (plant_index, axis_label)
             if roots_id not in roots_outputs_dict: continue
-
-            axis_components_iter = g.components_iter(axis_vid)
-
-            first_axis_component_vid = next(axis_components_iter)
-            second_axis_component_vid = next(axis_components_iter)
-
-            first_and_second_axis_components = {g.label(first_axis_component_vid): first_axis_component_vid,
-                                                g.label(second_axis_component_vid): second_axis_component_vid}
-
-            if 'roots' in first_and_second_axis_components:
-                roots_vid = first_and_second_axis_components['roots']
-            else:
-                # insert a roots in the MTG
-                roots_vid = insert_parent_at_all_scales(g, first_axis_component_vid, label='roots')[0]
-                g = fat_mtg(g)
-
             # update the roots in the MTG
-            roots_inputs = roots_inputs_dict[roots_id]
-            for roots_input_name, roots_input_value in roots_inputs.iteritems():
-                g.property(roots_input_name)[roots_vid] = roots_input_value
-            roots_outputs = roots_outputs_dict[roots_id]
-            for roots_output_name, roots_output_value in roots_outputs.iteritems():
-                g.property(roots_output_name)[roots_vid] = roots_output_value
-
-            for axis_component_vid in g.components_iter(axis_vid):
-                if not g.label(axis_component_vid).startswith('metamer'): continue
-                metamer_vid = axis_component_vid
+            if 'roots' not in g.get_vertex_property(axis_vid):
+                g.property('roots')[axis_vid] = {}
+            roots_properties = g.get_vertex_property(axis_vid)['roots']
+            roots_properties.update(roots_inputs_dict[roots_id])
+            roots_properties.update(roots_outputs_dict[roots_id])
+            for metamer_vid in g.components_iter(axis_vid):
                 metamer_index = int(g.index(metamer_vid))
                 for organ_vid in g.components_iter(metamer_vid):
                     organ_label = g.label(organ_vid)
@@ -334,47 +297,4 @@ def update_MTG(inputs, outputs, g):
                             if element_output_name == 'green_area':
                                 element_output_value *= 10000.0 # convert from m2 to cm2 ; TODO: homogenize the units between the models
                             g.property(element_output_name)[element_vid] = element_output_value
-
-
-##########################################################################################################
-####### TODO: move the following to openalea.mtg #########################################################
-##########################################################################################################
-
-def insert_parent_at_all_scales(g, parent_id, edge_type='+', label='roots'):
-    added_vertices = []
-    scale = g.scale(parent_id)
-    max_scale = g.max_scale()
-    edge_types = g.properties()['edge_type']
-
-    # Add a parent
-    if g.parent(parent_id) is None:
-        vid = g.insert_parent(parent_id, label=label, edge_type='/')
-        edge_types[parent_id] = edge_type
-    else:
-        return added_vertices
-
-    # Update complex and components
-    cid = g.complex(parent_id)
-    croots = g._components[cid]
-    if parent_id in croots:
-        i = croots.index(parent_id)
-        g._components[cid][i] = vid
-        g._complex[vid] = cid
-        print 'ADDED', vid
-    else:
-        print 'ERROR'
-
-    added_vertices.append(vid)
-
-    while scale+1 <= max_scale:
-        pid = g.component_roots(parent_id)[0]
-        component_id = g.add_component(vid)
-        vid = g.insert_parent(pid, parent_id=component_id, label=label, edge_type='/')
-        edge_types[pid] = edge_type
-        scale += 1
-        added_vertices.append(vid)
-        parent_id = pid
-        print 'ADDED', vid
-
-    return added_vertices
 
