@@ -29,6 +29,9 @@ from __future__ import division # use "//" to do integer division
 import pandas as pd
 
 
+#: the name of the organs modeled by FarquharWheat 
+FARQUHARWHEAT_ORGANS_NAMES = set(['internode', 'blade', 'sheath', 'peduncle', 'ear'])
+
 #: the inputs needed by FarquharWheat at element scale
 FARQUHARWHEAT_INPUTS = ['width', 'height', 'STAR', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
 
@@ -106,7 +109,6 @@ def from_MTG(g, inputs):
         
             - g (:class:`openalea.mtg.mtg.MTG`) - A MTG which contains the inputs
               of Farquhar-Wheat. These inputs are: :mod:`FARQUHARWHEAT_INPUTS`.
-              Each organ in the MTG must be one of ('internode', 'blade', 'sheath', 'peduncle', 'ear').
               
             - `inputs` (:class:`pandas.DataFrame`) - Inputs dataframe, with one line by element.
               
@@ -133,6 +135,7 @@ def from_MTG(g, inputs):
                 for organ_vid in g.components_iter(metamer_vid):
                     vertex_properties = g.get_vertex_property(organ_vid)
                     organ_label = g.label(organ_vid)
+                    if organ_label not in FARQUHARWHEAT_ORGANS_NAMES: continue
                     for element_vid in g.components_iter(organ_vid):
                         vertex_properties = g.get_vertex_property(element_vid)
                         element_label = g.label(element_vid)
@@ -176,7 +179,6 @@ def update_MTG(inputs, outputs, g):
             These outputs are: :mod:`FARQUHARWHEAT_OUTPUTS`. 
         
             - `g` (:class:`openalea.mtg.mtg.MTG`) - The MTG to update from the inputs and outputs of FarquharWheat.
-            Each organ in the MTG must be one of ('internode', 'blade', 'sheath', 'peduncle', 'ear').
             
     .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs` for the structure of Farquhar-Wheat inputs and outputs.
             
@@ -197,6 +199,7 @@ def update_MTG(inputs, outputs, g):
                 metamer_index = int(g.index(metamer_vid))
                 for organ_vid in g.components_iter(metamer_vid):
                     organ_label = g.label(organ_vid)
+                    if organ_label not in FARQUHARWHEAT_ORGANS_NAMES: continue
                     for element_vid in g.components_iter(organ_vid):
                         element_label = g.label(element_vid)
                         element_id = (plant_index, axis_label, metamer_index, organ_label, element_label)
