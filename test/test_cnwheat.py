@@ -13,10 +13,10 @@
 
     CSV files must contain only ASCII characters and ',' as separator.
 
-    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
+    :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
+    .. seealso:: Barillot et al. 2016.
 """
 
 """

@@ -290,12 +290,12 @@ def to_dataframes(population=None, soils=None):
                             append_row(element, [plant.index, axis.label, phytomer.index, organ.label, element.label], simulation.Simulation.ELEMENTS_STATE, all_elements_df)
 
         # sort the rows of the dataframes by columns
-        all_plants_df.sort_index(by=PLANTS_STATE_VARIABLES, inplace=True)
-        all_axes_df.sort_index(by=AXES_STATE_VARIABLES, inplace=True)
-        all_metamers_df.sort_index(by=PHYTOMERS_STATE_VARIABLES, inplace=True)
-        all_organs_df.sort_index(by=ORGANS_STATE_VARIABLES, inplace=True)
-        all_hgzs_df.sort_index(by=HGZS_STATE_VARIABLES, inplace=True)
-        all_elements_df.sort_index(by=ELEMENTS_STATE_VARIABLES, inplace=True)
+        all_plants_df.sort_values(by=PLANTS_STATE_VARIABLES, inplace=True)
+        all_axes_df.sort_values(by=AXES_STATE_VARIABLES, inplace=True)
+        all_metamers_df.sort_values(by=PHYTOMERS_STATE_VARIABLES, inplace=True)
+        all_organs_df.sort_values(by=ORGANS_STATE_VARIABLES, inplace=True)
+        all_hgzs_df.sort_values(by=HGZS_STATE_VARIABLES, inplace=True)
+        all_elements_df.sort_values(by=ELEMENTS_STATE_VARIABLES, inplace=True)
 
         # infer the right types of the columns in the dataframes
         all_plants_df = all_plants_df.convert_objects(copy=False)
@@ -324,7 +324,7 @@ def to_dataframes(population=None, soils=None):
         all_soils_df = pd.DataFrame(columns=SOILS_STATE_VARIABLES)
         for soil_id, soil in soils.iteritems():
             append_row(soil, list(soil_id), simulation.Simulation.SOILS_STATE, all_soils_df)
-        all_soils_df.sort_index(by=SOILS_STATE_VARIABLES, inplace=True)
+        all_soils_df.sort_values(by=SOILS_STATE_VARIABLES, inplace=True)
         all_soils_df = all_soils_df.convert_objects(copy=False)
         all_soils_df['plant'] = all_soils_df['plant'].astype(int)
         all_soils_df.reset_index(drop=True, inplace=True)
