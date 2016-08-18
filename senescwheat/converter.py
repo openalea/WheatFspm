@@ -253,9 +253,9 @@ def update_MTG(inputs, outputs, g):
     """
     # add the properties if needed
     property_names = g.property_names()
-    for senescwheat_output_name in SENESCWHEAT_INPUTS_OUTPUTS:
-        if senescwheat_output_name not in property_names:
-            g.add_property(senescwheat_output_name)
+    for senescwheat_data_name in SENESCWHEAT_INPUTS_OUTPUTS:
+        if senescwheat_data_name not in property_names:
+            g.add_property(senescwheat_data_name)
     if 'roots' not in property_names:
         g.add_property('roots')
 
