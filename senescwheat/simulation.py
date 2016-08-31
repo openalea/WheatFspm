@@ -78,20 +78,21 @@ class Simulation(object):
         """
         self.outputs.update({inputs_type: {} for inputs_type in self.inputs.iterkeys()})
 
+        # Roots
         all_roots_inputs = self.inputs['roots']
         all_roots_outputs = self.outputs['roots']
         for roots_inputs_id, roots_inputs_dict in all_roots_inputs.iteritems():
-            mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = model.SenescenceModel.calculate_roots_mstruct_growth(roots_inputs_dict['sucrose'], roots_inputs_dict['amino_acids'], roots_inputs_dict['mstruct'], self.delta_t)
+            # loss of mstruct and Nstruct
             mstruct_death, Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'], self.delta_t)
-            delta_mstruct, delta_Nstruct, relative_delta_mstruct = model.SenescenceModel.calculate_delta_mstruct_roots(mstruct_growth, Nstruct_growth, mstruct_death, Nstruct_death, roots_inputs_dict['mstruct'])
+            relative_delta_mstruct = model.SenescenceModel.calculate_relative_delta_mstruct_roots(mstruct_death, roots_inputs_dict['mstruct'])
+            # loss of cytokinins (losses of nitrates, amino acids and sucrose are neglected)
             loss_cytokinins = model.SenescenceModel.calculate_remobilisation(roots_inputs_dict['cytokinins'], relative_delta_mstruct)
-            all_roots_outputs[roots_inputs_id] = {'mstruct_C_growth': mstruct_C_growth/self.delta_t,
-                                                  'Nstruct_N_growth': Nstruct_N_growth/self.delta_t,
-                                                  'mstruct_death': mstruct_death/self.delta_t,
-                                                  'mstruct': roots_inputs_dict['mstruct'] + delta_mstruct,
-                                                  'Nstruct': roots_inputs_dict['Nstruct'] + delta_Nstruct,
+            # Update of root outputs
+            all_roots_outputs[roots_inputs_id] = {'mstruct': roots_inputs_dict['mstruct'] - mstruct_death,
+                                                  'Nstruct': roots_inputs_dict['Nstruct'] - Nstruct_death,
                                                   'cytokinins': roots_inputs_dict['cytokinins'] - loss_cytokinins}
 
+        # Elements
         all_elements_inputs = self.inputs['elements']
         all_elements_outputs = self.outputs['elements']
         for element_inputs_id, element_inputs_dict in all_elements_inputs.iteritems():
@@ -121,5 +122,3 @@ class Simulation(object):
                                         'max_proteins': max_proteins}
 
             all_elements_outputs[element_inputs_id] = element_outputs_dict
-
-

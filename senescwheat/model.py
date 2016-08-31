@@ -30,7 +30,7 @@ import pandas as pd
 class SenescenceModel(object):
 
     N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
-    SENESCENCE_ROOTS = 3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997).
+    SENESCENCE_ROOTS = 3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997). TODO: should be ontogenic
     FRACTION_N_MAX = {'blade': 0.5, 'stem': 0.425} # Threshold of ([proteins]/[proteins]max) below which tissue death is triggered
     SENESCENCE_MAX_RATE = 0.2E-8 # maximal senescence m² s-1
 
@@ -124,37 +124,6 @@ class SenescenceModel(object):
         """
         return metabolite * relative_delta_structure
 
-    # Roots
-    @classmethod
-    def calculate_roots_mstruct_growth(cls, sucrose, amino_acids, mstruct, delta_t):
-        # TODO: to be moved in a particular model (shouldn't be included in SenescenceModel)
-
-        """Root structural dry matter growth
-
-        : Parameters:
-            - `sucrose` (:class:`float`) - amount of sucrose (µmol C)
-            - `mstruct` (:class:`float`) - structural mass (g)
-
-        : Returns:
-            mstruct_C_growth (µmol C), mstruct_growth (g), Nstruct_growth (g), Nstruct_N_growth (µmol N)
-
-        :Returns Type:
-            :class:`float`
-        """
-        ALPHA = 1
-        VMAX_GROWTH = 0.015             #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS)
-        K_GROWTH = 1250                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS)
-        C_MOLAR_MASS = 12               #: Carbon molar mass (g mol-1)
-        RATIO_C_MSTRUCT = 0.384         #: Mean contribution of carbon to structural dry mass (g C g-1 Mstruct)
-        RATIO_N_MSTRUCT = 0.02          #: Mean contribution of nitrogen to structural dry mass (g N g-1 Mstruct)
-
-        mstruct_C_growth = (((max(0, sucrose)/(mstruct*ALPHA)) * VMAX_GROWTH) / ((max(0, sucrose)/(mstruct*ALPHA)) + K_GROWTH)) * delta_t * mstruct     #: root growth in C (µmol of C)
-        mstruct_growth = (mstruct_C_growth*1E-6 * C_MOLAR_MASS) / RATIO_C_MSTRUCT                                                                       #: root growth (g of structural dry mass)
-        Nstruct_growth = mstruct_growth*RATIO_N_MSTRUCT                                                                                                 #: root growth in nitrogen (g)
-        Nstruct_N_growth = min(amino_acids, (Nstruct_growth/cls.N_MOLAR_MASS)*1E6)                                                                      #: root growth in nitrogen (µmol N)
-
-        return mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth
-
     @classmethod
     def calculate_roots_senescence(cls, mstruct, Nstruct, delta_t):
         """Root senescence
@@ -169,26 +138,21 @@ class SenescenceModel(object):
         :Returns Type:
             :class:`float`
         """
-        return mstruct * cls.SENESCENCE_ROOTS * delta_t, Nstruct * cls.SENESCENCE_ROOTS * delta_t         #: Structral mass lost by turn_over (g)
+        return mstruct * cls.SENESCENCE_ROOTS * delta_t, Nstruct * cls.SENESCENCE_ROOTS * delta_t
 
 
     @classmethod
-    def calculate_delta_mstruct_roots(cls, mstruct_growth, Nstruct_growth, mstruct_senescence, Nstruct_senescence, root_mstruct):
-        """delta of root structural dry matter (g)
+    def calculate_relative_delta_mstruct_roots(cls, mstruct_death, root_mstruct):
+        """Relative delta of root structural dry matter (g)
 
         : Parameters:
-            - `mstruct_growth` (:class:`float`) - root structural mass growth (g)
-            - `Nstruct_growth` (:class:`float`) - root structural N growth (g)
-            - `mstruct_senescence` (:class:`float`) - amount of C lost by root senescence (g mstruct)
-            - `Nstruct_senescence` (:class:`float`) - amount of N lost by root senescence (g Nstruct)
+            - `mstruct_death` (:class:`float`) - amount of C lost through root death (g mstruct)
             - `root_mstruct` (:class:`float`) - actual mstruct of roots (g)
 
         : Returns:
-            delta_mstruct (g), delta_mstruct (g), relative_delta_mstruct
+            relative_delta_mstruct
 
         :Returns Type:
             :class:`float`
         """
-        delta_mstruct, delta_Nstruct = (mstruct_growth - mstruct_senescence), (Nstruct_growth - Nstruct_senescence)
-        relative_delta_mstruct = mstruct_senescence/root_mstruct
-        return delta_mstruct, delta_Nstruct, relative_delta_mstruct
+        return mstruct_death / root_mstruct

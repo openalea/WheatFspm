@@ -45,7 +45,7 @@ SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'proteins', 'mstruct', 'max_protein
 SENESCWHEAT_INPUTS = SENESCWHEAT_ROOTS_INPUTS + SENESCWHEAT_ELEMENTS_INPUTS
 
 #: the outputs computed by SenescWheat at roots scale
-SENESCWHEAT_ROOTS_OUTPUTS = ['mstruct_C_growth', 'Nstruct_N_growth', 'mstruct_death', 'mstruct', 'Nstruct', 'cytokinins']
+SENESCWHEAT_ROOTS_OUTPUTS = ['mstruct_death', 'mstruct', 'Nstruct', 'cytokinins']
 
 #: the outputs computed by SenescWheat at elements scale
 SENESCWHEAT_ELEMENTS_OUTPUTS = ['green_area', 'mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinins']
