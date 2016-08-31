@@ -53,7 +53,6 @@ class OrganParameters:
     """
     Internal parameters common to all the organs.
     """
-    MSTRUCT_AXIS = 2.5                      #: Structural mass of a plant (g): TODO: pas un param !!!
     ALPHA_AXIS = 1                          #: Proportion of the structural mass containing the substrates
 
     C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)

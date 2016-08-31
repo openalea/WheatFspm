@@ -336,9 +336,9 @@ def from_MTG(g, organs_inputs, hgzs_inputs, elements_inputs): #TODO: update doc
 
             - g (:class:`openalea.mtg.mtg.MTG`) - A MTG which contains the inputs
               of CN-Wheat. These inputs are: :mod:`POPULATION_STATE_VARIABLE`.
-              
+
             - `organs_inputs` (:class:`pandas.DataFrame`) - Organs dataframe, with one line by organ.
-            
+
             - `hgzs_inputs` (:class:`pandas.DataFrame`) - Hidden growing zones inputs, with one line by hidden growing zone.
 
             - `elements_inputs` (:class:`pandas.DataFrame`) - Elements dataframe, with one line by element.
@@ -404,10 +404,10 @@ def from_MTG(g, organs_inputs, hgzs_inputs, elements_inputs): #TODO: update doc
                     organ.initialize()
                     # add the new organ to current axis
                     setattr(axis, organ_label, organ)
-                else:
+                elif organ_class is not model.Grains:
                     is_valid_axis = False
                     break
-            
+
             if not is_valid_axis:
                 continue
 
@@ -416,7 +416,7 @@ def from_MTG(g, organs_inputs, hgzs_inputs, elements_inputs): #TODO: update doc
                 metamer_index = int(g.index(metamer_vid))
                 # create a new phytomer
                 phytomer = model.Phytomer(metamer_index)
-                
+
                 hgz_id = (plant_index, axis_label, metamer_index)
                 if hgz_id in hgzs_inputs_grouped.groups:
                     hgz_inputs_group = hgzs_inputs_grouped.get_group(hgz_id)
@@ -450,12 +450,12 @@ def from_MTG(g, organs_inputs, hgzs_inputs, elements_inputs): #TODO: update doc
                     hgz.initialize()
                     # add the new hgz to current phytomer
                     setattr(phytomer, hgz_label, hgz)
-                
+
                 has_valid_organ = False
 
                 for organ_vid in g.components_iter(metamer_vid):
                     organ_label = g.label(organ_vid)
-                    if organ_label not in MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING: continue
+                    if organ_label not in MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING or g.get_vertex_property(organ_vid)['length']==0: continue
                     # create a new organ
                     organ_class = MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING[organ_label]
                     organ = organ_class(organ_label)
@@ -520,7 +520,7 @@ def update_MTG(population, g):
             - population (:class:`model.Population`) - a CN-Wheat :class:`population <model.Population>`.
 
             - `g` (:class:`openalea.mtg.mtg.MTG`) - The MTG to update from the CN-Wheat :class:`population <model.Population>`.
-            
+
     .. seealso:: see :mod:`model` for the structure of the population.
 
     """

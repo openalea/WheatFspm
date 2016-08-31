@@ -1,4 +1,4 @@
-plant,axis,metamer,organ,element,width,height,STAR
+plant,axis,metamer,organ,element,width,height,Eabsm2
 1,MS,9,blade,LeafElement1,0.011,0.17,0.0114
 1,MS,9,internode,HiddenElement,0.002,0.03,0
 1,MS,9,sheath,StemElement,0.002,0.12,0.0049

@@ -92,27 +92,32 @@ class Axis(object):
         if phytomers is None:
             phytomers = []
         self.phytomers = phytomers #: the list of phytomers
+        self.mstruct = None #: structral mass of the axis (g)
 
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the axis recursively.
         """
+        self.mstruct= 0
         if self.roots is not None:
             self.roots.calculate_integrative_variables()
+            self.mstruct += self.roots.mstruct
         if self.phloem is not None:
             self.phloem.calculate_integrative_variables()
         if self.grains is not None:
             self.grains.calculate_integrative_variables()
+            self.mstruct += self.grains.structural_dry_mass
         for phytomer in self.phytomers:
             phytomer.calculate_integrative_variables()
+            self.mstruct += phytomer.mstruct
 
-
-class Phytomer(object): #: TODO: mettre a jour la doc
+class Phytomer(object):
     """
     The class :class:`Phytomer` defines the CN exchanges at the phytomers scale.
 
     A :class:`phytomer <Phytomer>` must have either:
         * one :class:`chaff <Chaff>`,
         * OR one :class:`peduncle <Peduncle>`,
+        * OR one :class:`hiddengrowingzone <HiddenGrowingZone>`,
         * OR one :class:`lamina <Lamina>`, one :class:`internode <Internode>` and one :class:`sheath <Sheath>`.
     """
 
@@ -126,20 +131,16 @@ class Phytomer(object): #: TODO: mettre a jour la doc
         self.internode = internode #: the internode
         self.sheath = sheath #: the sheath
         self.hiddengrowingzone = hiddengrowingzone #: the hidden growing zone
+        self.mstruct = None # the structural mass of the phytomer
 
     def calculate_integrative_variables(self):
         """Calculate the integrative variables of the phytomer recursively.
         """
-        if self.chaff is not None:
-            self.chaff.calculate_integrative_variables()
-        if self.peduncle is not None:
-            self.peduncle.calculate_integrative_variables()
-        if self.lamina is not None:
-            self.lamina.calculate_integrative_variables()
-        if self.internode is not None:
-            self.internode.calculate_integrative_variables()
-        if self.sheath is not None:
-            self.sheath.calculate_integrative_variables()
+        self.mstruct = 0
+        for organ_ in (self.chaff, self.peduncle, self.lamina, self.internode, self.sheath, self.hiddengrowingzone):
+            if organ_ is not None:
+                organ_.calculate_integrative_variables()
+                self.mstruct += organ_.mstruct
 
 
 class Organ(object):
@@ -175,14 +176,18 @@ class HiddenGrowingZone(Organ):
 
         super(HiddenGrowingZone, self).__init__(label)
 
+        # state parameters
+        self.mstruct = mstruct                       #: g
+
         # state variables
         self.sucrose = sucrose                       #: µmol C
         self.fructan = fructan                       #: µmol C
-        self.mstruct = mstruct                       #: g of CN # TODO: homogeniser avec mstruct reste modele
         self.amino_acids = amino_acids               #: µmol N
         self.proteins = proteins                     #: µmol N
 
-        # FLUX PHLOEME?
+        # fluxes from phloem
+        self.unloading_sucrose = None          #: current unloading of sucrose from phloem to hgz
+        self.unloading_amino_acids = None      #: current unloading of amino acids from phloem to hgz
 
     # variables
     def calculate_conc_sucrose(self, sucrose, mstruct):
@@ -238,6 +243,7 @@ class HiddenGrowingZone(Organ):
         return proteins/mstruct
 
     def Regul_Sfructanes(self, Unloading_Csuc_phlo):
+        # TODO: remplacer par calcul CN-WHEAT
         return (parameters.HiddenGrowingZoneParameters.Vmax_Regul_Sfructans*parameters.HiddenGrowingZoneParameters.K_Regul_Sfructans**parameters.HiddenGrowingZoneParameters.n_Regul_Sfructans)/(parameters.HiddenGrowingZoneParameters.K_Regul_Sfructans**parameters.HiddenGrowingZoneParameters.n_Regul_Sfructans + (max(0,(-Unloading_Csuc_phlo))**parameters.HiddenGrowingZoneParameters.n_Regul_Sfructans))
 
     # fluxes
@@ -277,7 +283,7 @@ class HiddenGrowingZone(Organ):
 
         :Parameters:
             - `conc_sucrose` (:class:`float`) - Sucrose concentration in the hidden growing zone (µmol C g-1 mstruct)
-            - `Regul_Sfructanes_gaine` (:class:`float`) - TODO
+            - `Regul_Sfructanes_gaine` (:class:`float`) - #TODO: doc
         :Returns:
             Fructan synthesis (µmol C g-1 mstruct)
         :Returns Type:
@@ -402,29 +408,31 @@ class Phloem(Organ):
 
     # VARIABLES
 
-    def calculate_conc_sucrose(self, sucrose):
+    def calculate_conc_sucrose(self, sucrose, mstruct_axis):
         """Sucrose concentration. Related to the structural dry mass of the culm
 
         :Parameters:
             - `sucrose` (:class:`float`) - Amount of sucrose in phloem (µmol C)
+            - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
         :Returns:
             Sucrose concentration (µmol sucrose g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
-        return (sucrose/Organ.PARAMETERS.NB_C_SUCROSE)/Organ.PARAMETERS.MSTRUCT_AXIS
+        return (sucrose / Organ.PARAMETERS.NB_C_SUCROSE) / mstruct_axis
 
-    def calculate_conc_amino_acids(self, amino_acids):
+    def calculate_conc_amino_acids(self, amino_acids, mstruct_axis):
         """Amino_acids concentration. Related to the structural dry mass of the culm.
 
         :Parameters:
             - `amino_acids` (:class:`float`) - Amount of amino_acids in phloem (µmol N)
+            - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
         :Returns:
             Amino_acids concentration (µmol amino_acids g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
-        return (amino_acids/Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) / Organ.PARAMETERS.MSTRUCT_AXIS
+        return (amino_acids / Organ.PARAMETERS.AMINO_ACIDS_N_RATIO) / mstruct_axis
 
     # COMPARTMENTS
 
@@ -551,18 +559,18 @@ class Grains(Organ):
         #mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO     #: Total mass of proteins (g)
         return mass_N_proteins
 
-    def calculate_RGR_structure(self, sucrose_phloem):
+    def calculate_RGR_structure(self, sucrose_phloem, mstruct_axis):
         """Relative Growth Rate of grain structure, regulated by sucrose concentration in phloem.
 
         :Parameters:
-            - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
+            - `sucrose_phloem` (:class:`float`) - Sucrose amount in phloem (µmol C)
+            - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
         :Returns:
             RGR of grain structure (dimensionless?)
         :Returns Type:
             :class:`float`
         """
-        return ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_RGR) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_RGR)
-
+        return ((max(0, sucrose_phloem) / (mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_RGR) / ((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_RGR)
 
     # FLUXES
 
@@ -585,13 +593,14 @@ class Grains(Organ):
             s_grain_structure = 0
         return s_grain_structure
 
-    def calculate_s_grain_starch(self, t, sucrose_phloem, delta_t):
+    def calculate_s_grain_starch(self, t, sucrose_phloem, mstruct_axis, delta_t):
         """Rate of starch synthesis in grains (i.e. grain filling) integrated over delta_t (µmol C starch g-1 mstruct s-1 * delta_t).
         Michaelis-Menten function of sucrose concentration in the phloem.
 
         :Parameters:
             - `t` (:class:`float`) - Time of the simulation (s)
             - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
+            - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
         :Returns:
             Synthesis of grain starch (µmol C g-1 mstruct)
         :Returns Type:
@@ -602,7 +611,7 @@ class Grains(Organ):
         elif t> Grains.PARAMETERS.FILLING_END:   #: Grain maturity
             s_grain_starch = 0
         else:                                    #: Grain filling
-            s_grain_starch = (((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_STARCH) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_STARCH)) * delta_t
+            s_grain_starch = (((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_STARCH) / ((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_STARCH)) * delta_t
         return s_grain_starch
 
     def calculate_s_proteins(self, s_grain_structure, s_grain_starch, amino_acids_phloem, sucrose_phloem, structural_dry_mass):
@@ -690,7 +699,7 @@ class Roots(Organ):
         self.sucrose = sucrose                 #: µmol C sucrose
         self.nitrates = nitrates               #: µmol N nitrates
         self.amino_acids = amino_acids         #: µmol N amino acids
-        self.cytokinins = cytokinins         #: AU cytokinins
+        self.cytokinins = cytokinins           #: AU cytokinins
 
         # fluxes from phloem
         self.unloading_sucrose = None          #: current unloading of sucrose from phloem to roots
@@ -780,18 +789,19 @@ class Roots(Organ):
 
     # FLUXES
 
-    def calculate_unloading_sucrose(self, sucrose_phloem, delta_t):
+    def calculate_unloading_sucrose(self, sucrose_phloem, mstruct_axis, delta_t):
         """Rate of sucrose unloading from phloem to roots integrated over delta_t (µmol C sucrose unloaded g-1 mstruct s-1 * delta_t).
         Michaelis-Menten function of the sucrose concentration in phloem.
 
         :Parameters:
             - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
+            - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
         :Returns:
             Sucrose unloading (µmol C g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
-        return (((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) * Roots.PARAMETERS.VMAX_SUCROSE_UNLOADING) / ((max(0, sucrose_phloem)/(Organ.PARAMETERS.MSTRUCT_AXIS*Organ.PARAMETERS.ALPHA_AXIS)) + Roots.PARAMETERS.K_SUCROSE_UNLOADING)) * delta_t
+        return (((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) * Roots.PARAMETERS.VMAX_SUCROSE_UNLOADING) / ((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) + Roots.PARAMETERS.K_SUCROSE_UNLOADING)) * delta_t
 
     def calculate_unloading_amino_acids(self, unloading_sucrose, sucrose_phloem, amino_acids_phloem):
         """Unloading of amino_acids from phloem to roots integrated over delta_t.
@@ -1051,11 +1061,14 @@ class PhotosyntheticOrgan(Organ):
 
         self.exposed_element = exposed_element #: the exposed element
         self.enclosed_element = enclosed_element #: the enclosed element
+        self.mstruct = None #: the structural dry mass
 
     def calculate_integrative_variables(self):
+        self.mstruct = 0
         for element in (self.exposed_element, self.enclosed_element):
             if element is not None:
                 element.calculate_integrative_variables()
+                self.mstruct += element.mstruct
 
     def calculate_total_green_area(self):
         """Calculate the sum of the element green area belonging to the organ.
@@ -1140,7 +1153,7 @@ class PhotosyntheticOrganElement(object):
         # state parameters
         self.mstruct = mstruct               #: Structural dry mass (g)
         self.Nstruct = Nstruct               #: Structural N mass (g)
-        self.is_growing = is_growing
+        self.is_growing = is_growing         #: Flag indicating if the element is growing or not (:class:`bool`)
         self.green_area = green_area         #: green area (m-2)
         self.Tr = Tr                         #: Transpiration rate (mmol m-2 s-1)
         self.Ag = Ag                         #: Gross assimilation (µmol m-2 s-1)
@@ -1366,20 +1379,21 @@ class PhotosyntheticOrganElement(object):
         """
         return (((max(0,triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * PhotosyntheticOrgan.PARAMETERS.VMAX_SUCROSE) / ((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SUCROSE)) * delta_t
 
-    def calculate_loading_sucrose(self, sucrose, sucrose_phloem, delta_t):
+    def calculate_loading_sucrose(self, sucrose, sucrose_phloem, mstruct_axis, delta_t):
         """Rate of sucrose loading to phloem (µmol C sucrose s-1 * delta_t).
         Transport-resistance model.
 
         :Parameters:
             - `sucrose` (:class:`float`) - Amount of sucrose in the element (µmol C)
             - `sucrose_phloem` (:class:`float`) - Amount of sucrose in the phloem (µmol C)
+            - `mstruct_axis` (:class:`float`) - Structural dry mass of the axis (g)
         :Returns:
             Sucrose loading (µmol C)
         :Returns Type:
             :class:`float`
         """
         conc_sucrose_element = sucrose / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
-        conc_sucrose_phloem  = sucrose_phloem / (PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS * parameters.OrganParameters.ALPHA_AXIS)
+        conc_sucrose_phloem  = sucrose_phloem / (mstruct_axis * parameters.OrganParameters.ALPHA_AXIS)
         #: Driving compartment (µmol C g-1 mstruct)
         driving_sucrose_compartment = max(conc_sucrose_element, conc_sucrose_phloem)
         #: Gradient of sucrose between the element and the phloem (µmol C g-1 mstruct)
@@ -1529,22 +1543,25 @@ class PhotosyntheticOrganElement(object):
 
         return k, max(0, k * (proteins/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * delta_t
 
-    def calculate_loading_amino_acids(self, amino_acids, amino_acids_phloem, delta_t):
+    def calculate_loading_amino_acids(self, amino_acids, amino_acids_phloem, mstruct_axis, delta_t):
         """Rate of amino acids loading to phloem (µmol N amino acids s-1 * delta_t).
         Transport-resistance model.
 
         :Parameters:
             - `amino_acids` (:class:`float`) - Amount of amino acids in the element (µmol N)
             - `amino_acids_phloem` (:class:`float`) - Amount of amino acids in the phloem (µmol N)
+            - `mstruct_axis` (:class:`float`) - Structural dry mass of the axis (g)
         :Returns:
             Amino acids loading (µmol N)
         :Returns Type:
             :class:`float`
         """
+        conc_amino_acids_element = amino_acids / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        conc_amino_acids_phloem  = amino_acids_phloem / (mstruct_axis * parameters.OrganParameters.ALPHA_AXIS)
         #: Driving compartment (µmol N g-1 mstruct)
-        driving_amino_acids_compartment = max(amino_acids / (self.mstruct*self.__class__.PARAMETERS.ALPHA), amino_acids_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS))
+        driving_amino_acids_compartment = max(conc_amino_acids_element, conc_amino_acids_phloem)
         #: Gradient of amino acids between the element and the phloem (µmol N g-1 mstruct)
-        diff_amino_acids = amino_acids/(self.mstruct*self.__class__.PARAMETERS.ALPHA) - amino_acids_phloem/(PhotosyntheticOrgan.PARAMETERS.MSTRUCT_AXIS*parameters.OrganParameters.ALPHA_AXIS)
+        diff_amino_acids = conc_amino_acids_element - conc_amino_acids_phloem
         #: Conductance depending on mstruct (g2 µmol-1 s-1)
         conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_AMINO_ACIDS * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
 

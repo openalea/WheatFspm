@@ -583,7 +583,7 @@ def compute_CN_distrib(run_simu=True, make_graphs=True):
 
         # 8) PAR interception
         ph_elements_output_df['day'] = ph_elements_output_df.t//24
-        ph_elements_output_df['projected_area'] = ph_elements_output_df['STAR'] * ph_elements_output_df['green_area'] # m²
+        ph_elements_output_df['projected_area'] = ph_elements_output_df['Eabsm2'] * ph_elements_output_df['green_area'] # m²
         tiller_projected_area = ph_elements_output_df.groupby('day')['projected_area'].sum() / 24 # moyenne jour (m²)
         projected_area_square_meter = tiller_projected_area * parameters.SoilParameters.CULM_DENSITY # moyenne jour sur 1 m² sol (m²)
 
