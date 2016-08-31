@@ -28,7 +28,6 @@ def assert_close(actual, desired, tolerance=0.01):
 
 def test_calculate_respiwheat():
 
-    G = 10
     mstruct_growth =10
     starch_filling =10
     sucrose_loading = 10
@@ -45,7 +44,7 @@ def test_calculate_respiwheat():
 
     actual_respirations = {}
 
-    actual_respirations['R_growth'] =  model.RespirationModel.R_growth(G, mstruct)
+    actual_respirations['R_growth'] =  model.RespirationModel.R_growth(mstruct_growth)
     actual_respirations['R_grain_growth_struct'], actual_respirations['R_grain_growth_starch'] =  model.RespirationModel.R_grain_growth(mstruct_growth, starch_filling, mstruct)
     actual_respirations['R_phloem'] =  model.RespirationModel.R_phloem(sucrose_loading, sucrose, mstruct)[0]
     actual_respirations['R_Namm'] =  model.RespirationModel.R_Namm_upt(U_Namm)

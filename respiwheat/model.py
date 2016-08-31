@@ -48,13 +48,12 @@ class RespirationModel(object):
     KM = 1.67E3           # The Michaelis-Menten constant affinity i.e. the C substrate concentration at half the value of KM_MAX (µmol of C substrate per g of structural mass)
 
     @classmethod
-    def R_growth(cls, G, mstruct):
+    def R_growth(cls, mstruct_growth):
         """
         Local growth respiration
 
         : Parameters:
-            - `G` (:class:`float`) - gross growth of plant tissue (µmol C added in new plant tissue g-1 mstruct)
-            - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
+            - `mstruct_growth` (:class:`float`) - gross growth of mstruct (µmol C added in mstruct)
 
         : Returns:
             _R_growth (µmol C respired)
@@ -62,8 +61,8 @@ class RespirationModel(object):
         :Returns Type:
             :class:`float`
         """
-        _R_growth = ((1 - cls.YG) / cls.YG) * (G * mstruct)
-        return _R_growth
+        R_growth = ((1 - cls.YG) / cls.YG) * mstruct_growth
+        return R_growth
 
     @classmethod
     def R_grain_growth(cls, mstruct_growth, starch_filling, mstruct):
