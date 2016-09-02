@@ -62,3 +62,12 @@ describing what they are and what they do.
     :show-inheritance:
     :synopsis: 
 
+:mod:`cnwheat.converter` module
+*********************************************************
+
+.. automodule:: cnwheat.converter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :synopsis:
+    
