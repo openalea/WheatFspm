@@ -32,4 +32,23 @@ describing what they are and what they do.
     :show-inheritance:
     :synopsis: 
     
+:mod:`senescwheat.simulation` module
+*********************************************************
+
+.. automodule:: senescwheat.simulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :synopsis: 
+    
+
+:mod:`senescwheat.converter` module
+*********************************************************
+
+.. automodule:: senescwheat.converter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :synopsis:
+
     
