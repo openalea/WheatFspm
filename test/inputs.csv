@@ -1,4 +1,4 @@
-plant,axis,metamer,organ,element,width,height,STAR,nitrates,amino_acids,proteins,Nstruct,green_area
+plant,axis,metamer,organ,element,width,height,Eabsm2,nitrates,amino_acids,proteins,Nstruct,green_area
 1,MS,10,blade,LeafElement1,0.018000,0.600000,0.000002,0.000000,16.000000,380.000000,0.001020,0.003460
 1,MS,10,internode,HiddenElement,0.002570,0.300000,0.000000,0.000000,17.000000,66.000000,0.000640,0.001130
 1,MS,10,sheath,StemElement,0.001100,0.500000,0.000000,0.000000,12.000000,128.000000,0.000680,0.000600

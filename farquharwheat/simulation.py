@@ -38,7 +38,7 @@ class Simulation(object):
         #:
         #: `inputs` is a dictionary of dictionaries:
         #:     {(plant_index, axis_label, metamer_index, organ_label, element_label): {element_input_name: element_input_value, ...}, ...}
-        #: See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>`
+        #: See :meth:`Model.run <farquharwheat.model.Model.run>`
         #: for more information about the inputs.
         self.inputs = {}
 
@@ -46,7 +46,7 @@ class Simulation(object):
         #:
         #: `outputs` is a dictionary of dictionaries:
         #:     {(plant_index, axis_label, metamer_index, organ_label, element_label): {element_output_name: element_output_value, ...}, ...}
-        #: See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>`
+        #: See :meth:`Model.run <farquharwheat.model.Model.run>`
         #: for more information about the outputs.
         self.outputs = {}
 
@@ -59,7 +59,7 @@ class Simulation(object):
             - `inputs` (:class:`dict`) - The inputs by element.
               `inputs` must be a dictionary with the same structure as :attr:`inputs`.
 
-            See :meth:`Model.calculate_An <farquharwheat.model.Model.calculate_An>`
+            See :meth:`Model.run <farquharwheat.model.Model.run>`
                for more information about the inputs.
         """
         self.inputs.clear()
@@ -90,14 +90,14 @@ class Simulation(object):
                 element_outputs = dict.fromkeys(['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs'], 0.0)
             else:
                 organ_label = element_id[3]
-                STAR = element_inputs['STAR'] # TODO: check whether absorbed STAR or not.
-                PARa = STAR * PARi
+                Eabsm2 = element_inputs['Eabsm2'] #: Relative absorbed PAR per unit area
+                PARa = Eabsm2 * PARi              #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
                 surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
                                                                             element_inputs['amino_acids'],
                                                                             element_inputs['proteins'],
                                                                             element_inputs['Nstruct'],
                                                                             element_inputs['green_area'])
-                Ag, An, Rd, Tr, Ts, gs = model.Model.calculate_An(surfacic_nitrogen,
+                Ag, An, Rd, Tr, Ts, gs = model.Model.run(surfacic_nitrogen,
                                                                   element_inputs['width'],
                                                                   element_inputs['height'],
                                                                   PARa, Ta, ambient_CO2, RH, Ur, organ_label)

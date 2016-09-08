@@ -7,10 +7,10 @@ from __future__ import division # use "//" to do integer division
     ~~~~~~~~~~~~~~~~~~~~~~~
 
     The module :mod:`farquharwheat.converter` defines functions to:
-        
+
         * convert a :class:`dataframe <pandas.DataFrame>` to/from FarquharWheat inputs or outputs format.
         * convert a :class:`MTG <openalea.mtg.mtg.MTG>` to/from FarquharWheat inputs or outputs format.
-    
+
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -29,16 +29,16 @@ from __future__ import division # use "//" to do integer division
 import pandas as pd
 
 
-#: the name of the organs modeled by FarquharWheat 
+#: the name of the organs modeled by FarquharWheat
 FARQUHARWHEAT_ORGANS_NAMES = set(['internode', 'blade', 'sheath', 'peduncle', 'ear'])
 
 #: the inputs needed by FarquharWheat at element scale
-FARQUHARWHEAT_INPUTS = ['width', 'height', 'STAR', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
+FARQUHARWHEAT_INPUTS = ['width', 'height', 'Eabsm2', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
 
 #: the outputs computed by FarquharWheat
 FARQUHARWHEAT_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs']
 
-#: the inputs and outputs of FarquharWheat. 
+#: the inputs and outputs of FarquharWheat.
 FARQUHARWHEAT_INPUTS_OUTPUTS = FARQUHARWHEAT_INPUTS + FARQUHARWHEAT_OUTPUTS
 
 #: the columns which define the topology in the input/output dataframe
@@ -48,20 +48,20 @@ DATAFRAME_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ', 'element']
 def from_dataframe(dataframe):
     """
     Convert inputs/outputs from Pandas dataframe to Farquhar-Wheat format.
-    
+
     :Parameters:
-        
+
         - `dataframe` (:class:`pandas.DataFrame`) - Inputs/outputs dataframe to convert, with one line by element.
-        
+
     :Returns:
         The inputs/outputs in a dictionary.
-    
+
     :Returns Type:
         :class:`dict` of :class:`dict`
-        
-    .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs` 
+
+    .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Farquhar-Wheat inputs/outputs.
-    
+
     """
     data_dict = {}
     data_columns = dataframe.columns.difference(DATAFRAME_TOPOLOGY_COLUMNS)
@@ -70,25 +70,25 @@ def from_dataframe(dataframe):
         current_dict = current_series[data_columns].to_dict()
         data_dict[current_id] = current_dict
     return data_dict
-    
+
 
 def to_dataframe(data_dict):
     """
     Convert inputs/outputs from Farquhar-Wheat format to Pandas dataframe.
-    
+
     :Parameters:
-        
+
         - `data_dict` (:class:`dict`) - The inputs/outputs in Farquhar-Wheat format.
-    
+
     :Returns:
         The inputs/outputs in a dataframe.
-    
+
     :Returns Type:
         :class:`pandas.DataFrame`
-        
-    .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs` 
+
+    .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Farquhar-Wheat inputs/outputs.
-        
+
     """
     ids_df = pd.DataFrame(data_dict.keys(), columns=DATAFRAME_TOPOLOGY_COLUMNS)
     data_df = pd.DataFrame(data_dict.values())
@@ -98,33 +98,33 @@ def to_dataframe(data_dict):
     df = df.reindex_axis(columns_sorted, axis=1, copy=False)
     df.reset_index(drop=True, inplace=True)
     return df
-    
+
 
 def from_MTG(g, inputs):
     """
-    Convert a MTG to Farquhar-Wheat inputs. 
+    Convert a MTG to Farquhar-Wheat inputs.
     Use data in `inputs` if `g` is incomplete.
-    
+
     :Parameters:
-        
+
             - g (:class:`openalea.mtg.mtg.MTG`) - A MTG which contains the inputs
               of Farquhar-Wheat. These inputs are: :mod:`FARQUHARWHEAT_INPUTS`.
-              
+
             - `inputs` (:class:`pandas.DataFrame`) - Inputs dataframe, with one line by element.
-              
+
     :Returns:
         The inputs of Farquhar-Wheat.
-        
+
     :Returns Type:
         :class:`dict`
-        
+
     .. seealso:: see :attr:`simulation.Simulation.inputs` for the structure of Farquhar-Wheat inputs.
-        
+
     """
     all_inputs_dict = {}
-    
+
     inputs_grouped = inputs.groupby(DATAFRAME_TOPOLOGY_COLUMNS)
-    
+
     # traverse the MTG recursively from top ...
     for plant_vid in g.components_iter(g.root):
         plant_index = int(g.index(plant_vid))
@@ -152,7 +152,7 @@ def from_MTG(g, inputs):
                                 # use the properties of the vertex
                                 element_inputs[element_input_name] = vertex_properties[element_input_name]
                                 if element_input_name == 'green_area':
-                                    element_inputs[element_input_name] /= 10000.0 # convert from cm2 to m2 ; TODO: homogenize the units between the models 
+                                    element_inputs[element_input_name] /= 10000.0 # convert from cm2 to m2 ; TODO: homogenize the units between the models
                             else:
                                 # use the value in elements_inputs
                                 if element_input_name in elements_inputs_group_series:
@@ -162,40 +162,40 @@ def from_MTG(g, inputs):
                                     break
                         if is_valid_element:
                             all_inputs_dict[element_id] = element_inputs
-    
+
     return all_inputs_dict
 
 
 def update_MTG(inputs, outputs, g):
     """
     Update a MTG from Farquhar-Wheat inputs and outputs.
-    
+
     :Parameters:
-    
-            - inputs (:class:`dict` of :class:`dict`) - Farquhar-Wheat inputs. 
-            These inputs are: :mod:`FARQUHARWHEAT_INPUTS`. 
-        
-            - outputs (:class:`dict` of :class:`dict`) - Farquhar-Wheat outputs. 
-            These outputs are: :mod:`FARQUHARWHEAT_OUTPUTS`. 
-        
+
+            - inputs (:class:`dict` of :class:`dict`) - Farquhar-Wheat inputs.
+            These inputs are: :mod:`FARQUHARWHEAT_INPUTS`.
+
+            - outputs (:class:`dict` of :class:`dict`) - Farquhar-Wheat outputs.
+            These outputs are: :mod:`FARQUHARWHEAT_OUTPUTS`.
+
             - `g` (:class:`openalea.mtg.mtg.MTG`) - The MTG to update from the inputs and outputs of FarquharWheat.
-            
+
     .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs` for the structure of Farquhar-Wheat inputs and outputs.
-            
+
     """
-    
+
     # add the properties if needed
     property_names = g.property_names()
     for farquharwheat_output_name in FARQUHARWHEAT_INPUTS_OUTPUTS:
         if farquharwheat_output_name not in property_names:
             g.add_property(farquharwheat_output_name)
-    
+
     # traverse the MTG recursively from top ...
     for plant_vid in g.components_iter(g.root):
         plant_index = int(g.index(plant_vid))
         for axis_vid in g.components_iter(plant_vid):
             axis_label = g.label(axis_vid)
-            for metamer_vid in g.components_iter(axis_vid): 
+            for metamer_vid in g.components_iter(axis_vid):
                 metamer_index = int(g.index(metamer_vid))
                 for organ_vid in g.components_iter(metamer_vid):
                     organ_label = g.label(organ_vid)
@@ -213,4 +213,4 @@ def update_MTG(inputs, outputs, g):
                         element_outputs = outputs[element_id]
                         for element_output_name, element_output_value in element_outputs.iteritems():
                             g.property(element_output_name)[element_vid] = element_output_value
-    
+

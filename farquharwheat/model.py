@@ -68,8 +68,7 @@ class Model(object):
     R = 8.3144              #: Physical parameter: Gas constant (J mol-1 K-1)
     PATM = 1.01325E5        #: Physical parameter: Atmospheric pressure (Pa)
 
-    FR = 0.1                #: Physical parameter: radiation reflectance
-    FT = 0.1                #: Physical parameter: radiation transmittance
+    PARa_to_RGa = 1.53      #: Physical parameter: Used to convert PAR absorbed into RG absorbed (see details in notice entitiled "Notes sur le calcul du rayonnement net à partir du PAR absorbé")
 
     #: Temperature dependance of photosynthetic parameters (parameter values derived from Braune et al. (2009) except for Kc, Ko, and Rdark (Bernacchi et al., 2001))
     #:     * deltaHa, deltaHd: enthalpie of activation and deactivation respectively (kJ mol-1)
@@ -97,7 +96,7 @@ class Model(object):
             - `z` (:class:`float`) - organ height from soil (m)
             - `Zh` (:class:`float`) - canopy height (m)
             - `Ur` (:class:`float`) - wind speed (m s-1) at the reference height (zr), e.g. top of the canopy + 2m (in the case of wheat, Ur can be approximated as the wind speed at 2m from soil)
-            - `PAR` (:class:`float`) - absorbed PAR(µmol m-2 s-1)
+            - `PAR` (:class:`float`) - absorbed PAR (µmol m-2 s-1)
             - `gsw` (:class:`float`) - stomatal conductance to water vapour (mol m-2 s-1)
             - `Ta` (:class:`float`) - air temperature (degree C)
             - `Ts` (:class:`float`) - organ temperature (degree C). Ts = Ta at the first iteration of the numeric resolution
@@ -128,28 +127,29 @@ class Model(object):
         ra = 1/(cls.K**2 * Ur) * (log((cls.ZR - d)/Zo))**2  #: Aerodynamic resistance integrated from zr to z0 + d
 
         #: Net absorbed radiation Rn (PAR and NIR, J m-2 s-1)
-        Iabs = (PAR*(1-cls.FR-cls.FT))/(0.55*4.55)          #: Global absorbed radiation by organ (J m-2 s-1). TODO: relation a verifier
+        RGa = (PAR * cls.PARa_to_RGa) / 4.55                #: Global absorbed radiation by organ (J m-2 s-1). It is assumed that 1 W m-2 of PAR is equivalent to 4.55 µmol m-2 s-1 of PAR (Goudriaan and Laar, 1994)
         es_Ta = 0.611 * exp((17.4*Ta)/(239+Ta))             #: Saturated vapour pressure of the air (kPa), Ta in degree Celsius
         V = RH * es_Ta                                      #: Vapour pressure of the air (kPa)
         fvap = 0.56 - 0.079*sqrt(10*V)                      #: Fraction of vapour pressure
 
-        tau = Iabs/cls.I0                                   #: Atmospheric transmissivity (dimensionless)
+        tau = RGa/cls.I0                                    #: Atmospheric transmissivity (dimensionless)
         fclear = 0.1 + 0.9*max(0, min(1, (tau-0.2)/0.5))    #: Fraction sky clearness
 
-        Rn = Iabs - cls.SIGMA * (Ts + cls.KELVIN_DEGREE)**4*fvap*fclear
+        Rn = RGa # NB: this only accounts for the visible radiations. General equation is Rn = RGa + epsilon*Ra + epsilon*sigma*(Ts_feuilles_voisines + cls.KELVIN_DEGREE)**4 - epsilon*sigma*(Ts + cls.KELVIN_DEGREE)**4
+                 # if Ra unavailable, use Ra = sigma*(Tair + cls.KELVIN_DEGREE)**4*fvap*fclear
 
         #: Transpiration (mm s-1), Penman-Monteith
         if Ts == Ta:
             Ta_K = Ta + cls.KELVIN_DEGREE
             s = ((17.4*239)/(Ta_K + 239)**2)*es_Ta          #: Slope of the curve relating saturation vapour pressure to temperature (kPa K-1)
         else:
-            es_Tl = 0.611 * exp((17.4*Ts)/(239+Ts))     #: Saturated vapour pressure at organ level (kPa), Ts in degree Celsius
+            es_Tl = 0.611 * exp((17.4*Ts)/(239+Ts))         #: Saturated vapour pressure at organ level (kPa), Ts in degree Celsius
             Ts_K, Ta_K = Ts + cls.KELVIN_DEGREE, Ta + cls.KELVIN_DEGREE
-            s = (es_Tl - es_Ta)/(Ts - Ta_K)               #: Slope of the curve relating saturation vapour pressure to temperature (kPa K-1)
+            s = (es_Tl - es_Ta)/(Ts - Ta_K)                 #: Slope of the curve relating saturation vapour pressure to temperature (kPa K-1)
 
         VPDa = es_Ta - V
         rbw = 0.96 * rbh                                                   #: Boundary layer resistance for water (s m-1)
-        gsw_physic = (gsw * cls.R * (Ts+cls.KELVIN_DEGREE)) / cls.PATM   #: Stomatal conductance to water in physical units (m s-1). Relation given by A. Tuzet (2003)
+        gsw_physic = (gsw * cls.R * (Ts+cls.KELVIN_DEGREE)) / cls.PATM     #: Stomatal conductance to water in physical units (m s-1). Relation given by A. Tuzet (2003)
         rswp = 1/gsw_physic                                                #: Stomatal resistance for water (s m-1)
         Tr = max(0, (s * Rn + (cls.RHOCP * VPDa)/(rbh + ra)) / (cls.LAMBDA * (s + cls.GAMMA*((rbw + ra + rswp)/(rbh + ra))))) # mm s-1
 
@@ -255,28 +255,28 @@ class Model(object):
         #: RuBisCO-limited carboxylation rate
         Sna_Vcmax25 = cls.PARAM_N['S_surfacic_nitrogen']['Vc_max25']
         surfacic_nitrogen_min_Vcmax25 = cls.PARAM_N['surfacic_nitrogen_min']['Vc_max25']
-        Vc_max25 = Sna_Vcmax25 * (surfacic_nitrogen - surfacic_nitrogen_min_Vcmax25)                                      #: Relation between Vc_max25 and surfacic_nitrogen (µmol m-2 s-1)
-        Vc_max = cls._f_temperature ('Vc_max', Vc_max25, Ts)                              #: Relation between Vc_max and temperature (µmol m-2 s-1)
-        Ac = (Vc_max * (Ci-Gamma)) / (Ci + Kc * (1 + cls.O/Ko))                             #: Rate of assimilation under Vc_max limitation (µmol m-2 s-1)
+        Vc_max25 = Sna_Vcmax25 * (surfacic_nitrogen - surfacic_nitrogen_min_Vcmax25)                  #: Relation between Vc_max25 and surfacic_nitrogen (µmol m-2 s-1)
+        Vc_max = cls._f_temperature ('Vc_max', Vc_max25, Ts)                                          #: Relation between Vc_max and temperature (µmol m-2 s-1)
+        Ac = (Vc_max * (Ci-Gamma)) / (Ci + Kc * (1 + cls.O/Ko))                                       #: Rate of assimilation under Vc_max limitation (µmol m-2 s-1)
 
         #: RuBP regeneration-limited carboxylation rate via electron transport
-        ALPHA = cls.PARAM_N['S_surfacic_nitrogen']['alpha'] * surfacic_nitrogen + cls.PARAM_N['beta']                     #: Relation between ALPHA and surfacic_nitrogen (mol e- mol-1 photon)
+        ALPHA = cls.PARAM_N['S_surfacic_nitrogen']['alpha'] * surfacic_nitrogen + cls.PARAM_N['beta'] #: Relation between ALPHA and surfacic_nitrogen (mol e- mol-1 photon)
         Sna_Jmax25 = cls.PARAM_N['S_surfacic_nitrogen']['Jmax25']
         surfacic_nitrogen_min_Jmax25 = cls.PARAM_N['surfacic_nitrogen_min']['Jmax25']
-        Jmax25 = Sna_Jmax25 * (surfacic_nitrogen - surfacic_nitrogen_min_Jmax25)                                          #: Relation between Jmax25 and surfacic_nitrogen (µmol m-2 s-1)
-        Jmax = cls._f_temperature('Jmax', Jmax25, Ts)                                     #: Relation between Jmax and temperature (µmol m-2 s-1)
+        Jmax25 = Sna_Jmax25 * (surfacic_nitrogen - surfacic_nitrogen_min_Jmax25)                      #: Relation between Jmax25 and surfacic_nitrogen (µmol m-2 s-1)
+        Jmax = cls._f_temperature('Jmax', Jmax25, Ts)                                                 #: Relation between Jmax and temperature (µmol m-2 s-1)
 
         J = ((Jmax+ALPHA*PAR) - sqrt((Jmax+ALPHA*PAR)**2 - 4*cls.THETA*ALPHA*PAR*Jmax))/(2*cls.THETA) #: Electron transport rate (Muller et al. (2005), Evers et al. (2010)) (µmol m-2 s-1)
-        Aj = (J * (Ci-Gamma)) / (4*Ci + 8*Gamma)                                            #: Rate of assimilation under RuBP regeneration limitation (µmol m-2 s-1)
+        Aj = (J * (Ci-Gamma)) / (4*Ci + 8*Gamma)                                                      #: Rate of assimilation under RuBP regeneration limitation (µmol m-2 s-1)
 
         #: Triose phosphate utilisation-limited carboxylation rate
         Sna_TPU25 = cls.PARAM_N['S_surfacic_nitrogen']['TPU25']
         surfacic_nitrogen_min_TPU25 = cls.PARAM_N['surfacic_nitrogen_min']['TPU25']
-        TPU25 = Sna_TPU25 * (surfacic_nitrogen - surfacic_nitrogen_min_TPU25)                                             #: Relation between TPU25 and surfacic_nitrogen (µmol m-2 s-1)
-        TPU = cls._f_temperature('TPU', TPU25, Ts)                                        #: Relation between TPU and temperature (µmol m-2 s-1)
-        Vomax = (Vc_max*Ko*Gamma)/(0.5*Kc*cls.O)                                            #: Maximum rate of Vo (µmol m-2 s-1) (µmol m-2 s-1)
-        Vo = (Vomax * cls.O) / (cls.O + Ko*(1+Ci/Kc))                                       #: Rate of oxygenation of RuBP (µmol m-2 s-1)
-        Ap = (1-Gamma/Ci)*(3*TPU + Vo)                                                      #: Rate of assimilation under TPU limitation (µmol m-2 s-1). I think there was a mistake in the paper of Braune t al. (2009) where they wrote Ap = (1-Gamma/Ci)*(3*TPU) + Vo
+        TPU25 = Sna_TPU25 * (surfacic_nitrogen - surfacic_nitrogen_min_TPU25)                         #: Relation between TPU25 and surfacic_nitrogen (µmol m-2 s-1)
+        TPU = cls._f_temperature('TPU', TPU25, Ts)                                                    #: Relation between TPU and temperature (µmol m-2 s-1)
+        Vomax = (Vc_max*Ko*Gamma)/(0.5*Kc*cls.O)                                                      #: Maximum rate of Vo (µmol m-2 s-1) (µmol m-2 s-1)
+        Vo = (Vomax * cls.O) / (cls.O + Ko*(1+Ci/Kc))                                                 #: Rate of oxygenation of RuBP (µmol m-2 s-1)
+        Ap = (1-Gamma/Ci)*(3*TPU + Vo)                                                                #: Rate of assimilation under TPU limitation (µmol m-2 s-1). I think there was a mistake in the paper of Braune t al. (2009) where they wrote Ap = (1-Gamma/Ci)*(3*TPU) + Vo
         # A more recent expression of Ap was given by S. v Caemmerer in her book (2000): AP = (3TPU * (Ci-Gamma))/(Ci-(1+3alpha)*Gamma),
         # where 0 < alpha > 1 is the fraction of glycolate carbon not returned to the chloroplast, but I couldn't find any estimation of alpha for wheat
 
@@ -319,9 +319,10 @@ class Model(object):
 
 
     @classmethod
-    def calculate_An(cls, surfacic_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name):
+    def run(cls, surfacic_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name):
         """
-        quelle doc?
+        Computes the photosynthesis of a photosynthetic element. The photosynthesis is computed by using the biochemical FCB model (Farquhar et al., 1980) coupled to the semiempirical
+        BWB model of stomatal conductance (Ball, 1987).
 
         :Parameters:
             - `surfacic_nitrogen` (:class:`float`) - total surfacic nitrogen content of organs (g m-2), obtained by the sum of nitrogen, amino acids, proteins and structural N.
@@ -357,7 +358,7 @@ class Model(object):
             surfacic_nitrogen = cls.NA_0
 
         #: Organ parameters
-        H_CANOPY = 0.78                              #: m, temporary
+        H_CANOPY = 0.78                              #TODO: temporary (m)
 
         ### Iterations to find organ temperature and Ci ###
         Ci, Ts = 0.7*ambient_CO2, Ta # Initial values
