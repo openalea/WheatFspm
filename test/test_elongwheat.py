@@ -79,8 +79,8 @@ def test_run():
     inputs = converter.from_dataframes(hiddenzone_inputs_df, organ_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
-    # convert the inputs to Pandas dataframe
-    hiddenzone_inputs_reconverted_df, organ_inputs_reconverted_df = converter.to_dataframes(simulation_.inputs)
+##    # convert the inputs to Pandas dataframe
+##    hiddenzone_inputs_reconverted_df, organ_inputs_reconverted_df = converter.to_dataframes(simulation_.inputs)
 ##    # compare inputs
 ##    compare_actual_to_desired('inputs', hiddenzone_inputs_reconverted_df, HIDDENZONE_INPUTS_FILENAME)
 ##    compare_actual_to_desired('inputs', organ_inputs_reconverted_df, ORGAN_INPUTS_FILENAME)
