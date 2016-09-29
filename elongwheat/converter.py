@@ -314,12 +314,11 @@ def update_MTG(g, geometrical_model, inputs=None, outputs=None):
                     if 'hiddenzone' not in metamer_properties:
                         g.property('hiddenzone')[metamer_vid] = {}
 
-                    for hiddenzone_data in hiddenzone_data_dict:
-                        for hiddenzone_data_name, hiddenzone_data_value in hiddenzone_data.iteritems():
-                            if hiddenzone_data_name not in ('lamina_Lmax', 'leaf_Wmax'):
-                                g.property('hiddenzone')[metamer_vid][hiddenzone_data_name] = hiddenzone_data_value
-                            else:
-                                mtg_organs_data_from_elongwheat_hiddenzone_data[hiddenzone_data_name] = hiddenzone_data_value # To be stored at organ scale
+                    for hiddenzone_data_name, hiddenzone_data_value in hiddenzone_data_dict.iteritems():
+                        if hiddenzone_data_name not in ('lamina_Lmax', 'leaf_Wmax'):
+                            g.property('hiddenzone')[metamer_vid][hiddenzone_data_name] = hiddenzone_data_value
+                        else:
+                            mtg_organs_data_from_elongwheat_hiddenzone_data[hiddenzone_data_name] = hiddenzone_data_value # To be stored at organ scale
 
                 elif 'hiddenzone' in g.get_vertex_property(metamer_vid):
                     # remove the 'hiddenzone' property from this metamer
