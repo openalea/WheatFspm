@@ -188,7 +188,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         for k, v in dtypes.iteritems():
             hiddenzones_inputs_t0[k] = hiddenzones_inputs_t0[k].astype(v)
 
-        hiddenzones_inputs_outputs = hiddenzones_inputs_t0.reindex_axis(cnwheat_simulation.Simulation.HIDDENZONE_INPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.HIDDENZONE_INPUTS_OUTPUTS + elongwheat_simulation.HIDDENZONE_INPUTS_OUTPUTS)), axis=1)
+        hiddenzones_inputs_outputs = hiddenzones_inputs_t0.reindex_axis(cnwheat_simulation.Simulation.HIDDENZONE_INPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.HIDDENZONE_INPUTS_OUTPUTS + elongwheat_simulation.HIDDENZONE_INPUTS_OUTPUTS + growthwheat_simulation.HIDDENZONE_INPUTS_OUTPUTS)), axis=1)
         # elements
         cnwheat_elements_inputs_t0_reindexed = pd.DataFrame(cnwheat_elements_inputs_t0.values,
                                                             index=sorted(cnwheat_elements_inputs_t0.groupby(cnwheat_simulation.Simulation.ELEMENTS_INPUTS_INDEXES).groups.keys()),
@@ -318,37 +318,37 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
                                 # update the shared data
                                 ## Organs
-                                cnwheat_organs_all_data = cnwheat_organs_all_data.loc[cnwheat_organs_all_data.t == t_cnwheat, :].reset_index(drop=True)
+                                cnwheat_organs_all_data = cnwheat_organs_all_data.loc[cnwheat_organs_all_data.t == t_cnwheat+1, :].reset_index(drop=True)
                                 cnwheat_organs_outputs_reindexed = pd.DataFrame(cnwheat_organs_all_data.values,
                                                                                 index=sorted(cnwheat_organs_all_data.groupby(cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES).groups.keys()),
                                                                                 columns=cnwheat_organs_all_data.columns)
                                 organs_inputs_outputs.update(cnwheat_organs_outputs_reindexed)
-                                organs_inputs_outputs = organs_inputs_outputs.combine_first(cnwheat_organs_outputs_reindexed)
+                                #organs_inputs_outputs = organs_inputs_outputs.combine_first(cnwheat_organs_outputs_reindexed)
                                 ## Hidden zones
-                                cnwheat_hiddenzones_all_data = cnwheat_hiddenzones_all_data.loc[cnwheat_hiddenzones_all_data.t == t_cnwheat, :].reset_index(drop=True)
+                                cnwheat_hiddenzones_all_data = cnwheat_hiddenzones_all_data.loc[cnwheat_hiddenzones_all_data.t == t_cnwheat+1, :].reset_index(drop=True)
                                 cnwheat_hiddenzones_outputs_reindexed = pd.DataFrame(cnwheat_hiddenzones_all_data.values,
                                                                               index=sorted(cnwheat_hiddenzones_all_data.groupby(cnwheat_simulation.Simulation.HIDDENZONE_INPUTS_INDEXES).groups.keys()),
                                                                               columns=cnwheat_hiddenzones_all_data.columns)
                                 hiddenzones_inputs_outputs.update(cnwheat_hiddenzones_outputs_reindexed)
-                                hiddenzones_inputs_outputs = hiddenzones_inputs_outputs.combine_first(cnwheat_hiddenzones_outputs_reindexed)
+                                #hiddenzones_inputs_outputs = hiddenzones_inputs_outputs.combine_first(cnwheat_hiddenzones_outputs_reindexed)
                                 ## Elements
-                                cnwheat_elements_all_data = cnwheat_elements_all_data.loc[cnwheat_elements_all_data.t == t_cnwheat, :].reset_index(drop=True)
+                                cnwheat_elements_all_data = cnwheat_elements_all_data.loc[cnwheat_elements_all_data.t == t_cnwheat+1, :].reset_index(drop=True)
                                 cnwheat_elements_outputs_reindexed = pd.DataFrame(cnwheat_elements_all_data.values,
                                                                                   index=sorted(cnwheat_elements_all_data.groupby(cnwheat_simulation.Simulation.ELEMENTS_INPUTS_INDEXES).groups.keys()),
                                                                                   columns=cnwheat_elements_all_data.columns)
                                 elements_inputs_outputs.update(cnwheat_elements_outputs_reindexed)
-                                elements_inputs_outputs = elements_inputs_outputs.combine_first(cnwheat_elements_outputs_reindexed)
+                                #elements_inputs_outputs = elements_inputs_outputs.combine_first(cnwheat_elements_outputs_reindexed)
                                 ## Soil
-                                cnwheat_soils_all_data = cnwheat_soils_all_data.loc[cnwheat_soils_all_data.t == t_cnwheat, :].reset_index(drop=True)
+                                cnwheat_soils_all_data = cnwheat_soils_all_data.loc[cnwheat_soils_all_data.t == t_cnwheat+1, :].reset_index(drop=True)
                                 cnwheat_soils_outputs_reindexed = pd.DataFrame(cnwheat_soils_all_data.values,
                                                                                index=sorted(cnwheat_soils_all_data.groupby(cnwheat_simulation.Simulation.SOILS_INPUTS_INDEXES).groups.keys()),
                                                                                columns=cnwheat_soils_all_data.columns)
                                 soils_inputs_outputs.update(cnwheat_soils_outputs_reindexed)
-                                soils_inputs_outputs = soils_inputs_outputs.combine_first(cnwheat_soils_outputs_reindexed)
+                                #soils_inputs_outputs = soils_inputs_outputs.combine_first(cnwheat_soils_outputs_reindexed)
 
                                 # append the computed states to global list of states
                                 all_simulation_steps.append(t_cnwheat)
-                                axes_all_data_list.append(cnwheat_axes_all_data.loc[cnwheat_axes_all_data.t == t_cnwheat])
+                                axes_all_data_list.append(cnwheat_axes_all_data.loc[cnwheat_axes_all_data.t == t_cnwheat+1])
                                 organs_all_data_list.append(organs_inputs_outputs.copy())
                                 hiddenzones_all_data_list.append(hiddenzones_inputs_outputs.copy())
                                 elements_all_data_list.append(elements_inputs_outputs.copy())
@@ -458,7 +458,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         all_hiddenzones_inputs_outputs_df = pd.read_csv(HIDDENZONES_STATES_FILEPATH)
         graph_variables_hiddenzones = {'hiddenzone_L': u'Hidden zone length (m)','leaf_L': u'Leaf length (m)', 'delta_leaf_L':u'Delta leaf length (m)',
                                        'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
-                                        'Unloading_Sucrose':u'Sucrose unloading (µmol C)', 'Unloading_Amino_Acids':u'Amino_acids unloading (µmol N)', 'mstruct': u'Structural mass (g)'}
+                                        'Unloading_Sucrose':u'Sucrose unloading (µmol C)', 'Unloading_Amino_Acids':u'Amino_acids unloading (µmol N)', 'mstruct': u'Structural mass (g)', 'Respi_growth': u'Growth respiration (µmol C)', 'sucrose_consumption_mstruct': u'Consumption of sucrose for growth (µmol C)'}
 
         for variable_name, variable_label in graph_variables_hiddenzones.iteritems():
             graph_name = variable_name + '_hz' + '.PNG'
