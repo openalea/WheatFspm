@@ -39,7 +39,7 @@ SENESCWHEAT_PHOTOSYNTHETIC_ORGANS_NAMES = set(['internode', 'blade', 'sheath', '
 SENESCWHEAT_ROOTS_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'cytokinins']
 
 #: the inputs needed by SenescWheat at element scale
-SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'proteins', 'mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan', 'cytokinins', 'sucrose']
+SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'proteins', 'mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan', 'cytokinins', 'sucrose', 'is_growing']
 
 #: the inputs needed by SenescWheat
 SENESCWHEAT_INPUTS = SENESCWHEAT_ROOTS_INPUTS + SENESCWHEAT_ELEMENTS_INPUTS
@@ -127,7 +127,7 @@ def to_dataframes(data_dict):
         current_ids_df = pd.DataFrame(current_data_dict.keys(), columns=current_topology_columns)
         current_data_df = pd.DataFrame(current_data_dict.values())
         current_df = pd.concat([current_ids_df, current_data_df], axis=1)
-        current_df.sort_index(by=current_topology_columns, inplace=True)
+        current_df.sort_values(by=current_topology_columns, inplace=True)
         current_columns_sorted = current_topology_columns + [input_output for input_output in current_inputs_outputs_names if input_output in current_df.columns]
         current_df = current_df.reindex_axis(current_columns_sorted, axis=1, copy=False)
         current_df.reset_index(drop=True, inplace=True)
@@ -219,8 +219,6 @@ def from_MTG(g, roots_inputs, elements_inputs):
                             if element_input_name in vertex_properties:
                                 # use the input from the MTG
                                 element_inputs[element_input_name] = vertex_properties[element_input_name]
-                                if element_input_name == 'green_area':
-                                    element_inputs[element_input_name] /= 10000.0 # convert from cm2 to m2 ; TODO: homogenize the units between the models
                             else:
                                 # use the input from the dataframe
                                 if element_input_name in elements_inputs_group_series:
@@ -289,12 +287,7 @@ def update_MTG(inputs, outputs, g):
                         # update the element in the MTG
                         element_inputs = elements_inputs_dict[element_id]
                         for element_input_name, element_input_value in element_inputs.iteritems():
-                            if element_input_name == 'green_area':
-                                element_input_value *= 10000.0 # convert from m2 to cm2 ; TODO: homogenize the units between the models
                             g.property(element_input_name)[element_vid] = element_input_value
                         element_outputs = elements_outputs_dict[element_id]
                         for element_output_name, element_output_value in element_outputs.iteritems():
-                            if element_output_name == 'green_area':
-                                element_output_value *= 10000.0 # convert from m2 to cm2 ; TODO: homogenize the units between the models
                             g.property(element_output_name)[element_vid] = element_output_value
-

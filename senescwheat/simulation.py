@@ -97,9 +97,10 @@ class Simulation(object):
         all_elements_outputs = self.outputs['elements']
         for element_inputs_id, element_inputs_dict in all_elements_inputs.iteritems():
             # Senescence
-            if element_inputs_dict['green_area'] < Simulation.MIN_GREEN_AREA:
-                element_outputs_dict = element_inputs_dict.copy()
-                element_outputs_dict['green_area'] = 0.0
+            if element_inputs_dict['green_area'] < Simulation.MIN_GREEN_AREA and not element_inputs_dict['is_growing']:
+                pass
+##                element_outputs_dict = element_inputs_dict.copy()
+##                element_outputs_dict['green_area'] = 0.0
             else:
                 update_max_protein = forced_max_protein_elements is None or not element_inputs_id in forced_max_protein_elements
                 new_green_area, relative_delta_green_area, max_proteins = model.SenescenceModel.calculate_relative_delta_green_area(element_inputs_id[3], element_inputs_dict['green_area'], element_inputs_dict['proteins'] / element_inputs_dict['mstruct'], element_inputs_dict['max_proteins'], self.delta_t, update_max_protein)

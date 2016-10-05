@@ -94,7 +94,6 @@ class SenescenceModel(object):
         else:
             new_green_area = prev_green_area
             relative_delta_green_area = 0
-
         return new_green_area, relative_delta_green_area, max_proteins
 
     @classmethod
