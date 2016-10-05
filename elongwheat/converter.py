@@ -125,7 +125,7 @@ def to_dataframes(data_dict):
     """
     dataframes_dict = {}
     for (current_key, current_topology_columns, current_outputs_names) in (('hiddenzone', HIDDENZONE_TOPOLOGY_COLUMNS, simulation.HIDDENZONE_OUTPUTS),
-                                                                           ('organs', ORGAN_TOPOLOGY_COLUMNS, simulation.ORGAN_OUTPUTS)):
+                                                                           ('organs', ORGAN_TOPOLOGY_COLUMNS, simulation.ORGAN_OUTPUTS + ['width'])): #TODO: temp
         current_data_dict = data_dict[current_key]
         current_ids_df = pd.DataFrame(current_data_dict.keys(), columns=current_topology_columns)
         current_data_df = pd.DataFrame(current_data_dict.values())
@@ -343,3 +343,7 @@ def update_MTG(g, geometrical_model, inputs=None, outputs=None):
                             for element_vid in g.components_iter(organ_vid):
                                 if g.get_vertex_property(element_vid)['label'] in ('StemElement', 'LeafElement1'):
                                     g.property(organ_data_name)[element_vid] = organ_data_dict.get(organ_data_name)
+                                    g.property('green_area')[element_vid] = g.property('area')[element_vid]
+                        if g.get_vertex_property(organ_vid).has_key('green_area'):
+                            g.property('width')[organ_vid] = g.property('green_area')[organ_vid] / (organ_data_dict['visible_length'] * 0.75) # TODO: temp
+                            g.property('width')[element_vid] = g.property('width')[organ_vid] # TODO: temp

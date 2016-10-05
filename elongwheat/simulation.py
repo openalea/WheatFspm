@@ -111,8 +111,6 @@ class Simulation(object):
 
         for hiddenzone_id, hiddenzone_inputs in all_hiddenzone_inputs.iteritems():
             curr_hiddenzone_outputs = all_hiddenzone_outputs[hiddenzone_id]
-            if hiddenzone_id==(1,'MS',4):
-                pass
             # Found previous hidden zone TODO: a améliorer
             prev_hiddenzone_id = tuple(list(hiddenzone_id[:2]) + [hiddenzone_id[2] - 1])
             if prev_hiddenzone_id in all_hiddenzone_inputs:
