@@ -40,7 +40,7 @@ PLANTS_INPUTS_FILENAME = 'plants_inputs.csv'
 AXES_INPUTS_FILENAME = 'axes_inputs.csv'
 METAMERS_INPUTS_FILENAME = 'metamers_inputs.csv'
 ORGANS_INPUTS_FILENAME = 'organs_inputs.csv'
-HGZS_INPUTS_FILENAME = 'hgzs_inputs.csv'
+HIDDENZONES_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
 ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
 SOILS_INPUTS_FILENAME = 'soils_inputs.csv'
 
@@ -54,7 +54,7 @@ DESIRED_PLANTS_OUTPUTS_FILENAME = 'desired_plants_outputs.csv'
 DESIRED_AXES_OUTPUTS_FILENAME = 'desired_axes_outputs.csv'
 DESIRED_METAMERS_OUTPUTS_FILENAME = 'desired_metamers_outputs.csv'
 DESIRED_ORGANS_OUTPUTS_FILENAME = 'desired_organs_outputs.csv'
-DESIRED_HGZS_OUTPUTS_FILENAME = 'desired_hgzs_outputs.csv'
+DESIRED_HIDDENZONES_OUTPUTS_FILENAME = 'desired_hiddenzones_outputs.csv'
 DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
 DESIRED_SOILS_OUTPUTS_FILENAME = 'desired_soils_outputs.csv'
 
@@ -62,7 +62,7 @@ ACTUAL_PLANTS_OUTPUTS_FILENAME = 'actual_plants_outputs.csv'
 ACTUAL_AXES_OUTPUTS_FILENAME = 'actual_axes_outputs.csv'
 ACTUAL_METAMERS_OUTPUTS_FILENAME = 'actual_metamers_outputs.csv'
 ACTUAL_ORGANS_OUTPUTS_FILENAME = 'actual_organs_outputs.csv'
-ACTUAL_HGZS_OUTPUTS_FILENAME = 'actual_hgzs_outputs.csv'
+ACTUAL_HIDDENZONES_OUTPUTS_FILENAME = 'actual_hiddenzones_outputs.csv'
 ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
 ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
 
@@ -73,7 +73,7 @@ def test_run():
     simulation_ = simulation.Simulation(delta_t=3600)
     # read inputs from Pandas dataframes
     inputs_dataframes = {}
-    for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, METAMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, HGZS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):
+    for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, METAMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, HIDDENZONES_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):
         inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
 
     # convert inputs to a population of plants and a dictionary of soils
@@ -81,7 +81,7 @@ def test_run():
                                                   inputs_dataframes[AXES_INPUTS_FILENAME],
                                                   inputs_dataframes[METAMERS_INPUTS_FILENAME],
                                                   inputs_dataframes[ORGANS_INPUTS_FILENAME],
-                                                  inputs_dataframes[HGZS_INPUTS_FILENAME],
+                                                  inputs_dataframes[HIDDENZONES_INPUTS_FILENAME],
                                                   inputs_dataframes[ELEMENTS_INPUTS_FILENAME],
                                                   inputs_dataframes[SOILS_INPUTS_FILENAME])
 
@@ -93,12 +93,12 @@ def test_run():
     formatted_inputs_dataframes[AXES_INPUTS_FILENAME], \
     formatted_inputs_dataframes[METAMERS_INPUTS_FILENAME], \
     formatted_inputs_dataframes[ORGANS_INPUTS_FILENAME], \
-    formatted_inputs_dataframes[HGZS_INPUTS_FILENAME], \
+    formatted_inputs_dataframes[HIDDENZONES_INPUTS_FILENAME], \
     formatted_inputs_dataframes[ELEMENTS_INPUTS_FILENAME], \
     formatted_inputs_dataframes[SOILS_INPUTS_FILENAME] = converter.to_dataframes(population, soils)
-    # compare inputs
-    for inputs_filename, inputs_df in formatted_inputs_dataframes.iteritems():
-        tools.compare_actual_to_desired(INPUTS_DIRPATH, inputs_df, inputs_filename)
+##    # compare inputs
+##    for inputs_filename, inputs_df in formatted_inputs_dataframes.iteritems():
+##        tools.compare_actual_to_desired(INPUTS_DIRPATH, inputs_df, inputs_filename)
 
     # Get photosynthesis data
     photosynthesis_elements_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_ELEMENTS_DATA_FILENAME)
@@ -121,7 +121,7 @@ def test_run():
     all_axes_df_list = []
     all_metamers_df_list = []
     all_organs_df_list = []
-    all_hgzs_df_list = []
+    all_hiddenzones_df_list = []
     all_elements_df_list = []
     all_soils_df_list = []
 
@@ -153,13 +153,13 @@ def test_run():
         simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
 
         # run post-processings
-        all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_hgzs_df, all_elements_df, all_soils_df = simulation_.postprocessings()
+        all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_hiddenzones_df, all_elements_df, all_soils_df = simulation_.postprocessings()
 
         all_plants_df_list.append(all_plants_df)
         all_axes_df_list.append(all_axes_df)
         all_metamers_df_list.append(all_metamers_df)
         all_organs_df_list.append(all_organs_df)
-        all_hgzs_df_list.append(all_hgzs_df)
+        all_hiddenzones_df_list.append(all_hiddenzones_df)
         all_elements_df_list.append(all_elements_df)
         all_soils_df_list.append(all_soils_df)
 
@@ -179,9 +179,9 @@ def test_run():
     global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
     tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_organs_df, DESIRED_ORGANS_OUTPUTS_FILENAME, ACTUAL_ORGANS_OUTPUTS_FILENAME)
 
-    global_hgzs_df = pd.concat(all_hgzs_df_list, ignore_index=True)
-    global_hgzs_df.drop_duplicates(subset=simulation.Simulation.HIDDENGROWINGZONE_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_hgzs_df, DESIRED_HGZS_OUTPUTS_FILENAME, ACTUAL_HGZS_OUTPUTS_FILENAME)
+    global_hiddenzones_df = pd.concat(all_hiddenzones_df_list, ignore_index=True)
+    global_hiddenzones_df.drop_duplicates(subset=simulation.Simulation.HIDDENZONE_OUTPUTS_INDEXES, inplace=True)
+    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_hiddenzones_df, DESIRED_HIDDENZONES_OUTPUTS_FILENAME, ACTUAL_HIDDENZONES_OUTPUTS_FILENAME)
 
     global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
     global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)

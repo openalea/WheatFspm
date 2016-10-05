@@ -38,7 +38,7 @@ PLANTS_INPUTS_FILENAME = 'plants_inputs.csv'
 AXES_INPUTS_FILENAME = 'axes_inputs.csv'
 METAMERS_INPUTS_FILENAME = 'metamers_inputs.csv'
 ORGANS_INPUTS_FILENAME = 'organs_inputs.csv'
-HGZS_INPUTS_FILENAME = 'hgzs_inputs.csv'
+HIDDENZONES_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
 ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
 SOILS_INPUTS_FILENAME = 'soils_inputs.csv'
 
@@ -53,7 +53,7 @@ PLANTS_OUTPUTS_FILENAME = 'plants_outputs.csv'
 AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
 METAMERS_OUTPUTS_FILENAME = 'metamers_outputs.csv'
 ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
-HGZS_OUTPUTS_FILENAME = 'hgzs_outputs.csv'
+HIDDENZONES_OUTPUTS_FILENAME = 'hiddenzones_outputs.csv'
 ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
 SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
 
@@ -61,7 +61,7 @@ PLANTS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, PLANTS_OUTPUTS_FILENAME)
 AXES_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, AXES_OUTPUTS_FILENAME)
 METAMERS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, METAMERS_OUTPUTS_FILENAME)
 ORGANS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, ORGANS_OUTPUTS_FILENAME)
-HGZS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, HGZS_OUTPUTS_FILENAME)
+HIDDENZONES_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME)
 ELEMENTS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME)
 SOILS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, SOILS_OUTPUTS_FILENAME)
 
@@ -73,7 +73,7 @@ OUTPUTS_PRECISION = 6
 
 # Read CN exchange inputs
 inputs_dataframes = {}
-for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, METAMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, HGZS_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):
+for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, METAMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, HIDDENZONES_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):
     inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
 
 # Initialize a simulation from CN exchange inputs
@@ -82,7 +82,7 @@ population, soils = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FI
                                               inputs_dataframes[AXES_INPUTS_FILENAME],
                                               inputs_dataframes[METAMERS_INPUTS_FILENAME],
                                               inputs_dataframes[ORGANS_INPUTS_FILENAME],
-                                              inputs_dataframes[HGZS_INPUTS_FILENAME],
+                                              inputs_dataframes[HIDDENZONES_INPUTS_FILENAME],
                                               inputs_dataframes[ELEMENTS_INPUTS_FILENAME],
                                               inputs_dataframes[SOILS_INPUTS_FILENAME])
 simulation_.initialize(population, soils)
@@ -113,7 +113,7 @@ all_plants_df_list = []
 all_axes_df_list = []
 all_metamers_df_list = []
 all_organs_df_list = []
-all_hgzs_df_list = []
+all_hiddenzones_df_list = []
 all_elements_df_list = []
 all_soils_df_list = []
 
@@ -143,13 +143,13 @@ for t in xrange(start_time, stop_time, time_step):
     simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
 
     # run post-processings
-    all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_hgzs_df, all_elements_df, all_soils_df = simulation_.postprocessings()
+    all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_hiddenzones_df, all_elements_df, all_soils_df = simulation_.postprocessings()
 
     all_plants_df_list.append(all_plants_df)
     all_axes_df_list.append(all_axes_df)
     all_metamers_df_list.append(all_metamers_df)
     all_organs_df_list.append(all_organs_df)
-    all_hgzs_df_list.append(all_hgzs_df)
+    all_hiddenzones_df_list.append(all_hiddenzones_df)
     all_elements_df_list.append(all_elements_df)
     all_soils_df_list.append(all_soils_df)
 
@@ -172,9 +172,9 @@ global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
 global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
 global_organs_df.to_csv(ORGANS_OUTPUTS_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
-global_hgzs_df = pd.concat(all_hgzs_df_list, ignore_index=True)
-global_hgzs_df.drop_duplicates(subset=simulation.Simulation.HIDDENGROWINGZONE_OUTPUTS_INDEXES, inplace=True)
-global_hgzs_df.to_csv(HGZS_OUTPUTS_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+global_hiddenzones_df = pd.concat(all_hiddenzones_df_list, ignore_index=True)
+global_hiddenzones_df.drop_duplicates(subset=simulation.Simulation.HIDDENZONE_OUTPUTS_INDEXES, inplace=True)
+global_hiddenzones_df.to_csv(HIDDENZONES_OUTPUTS_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
 
 global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
 global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)

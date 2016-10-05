@@ -26,7 +26,7 @@ def run_caribu(g, adel_wheat):
     for vid in geom.keys():
         if g.class_name(vid) == 'HiddenElement':
             continue
-        elif g.class_name(vid) == 'LeafElement':
+        elif g.class_name(vid) in ('LeafElement1', 'LeafElement'):
             plant_id = g.index(g.complex_at_scale(vid, scale=1))
             label = encode_label(opt_id=1, opak=1, plant_id=plant_id)[0]
         elif g.class_name(vid) == 'StemElement':

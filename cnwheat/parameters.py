@@ -68,8 +68,8 @@ class OrganParameters:
     N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
 
 
-class HiddenGrowingZoneParameters(OrganParameters):
-    SIGMA = 8e-05                           #: Coefficient de diffusion surfacique. Utilisé dans la loide Fick g/mm²/s
+class HiddenZoneParameters(OrganParameters):
+    SIGMA = 80                           #: Coefficient de diffusion surfacique. Utilisé dans la loi de Fick (g m-2 s-1)
     Vmax_Regul_Sfructans = 1
     K_Regul_Sfructans = 0.5
     n_Regul_Sfructans = 15
