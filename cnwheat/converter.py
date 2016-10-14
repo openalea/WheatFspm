@@ -266,7 +266,8 @@ def to_dataframes(population=None, soils=None):
             for axis in plant.axes:
                 append_row(axis, [plant.index, axis.label], simulation.Simulation.AXES_STATE, all_axes_df)
                 for organ in (axis.roots, axis.phloem, axis.grains):
-                    append_row(organ, [plant.index, axis.label, organ.label], simulation.Simulation.ORGANS_STATE, all_organs_df)
+                    if organ is not None:
+                        append_row(organ, [plant.index, axis.label, organ.label], simulation.Simulation.ORGANS_STATE, all_organs_df)
                 for phytomer in axis.phytomers:
                     append_row(phytomer, [plant.index, axis.label, phytomer.index], simulation.Simulation.PHYTOMERS_STATE, all_metamers_df)
                     if phytomer.hiddenzone is not None:

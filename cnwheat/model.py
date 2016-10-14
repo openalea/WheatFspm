@@ -241,9 +241,9 @@ class HiddenZone(Organ):
         mass_proteins = mass_N_proteins / Organ.PARAMETERS.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
 
-    def Regul_Sfructanes(self, Unloading_Csuc_phlo):
-        # TODO: remplacer par calcul CN-WHEAT
-        return (parameters.HiddenZoneParameters.Vmax_Regul_Sfructans*parameters.HiddenZoneParameters.K_Regul_Sfructans**parameters.HiddenZoneParameters.n_Regul_Sfructans)/(parameters.HiddenZoneParameters.K_Regul_Sfructans**parameters.HiddenZoneParameters.n_Regul_Sfructans + (max(0,(-Unloading_Csuc_phlo))**parameters.HiddenZoneParameters.n_Regul_Sfructans))
+##    def Regul_Sfructanes(self, Unloading_Csuc_phlo):
+##        # TODO: remplacer par calcul CN-WHEAT
+##        return (parameters.HiddenZoneParameters.Vmax_Regul_Sfructans*parameters.HiddenZoneParameters.K_Regul_Sfructans**parameters.HiddenZoneParameters.n_Regul_Sfructans)/(parameters.HiddenZoneParameters.K_Regul_Sfructans**parameters.HiddenZoneParameters.n_Regul_Sfructans + (max(0,(-Unloading_Csuc_phlo))**parameters.HiddenZoneParameters.n_Regul_Sfructans))
 
     # fluxes
     def calculate_unloading_sucrose(self, sucrose, sucrose_phloem, mstruct_axis, delta_t):
@@ -262,6 +262,7 @@ class HiddenZone(Organ):
         conductance = parameters.HiddenZoneParameters.SIGMA * parameters.PhotosyntheticOrganParameters.BETA * self.mstruct**(2/3)
         return ((sucrose_phloem / mstruct_axis) - (sucrose / self.mstruct)) * conductance * delta_t
 
+
     def calculate_unloading_amino_acids(self, amino_acids, amino_acids_phloem, mstruct_axis, delta_t):
         """Amino acids unloading from phloem to the hidden zone integrated over delta_t (µmol N amino acids unloaded g-1 mstruct s-1 * delta_t).
         Transport-resistance equation
@@ -278,35 +279,35 @@ class HiddenZone(Organ):
         conductance = parameters.HiddenZoneParameters.SIGMA * parameters.PhotosyntheticOrganParameters.BETA * self.mstruct**(2/3)
         return ((amino_acids_phloem / mstruct_axis) - (amino_acids / self.mstruct)) * conductance * delta_t
 
-    def calculate_s_fructan(self, sucrose, Regul_Sfructanes_gaine, delta_t):
-        """Rate of fructan synthesis (µmol C fructan g-1 mstruct s-1 * delta_t).
-        Sigmoïdal function of sucrose.
-
-        :Parameters:
-            - `sucrose` (:class:`float`) - Sucrose amount in the hidden zone (µmol C)
-            - `Regul_Sfructanes_gaine` (:class:`float`) - #TODO: doc
-        :Returns:
-            Fructan synthesis (µmol C g-1 mstruct)
-        :Returns Type:
-            :class:`float`
-        """
-        return (((max(0, (sucrose / self.mstruct))) ** parameters.PhotosyntheticOrganParameters.N_REGUL_SFRUCTAN) * parameters.HiddenZoneParameters.Vmax_Sfructans)/ ( (max(0, (sucrose / self.mstruct))) ** parameters.PhotosyntheticOrganParameters.N_REGUL_SFRUCTAN + parameters.PhotosyntheticOrganParameters.K_SFRUCTAN**parameters.PhotosyntheticOrganParameters.N_REGUL_SFRUCTAN) * delta_t * Regul_Sfructanes_gaine
-
-    def calculate_d_fructan(self, sucrose, fructan, delta_t):
-        """Rate of fructan degradation (µmol C fructan g-1 mstruct s-1 * delta_t).
-        Inhibition function by the end product i.e. sucrose (Bancal et al., 2012).
-
-        :Parameters:
-            - `sucrose` (:class:`float`) - Sucrose amount in the hidden zone (µmol C)
-            - `fructan` (:class:`float`) - Fructan amount in the hidden zone (µmol C)
-        :Returns:
-            Fructan degradation (µmol C g-1 mstruct)
-        :Returns Type:
-            :class:`float`
-        """
-        fc = ((fructan / self.mstruct) / ((fructan / self.mstruct) + 1))**2
-        D_fructan_pot = ((parameters.PhotosyntheticOrganParameters.K_DFRUCTAN * parameters.PhotosyntheticOrganParameters.VMAX_DFRUCTAN)/((sucrose / self.mstruct) + parameters.PhotosyntheticOrganParameters.K_DFRUCTAN)) * delta_t * fc
-        return D_fructan_pot
+##    def calculate_s_fructan(self, sucrose, Regul_Sfructanes_gaine, delta_t):
+##        """Rate of fructan synthesis (µmol C fructan g-1 mstruct s-1 * delta_t).
+##        Sigmoïdal function of sucrose.
+##
+##        :Parameters:
+##            - `sucrose` (:class:`float`) - Sucrose amount in the hidden zone (µmol C)
+##            - `Regul_Sfructanes_gaine` (:class:`float`) - #TODO: doc
+##        :Returns:
+##            Fructan synthesis (µmol C g-1 mstruct)
+##        :Returns Type:
+##            :class:`float`
+##        """
+##        return (((max(0, (sucrose / self.mstruct))) ** parameters.PhotosyntheticOrganParameters.N_REGUL_SFRUCTAN) * parameters.HiddenZoneParameters.Vmax_Sfructans)/ ( (max(0, (sucrose / self.mstruct))) ** parameters.PhotosyntheticOrganParameters.N_REGUL_SFRUCTAN + parameters.PhotosyntheticOrganParameters.K_SFRUCTAN**parameters.PhotosyntheticOrganParameters.N_REGUL_SFRUCTAN) * delta_t * Regul_Sfructanes_gaine
+##
+##    def calculate_d_fructan(self, sucrose, fructan, delta_t):
+##        """Rate of fructan degradation (µmol C fructan g-1 mstruct s-1 * delta_t).
+##        Inhibition function by the end product i.e. sucrose (Bancal et al., 2012).
+##
+##        :Parameters:
+##            - `sucrose` (:class:`float`) - Sucrose amount in the hidden zone (µmol C)
+##            - `fructan` (:class:`float`) - Fructan amount in the hidden zone (µmol C)
+##        :Returns:
+##            Fructan degradation (µmol C g-1 mstruct)
+##        :Returns Type:
+##            :class:`float`
+##        """
+##        fc = ((fructan / self.mstruct) / ((fructan / self.mstruct) + 1))**2
+##        D_fructan_pot = ((parameters.PhotosyntheticOrganParameters.K_DFRUCTAN * parameters.PhotosyntheticOrganParameters.VMAX_DFRUCTAN)/((sucrose / self.mstruct) + parameters.PhotosyntheticOrganParameters.K_DFRUCTAN)) * delta_t * fc
+##        return D_fructan_pot
 
     def calculate_s_proteins(self, amino_acids, delta_t):
         """Rate of protein synthesis (µmol N proteins s-1 g-1 MS * delta_t).
@@ -333,6 +334,56 @@ class HiddenZone(Organ):
             :class:`float`
         """
         return max(0,(parameters.HiddenZoneParameters.delta_Dproteins * (proteins / self.mstruct))) * delta_t
+
+
+    def calculate_regul_s_fructan(self, loading_sucrose, delta_t):
+        """Regulating function for fructan maximal rate of synthesis.
+        Negative regulation by the loading of sucrose from the phloem ("swith-off" sigmoïdal kinetic).
+
+        :Parameters:
+            - `loading_sucrose` (:class:`float`) - Sucrose loading (µmol C)
+        :Returns:
+            Maximal rate of fructan synthesis (µmol C g-1 mstruct)
+        :Returns Type:
+        """
+        if loading_sucrose <=0:
+            Vmax_Sfructans = PhotosyntheticOrgan.PARAMETERS.VMAX_SFRUCTAN_POT
+        else: # Regulation by sucrose loading
+            rate_loading_sucrose_massic = loading_sucrose/self.mstruct/delta_t
+            Vmax_Sfructans = ((PhotosyntheticOrgan.PARAMETERS.VMAX_SFRUCTAN_POT * PhotosyntheticOrgan.PARAMETERS.K_REGUL_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)) / (max(0, rate_loading_sucrose_massic**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)) + PhotosyntheticOrgan.PARAMETERS.K_REGUL_SFRUCTAN**(PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN)))
+        return Vmax_Sfructans
+
+    def calculate_s_fructan(self, sucrose, regul_s_fructan, delta_t):
+        """Rate of fructan synthesis (µmol C fructan g-1 mstruct s-1 * delta_t).
+        Sigmoïdal function of sucrose.
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
+            - `regul_s_fructan` (:class:`float`) - Maximal rate of fructan synthesis regulated by sucrose loading (µmol C g-1 mstruct)
+        :Returns:
+            Fructan synthesis (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        return ((max(0, sucrose)/(self.mstruct)) * regul_s_fructan)/((max(0, sucrose)/(self.mstruct)) + PhotosyntheticOrgan.PARAMETERS.K_SFRUCTAN) * delta_t
+
+
+    def calculate_d_fructan(self, sucrose, fructan, delta_t):
+        """Rate of fructan degradation (µmol C fructan g-1 mstruct s-1 * delta_t).
+        Inhibition function by the end product i.e. sucrose (Bancal et al., 2012).
+
+        :Parameters:
+            - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
+            - `fructan` (:class:`float`) - Amount of fructan (µmol C)
+        :Returns:
+            Fructan degradation (µmol C g-1 mstruct)
+        :Returns Type:
+            :class:`float`
+        """
+        d_potential = ((PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN * PhotosyntheticOrgan.PARAMETERS.VMAX_DFRUCTAN) / ((max(0, sucrose)/(self.mstruct)) + PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN)) * delta_t
+        d_actual = min(d_potential , max(0, fructan))
+        return d_actual
+
 
     # compartments
     def calculate_sucrose_derivative(self, unloading_sucrose, s_fructan, d_fructan, hiddenzone_loading_sucrose_contribution):
@@ -843,7 +894,7 @@ class Roots(Organ):
         #: Low Affinity Transport System (LATS)
         K_LATS = Roots.PARAMETERS.A_LATS * np.exp(-Roots.PARAMETERS.LAMBDA_LATS*(nitrates_roots/self.mstruct))                         #: Rate constant for nitrates influx at low soil N concentration; LATS (m3 g-1 mstruct s-1)
         LATS = (K_LATS * conc_nitrates_soil)                                                                                           #: Rate of nitrate influx by LATS (µmol N nitrates uptaked s-1 g-1 mstruct)
-        HATS_LATS = (HATS + LATS) * self.mstruct * delta_t                                                            #: Nitrate influx (µmol N)
+        HATS_LATS = (HATS + LATS) * self.mstruct * delta_t                                                                             #: Nitrate influx (µmol N)
 
         # Regulations
         regul_C = (sucrose_roots/self.mstruct) / ((sucrose_roots/self.mstruct) + Roots.PARAMETERS.K_C)                                 #: Nitrate uptake regulation by root C
@@ -1816,4 +1867,4 @@ class Soil(object):
         :Returns Type:
             :class:`float`
         """
-        return mineralisation - uptake_nitrates * parameters.SoilParameters.CULM_DENSITY
+        return mineralisation - uptake_nitrates * parameters.SoilParameters.CULM_DENSITY #TODO: attention calcul densité

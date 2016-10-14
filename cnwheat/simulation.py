@@ -552,17 +552,18 @@ class Simulation(object):
                         hiddenzone.unloading_amino_acids = hiddenzone.calculate_unloading_amino_acids(hiddenzone.amino_acids, axis.phloem.amino_acids, axis.mstruct, self.delta_t)
 
                         # Fructan synthesis
-                        Regul_Sfructanes = hiddenzone.Regul_Sfructanes(hiddenzone.unloading_sucrose)
-                        s_fructan = 0#hiddenzone.calculate_s_fructan(hiddenzone.sucrose, Regul_Sfructanes, self.delta_t) #TODO: a suppr
+                        #Regul_Sfructanes = hiddenzone.Regul_Sfructanes(hiddenzone.unloading_sucrose)
+                        Regul_Sfructanes = hiddenzone.calculate_regul_s_fructan(hiddenzone.unloading_sucrose, self.delta_t)
+                        hiddenzone_s_fructan = hiddenzone.calculate_s_fructan(hiddenzone.sucrose, Regul_Sfructanes, self.delta_t)
 
                         # Fructan degradation
-                        d_fructan = 0#hiddenzone.calculate_d_fructan(hiddenzone.sucrose, hiddenzone.fructan, self.delta_t)
+                        hiddenzone_d_fructan = hiddenzone.calculate_d_fructan(hiddenzone.sucrose, hiddenzone.fructan, self.delta_t)
 
                         # Synthesis proteins
-                        s_proteins = hiddenzone.calculate_s_proteins(hiddenzone.amino_acids, self.delta_t)
+                        hiddenzone_s_proteins = hiddenzone.calculate_s_proteins(hiddenzone.amino_acids, self.delta_t)
 
                         # Degradation proteins
-                        d_proteins = hiddenzone.calculate_d_proteins(hiddenzone.proteins, self.delta_t)
+                        hiddenzone_d_proteins = hiddenzone.calculate_d_proteins(hiddenzone.proteins, self.delta_t)
 
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
 
@@ -637,10 +638,10 @@ class Simulation(object):
 
                     if phytomer.hiddenzone is not None:
                         # compute the derivatives of the hidden zone
-                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['sucrose']] = hiddenzone.calculate_sucrose_derivative(hiddenzone.unloading_sucrose, s_fructan, d_fructan, hiddenzone_loading_sucrose_contribution)
-                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['amino_acids']] = hiddenzone.calculate_amino_acids_derivative(hiddenzone.unloading_amino_acids, s_proteins, d_proteins, hiddenzone_loading_amino_acids_contribution)
-                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['fructan']] = hiddenzone.calculate_fructan_derivative(s_fructan, d_fructan)
-                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['proteins']] = hiddenzone.calculate_proteins_derivative(s_proteins, d_proteins)
+                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['sucrose']] = hiddenzone.calculate_sucrose_derivative(hiddenzone.unloading_sucrose, hiddenzone_s_fructan, hiddenzone_d_fructan, hiddenzone_loading_sucrose_contribution)
+                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['amino_acids']] = hiddenzone.calculate_amino_acids_derivative(hiddenzone.unloading_amino_acids, hiddenzone_s_proteins, hiddenzone_d_proteins, hiddenzone_loading_amino_acids_contribution)
+                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['fructan']] = hiddenzone.calculate_fructan_derivative(hiddenzone_s_fructan, hiddenzone_d_fructan)
+                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['proteins']] = hiddenzone.calculate_proteins_derivative(hiddenzone_s_proteins, hiddenzone_d_proteins)
 
 
                 if axis.grains is not None:
