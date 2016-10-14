@@ -120,7 +120,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # read adelwheat inputs at t0
         adel_wheat = AdelWheat(seed=1234)
         g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)[0]
-        properties_to_convert = {'lengths': ['shape_mature_length', 'shape_max_width', 'length', 'visible_length'], 'areas': ['green_area']}
+        properties_to_convert = {'lengths': ['shape_mature_length', 'shape_max_width', 'length', 'visible_length', 'width'], 'areas': ['green_area']}
         adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
         # read cnwheat inputs at t0
@@ -151,6 +151,11 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # Initialise simulations
         elongwheat_interface.initialize(g, {'hiddenzone_inputs':elongwheat_hiddenzones_inputs_t0, 'organ_inputs':elongwheat_organ_inputs_t0}, adel_wheat)
         growthwheat_interface.initialize(g, {'hiddenzone_inputs':growthwheat_hiddenzones_inputs_t0, 'organ_inputs':growthwheat_organ_inputs_t0, 'root_inputs':growthwheat_root_inputs_t0})
+
+        # Update geometry
+        adel_wheat.update_geometry(g, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
+        #adel_wheat.plot(g)
+        adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
         # define the start and the end of the whole simulation (in hours)
         start_time = 0
@@ -220,7 +225,13 @@ def main(stop_time, run_simu=True, make_graphs=True):
         current_time_of_the_system = time.time()
 
         for t_caribu in xrange(start_time, stop_time, caribu_ts):
-            run_caribu.run_caribu(g, adel_wheat)
+            caribu_outputs = run_caribu.run_caribu(g, adel_wheat)
+            # update the shared data
+            caribu_outputs_reindexed = pd.DataFrame(caribu_outputs.values,
+                                                           index=sorted(caribu_outputs.groupby(run_caribu.DATAFRAME_TOPOLOGY_COLUMNS).groups.keys()),
+                                                           columns=caribu_outputs.columns)
+            elements_inputs_outputs.update(caribu_outputs_reindexed)
+
             for t_senescwheat in xrange(t_caribu, t_caribu + caribu_ts, senescwheat_ts):
                 # initialize and run senescwheat
                 senescwheat_roots_inputs = organs_inputs_outputs.loc[organs_inputs_outputs.organ == 'roots', senescwheat_converter.ROOTS_TOPOLOGY_COLUMNS + senescwheat_converter.SENESCWHEAT_ROOTS_INPUTS].reset_index(drop=True)
@@ -272,7 +283,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
                                                                                                   columns=elongwheat_organs_outputs_with_organ_column.columns)
                         elements_inputs_outputs.update(elongwheat_organs_outputs_with_organ_column_reindexed)
                         # Update geometry
-                        adel_wheat.update_geometry(g, SI_units=True, properties_to_convert=properties_to_convert)
+                        adel_wheat.update_geometry(g, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
                         #adel_wheat.plot(g)
                         adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
@@ -393,7 +404,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # 1) Photosynthetic organs
         ph_elements_output_df = pd.read_csv(ELEMENTS_STATES_FILEPATH)
 
-        graph_variables_ph_elements = {'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
+        graph_variables_ph_elements = {'Eabsm2': u'Absorbed PAR (µmol m$^{-2}$ s$^{-1}$)', 'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
                            'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
                            'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
                            'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
@@ -487,4 +498,4 @@ def main(stop_time, run_simu=True, make_graphs=True):
                           explicit_label=False)
 
 if __name__ == '__main__':
-    main(100, run_simu=True, make_graphs=True)
+    main(200, run_simu=True, make_graphs=False)
