@@ -125,7 +125,7 @@ def to_dataframes(data_dict):
     """
     dataframes_dict = {}
     for (current_key, current_topology_columns, current_outputs_names) in (('hiddenzone', HIDDENZONE_TOPOLOGY_COLUMNS, simulation.HIDDENZONE_OUTPUTS),
-                                                                           ('organs', ORGAN_TOPOLOGY_COLUMNS, simulation.ORGAN_OUTPUTS + ['width'])): #TODO: temp
+                                                                           ('organs', ORGAN_TOPOLOGY_COLUMNS, simulation.ORGAN_OUTPUTS)):
         current_data_dict = data_dict[current_key]
         current_ids_df = pd.DataFrame(current_data_dict.keys(), columns=current_topology_columns)
         current_data_df = pd.DataFrame(current_data_dict.values())
@@ -338,12 +338,18 @@ def update_MTG(g, geometrical_model, inputs=None, outputs=None):
                     if organ_data_dict:
                         for organ_data_name in organs_data_names:
                             g.property(organ_data_name)[organ_vid] = organ_data_dict.get(organ_data_name)
+                        for element_vid in g.components_iter(organ_vid):
+                            if g.get_vertex_property(element_vid)['label'] in ('StemElement', 'LeafElement1'):
+                                g.property(organ_data_name)[element_vid] = organ_data_dict.get(organ_data_name)
 
-                            # Write properties in element scale #: TODO: voir ce qui ce passe avec +sieurs élements
-                            for element_vid in g.components_iter(organ_vid):
-                                if g.get_vertex_property(element_vid)['label'] in ('StemElement', 'LeafElement1'):
-                                    g.property(organ_data_name)[element_vid] = organ_data_dict.get(organ_data_name)
-                                    g.property('green_area')[element_vid] = g.property('area')[element_vid]
-                        if g.get_vertex_property(organ_vid).has_key('green_area'):
-                            g.property('width')[organ_vid] = g.property('green_area')[organ_vid] / (organ_data_dict['visible_length'] * 0.75) # TODO: temp
-                            g.property('width')[element_vid] = g.property('width')[organ_vid] # TODO: temp
+##                        if g.property('green_area').has_key(organ_vid):
+##                            g.property('area')[organ_vid] = g.property('green_area')[organ_vid] #TODO: temp
+####
+####                            # Write properties in element scale #: TODO: voir ce qui ce passe avec +sieurs élements
+##                        for element_vid in g.components_iter(organ_vid):
+####                                if g.get_vertex_property(element_vid)['label'] in ('StemElement', 'LeafElement1'):
+####                                    g.property(organ_data_name)[element_vid] = organ_data_dict.get(organ_data_name)
+####                                    if organ_data_name == 'green_area' and inputs:
+####                                        g.property('area')[element_vid] = g.property('green_area')[element_vid]
+####                                    elif organ_data_name == 'green_area' and outputs:
+####                                        g.property('green_area')[element_vid] = g.property('area')[element_vid]

@@ -36,7 +36,7 @@ HIDDENZONE_INPUTS = ['leaf_is_growing', 'hiddenzone_L', 'leaf_L', 'leaf_Lmax', '
 ORGAN_INPUTS = ['visible_length', 'is_growing', 'final_hidden_length', 'length']
 
 #: the outputs computed by ElongWheat
-HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'hiddenzone_L', 'leaf_L', 'delta_leaf_L', 'leaf_Lmax', 'leaf_Lem_prev', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'sucrose', 'amino_acids', 'fructan', 'mstruct']
+HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'hiddenzone_L', 'delta_hiddenzone_L', 'leaf_L', 'delta_leaf_L', 'leaf_Lmax', 'leaf_Lem_prev', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'sucrose', 'amino_acids', 'fructan', 'mstruct']
 ORGAN_OUTPUTS = ['visible_length', 'is_growing', 'final_hidden_length', 'length']
 
 #: the inputs and outputs of ElongWheat.
@@ -106,7 +106,7 @@ class Simulation(object):
         all_organs_inputs = self.inputs['organs']
         all_organs_outputs = self.outputs['organs']
 
-        # Previous sheaths
+        # Hidden zone lengths
         all_hiddenzone_L_calculation_inputs = self.inputs['hiddenzone_L_calculation']
 
         for hiddenzone_id, hiddenzone_inputs in all_hiddenzone_inputs.iteritems():
@@ -123,6 +123,7 @@ class Simulation(object):
             previous_sheath_L = all_hiddenzone_L_calculation_inputs[hiddenzone_id]['previous_sheath_visible_length']
             previous_sheath_final_hidden_L = all_hiddenzone_L_calculation_inputs[hiddenzone_id]['previous_sheath_final_hidden_length']
             curr_hiddenzone_outputs['hiddenzone_L'] = model.calculate_hiddenzone_length(previous_hiddenzone_L, previous_sheath_L, previous_sheath_final_hidden_L)
+            curr_hiddenzone_outputs['delta_hiddenzone_L'] = curr_hiddenzone_outputs['hiddenzone_L'] - hiddenzone_inputs['hiddenzone_L']
 
             if not prev_leaf_emerged: #: Before the emergence of the previous leaf. Exponential-like elong.
                 ## delta leaf length
@@ -140,8 +141,9 @@ class Simulation(object):
                     #: Test of leaf emergence against hidden zone length. Assumes that a leaf cannot emerge before the previous one # TODO: besoin correction pour savoir à quel pas de temps exact??
                     curr_hiddenzone_outputs['leaf_is_emerged'] = model.calculate_leaf_emergence(hiddenzone_inputs['leaf_L'], curr_hiddenzone_outputs['hiddenzone_L'])
                     if curr_hiddenzone_outputs['leaf_is_emerged']: # Initialise lamina outputs
-                        all_organs_outputs[lamina_id] = dict.fromkeys(ORGAN_OUTPUTS, 0)
-                        all_organs_outputs[lamina_id]['is_growing'] = True
+                        new_lamina_outputs = dict.fromkeys(ORGAN_OUTPUTS, 0)
+                        new_lamina_outputs['is_growing'] = True
+                        self.outputs['organs'][lamina_id] = new_lamina_outputs
 
                         # Initialise variables for the next hidden zone
                         next_hiddenzone_id = tuple(list(hiddenzone_id[:2]) + [hiddenzone_id[2] + 1])
@@ -176,8 +178,9 @@ class Simulation(object):
                         curr_organ_outputs['length'] = lamina_L
                         # Initialise sheath outputs
                         sheath_id = hiddenzone_id + tuple(['sheath'])
-                        all_organs_outputs[sheath_id] = dict.fromkeys(ORGAN_OUTPUTS, 0)
-                        all_organs_outputs[sheath_id]['is_growing'] = True
+                        new_sheath = dict.fromkeys(ORGAN_OUTPUTS, 0)
+                        new_sheath[sheath_id]['is_growing'] = True
+                        self.outputs['organs'][sheath_id] = new_sheath
 
                     # Update of lamina outputs
                     self.outputs['organs'][lamina_id] = curr_organ_outputs
@@ -202,7 +205,7 @@ class Simulation(object):
                     # Update of sheath outputs
                     self.outputs['organs'][sheath_id] = curr_organ_outputs
 
-            # Update of leaf outputs, TODO: attention aux valeurs negatives
+            # Update of leaf outputs, #TODO: attention aux valeurs negatives
             curr_hiddenzone_outputs['leaf_L'] = leaf_L
             curr_hiddenzone_outputs['delta_leaf_L'] = np.nanmin([delta_leaf_L, (curr_hiddenzone_outputs['leaf_Lmax'] - hiddenzone_inputs['leaf_L'])])
 
