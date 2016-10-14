@@ -2,7 +2,7 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import division # use '//' to do integer division
-
+import warnings
 """
     farquharwheat.model
     ~~~~~~~~~~~~~~~~~~~
@@ -289,7 +289,7 @@ class Model(object):
         Rd = Rdark * (0.33 + (1-0.33)*(0.5)**(PAR/15))                                      # Found in Muller et al. (2005), eq. 19 (µmol m-2 s-1)
 
         #: Net C assimilation (µmol m-2 s-1)
-        if Ag <= 0: # Occurs when Ci is lower than Gamma, in these cases there is no net assimilation (Farquhar, 1980; Caemmerer, 2000)
+        if Ag <= 0: # Occurs when Ci is lower than Gamma or when (surfacic_nitrogen - surfacic_nitrogen_min)<0, in these cases there is no net assimilation (Farquhar, 1980; Caemmerer, 2000)
             Ag, An = 0, 0
         else:
             An = Ag - Rd
