@@ -24,8 +24,6 @@ from __future__ import division # use '//' to do integer division
         $Id$
 """
 
-import pandas as pd
-
 
 class SenescenceModel(object):
 
