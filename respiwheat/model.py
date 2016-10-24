@@ -2,7 +2,6 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import division # use '//' to do integer division
-from math import log, exp
 
 """
     respiwheat.model
