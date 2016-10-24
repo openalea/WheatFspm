@@ -36,9 +36,6 @@ from cnwheat import simulation, tools, converter, model
 
 INPUTS_DIRPATH = 'inputs'
 
-PLANTS_INPUTS_FILENAME = 'plants_inputs.csv'
-AXES_INPUTS_FILENAME = 'axes_inputs.csv'
-METAMERS_INPUTS_FILENAME = 'metamers_inputs.csv'
 ORGANS_INPUTS_FILENAME = 'organs_inputs.csv'
 HIDDENZONES_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
 ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
@@ -58,9 +55,7 @@ DESIRED_HIDDENZONES_OUTPUTS_FILENAME = 'desired_hiddenzones_outputs.csv'
 DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
 DESIRED_SOILS_OUTPUTS_FILENAME = 'desired_soils_outputs.csv'
 
-ACTUAL_PLANTS_OUTPUTS_FILENAME = 'actual_plants_outputs.csv'
 ACTUAL_AXES_OUTPUTS_FILENAME = 'actual_axes_outputs.csv'
-ACTUAL_METAMERS_OUTPUTS_FILENAME = 'actual_metamers_outputs.csv'
 ACTUAL_ORGANS_OUTPUTS_FILENAME = 'actual_organs_outputs.csv'
 ACTUAL_HIDDENZONES_OUTPUTS_FILENAME = 'actual_hiddenzones_outputs.csv'
 ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
@@ -73,14 +68,11 @@ def test_run():
     simulation_ = simulation.Simulation(delta_t=3600)
     # read inputs from Pandas dataframes
     inputs_dataframes = {}
-    for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, METAMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, HIDDENZONES_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):
+    for inputs_filename in (ORGANS_INPUTS_FILENAME, HIDDENZONES_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):
         inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
 
     # convert inputs to a population of plants and a dictionary of soils
-    population, soils = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FILENAME],
-                                                  inputs_dataframes[AXES_INPUTS_FILENAME],
-                                                  inputs_dataframes[METAMERS_INPUTS_FILENAME],
-                                                  inputs_dataframes[ORGANS_INPUTS_FILENAME],
+    population, soils = converter.from_dataframes(inputs_dataframes[ORGANS_INPUTS_FILENAME],
                                                   inputs_dataframes[HIDDENZONES_INPUTS_FILENAME],
                                                   inputs_dataframes[ELEMENTS_INPUTS_FILENAME],
                                                   inputs_dataframes[SOILS_INPUTS_FILENAME])
@@ -89,9 +81,7 @@ def test_run():
     simulation_.initialize(population, soils)
     # convert the population and the soils to Pandas dataframes
     formatted_inputs_dataframes = {}
-    formatted_inputs_dataframes[PLANTS_INPUTS_FILENAME], \
-    formatted_inputs_dataframes[AXES_INPUTS_FILENAME], \
-    formatted_inputs_dataframes[METAMERS_INPUTS_FILENAME], \
+    _, \
     formatted_inputs_dataframes[ORGANS_INPUTS_FILENAME], \
     formatted_inputs_dataframes[HIDDENZONES_INPUTS_FILENAME], \
     formatted_inputs_dataframes[ELEMENTS_INPUTS_FILENAME], \
@@ -117,9 +107,7 @@ def test_run():
     stop_time = 48
     time_step = 4
 
-    all_plants_df_list = []
     all_axes_df_list = []
-    all_metamers_df_list = []
     all_organs_df_list = []
     all_hiddenzones_df_list = []
     all_elements_df_list = []
@@ -153,27 +141,17 @@ def test_run():
         simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
 
         # run post-processings
-        all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_hiddenzones_df, all_elements_df, all_soils_df = simulation_.postprocessings()
+        _, all_axes_df, _, all_organs_df, all_hiddenzones_df, all_elements_df, all_soils_df = simulation_.postprocessings()
 
-        all_plants_df_list.append(all_plants_df)
         all_axes_df_list.append(all_axes_df)
-        all_metamers_df_list.append(all_metamers_df)
         all_organs_df_list.append(all_organs_df)
         all_hiddenzones_df_list.append(all_hiddenzones_df)
         all_elements_df_list.append(all_elements_df)
         all_soils_df_list.append(all_soils_df)
 
-    global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
-    global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_plants_df, DESIRED_PLANTS_OUTPUTS_FILENAME, ACTUAL_PLANTS_OUTPUTS_FILENAME)
-
     global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
     global_axes_df.drop_duplicates(subset=simulation.Simulation.AXES_OUTPUTS_INDEXES, inplace=True)
     tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_axes_df, DESIRED_AXES_OUTPUTS_FILENAME, ACTUAL_AXES_OUTPUTS_FILENAME)
-
-    global_metamers_df = pd.concat(all_metamers_df_list, ignore_index=True)
-    global_metamers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_metamers_df, DESIRED_METAMERS_OUTPUTS_FILENAME, ACTUAL_METAMERS_OUTPUTS_FILENAME)
 
     global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
     global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
