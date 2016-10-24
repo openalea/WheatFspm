@@ -23,7 +23,6 @@ from __future__ import division # use "//" to do integer division
         $Id$
 """
 
-import math
 import parameters
 
 def calculate_hiddenzone_length(previous_hiddenzone_L, previous_sheath_visible_L, previous_sheath_final_hidden_L):

@@ -24,10 +24,8 @@ from __future__ import division # use "//" to do integer division
 """
 
 import numpy as np
-import pandas as pd
 
 import model
-import logging
 import warnings
 import copy
 

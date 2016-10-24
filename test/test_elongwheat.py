@@ -32,7 +32,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from elongwheat import model, simulation, converter
+from elongwheat import simulation, converter
 
 INPUTS_DIRPATH = 'inputs'
 HIDDENZONE_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
