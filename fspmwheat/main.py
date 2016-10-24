@@ -10,10 +10,10 @@
     You must first install :mod:`alinea.adel`, :mod:`cnwheat`, :mod:`farquharwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
     before running this script with the command `python`.
 
-    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
+    :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
+    .. seealso:: Barillot et al. 2016.
 '''
 
 '''
@@ -29,6 +29,8 @@ import os
 import time, datetime
 import profile, pstats
 
+import random
+
 import logging
 
 import pandas as pd
@@ -36,12 +38,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from alinea.adel.astk_interface import AdelWheat
+import cnwheat_facade, elongwheat_facade, farquharwheat_facade, growthwheat_facade, senescwheat_facade, caribu_facade
 
-from cnwheat import simulation as cnwheat_simulation, model as cnwheat_model, parameters as cnwheat_parameters, converter as cnwheat_converter, tools as cnwheat_tools, run_caribu
-from farquharwheat import simulation as farquharwheat_simulation, model as farquharwheat_model, converter as farquharwheat_converter
-from senescwheat import simulation as senescwheat_simulation, model as senescwheat_model, converter as senescwheat_converter
-from elongwheat import simulation as elongwheat_simulation, model as elongwheat_model, converter as elongwheat_converter, interface as elongwheat_interface
-from growthwheat import simulation as growthwheat_simulation, model as growthwheat_model, converter as growthwheat_converter, interface as growthwheat_interface
+random.seed(1234)
+np.random.seed(1234)
 
 INPUTS_DIRPATH = 'inputs'
 GRAPHS_DIRPATH = 'graphs'
@@ -88,13 +88,17 @@ HIDDENZONES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hiddenzones_states.
 ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'elements_states.csv')
 SOILS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'soils_states.csv')
 
-INPUTS_OUTPUTS_PRECISION = 10
+AXES_INDEX_COLUMNS = ['t','plant','axis']
+ELEMENTS_INDEX_COLUMNS = ['t','plant','axis', 'metamer', 'organ', 'element']
+HIDDENZONES_INDEX_COLUMNS = ['t','plant','axis', 'metamer']
+ORGANS_INDEX_COLUMNS = ['t','plant','axis', 'organ']
+SOILS_INDEX_COLUMNS = ['t','plant','axis']
+
+INPUTS_OUTPUTS_PRECISION = 5 # 10
 
 LOGGING_CONFIG_FILEPATH = os.path.join('..', '..', 'logging.json')
 
 LOGGING_LEVEL = logging.INFO # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
-
-cnwheat_tools.setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL, log_model=False, log_compartments=False, log_derivatives=False)
 
 def main(stop_time, run_simu=True, make_graphs=True):
     if run_simu:
@@ -111,49 +115,85 @@ def main(stop_time, run_simu=True, make_graphs=True):
         cnwheat_ts = 1
 
         hour_to_second_conversion_factor = 3600
-
-        # create the simulators
-        senescwheat_simulation_ = senescwheat_simulation.Simulation(senescwheat_ts * hour_to_second_conversion_factor)
-        farquharwheat_simulation_ = farquharwheat_simulation.Simulation()
-        cnwheat_simulation_ = cnwheat_simulation.Simulation(cnwheat_ts * hour_to_second_conversion_factor)
-
+        
         # read adelwheat inputs at t0
         adel_wheat = AdelWheat(seed=1234)
         g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)[0]
         properties_to_convert = {'lengths': ['shape_mature_length', 'shape_max_width', 'length', 'visible_length', 'width'], 'areas': ['green_area']}
         adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
-        # read cnwheat inputs at t0
-        cnwheat_plants_inputs_t0 = pd.read_csv(CNWHEAT_PLANTS_INPUTS_FILEPATH)
-        cnwheat_axes_inputs_t0 = pd.read_csv(CNWHEAT_AXES_INPUTS_FILEPATH)
-        cnwheat_metamers_inputs_t0 = pd.read_csv(CNWHEAT_METAMERS_INPUTS_FILEPATH)
+        # create empty dataframes to shared data between the models
+        shared_axes_inputs_outputs_df = pd.DataFrame()
+        shared_organs_inputs_outputs_df = pd.DataFrame()
+        shared_hiddenzones_inputs_outputs_df = pd.DataFrame()
+        shared_elements_inputs_outputs_df = pd.DataFrame()
+        shared_soils_inputs_outputs_df = pd.DataFrame()
+
+        # read the inputs at t0 and create the facades
+        # caribu
+        caribu_facade_ = caribu_facade.CaribuFacade(g, 
+                                                    shared_elements_inputs_outputs_df,
+                                                    adel_wheat)
+
+        # senescwheat
+        senescwheat_roots_inputs_t0 = pd.read_csv(SENESCWHEAT_ROOTS_INPUTS_FILEPATH)
+        senescwheat_elements_inputs_t0 = pd.read_csv(SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH)
+        senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g, 
+                                                                   senescwheat_ts * hour_to_second_conversion_factor, 
+                                                                   senescwheat_roots_inputs_t0, 
+                                                                   senescwheat_elements_inputs_t0, 
+                                                                   shared_organs_inputs_outputs_df, 
+                                                                   shared_elements_inputs_outputs_df)
+        
+        # farquharwheat
+        farquharwheat_elements_inputs_t0 = pd.read_csv(FARQUHARWHEAT_INPUTS_FILEPATH)
+        farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g, 
+                                                                         farquharwheat_elements_inputs_t0, 
+                                                                         shared_elements_inputs_outputs_df)
+        
+        # elongwheat
+        elongwheat_hiddenzones_inputs_t0 = pd.read_csv(ELONGWHEAT_HIDDENZONE_INPUTS_FILEPATH)
+        elongwheat_organ_inputs_t0 = pd.read_csv(ELONGWHEAT_ORGANS_INPUTS_FILEPATH)
+        elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g, 
+                                                                elongwheat_ts * hour_to_second_conversion_factor, 
+                                                                elongwheat_hiddenzones_inputs_t0, 
+                                                                elongwheat_organ_inputs_t0, 
+                                                                shared_hiddenzones_inputs_outputs_df, 
+                                                                shared_elements_inputs_outputs_df, 
+                                                                adel_wheat)
+        
+        # growthwheat
+        growthwheat_hiddenzones_inputs_t0 = pd.read_csv(GROWTHWHEAT_HIDDENZONE_INPUTS_FILEPATH)
+        growthwheat_organ_inputs_t0 = pd.read_csv(GROWTHWHEAT_ORGANS_INPUTS_FILEPATH)
+        growthwheat_root_inputs_t0 = pd.read_csv(GROWTHWHEAT_ROOTS_INPUTS_FILEPATH)
+        growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g, 
+                                                                   growthwheat_ts * hour_to_second_conversion_factor, 
+                                                                   growthwheat_hiddenzones_inputs_t0, 
+                                                                   growthwheat_organ_inputs_t0, 
+                                                                   growthwheat_root_inputs_t0, 
+                                                                   shared_organs_inputs_outputs_df, 
+                                                                   shared_hiddenzones_inputs_outputs_df, 
+                                                                   shared_elements_inputs_outputs_df)
+        
+        # cnwheat
         cnwheat_organs_inputs_t0 = pd.read_csv(CNWHEAT_ORGANS_INPUTS_FILEPATH)
         cnwheat_hiddenzones_inputs_t0 = pd.read_csv(CNWHEAT_HIDDENZONE_INPUTS_FILEPATH)
         cnwheat_elements_inputs_t0 = pd.read_csv(CNWHEAT_ELEMENTS_INPUTS_FILEPATH)
         cnwheat_soils_inputs_t0 = pd.read_csv(CNWHEAT_SOILS_INPUTS_FILEPATH)
-
-        # read farquharwheat inputs at t0
-        farquharwheat_elements_inputs_t0 = pd.read_csv(FARQUHARWHEAT_INPUTS_FILEPATH)
-
-        # read senescwheat inputs at t0
-        senescwheat_roots_inputs_t0 = pd.read_csv(SENESCWHEAT_ROOTS_INPUTS_FILEPATH)
-        senescwheat_elements_inputs_t0 = pd.read_csv(SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH)
-
-        # read elongwheat inputs at t0
-        elongwheat_hiddenzones_inputs_t0 = pd.read_csv(ELONGWHEAT_HIDDENZONE_INPUTS_FILEPATH)
-        elongwheat_organ_inputs_t0 = pd.read_csv(ELONGWHEAT_ORGANS_INPUTS_FILEPATH)
-
-        # read growthwheat inputs at t0
-        growthwheat_hiddenzones_inputs_t0 = pd.read_csv(GROWTHWHEAT_HIDDENZONE_INPUTS_FILEPATH)
-        growthwheat_organ_inputs_t0 = pd.read_csv(GROWTHWHEAT_ORGANS_INPUTS_FILEPATH)
-        growthwheat_root_inputs_t0 = pd.read_csv(GROWTHWHEAT_ROOTS_INPUTS_FILEPATH)
-
-        # Initialise simulations
-        elongwheat_interface.initialize(g, {'hiddenzone_inputs':elongwheat_hiddenzones_inputs_t0, 'organ_inputs':elongwheat_organ_inputs_t0}, adel_wheat)
-        growthwheat_interface.initialize(g, {'hiddenzone_inputs':growthwheat_hiddenzones_inputs_t0, 'organ_inputs':growthwheat_organ_inputs_t0, 'root_inputs':growthwheat_root_inputs_t0})
-
+        cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g, 
+                                                       cnwheat_ts * hour_to_second_conversion_factor, 
+                                                       cnwheat_organs_inputs_t0, 
+                                                       cnwheat_hiddenzones_inputs_t0, 
+                                                       cnwheat_elements_inputs_t0, 
+                                                       cnwheat_soils_inputs_t0, 
+                                                       shared_axes_inputs_outputs_df, 
+                                                       shared_organs_inputs_outputs_df, 
+                                                       shared_hiddenzones_inputs_outputs_df, 
+                                                       shared_elements_inputs_outputs_df, 
+                                                       shared_soils_inputs_outputs_df)
+        
         # Update geometry
-        adel_wheat.update_geometry(g, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
+        adel_wheat.update_geometry(g, SI_units=True, properties_to_convert=properties_to_convert) # convert the data in the mtg to non-SI units
         #adel_wheat.plot(g)
         adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
@@ -161,63 +201,12 @@ def main(stop_time, run_simu=True, make_graphs=True):
         start_time = 0
         stop_time = stop_time
 
-        # define lists of dataframes to store the state of the system at each step.
+        # define lists of dataframes to store the inputs and the outputs of the models at each step.
         axes_all_data_list = []
         organs_all_data_list = [] # organs which belong to axes: roots, phloem, grains
         hiddenzones_all_data_list = []
         elements_all_data_list = []
         soils_all_data_list = []
-
-        # initialize dataframes to share data between the models
-        # organs
-        cnwheat_organs_inputs_t0_reindexed = pd.DataFrame(cnwheat_organs_inputs_t0.values,
-                                                          index=sorted(cnwheat_organs_inputs_t0.groupby(cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES).groups.keys()),
-                                                          columns=cnwheat_organs_inputs_t0.columns)
-        senescwheat_roots_inputs_t0_with_organ_column = senescwheat_roots_inputs_t0.copy()
-        senescwheat_roots_inputs_t0_with_organ_column.loc[:, 'organ'] = 'roots'
-        senescwheat_roots_inputs_t0_with_organ_column_reindexed = pd.DataFrame(senescwheat_roots_inputs_t0_with_organ_column.values,
-                                                                               index=sorted(senescwheat_roots_inputs_t0_with_organ_column.groupby(senescwheat_converter.ROOTS_TOPOLOGY_COLUMNS + ['organ']).groups.keys()),
-                                                                               columns=senescwheat_roots_inputs_t0_with_organ_column.columns)
-        organs_inputs_t0 = cnwheat_organs_inputs_t0_reindexed.combine_first(senescwheat_roots_inputs_t0_with_organ_column_reindexed)
-        organs_inputs_outputs = organs_inputs_t0.reindex_axis(cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.ORGANS_INPUTS_OUTPUTS + senescwheat_converter.SENESCWHEAT_ROOTS_INPUTS_OUTPUTS)), axis=1)
-
-        # hidden zones
-        cnwheat_hiddenzones_inputs_t0_reindexed = pd.DataFrame(cnwheat_hiddenzones_inputs_t0.values,
-                                                        index=sorted(cnwheat_hiddenzones_inputs_t0.groupby(cnwheat_simulation.Simulation.HIDDENZONE_INPUTS_INDEXES).groups.keys()),
-                                                        columns=cnwheat_hiddenzones_inputs_t0.columns)
-        elongwheat_hiddenzones_inputs_t0_reindexed = pd.DataFrame(elongwheat_hiddenzones_inputs_t0.values.tolist(),
-                                                            index=sorted(elongwheat_hiddenzones_inputs_t0.groupby(elongwheat_converter.HIDDENZONE_TOPOLOGY_COLUMNS).groups.keys()),
-                                                            columns=elongwheat_hiddenzones_inputs_t0.columns)
-        hiddenzones_inputs_t0 = cnwheat_hiddenzones_inputs_t0_reindexed.combine_first(elongwheat_hiddenzones_inputs_t0_reindexed)
-        dtypes = elongwheat_hiddenzones_inputs_t0_reindexed.dtypes.combine_first(cnwheat_hiddenzones_inputs_t0_reindexed.dtypes)
-        for k, v in dtypes.iteritems():
-            hiddenzones_inputs_t0[k] = hiddenzones_inputs_t0[k].astype(v)
-
-        hiddenzones_inputs_outputs = hiddenzones_inputs_t0.reindex_axis(cnwheat_simulation.Simulation.HIDDENZONE_INPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.HIDDENZONE_INPUTS_OUTPUTS + elongwheat_simulation.HIDDENZONE_INPUTS_OUTPUTS + growthwheat_simulation.HIDDENZONE_INPUTS_OUTPUTS)), axis=1)
-        # elements
-        cnwheat_elements_inputs_t0_reindexed = pd.DataFrame(cnwheat_elements_inputs_t0.values,
-                                                            index=sorted(cnwheat_elements_inputs_t0.groupby(cnwheat_simulation.Simulation.ELEMENTS_INPUTS_INDEXES).groups.keys()),
-                                                            columns=cnwheat_elements_inputs_t0.columns)
-        farquharwheat_elements_inputs_t0_reindexed = pd.DataFrame(farquharwheat_elements_inputs_t0.values,
-                                                                  index=sorted(farquharwheat_elements_inputs_t0.groupby(farquharwheat_converter.DATAFRAME_TOPOLOGY_COLUMNS).groups.keys()),
-                                                                  columns=farquharwheat_elements_inputs_t0.columns)
-        elongwheat_elements_inputs_t0_with_element_column = elongwheat_organ_inputs_t0.copy()
-        elongwheat_elements_inputs_t0_with_element_column.loc[elongwheat_elements_inputs_t0_with_element_column.organ == 'blade', 'element'] = 'LeafElement1'
-        elongwheat_elements_inputs_t0_with_element_column.loc[elongwheat_elements_inputs_t0_with_element_column.organ != 'blade', 'element'] = 'StemElement'
-        elongwheat_organ_inputs_t0_with_element_column_reindexed = pd.DataFrame(elongwheat_elements_inputs_t0_with_element_column.values,
-                                                                                           index=sorted(elongwheat_elements_inputs_t0_with_element_column.groupby(elongwheat_converter.ORGAN_TOPOLOGY_COLUMNS + ['element']).groups.keys()),
-                                                                                           columns=elongwheat_elements_inputs_t0_with_element_column.columns)
-        senescwheat_elements_inputs_t0_reindexed = pd.DataFrame(senescwheat_elements_inputs_t0.values,
-                                                                index=sorted(senescwheat_elements_inputs_t0.groupby(senescwheat_converter.ELEMENTS_TOPOLOGY_COLUMNS).groups.keys()),
-                                                                columns=senescwheat_elements_inputs_t0.columns)
-        elements_inputs_t0 = cnwheat_elements_inputs_t0_reindexed.combine_first(farquharwheat_elements_inputs_t0_reindexed).combine_first(elongwheat_organ_inputs_t0_with_element_column_reindexed).combine_first(senescwheat_elements_inputs_t0_reindexed)
-        elements_inputs_outputs = elements_inputs_t0.reindex_axis(cnwheat_simulation.Simulation.ELEMENTS_INPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.ELEMENTS_INPUTS_OUTPUTS + farquharwheat_converter.FARQUHARWHEAT_INPUTS_OUTPUTS + elongwheat_simulation.ORGAN_INPUTS_OUTPUTS + senescwheat_converter.SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS)), axis=1)
-        # soils
-        cnwheat_soils_inputs_t0_reindexed = pd.DataFrame(cnwheat_soils_inputs_t0.values,
-                                                         index=sorted(cnwheat_soils_inputs_t0.groupby(cnwheat_simulation.Simulation.SOILS_INPUTS_INDEXES).groups.keys()),
-                                                         columns=cnwheat_soils_inputs_t0.columns)
-        soils_inputs_t0 = cnwheat_soils_inputs_t0_reindexed
-        soils_inputs_outputs = soils_inputs_t0.reindex_axis(cnwheat_simulation.Simulation.SOILS_INPUTS_INDEXES + sorted(set(cnwheat_simulation.Simulation.SOILS_INPUTS_OUTPUTS)), axis=1)
 
         all_simulation_steps = [] # to store the steps of the simulation
 
@@ -225,152 +214,46 @@ def main(stop_time, run_simu=True, make_graphs=True):
         current_time_of_the_system = time.time()
 
         for t_caribu in xrange(start_time, stop_time, caribu_ts):
-            caribu_outputs = run_caribu.run_caribu(g, adel_wheat)
-            # update the shared data
-            caribu_outputs_reindexed = pd.DataFrame(caribu_outputs.values,
-                                                           index=sorted(caribu_outputs.groupby(run_caribu.DATAFRAME_TOPOLOGY_COLUMNS).groups.keys()),
-                                                           columns=caribu_outputs.columns)
-            elements_inputs_outputs.update(caribu_outputs_reindexed)
-
+            # run Caribu
+            caribu_facade_.run()
             for t_senescwheat in xrange(t_caribu, t_caribu + caribu_ts, senescwheat_ts):
-                # initialize and run senescwheat
-                senescwheat_roots_inputs = organs_inputs_outputs.loc[organs_inputs_outputs.organ == 'roots', senescwheat_converter.ROOTS_TOPOLOGY_COLUMNS + senescwheat_converter.SENESCWHEAT_ROOTS_INPUTS].reset_index(drop=True)
-                senescwheat_elements_inputs = elements_inputs_outputs.loc[:, senescwheat_converter.ELEMENTS_TOPOLOGY_COLUMNS + senescwheat_converter.SENESCWHEAT_ELEMENTS_INPUTS].reset_index(drop=True)
-                senescwheat_simulation_.initialize(senescwheat_converter.from_MTG(g, senescwheat_roots_inputs, senescwheat_elements_inputs))
-                senescwheat_simulation_.run()
-                senescwheat_roots_outputs, senescwheat_elements_outputs = senescwheat_converter.to_dataframes(senescwheat_simulation_.outputs)
-                senescwheat_converter.update_MTG(senescwheat_simulation_.inputs, senescwheat_simulation_.outputs, g)
-                # update the shared data
-                senescwheat_roots_outputs_with_organ_column = senescwheat_roots_outputs.copy()
-                senescwheat_roots_outputs_with_organ_column.loc[:, 'organ'] = 'roots'
-                senescwheat_roots_outputs_with_organ_column_reindexed = pd.DataFrame(senescwheat_roots_outputs_with_organ_column.values,
-                                                                                     index=sorted(senescwheat_roots_outputs_with_organ_column.groupby(senescwheat_converter.ROOTS_TOPOLOGY_COLUMNS + ['organ']).groups.keys()),
-                                                                                     columns=senescwheat_roots_outputs_with_organ_column.columns)
-                organs_inputs_outputs.update(senescwheat_roots_outputs_with_organ_column_reindexed)
-                senescwheat_elements_outputs_reindexed = pd.DataFrame(senescwheat_elements_outputs.values,
-                                                                      index=sorted(senescwheat_elements_outputs.groupby(senescwheat_converter.ELEMENTS_TOPOLOGY_COLUMNS).groups.keys()),
-                                                                      columns=senescwheat_elements_outputs.columns)
-                elements_inputs_outputs.update(senescwheat_elements_outputs_reindexed)
-
+                # run SenescWheat
+                senescwheat_facade_.run()
                 for t_farquharwheat in xrange(t_senescwheat, t_senescwheat + senescwheat_ts, farquharwheat_ts):
                     # get the meteo of the current step
                     Ta, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
-                    # initialize and run farquharwheat
-                    farquharwheat_elements_inputs = elements_inputs_outputs.loc[:, farquharwheat_converter.DATAFRAME_TOPOLOGY_COLUMNS + farquharwheat_converter.FARQUHARWHEAT_INPUTS].reset_index(drop=True)
-                    farquharwheat_simulation_.initialize(farquharwheat_converter.from_MTG(g, farquharwheat_elements_inputs))
-                    farquharwheat_simulation_.run(Ta, ambient_CO2, RH, Ur, PARi)
-                    farquharwheat_outputs = farquharwheat_converter.to_dataframe(farquharwheat_simulation_.outputs)
-                    farquharwheat_converter.update_MTG(farquharwheat_simulation_.inputs, farquharwheat_simulation_.outputs, g)
-                    # update the shared data
-                    farquharwheat_outputs_reindexed = pd.DataFrame(farquharwheat_outputs.values,
-                                                                   index=sorted(farquharwheat_outputs.groupby(farquharwheat_converter.DATAFRAME_TOPOLOGY_COLUMNS).groups.keys()),
-                                                                   columns=farquharwheat_outputs.columns)
-                    elements_inputs_outputs.update(farquharwheat_outputs_reindexed)
-
+                    # run FarquharWheat
+                    farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur, PARi)
                     for t_elongwheat in xrange(t_farquharwheat, t_farquharwheat + farquharwheat_ts, elongwheat_ts):
-                        # Run elongwheat
-                        _, elongwheat_hiddenzones_outputs, elongwheat_organs_outputs = elongwheat_interface.run(g, elongwheat_ts * hour_to_second_conversion_factor, adel_wheat)
-                        # update the shared data
-                        elongwheat_hiddenzones_outputs_reindexed = pd.DataFrame(elongwheat_hiddenzones_outputs.values,
-                                                                          index=sorted(elongwheat_hiddenzones_outputs.groupby(elongwheat_converter.HIDDENZONE_TOPOLOGY_COLUMNS).groups.keys()),
-                                                                          columns=elongwheat_hiddenzones_outputs.columns)
-                        hiddenzones_inputs_outputs.update(elongwheat_hiddenzones_outputs_reindexed)
-                        elongwheat_organs_outputs_with_organ_column = elongwheat_organs_outputs.copy()
-                        elongwheat_organs_outputs_with_organ_column.loc[elongwheat_organs_outputs_with_organ_column.organ == 'blade', 'element'] = 'LeafElement1'
-                        elongwheat_organs_outputs_with_organ_column.loc[elongwheat_organs_outputs_with_organ_column.organ != 'blade', 'element'] = 'StemElement'
-                        elongwheat_organs_outputs_with_organ_column_reindexed = pd.DataFrame(elongwheat_organs_outputs_with_organ_column.values,
-                                                                                                  index=sorted(elongwheat_organs_outputs_with_organ_column.groupby(elongwheat_converter.ORGAN_TOPOLOGY_COLUMNS + ['element']).groups.keys()),
-                                                                                                  columns=elongwheat_organs_outputs_with_organ_column.columns)
-                        elements_inputs_outputs.update(elongwheat_organs_outputs_with_organ_column_reindexed)
+                        # run ElongWheat
+                        elongwheat_facade_.run()
                         # Update geometry
                         adel_wheat.update_geometry(g, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
                         #adel_wheat.plot(g)
                         adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
                         for t_growthwheat in xrange(t_elongwheat, t_elongwheat + elongwheat_ts, growthwheat_ts):
-                            # Run growthwheat
-                            _, growthwheat_hiddenzones_outputs, growthwheat_organs_outputs, growthwheat_roots_outputs = growthwheat_interface.run(g, growthwheat_ts * hour_to_second_conversion_factor)
-                            # update the shared data
-                            growthwheat_hiddenzones_outputs_reindexed = pd.DataFrame(growthwheat_hiddenzones_outputs.values,
-                                                                              index=sorted(growthwheat_hiddenzones_outputs.groupby(growthwheat_converter.HIDDENZONE_TOPOLOGY_COLUMNS).groups.keys()),
-                                                                              columns=growthwheat_hiddenzones_outputs.columns)
-                            hiddenzones_inputs_outputs.update(growthwheat_hiddenzones_outputs_reindexed)
-                            growthwheat_organs_outputs_with_organ_column = growthwheat_organs_outputs.copy()
-                            growthwheat_organs_outputs_with_organ_column.loc[growthwheat_organs_outputs_with_organ_column.organ == 'blade', 'element'] = 'LeafElement1'
-                            growthwheat_organs_outputs_with_organ_column.loc[growthwheat_organs_outputs_with_organ_column.organ != 'blade', 'element'] = 'StemElement'
-                            growthwheat_organs_outputs_with_organ_column_reindexed = pd.DataFrame(growthwheat_organs_outputs_with_organ_column.values,
-                                                                                                      index=sorted(growthwheat_organs_outputs_with_organ_column.groupby(growthwheat_converter.ORGAN_TOPOLOGY_COLUMNS + ['element']).groups.keys()),
-                                                                                                      columns=growthwheat_organs_outputs_with_organ_column.columns)
-                            elements_inputs_outputs.update(growthwheat_organs_outputs_with_organ_column_reindexed)
-                            growthwheat_roots_outputs_reindexed = pd.DataFrame(growthwheat_roots_outputs.values,
-                                                                              index=sorted(growthwheat_roots_outputs.groupby(growthwheat_converter.ROOT_TOPOLOGY_COLUMNS).groups.keys()),
-                                                                              columns=growthwheat_roots_outputs.columns)
-                            organs_inputs_outputs.update(growthwheat_roots_outputs_reindexed)
-
+                            # run GrowthWheat
+                            growthwheat_facade_.run()
                             for t_cnwheat in xrange(t_growthwheat, t_growthwheat + growthwheat_ts, cnwheat_ts):
-                                # initialize and run cnwheat
-                                cnwheat_organs_inputs = organs_inputs_outputs.loc[:, cnwheat_converter.ORGANS_STATE_VARIABLES].reset_index(drop=True)
-                                cnwheat_hiddenzones_inputs = hiddenzones_inputs_outputs.loc[:, cnwheat_converter.HIDDENZONES_STATE_VARIABLES].reset_index(drop=True)
-                                cnwheat_elements_inputs = elements_inputs_outputs.loc[:, cnwheat_converter.ELEMENTS_STATE_VARIABLES].reset_index(drop=True)
-                                cnwheat_soils_inputs = soils_inputs_outputs.reset_index(drop=True)
-                                population = cnwheat_converter.from_MTG(g, organs_inputs=cnwheat_organs_inputs, hiddenzones_inputs=cnwheat_hiddenzones_inputs,
-                                                                                      elements_inputs=cnwheat_elements_inputs)
-                                cnwheat_simulation_.initialize(population, cnwheat_converter.from_dataframes(soils_inputs=cnwheat_soils_inputs))
-                                cnwheat_simulation_.run(start_time=t_cnwheat, stop_time=t_cnwheat+cnwheat_ts, number_of_output_steps=cnwheat_ts+1)
-                                cnwheat_converter.update_MTG(population, g)
+                                # run CNWheat
+                                cnwheat_facade_.run()
 
-                                (cnwheat_plants_all_data,
-                                 cnwheat_axes_all_data,
-                                 cnwheat_metamers_all_data,
-                                 cnwheat_organs_all_data,
-                                 cnwheat_hiddenzones_all_data,
-                                 cnwheat_elements_all_data,
-                                 cnwheat_soils_all_data) = cnwheat_simulation_.postprocessings()
-
-                                # update the shared data
-                                ## Organs
-                                cnwheat_organs_all_data = cnwheat_organs_all_data.loc[cnwheat_organs_all_data.t == t_cnwheat+1, :].reset_index(drop=True)
-                                cnwheat_organs_outputs_reindexed = pd.DataFrame(cnwheat_organs_all_data.values,
-                                                                                index=sorted(cnwheat_organs_all_data.groupby(cnwheat_simulation.Simulation.ORGANS_INPUTS_INDEXES).groups.keys()),
-                                                                                columns=cnwheat_organs_all_data.columns)
-                                organs_inputs_outputs.update(cnwheat_organs_outputs_reindexed)
-                                #organs_inputs_outputs = organs_inputs_outputs.combine_first(cnwheat_organs_outputs_reindexed)
-                                ## Hidden zones
-                                cnwheat_hiddenzones_all_data = cnwheat_hiddenzones_all_data.loc[cnwheat_hiddenzones_all_data.t == t_cnwheat+1, :].reset_index(drop=True)
-                                cnwheat_hiddenzones_outputs_reindexed = pd.DataFrame(cnwheat_hiddenzones_all_data.values,
-                                                                              index=sorted(cnwheat_hiddenzones_all_data.groupby(cnwheat_simulation.Simulation.HIDDENZONE_INPUTS_INDEXES).groups.keys()),
-                                                                              columns=cnwheat_hiddenzones_all_data.columns)
-                                hiddenzones_inputs_outputs.update(cnwheat_hiddenzones_outputs_reindexed)
-                                #hiddenzones_inputs_outputs = hiddenzones_inputs_outputs.combine_first(cnwheat_hiddenzones_outputs_reindexed)
-                                ## Elements
-                                cnwheat_elements_all_data = cnwheat_elements_all_data.loc[cnwheat_elements_all_data.t == t_cnwheat+1, :].reset_index(drop=True)
-                                cnwheat_elements_outputs_reindexed = pd.DataFrame(cnwheat_elements_all_data.values,
-                                                                                  index=sorted(cnwheat_elements_all_data.groupby(cnwheat_simulation.Simulation.ELEMENTS_INPUTS_INDEXES).groups.keys()),
-                                                                                  columns=cnwheat_elements_all_data.columns)
-                                elements_inputs_outputs.update(cnwheat_elements_outputs_reindexed)
-                                #elements_inputs_outputs = elements_inputs_outputs.combine_first(cnwheat_elements_outputs_reindexed)
-                                ## Soil
-                                cnwheat_soils_all_data = cnwheat_soils_all_data.loc[cnwheat_soils_all_data.t == t_cnwheat+1, :].reset_index(drop=True)
-                                cnwheat_soils_outputs_reindexed = pd.DataFrame(cnwheat_soils_all_data.values,
-                                                                               index=sorted(cnwheat_soils_all_data.groupby(cnwheat_simulation.Simulation.SOILS_INPUTS_INDEXES).groups.keys()),
-                                                                               columns=cnwheat_soils_all_data.columns)
-                                soils_inputs_outputs.update(cnwheat_soils_outputs_reindexed)
-                                #soils_inputs_outputs = soils_inputs_outputs.combine_first(cnwheat_soils_outputs_reindexed)
-
-                                # append the computed states to global list of states
+                                # append the inputs and outputs at current step to global lists
                                 all_simulation_steps.append(t_cnwheat)
-                                axes_all_data_list.append(cnwheat_axes_all_data.loc[cnwheat_axes_all_data.t == t_cnwheat+1])
-                                organs_all_data_list.append(organs_inputs_outputs.copy())
-                                hiddenzones_all_data_list.append(hiddenzones_inputs_outputs.copy())
-                                elements_all_data_list.append(elements_inputs_outputs.copy())
-                                soils_all_data_list.append(soils_inputs_outputs.copy())
+                                axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
+                                organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
+                                hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
+                                elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                                soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
 
         execution_time = int(time.time() - current_time_of_the_system)
         print '\n', 'Simulation run in ', str(datetime.timedelta(seconds=execution_time))
 
-        # write all the computed states to CSV files
-        all_axes_inputs_outputs = pd.concat(axes_all_data_list)
-        all_axes_inputs_outputs.reset_index(inplace=True, drop=True)
+        # write all inputs and outputs to CSV files
+        all_axes_inputs_outputs = pd.concat(axes_all_data_list, keys=all_simulation_steps)
+        all_axes_inputs_outputs.reset_index(0, inplace=True)
+        all_axes_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_axes_inputs_outputs.to_csv(AXES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps)
@@ -384,6 +267,8 @@ def main(stop_time, run_simu=True, make_graphs=True):
         all_hiddenzones_inputs_outputs.to_csv(HIDDENZONES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
+        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & ### TODO: temporary ; to remove when there will be default input values for each element in the mtg 
+                                                                      (all_elements_inputs_outputs.axis == 'MS')]
         all_elements_inputs_outputs.reset_index(0, inplace=True)
         all_elements_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
@@ -392,7 +277,6 @@ def main(stop_time, run_simu=True, make_graphs=True):
         all_soils_inputs_outputs.reset_index(0, inplace=True)
         all_soils_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
-
 
     ########POST-PROCESSING##
     if make_graphs:
@@ -498,4 +382,4 @@ def main(stop_time, run_simu=True, make_graphs=True):
                           explicit_label=False)
 
 if __name__ == '__main__':
-    main(200, run_simu=True, make_graphs=False)
+    main(8, run_simu=True, make_graphs=False)
