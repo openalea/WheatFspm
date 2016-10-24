@@ -28,7 +28,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from farquharwheat import model, simulation, converter
+from farquharwheat import simulation, converter
 
 INPUTS_FILENAME = 'inputs.csv'
 
