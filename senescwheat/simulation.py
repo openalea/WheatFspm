@@ -89,6 +89,7 @@ class Simulation(object):
             loss_cytokinins = model.SenescenceModel.calculate_remobilisation(roots_inputs_dict['cytokinins'], relative_delta_mstruct)
             # Update of root outputs
             all_roots_outputs[roots_inputs_id] = {'mstruct': roots_inputs_dict['mstruct'] - mstruct_death,
+                                                  'mstruct_death': mstruct_death,
                                                   'Nstruct': roots_inputs_dict['Nstruct'] - Nstruct_death,
                                                   'cytokinins': roots_inputs_dict['cytokinins'] - loss_cytokinins}
 
