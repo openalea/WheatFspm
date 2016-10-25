@@ -35,3 +35,37 @@ max_SSLW = 50 #: g m-2
 ratio_SSSW_SSLW = 5 # ratio gaine/limbe des matieres seches structurales spécifiques (calculé depuis les données de J. Bertheloot, 2004)
 RERmax = 4e-06 #: s-1
 EPSILON = 0.01 #: A threshold, expressed in relative leaf length that remains to be produced, under which the rate of leaf elongation will be assumed as constant
+
+
+class HiddenZoneInit:
+    """
+    Initial values for hidden zones
+    """
+
+    leaf_is_growing = True
+    hiddenzone_L = 0
+    delta_hiddenzone_L = 0
+    leaf_L = 4E-08
+    delta_leaf_L = 0
+    leaf_Lmax = 0
+    leaf_Lem_prev = 0
+    lamina_Lmax = 0
+    sheath_Lmax = 0
+    leaf_Wmax = 0
+    SSLW = 0
+    SSSW = 0
+    leaf_is_emerged = False
+    sucrose = 1E-3
+    amino_acids = 1E-3
+    fructan = 0
+    mstruct = 2.65E-08
+
+class OrganInit:
+    """
+    Initial values for organs
+    """
+
+    visible_length = 0
+    is_growing = True
+    final_hidden_length = 0
+    length = 0
