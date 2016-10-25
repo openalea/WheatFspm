@@ -50,7 +50,7 @@ class Simulation(object):
 
     #: the name of the compartments attributes in the model.
     MODEL_COMPARTMENTS_NAMES = {model.Plant: [],
-                                model.Axis: ['mstruct'],
+                                model.Axis: [],
                                 model.Phytomer: [],
                                 model.Organ: ['sucrose', 'amino_acids', 'nitrates', 'structure', 'starch', 'proteins', 'Nstruct', 'cytokinins'],
                                 model.HiddenZone: ['sucrose', 'fructan', 'amino_acids', 'proteins'],
@@ -552,7 +552,6 @@ class Simulation(object):
                         hiddenzone.unloading_amino_acids = hiddenzone.calculate_unloading_amino_acids(hiddenzone.amino_acids, axis.phloem.amino_acids, axis.mstruct, self.delta_t)
 
                         # Fructan synthesis
-                        #Regul_Sfructanes = hiddenzone.Regul_Sfructanes(hiddenzone.unloading_sucrose)
                         Regul_Sfructanes = hiddenzone.calculate_regul_s_fructan(hiddenzone.unloading_sucrose, self.delta_t)
                         hiddenzone_s_fructan = hiddenzone.calculate_s_fructan(hiddenzone.sucrose, Regul_Sfructanes, self.delta_t)
 
@@ -701,8 +700,6 @@ class Simulation(object):
                 y_derivatives[self.initial_conditions_mapping[axis.phloem]['sucrose']] = sucrose_phloem_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.phloem]['amino_acids']] = amino_acids_phloem_derivative
 
-                # Axis
-                y_derivatives[self.initial_conditions_mapping[axis]['mstruct']] = axis.mstruct
 
         if self.show_progressbar:
             self.progressbar.update(t)
@@ -776,7 +773,7 @@ class Simulation(object):
                 axes_df['t'] = self._time_grid
                 axes_df['plant'] = plant.index
                 axes_df['axis'] = axis.label
-                axes_df['mstruct'] = solver_output_transposed[self.initial_conditions_mapping[axis]['mstruct']]
+                axes_df['mstruct'] = [axis.mstruct] * len(self._time_grid)
 
                 # compute the total transpiration
                 total_transpiration = np.zeros_like(self._time_grid)

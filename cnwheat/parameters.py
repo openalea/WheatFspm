@@ -69,7 +69,7 @@ class OrganParameters:
 
 
 class HiddenZoneParameters(OrganParameters):
-    SIGMA = 1E-2                          #: Coefficient de diffusion surfacique. Utilisé dans la loi de Fick (g m-2 s-1)
+    SIGMA = 5E-2                          #: Coefficient de diffusion surfacique. Utilisé dans la loi de Fick (g m-2 s-1)
     Vmax_Regul_Sfructans = 1
     K_Regul_Sfructans = 0.5
     n_Regul_Sfructans = 15
@@ -270,5 +270,5 @@ class SoilParameters:
     """
     Internal parameters of soil.
     """
-    CULM_DENSITY = 410                      # culms m-2
+    CULM_DENSITY = 410                      # culms m-2 #TODO: mettre en variable
     MINERALISATION_RATE = 2.05E-6           # Mineralisation rate (µmol N nitrates m-3 s-1)

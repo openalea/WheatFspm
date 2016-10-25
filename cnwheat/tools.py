@@ -339,13 +339,13 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(PRECISION))
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'element'):
+    for column in ('axis', 'organ', 'element', 'is_growing'):
         if column in desired_data_df.columns:
             del desired_data_df[column]
             del actual_data_df[column]
 
     # compare to the desired data
-    #actual_data_df = actual_data_df.astype(np.float)
+    actual_data_df = actual_data_df.astype(np.float)
     np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
 
 

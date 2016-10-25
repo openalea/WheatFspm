@@ -4,9 +4,9 @@
     cnwheat.converter
     ~~~~~~~~~~~~~~~~~
 
-    The module :mod:`cnwheat.converter` defines functions to convert 
+    The module :mod:`cnwheat.converter` defines functions to convert
     :class:`dataframes <pandas.DataFrame>` to/from CNWheat inputs or outputs format.
-    
+
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -63,7 +63,7 @@ MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING = {'HiddenElement': 'enclosed_element', 'S
 
 def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs=None, soils_inputs=None):
     """
-    If `organs_inputs`, `hiddenzones_inputs` and `elements_inputs` are not `None`, 
+    If `organs_inputs`, `hiddenzones_inputs` and `elements_inputs` are not `None`,
     convert `organs_inputs`, `hiddenzones_inputs` and  `elements_inputs` to a :class:`population <model.Population>`.
 
     If `soils_inputs` is not `None`, convert `soils_inputs` to a dictionary of :class:`soils <model.Soil>`.
@@ -133,7 +133,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                          ('sheath', model.Sheath, model.SheathElement)):
 
                         organ_label = CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[phytomer_attribute_class]
-                        
+
                         if metamer_index in curr_metamers_indexes_for_elements:
                             curr_elements_inputs = elements_inputs[(elements_inputs['plant'] == plant_index) & (elements_inputs['axis'] == axis_label) & (elements_inputs['metamer'] == metamer_index) & (elements_inputs['organ'] == organ_label)]
                             if organ_label not in curr_elements_inputs.organ.values:
@@ -142,7 +142,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                             organ = phytomer_attribute_class(organ_label)
                             organ.initialize()
                             setattr(phytomer, phytomer_attribute_name, organ)
-    
+
                             for mtg_element_label, cnwheat_element_name in MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING.iteritems():
                                 element_inputs = curr_elements_inputs[curr_elements_inputs['element'] == mtg_element_label]
                                 if len(element_inputs) == 0:
@@ -152,7 +152,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                                 # create a new element
                                 element = phytomer_attribute_element_class(mtg_element_label, **element_dict)
                                 setattr(organ, cnwheat_element_name, element)
-                                
+
                     if metamer_index in curr_metamers_indexes_for_hiddenzones:
                         hiddenzone_inputs = hiddenzones_inputs[(hiddenzones_inputs['plant'] == plant_index) & (hiddenzones_inputs['axis'] == axis_label) & (hiddenzones_inputs['metamer'] == metamer_index)]
                         if len(hiddenzone_inputs) == 0:
@@ -256,12 +256,6 @@ def to_dataframes(population=None, soils=None):
         all_hiddenzones_df.sort_values(by=HIDDENZONES_STATE_VARIABLES, inplace=True)
         all_elements_df.sort_values(by=ELEMENTS_STATE_VARIABLES, inplace=True)
 
-        # infer the right types of the columns in the dataframes
-        all_axes_df = all_axes_df.convert_objects(copy=False)
-        all_organs_df = all_organs_df.convert_objects(copy=False)
-        all_hiddenzones_df = all_hiddenzones_df.convert_objects(copy=False)
-        all_elements_df = all_elements_df.convert_objects(copy=False)
-
         # convert the indexes of plants, metamers and elements to integers in the dataframes
         all_axes_df['plant'] = all_axes_df['plant'].astype(int)
         all_organs_df['plant'] = all_organs_df['plant'].astype(int)
@@ -278,7 +272,6 @@ def to_dataframes(population=None, soils=None):
         for soil_id, soil in soils.iteritems():
             append_row(soil, list(soil_id), simulation.Simulation.SOILS_STATE, all_soils_df)
         all_soils_df.sort_values(by=SOILS_STATE_VARIABLES, inplace=True)
-        all_soils_df = all_soils_df.convert_objects(copy=False)
         all_soils_df['plant'] = all_soils_df['plant'].astype(int)
         all_soils_df.reset_index(drop=True, inplace=True)
 
@@ -288,4 +281,4 @@ def to_dataframes(population=None, soils=None):
         return all_axes_df, all_organs_df, all_hiddenzones_df, all_elements_df
     else:
         return all_soils_df
-    
+
