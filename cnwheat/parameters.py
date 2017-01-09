@@ -98,8 +98,8 @@ class GrainsParameters(OrganParameters):
     VMAX_STARCH = 0.35                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
     K_STARCH = 400                              #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
 
-    FILLING_INIT = 360                          #: Time (h) at which phloem loading switch from grain structure to accumulation of starch
-    FILLING_END = 900                           #: Time (h) at which grains filling stops. (Bertheloot et al., 2011)
+    FILLING_INIT = 360 * 3600                   #: Time (s) at which phloem loading switch from grain structure to accumulation of starch
+    FILLING_END = 900 * 3600                    #: Time (s) at which grains filling stops. (Bertheloot et al., 2011)
 
 
 class RootsParameters(OrganParameters):

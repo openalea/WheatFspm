@@ -103,18 +103,19 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                 # create a new axis
                 axis = model.Axis(axis_label)
                 curr_organs_inputs = organs_inputs[(organs_inputs['plant'] == plant_index) & (organs_inputs['axis'] == axis_label)]
-                for axis_attribute_name, axis_attribute_class in (('roots', model.Roots), ('phloem', model.Phloem)):
+                for axis_attribute_name, axis_attribute_class in (('roots', model.Roots), ('phloem', model.Phloem), ('grains', model.Grains)):
                     organ_label = CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[axis_attribute_class]
                     organ_inputs = curr_organs_inputs[curr_organs_inputs['organ'] == organ_label]
-                    # create a new organ
-                    organ = axis_attribute_class(organ_label)
-                    organ_attributes_names = [state_var_name for state_var_name in simulation.Simulation.ORGANS_STATE if hasattr(organ, state_var_name)]
-                    organ_row = organ_inputs.loc[organ_inputs.first_valid_index()]
-                    organ_attributes_values = organ_row[organ_attributes_names].tolist()
-                    organ_attributes = dict(zip(organ_attributes_names, organ_attributes_values))
-                    organ.__dict__.update(organ_attributes)
-                    organ.initialize()
-                    setattr(axis, axis_attribute_name, organ)
+                    if not organ_inputs.empty:
+                        # create a new organ
+                        organ = axis_attribute_class(organ_label)
+                        organ_attributes_names = [state_var_name for state_var_name in simulation.Simulation.ORGANS_STATE if hasattr(organ, state_var_name)]
+                        organ_row = organ_inputs.loc[organ_inputs.first_valid_index()]
+                        organ_attributes_values = organ_row[organ_attributes_names].tolist()
+                        organ_attributes = dict(zip(organ_attributes_names, organ_attributes_values))
+                        organ.__dict__.update(organ_attributes)
+                        organ.initialize()
+                        setattr(axis, axis_attribute_name, organ)
 
                 curr_metamers_indexes_for_hiddenzones = hiddenzones_inputs[(hiddenzones_inputs['plant'] == plant_index) & (hiddenzones_inputs['axis'] == axis_label)].metamer.unique()
                 curr_metamers_indexes_for_elements = elements_inputs[(elements_inputs['plant'] == plant_index) & (elements_inputs['axis'] == axis_label)].metamer.unique()

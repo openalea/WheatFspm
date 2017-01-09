@@ -172,12 +172,13 @@ class HiddenZone(Organ):
 
     PARAMETERS = parameters.HiddenZoneParameters #: the internal parameters of the hidden zone
 
-    def __init__(self, label=None, sucrose=None, fructan=None, mstruct=None, amino_acids=None, proteins=None):
+    def __init__(self, label=None, sucrose=None, fructan=None, mstruct=None, Nstruct=None, amino_acids=None, proteins=None):
 
         super(HiddenZone, self).__init__(label)
 
         # state parameters
         self.mstruct = mstruct                       #: g
+        self.Nstruct = Nstruct                       #: g
 
         # state variables
         self.sucrose = sucrose                       #: µmol C
@@ -507,14 +508,15 @@ class Grains(Organ):
 
     PARAMETERS = parameters.GrainsParameters #: the internal parameters of the grains
 
-    def __init__(self, label=None, starch=None, structure=None, proteins=None):
+    def __init__(self, label=None, age_from_flowering=None, starch=None, structure=None, proteins=None):
 
         super(Grains, self).__init__(label)
 
         # state variables
-        self.starch = starch                     #: µmol of C starch
-        self.structure = structure               #: µmol of C sucrose
-        self.proteins = proteins                 #: µmol of N proteins
+        self.age_from_flowering = age_from_flowering    #: seconds
+        self.starch = starch                            #: µmol of C starch
+        self.structure = structure                      #: µmol of C sucrose
+        self.proteins = proteins                        #: µmol of N proteins
 
         # derived attributes
         self.structural_dry_mass = None          #: g of MS
@@ -592,12 +594,11 @@ class Grains(Organ):
 
     # FLUXES
 
-    def calculate_s_grain_structure(self, t, prec_structure, RGR_structure, delta_t):
+    def calculate_s_grain_structure(self, prec_structure, RGR_structure, delta_t):
         """Rate of grain structure synthesis integrated over delta_t (µmol C structure s-1 * delta_t).
         Exponential function, RGR regulated by sucrose concentration in the phloem.
 
         :Parameters:
-            - `t` (:class:`float`) - Time of the simulation (s)
             - `prec_structure` (:class:`float`) - Grain structure at t-1 (µmol C)
             - `RGR_structure` (:class:`float`) - Relative Growth Rate of grain structure (dimensionless?)
         :Returns:
@@ -605,18 +606,17 @@ class Grains(Organ):
         :Returns Type:
             :class:`float`
         """
-        if t<=Grains.PARAMETERS.FILLING_INIT: #: Grain enlargment TODO: enlever ce t
+        if self.age_from_flowering <= Grains.PARAMETERS.FILLING_INIT: #: Grain enlargment
             s_grain_structure = prec_structure * RGR_structure * delta_t
-        else:                                 #: Grain filling
+        else:                                                         #: Grain filling
             s_grain_structure = 0
         return s_grain_structure
 
-    def calculate_s_grain_starch(self, t, sucrose_phloem, mstruct_axis, delta_t):
+    def calculate_s_grain_starch(self, sucrose_phloem, mstruct_axis, delta_t):
         """Rate of starch synthesis in grains (i.e. grain filling) integrated over delta_t (µmol C starch g-1 mstruct s-1 * delta_t).
         Michaelis-Menten function of sucrose concentration in the phloem.
 
         :Parameters:
-            - `t` (:class:`float`) - Time of the simulation (s)
             - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (µmol C g-1 mstruct)
             - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
         :Returns:
@@ -624,11 +624,11 @@ class Grains(Organ):
         :Returns Type:
             :class:`float`
         """
-        if t<= Grains.PARAMETERS.FILLING_INIT:   #: Grain enlargment
+        if self.age_from_flowering <= Grains.PARAMETERS.FILLING_INIT:   #: Grain enlargment
             s_grain_starch = 0
-        elif t> Grains.PARAMETERS.FILLING_END:   #: Grain maturity
+        elif self.age_from_flowering> Grains.PARAMETERS.FILLING_END:    #: Grain maturity
             s_grain_starch = 0
-        else:                                    #: Grain filling
+        else:                                                           #: Grain filling
             s_grain_starch = (((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_STARCH) / ((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_STARCH)) * delta_t
         return s_grain_starch
 
@@ -1835,4 +1835,4 @@ class Soil(object):
         :Returns Type:
             :class:`float`
         """
-        return 0#mineralisation - uptake_nitrates * parameters.SoilParameters.CULM_DENSITY #TODO: attention calcul densité
+        return mineralisation - uptake_nitrates * parameters.SoilParameters.CULM_DENSITY #TODO: attention calcul densité

@@ -52,7 +52,7 @@ class Simulation(object):
     MODEL_COMPARTMENTS_NAMES = {model.Plant: [],
                                 model.Axis: [],
                                 model.Phytomer: [],
-                                model.Organ: ['sucrose', 'amino_acids', 'nitrates', 'structure', 'starch', 'proteins', 'Nstruct', 'cytokinins'],
+                                model.Organ: ['sucrose', 'amino_acids', 'nitrates', 'structure', 'starch', 'proteins', 'Nstruct', 'cytokinins', 'age_from_flowering'],
                                 model.HiddenZone: ['sucrose', 'fructan', 'amino_acids', 'proteins'],
                                 model.PhotosyntheticOrganElement: ['nitrates', 'starch', 'amino_acids', 'proteins',
                                                                    'sucrose', 'triosesP', 'fructan', 'cytokinins'],
@@ -109,7 +109,7 @@ class Simulation(object):
 
     HIDDENZONE_INPUTS_INDEXES = ['plant', 'axis', 'metamer']
     HIDDENZONE_OUTPUTS_INDEXES = [T_INDEX] + HIDDENZONE_INPUTS_INDEXES
-    HIDDENZONE_STATE_PARAMETERS = ['mstruct']
+    HIDDENZONE_STATE_PARAMETERS = ['mstruct', 'Nstruct']
     HIDDENZONE_STATE = HIDDENZONE_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.HiddenZone, [])
     HIDDENZONE_INTERMEDIATE_VARIABLES = []
     HIDDENZONE_FLUXES = ['Unloading_Sucrose', 'Unloading_Amino_Acids']
@@ -259,7 +259,7 @@ class Simulation(object):
                                 continue
                             i = _init_initial_conditions(element, i)
 
-        self.population.calculate_integrative_variables() # TODO: create method "calculate_preprocessing_variables" to compute integrative variables which do not change during the run of cnwheat (these integrative variables should be called "integrative parameters"). 
+        self.population.calculate_integrative_variables() # TODO: create method "calculate_preprocessing_variables" to compute integrative variables which do not change during the run of cnwheat (these integrative variables should be called "integrative parameters").
         #TODO: check the consistency of population and soils
         logger.info('Initialization of the simulation DONE')
         y_isnan = np.isnan(self.initial_conditions)
@@ -655,8 +655,8 @@ class Simulation(object):
                     axis.grains.structural_dry_mass = axis.grains.calculate_structural_dry_mass(axis.grains.structure)
 
                     # flows
-                    axis.grains.s_grain_structure = axis.grains.calculate_s_grain_structure(t, axis.grains.structure, RGR_structure, self.delta_t)
-                    axis.grains.s_grain_starch = axis.grains.calculate_s_grain_starch(t, axis.phloem.sucrose, axis.mstruct, self.delta_t)
+                    axis.grains.s_grain_structure = axis.grains.calculate_s_grain_structure(axis.grains.structure, RGR_structure, self.delta_t)
+                    axis.grains.s_grain_starch = axis.grains.calculate_s_grain_starch(axis.phloem.sucrose, axis.mstruct, self.delta_t)
                     axis.grains.s_proteins = axis.grains.calculate_s_proteins(axis.grains.s_grain_structure, axis.grains.s_grain_starch, axis.phloem.amino_acids, axis.phloem.sucrose, axis.grains.structural_dry_mass)
                     # compartments derivatives
                     R_grain_growth_struct, R_grain_growth_starch = RespirationModel.R_grain_growth(axis.grains.s_grain_structure, axis.grains.s_grain_starch, axis.grains.structural_dry_mass)
@@ -666,6 +666,7 @@ class Simulation(object):
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['structure']] = structure_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['starch']] = starch_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['proteins']] = proteins_derivative
+                    y_derivatives[self.initial_conditions_mapping[axis.grains]['age_from_flowering']] += self.delta_t
 
                 # compute the derivative of each compartment of soil
                 mineralisation = soil.calculate_mineralisation(self.delta_t)
@@ -969,9 +970,9 @@ class Simulation(object):
                     organs_df['starch'] = solver_output_transposed[self.initial_conditions_mapping[axis.grains]['starch']]
                     organs_df['proteins'] = solver_output_transposed[self.initial_conditions_mapping[axis.grains]['proteins']]
                     organs_df['RGR_Structure'] = map(axis.grains.calculate_RGR_structure, phloem_sucrose, axes_df['mstruct'])
-                    organs_df['S_grain_structure'] = map(axis.grains.calculate_s_grain_structure, self._time_grid, organs_df['structure'], organs_df['RGR_Structure'], delta_t_repeated)
+                    organs_df['S_grain_structure'] = map(axis.grains.calculate_s_grain_structure, organs_df['structure'], organs_df['RGR_Structure'], delta_t_repeated)
                     structural_dry_mass = map(axis.grains.calculate_structural_dry_mass, organs_df['structure'])
-                    organs_df['S_grain_starch'] = map(axis.grains.calculate_s_grain_starch, self._time_grid, phloem_sucrose, axes_df['mstruct'], delta_t_repeated)
+                    organs_df['S_grain_starch'] = map(axis.grains.calculate_s_grain_starch, phloem_sucrose, axes_df['mstruct'], delta_t_repeated)
                     organs_df['Dry_Mass'] = axis.grains.calculate_dry_mass(organs_df['structure'], organs_df['starch'], organs_df['proteins'])
                     organs_df['Proteins_N_Mass'] = axis.grains.calculate_protein_N_mass(organs_df['proteins'])
                     organs_df['S_Proteins'] = map(axis.grains.calculate_s_proteins, organs_df['S_grain_structure'], organs_df['S_grain_starch'], phloem_amino_acids, phloem_sucrose, structural_dry_mass)
