@@ -5,11 +5,11 @@
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     The module :mod:`fspmwheat.farquharwheat_facade` is a facade of the model FarquharWheat.
-    
-    This module permits to initialize and run the model FarquharWheat from a :class:`MTG <openalea.mtg.mtg.MTG>` 
-    in a convenient and transparent way, wrapping all the internal complexity of the model, and dealing 
+
+    This module permits to initialize and run the model FarquharWheat from a :class:`MTG <openalea.mtg.mtg.MTG>`
+    in a convenient and transparent way, wrapping all the internal complexity of the model, and dealing
     with all the tedious initialization and conversion processes.
-    
+
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -40,40 +40,40 @@ SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', '
 
 class FarquharWheatFacade(object):
     """
-    The FarquharWheatFacade class permits to initialize, run the model FarquharWheat 
-    from a :class:`MTG <openalea.mtg.mtg.MTG>`, and update the MTG and the dataframes 
-    shared between all models. 
+    The FarquharWheatFacade class permits to initialize, run the model FarquharWheat
+    from a :class:`MTG <openalea.mtg.mtg.MTG>`, and update the MTG and the dataframes
+    shared between all models.
 
     Use :meth:`run` to run the model.
 
     :Parameters:
 
-        - `shared_mtg` (:class:`openalea.mtg.mtg.MTG`) - The MTG shared between all models. 
+        - `shared_mtg` (:class:`openalea.mtg.mtg.MTG`) - The MTG shared between all models.
         - `model_elements_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at elements scale.
         - `shared_elements_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at elements scale shared between all models.
     """
-    
-    def __init__(self, shared_mtg,  
+
+    def __init__(self, shared_mtg,
                  model_elements_inputs_df,
                  shared_elements_inputs_outputs_df):
-        
+
         self._shared_mtg = shared_mtg #: the MTG shared between all models
-        
+
         self._simulation = simulation.Simulation() #: the simulator to use to run the model
-        
+
         all_farquharwheat_inputs_dict = converter.from_dataframe(model_elements_inputs_df)
         self._update_shared_MTG(all_farquharwheat_inputs_dict)
-        
+
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df #: the dataframe at elements scale shared between all models
         self._update_shared_dataframes(model_elements_inputs_df)
-        
-    
+
+
     def run(self, Ta, ambient_CO2, RH, Ur, PARi):
         """
         Run the model and update the MTG and the dataframes shared between all models.
-        
+
         :Parameters:
-            
+
             - `Ta` (:class:`float`) - air temperature at t (degree Celsius)
 
             - `ambient_CO2` (:class:`float`) - air CO2 at t (µmol mol-1)
@@ -83,21 +83,21 @@ class FarquharWheatFacade(object):
             - `Ur` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
 
             - `PARi` (:class:`float`) - the incident PAR above the canopy (µmol m-2 s-1)
-            
+
         """
         self._initialize_model()
         self._simulation.run(Ta, ambient_CO2, RH, Ur, PARi)
         self._update_shared_MTG(self._simulation.outputs)
         farquharwheat_elements_outputs_df = converter.to_dataframe(self._simulation.outputs)
         self._update_shared_dataframes(farquharwheat_elements_outputs_df)
-        
-        
+
+
     def _initialize_model(self):
         """
         Initialize the inputs of the model from the MTG shared between all models.
         """
         all_farquharwheat_elements_inputs_dict = {}
-    
+
         # traverse the MTG recursively from top ...
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
@@ -117,7 +117,6 @@ class FarquharWheatFacade(object):
                                 for farquharwheat_element_input_name in converter.FARQUHARWHEAT_INPUTS:
                                     farquharwheat_element_inputs_dict[farquharwheat_element_input_name] = mtg_element_properties[farquharwheat_element_input_name]
                                 all_farquharwheat_elements_inputs_dict[element_id] = farquharwheat_element_inputs_dict
-                            elif element_id == (1, 'MS', 4, 'blade', 'LeafElement1'):
                                 # TODO: temporary ; replace 'FARQUHARWHEAT_ELEMENT_PROPERTIES_TEMP' by default values
                                 FARQUHARWHEAT_ELEMENT_PROPERTIES_TEMP = {'width': 0, 'height': 0.6, 'Eabsm2': 0}
                                 farquharwheat_element_inputs_dict = {}
@@ -127,10 +126,10 @@ class FarquharWheatFacade(object):
                                     else:
                                         farquharwheat_element_inputs_dict[farquharwheat_element_input_name] = FARQUHARWHEAT_ELEMENT_PROPERTIES_TEMP[farquharwheat_element_input_name]
                                 all_farquharwheat_elements_inputs_dict[element_id] = farquharwheat_element_inputs_dict
-                            
+
         self._simulation.initialize(all_farquharwheat_elements_inputs_dict)
-    
-    
+
+
     def _update_shared_MTG(self, farquharwheat_elements_data_dict):
         """
         Update the MTG shared between all models from the inputs or the outputs of the model.
@@ -140,7 +139,7 @@ class FarquharWheatFacade(object):
         for farquharwheat_elements_data_name in converter.FARQUHARWHEAT_INPUTS_OUTPUTS:
             if farquharwheat_elements_data_name not in mtg_property_names:
                 self._shared_mtg.add_property(farquharwheat_elements_data_name)
-    
+
         # traverse the MTG recursively from top ...
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
@@ -159,12 +158,11 @@ class FarquharWheatFacade(object):
                             farquharwheat_element_data_dict = farquharwheat_elements_data_dict[element_id]
                             for farquharwheat_element_data_name, farquharwheat_element_data_value in farquharwheat_element_data_dict.iteritems():
                                 self._shared_mtg.property(farquharwheat_element_data_name)[mtg_element_vid] = farquharwheat_element_data_value
-    
-    
+
+
     def _update_shared_dataframes(self, farquharwheat_elements_data_df):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
         """
         tools.combine_dataframes_inplace(farquharwheat_elements_data_df, SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES, self._shared_elements_inputs_outputs_df)
-        
-        
+

@@ -5,11 +5,11 @@
     ~~~~~~~~~~~~~~~~~~~~~~~~
 
     The module :mod:`fspmwheat.cnwheat_facade` is a facade of the model CNWheat.
-    
-    This module permits to initialize and run the model CNWheat from a :class:`MTG <openalea.mtg.mtg.MTG>` 
-    in a convenient and transparent way, wrapping all the internal complexity of the model, and dealing 
+
+    This module permits to initialize and run the model CNWheat from a :class:`MTG <openalea.mtg.mtg.MTG>`
+    in a convenient and transparent way, wrapping all the internal complexity of the model, and dealing
     with all the tedious initialization and conversion processes.
-    
+
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -54,15 +54,15 @@ POPULATION_STATE_VARIABLE = set(simulation.Simulation.PLANTS_STATE + simulation.
 
 class CNWheatFacade(object):
     """
-    The CNWheatFacade class permits to initialize, run the model CNWheat 
-    from a :class:`MTG <openalea.mtg.mtg.MTG>`, and update the MTG and the dataframes 
+    The CNWheatFacade class permits to initialize, run the model CNWheat
+    from a :class:`MTG <openalea.mtg.mtg.MTG>`, and update the MTG and the dataframes
     shared between all models.
 
     Use :meth:`run` to run the model.
 
     :Parameters:
 
-        - `shared_mtg` (:class:`openalea.mtg.mtg.MTG`) - The MTG shared between all models. 
+        - `shared_mtg` (:class:`openalea.mtg.mtg.MTG`) - The MTG shared between all models.
         - `delta_t` (:class:`int`) - The delta between two runs, in seconds.
         - `model_organs_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at organs scale.
         - `model_hiddenzones_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at hiddenzones scale.
@@ -73,10 +73,10 @@ class CNWheatFacade(object):
         - `shared_hiddenzones_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at hiddenzones scale shared between all models.
         - `shared_elements_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at elements scale shared between all models.
         - `shared_soils_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at soils scale shared between all models.
-        
+
     """
-    
-    def __init__(self, shared_mtg, delta_t, 
+
+    def __init__(self, shared_mtg, delta_t,
                  model_organs_inputs_df,
                  model_hiddenzones_inputs_df,
                  model_elements_inputs_df,
@@ -86,25 +86,25 @@ class CNWheatFacade(object):
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
                  shared_soils_inputs_outputs_df):
-        
+
         self._shared_mtg = shared_mtg #: the MTG shared between all models
-        
+
         self._simulation = simulation.Simulation(delta_t=delta_t) #: the simulator to use to run the model
-        
+
         cnwheat_population, self.cnwheat_soils = converter.from_dataframes(model_organs_inputs_df, model_hiddenzones_inputs_df, model_elements_inputs_df, model_soils_inputs_df)
         self._update_shared_MTG(cnwheat_population)
-        
+
         self._shared_axes_inputs_outputs_df = shared_axes_inputs_outputs_df #: the dataframe at axes scale shared between all models
         self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df #: the dataframe at organs scale shared between all models
         self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df #: the dataframe at hiddenzones scale shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df #: the dataframe at elements scale shared between all models
         self._shared_soils_inputs_outputs_df = shared_soils_inputs_outputs_df #: the dataframe at soils scale shared between all models
-        self._update_shared_dataframes(cnwheat_organs_data_df=model_organs_inputs_df, 
-                                       cnwheat_hiddenzones_data_df=model_hiddenzones_inputs_df, 
-                                       cnwheat_elements_data_df=model_elements_inputs_df, 
+        self._update_shared_dataframes(cnwheat_organs_data_df=model_organs_inputs_df,
+                                       cnwheat_hiddenzones_data_df=model_hiddenzones_inputs_df,
+                                       cnwheat_elements_data_df=model_elements_inputs_df,
                                        cnwheat_soils_data_df=model_soils_inputs_df)
-        
-    
+
+
     def run(self):
         """
         Run the model and update the MTG and the dataframes shared between all models.
@@ -112,31 +112,32 @@ class CNWheatFacade(object):
         self._initialize_model()
         self._simulation.run(start_time=0, stop_time=1, number_of_output_steps=2)
         self._update_shared_MTG(self._simulation.population)
-        
-        (_, 
-         cnwheat_axes_inputs_outputs_df, 
-         _, 
-         cnwheat_organs_inputs_outputs_df, 
-         cnwheat_hiddenzones_inputs_outputs_df, 
-         cnwheat_elements_inputs_outputs_df, 
+
+        (_,
+         cnwheat_axes_inputs_outputs_df,
+         _,
+         cnwheat_organs_inputs_outputs_df,
+         cnwheat_hiddenzones_inputs_outputs_df,
+         cnwheat_elements_inputs_outputs_df,
          cnwheat_soils_inputs_outputs_df) = self._simulation.postprocessings()
-        
-        for cnwheat_inputs_outputs_df in (cnwheat_axes_inputs_outputs_df, 
-                                          cnwheat_organs_inputs_outputs_df, 
+
+        for cnwheat_inputs_outputs_df in (cnwheat_axes_inputs_outputs_df,
+                                          cnwheat_organs_inputs_outputs_df,
                                           cnwheat_hiddenzones_inputs_outputs_df,
                                           cnwheat_elements_inputs_outputs_df,
                                           cnwheat_soils_inputs_outputs_df):
-            t_to_keep = cnwheat_inputs_outputs_df.t.loc[cnwheat_inputs_outputs_df.last_valid_index()]
-            cnwheat_inputs_outputs_df.drop(cnwheat_inputs_outputs_df.t.loc[cnwheat_inputs_outputs_df.t != t_to_keep].index, inplace=True)
-            cnwheat_inputs_outputs_df.drop('t', 1, inplace=True)
-            cnwheat_inputs_outputs_df.reset_index(drop=True, inplace=True)
-        self._update_shared_dataframes(cnwheat_axes_data_df=cnwheat_axes_inputs_outputs_df, 
+            if not cnwheat_inputs_outputs_df.empty:
+                t_to_keep = cnwheat_inputs_outputs_df.t.loc[cnwheat_inputs_outputs_df.last_valid_index()]
+                cnwheat_inputs_outputs_df.drop(cnwheat_inputs_outputs_df.t.loc[cnwheat_inputs_outputs_df.t != t_to_keep].index, inplace=True)
+                cnwheat_inputs_outputs_df.drop('t', 1, inplace=True)
+                cnwheat_inputs_outputs_df.reset_index(drop=True, inplace=True)
+        self._update_shared_dataframes(cnwheat_axes_data_df=cnwheat_axes_inputs_outputs_df,
                                        cnwheat_organs_data_df=cnwheat_organs_inputs_outputs_df,
                                        cnwheat_hiddenzones_data_df=cnwheat_hiddenzones_inputs_outputs_df,
                                        cnwheat_elements_data_df=cnwheat_elements_inputs_outputs_df,
                                        cnwheat_soils_data_df=cnwheat_soils_inputs_outputs_df)
-        
-        
+
+
     def _initialize_model(self):
         """
         Initialize the inputs of the model from the MTG shared between all models and the soils.
@@ -176,17 +177,17 @@ class CNWheatFacade(object):
                     elif cnwheat_organ_class is not model.Grains:
                         is_valid_axis = False
                         break
-                            
+
                 if not is_valid_axis:
                     continue
-    
+
                 has_valid_phytomer = False
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
-    
+
                     # create a new phytomer
                     cnwheat_phytomer = model.Phytomer(mtg_metamer_index)
-    
+
                     mtg_hiddenzone_label = converter.CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[model.HiddenZone]
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
                     if mtg_hiddenzone_label in mtg_metamer_properties:
@@ -205,12 +206,12 @@ class CNWheatFacade(object):
                             has_valid_hiddenzone = False
                     else:
                         has_valid_hiddenzone = False
-                        
+
                     has_valid_organ = False
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
                         if mtg_organ_label not in MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING \
-                            or self._shared_mtg.get_vertex_property(mtg_organ_vid)['length'] == 0: 
+                            or self._shared_mtg.get_vertex_property(mtg_organ_vid)['length'] == 0:
                             continue
                         # create a new organ
                         cnwheat_organ_class = MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]
@@ -220,7 +221,7 @@ class CNWheatFacade(object):
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
-                            if mtg_element_label not in converter.MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING: continue                            
+                            if mtg_element_label not in converter.MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING: continue
                             if set(mtg_element_properties).issuperset(simulation.Simulation.ELEMENTS_STATE):
                                 has_valid_element = True
                                 cnwheat_element_data_dict = {}
@@ -240,28 +241,28 @@ class CNWheatFacade(object):
                                         cnwheat_element_data_dict[cnwheat_element_data_name] = CNWHEAT_ELEMENT_PROPERTIES_TEMP[cnwheat_element_data_name]
                                 cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
                                 setattr(cnwheat_organ, converter.MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
-                            
+
                         if has_valid_element:
                             has_valid_organ = True
                             setattr(cnwheat_phytomer, CNWHEAT_ATTRIBUTES_MAPPING[cnwheat_organ_class], cnwheat_organ)
-    
+
                     if has_valid_organ or has_valid_hiddenzone:
                         cnwheat_axis.phytomers.append(cnwheat_phytomer)
                         has_valid_phytomer = True
-    
+
                 if not has_valid_phytomer:
                     is_valid_axis = False
-    
+
                 if is_valid_axis:
                     cnwheat_plant.axes.append(cnwheat_axis)
                     is_valid_plant = True
-    
+
             if is_valid_plant:
                 cnwheat_population.plants.append(cnwheat_plant)
-    
+
         self._simulation.initialize(cnwheat_population, self.cnwheat_soils)
-    
-    
+
+
     def _update_shared_MTG(self, cnwheat_population):
         """
         Update the MTG shared between all models from the population of CNWheat.
@@ -274,7 +275,7 @@ class CNWheatFacade(object):
         for cnwheat_organ_label in MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING.keys() + [converter.CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[model.HiddenZone]]:
             if cnwheat_organ_label not in mtg_property_names:
                 self._shared_mtg.add_property(cnwheat_organ_label)
-    
+
         mtg_plants_iterator = self._shared_mtg.components_iter(self._shared_mtg.root)
         # traverse CN-Wheat population from top
         for cnwheat_plant in cnwheat_population.plants:
@@ -328,7 +329,7 @@ class CNWheatFacade(object):
                                 self._shared_mtg.property(cnwheat_organ_property_name)[mtg_organ_vid] = attribute_value
                             elif cnwheat_organ_property_name not in self._shared_mtg.get_vertex_property(mtg_organ_vid):
                                 self._shared_mtg.property(cnwheat_organ_property_name)[mtg_organ_vid] = attribute_value
-                                
+
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
                             if mtg_element_label not in converter.MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING: continue
@@ -338,24 +339,24 @@ class CNWheatFacade(object):
                                 cnwheat_element_property_value = getattr(cnwheat_element, cnwheat_element_property_name)
                                 self._shared_mtg.property(cnwheat_element_property_name)[mtg_element_vid] = cnwheat_element_property_value
                                 self._shared_mtg.property(cnwheat_element_property_name)[mtg_organ_vid] = cnwheat_element_property_value # Update organ property too
-        
-    
-    def _update_shared_dataframes(self, cnwheat_axes_data_df=None, cnwheat_organs_data_df=None, 
-                                  cnwheat_hiddenzones_data_df=None, cnwheat_elements_data_df=None, 
+
+
+    def _update_shared_dataframes(self, cnwheat_axes_data_df=None, cnwheat_organs_data_df=None,
+                                  cnwheat_hiddenzones_data_df=None, cnwheat_elements_data_df=None,
                                   cnwheat_soils_data_df=None):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
         """
-        
+
         for cnwheat_data_df, \
             shared_inputs_outputs_indexes, \
-            shared_inputs_outputs_df in ((cnwheat_axes_data_df, simulation.Simulation.AXES_INPUTS_INDEXES, self._shared_axes_inputs_outputs_df), 
+            shared_inputs_outputs_df in ((cnwheat_axes_data_df, simulation.Simulation.AXES_INPUTS_INDEXES, self._shared_axes_inputs_outputs_df),
                                          (cnwheat_organs_data_df, simulation.Simulation.ORGANS_INPUTS_INDEXES, self._shared_organs_inputs_outputs_df),
                                          (cnwheat_hiddenzones_data_df, simulation.Simulation.HIDDENZONE_INPUTS_INDEXES, self._shared_hiddenzones_inputs_outputs_df),
                                          (cnwheat_elements_data_df, simulation.Simulation.ELEMENTS_INPUTS_INDEXES, self._shared_elements_inputs_outputs_df),
                                          (cnwheat_soils_data_df, simulation.Simulation.SOILS_INPUTS_INDEXES, self._shared_soils_inputs_outputs_df)):
-            
+
             if cnwheat_data_df is None: continue
-            
+
             tools.combine_dataframes_inplace(cnwheat_data_df, shared_inputs_outputs_indexes, shared_inputs_outputs_df)
-            
+

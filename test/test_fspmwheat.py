@@ -77,10 +77,7 @@ def test_run():
         inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
 
     # convert inputs to a population of plants and a dictionary of soils
-    population, soils = converter.from_dataframes(inputs_dataframes[PLANTS_INPUTS_FILENAME],
-                                                  inputs_dataframes[AXES_INPUTS_FILENAME],
-                                                  inputs_dataframes[METAMERS_INPUTS_FILENAME],
-                                                  inputs_dataframes[ORGANS_INPUTS_FILENAME],
+    population, soils = converter.from_dataframes(inputs_dataframes[ORGANS_INPUTS_FILENAME],
                                                   inputs_dataframes[HIDDENZONES_INPUTS_FILENAME],
                                                   inputs_dataframes[ELEMENTS_INPUTS_FILENAME],
                                                   inputs_dataframes[SOILS_INPUTS_FILENAME])
@@ -89,9 +86,7 @@ def test_run():
     simulation_.initialize(population, soils)
     # convert the population and the soils to Pandas dataframes
     formatted_inputs_dataframes = {}
-    formatted_inputs_dataframes[PLANTS_INPUTS_FILENAME], \
     formatted_inputs_dataframes[AXES_INPUTS_FILENAME], \
-    formatted_inputs_dataframes[METAMERS_INPUTS_FILENAME], \
     formatted_inputs_dataframes[ORGANS_INPUTS_FILENAME], \
     formatted_inputs_dataframes[HIDDENZONES_INPUTS_FILENAME], \
     formatted_inputs_dataframes[ELEMENTS_INPUTS_FILENAME], \

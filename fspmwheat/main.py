@@ -115,12 +115,11 @@ def main(stop_time, run_simu=True, make_graphs=True):
         cnwheat_ts = 1
 
         hour_to_second_conversion_factor = 3600
-        
+
         # read adelwheat inputs at t0
-        adel_wheat = AdelWheat(seed=1234)
+        adel_wheat = AdelWheat(seed=1234, convUnit=1)
         g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)[0]
-        properties_to_convert = {'lengths': ['shape_mature_length', 'shape_max_width', 'length', 'visible_length', 'width'], 'areas': ['green_area']}
-        adel_wheat.convert_to_SI_units(g, properties_to_convert)
+##        adel_wheat.domain = tuple(tuple((coord[0]/100, (coord[1]/100)) for coord in adel_wheat.domain)) # TODO: temp
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -131,71 +130,71 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         # read the inputs at t0 and create the facades
         # caribu
-        caribu_facade_ = caribu_facade.CaribuFacade(g, 
+        caribu_facade_ = caribu_facade.CaribuFacade(g,
                                                     shared_elements_inputs_outputs_df,
                                                     adel_wheat)
 
         # senescwheat
         senescwheat_roots_inputs_t0 = pd.read_csv(SENESCWHEAT_ROOTS_INPUTS_FILEPATH)
         senescwheat_elements_inputs_t0 = pd.read_csv(SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH)
-        senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g, 
-                                                                   senescwheat_ts * hour_to_second_conversion_factor, 
-                                                                   senescwheat_roots_inputs_t0, 
-                                                                   senescwheat_elements_inputs_t0, 
-                                                                   shared_organs_inputs_outputs_df, 
+        senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
+                                                                   senescwheat_ts * hour_to_second_conversion_factor,
+                                                                   senescwheat_roots_inputs_t0,
+                                                                   senescwheat_elements_inputs_t0,
+                                                                   shared_organs_inputs_outputs_df,
                                                                    shared_elements_inputs_outputs_df)
-        
+
         # farquharwheat
         farquharwheat_elements_inputs_t0 = pd.read_csv(FARQUHARWHEAT_INPUTS_FILEPATH)
-        farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g, 
-                                                                         farquharwheat_elements_inputs_t0, 
+        farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
+                                                                         farquharwheat_elements_inputs_t0,
                                                                          shared_elements_inputs_outputs_df)
-        
+
         # elongwheat
         elongwheat_hiddenzones_inputs_t0 = pd.read_csv(ELONGWHEAT_HIDDENZONE_INPUTS_FILEPATH)
         elongwheat_organ_inputs_t0 = pd.read_csv(ELONGWHEAT_ORGANS_INPUTS_FILEPATH)
-        elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g, 
-                                                                elongwheat_ts * hour_to_second_conversion_factor, 
-                                                                elongwheat_hiddenzones_inputs_t0, 
-                                                                elongwheat_organ_inputs_t0, 
-                                                                shared_hiddenzones_inputs_outputs_df, 
-                                                                shared_elements_inputs_outputs_df, 
+        elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
+                                                                elongwheat_ts * hour_to_second_conversion_factor,
+                                                                elongwheat_hiddenzones_inputs_t0,
+                                                                elongwheat_organ_inputs_t0,
+                                                                shared_hiddenzones_inputs_outputs_df,
+                                                                shared_elements_inputs_outputs_df,
                                                                 adel_wheat)
-        
+
         # growthwheat
         growthwheat_hiddenzones_inputs_t0 = pd.read_csv(GROWTHWHEAT_HIDDENZONE_INPUTS_FILEPATH)
         growthwheat_organ_inputs_t0 = pd.read_csv(GROWTHWHEAT_ORGANS_INPUTS_FILEPATH)
         growthwheat_root_inputs_t0 = pd.read_csv(GROWTHWHEAT_ROOTS_INPUTS_FILEPATH)
-        growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g, 
-                                                                   growthwheat_ts * hour_to_second_conversion_factor, 
-                                                                   growthwheat_hiddenzones_inputs_t0, 
-                                                                   growthwheat_organ_inputs_t0, 
-                                                                   growthwheat_root_inputs_t0, 
-                                                                   shared_organs_inputs_outputs_df, 
-                                                                   shared_hiddenzones_inputs_outputs_df, 
+        growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
+                                                                   growthwheat_ts * hour_to_second_conversion_factor,
+                                                                   growthwheat_hiddenzones_inputs_t0,
+                                                                   growthwheat_organ_inputs_t0,
+                                                                   growthwheat_root_inputs_t0,
+                                                                   shared_organs_inputs_outputs_df,
+                                                                   shared_hiddenzones_inputs_outputs_df,
                                                                    shared_elements_inputs_outputs_df)
-        
+
         # cnwheat
         cnwheat_organs_inputs_t0 = pd.read_csv(CNWHEAT_ORGANS_INPUTS_FILEPATH)
         cnwheat_hiddenzones_inputs_t0 = pd.read_csv(CNWHEAT_HIDDENZONE_INPUTS_FILEPATH)
         cnwheat_elements_inputs_t0 = pd.read_csv(CNWHEAT_ELEMENTS_INPUTS_FILEPATH)
         cnwheat_soils_inputs_t0 = pd.read_csv(CNWHEAT_SOILS_INPUTS_FILEPATH)
-        cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g, 
-                                                       cnwheat_ts * hour_to_second_conversion_factor, 
-                                                       cnwheat_organs_inputs_t0, 
-                                                       cnwheat_hiddenzones_inputs_t0, 
-                                                       cnwheat_elements_inputs_t0, 
-                                                       cnwheat_soils_inputs_t0, 
-                                                       shared_axes_inputs_outputs_df, 
-                                                       shared_organs_inputs_outputs_df, 
-                                                       shared_hiddenzones_inputs_outputs_df, 
-                                                       shared_elements_inputs_outputs_df, 
+        cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
+                                                       cnwheat_ts * hour_to_second_conversion_factor,
+                                                       cnwheat_organs_inputs_t0,
+                                                       cnwheat_hiddenzones_inputs_t0,
+                                                       cnwheat_elements_inputs_t0,
+                                                       cnwheat_soils_inputs_t0,
+                                                       shared_axes_inputs_outputs_df,
+                                                       shared_organs_inputs_outputs_df,
+                                                       shared_hiddenzones_inputs_outputs_df,
+                                                       shared_elements_inputs_outputs_df,
                                                        shared_soils_inputs_outputs_df)
-        
+
         # Update geometry
-        adel_wheat.update_geometry(g, SI_units=True, properties_to_convert=properties_to_convert) # convert the data in the mtg to non-SI units
-        #adel_wheat.plot(g)
-        adel_wheat.convert_to_SI_units(g, properties_to_convert)
+        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Returns mtg with non-SI units
+##        adel_wheat.convert_to_SI_units(g, properties_to_convert)
+        adel_wheat.plot(g)
 
         # define the start and the end of the whole simulation (in hours)
         start_time = 0
@@ -228,9 +227,9 @@ def main(stop_time, run_simu=True, make_graphs=True):
                         # run ElongWheat
                         elongwheat_facade_.run()
                         # Update geometry
-                        adel_wheat.update_geometry(g, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
+                        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
                         #adel_wheat.plot(g)
-                        adel_wheat.convert_to_SI_units(g, properties_to_convert)
+##                        adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
                         for t_growthwheat in xrange(t_elongwheat, t_elongwheat + elongwheat_ts, growthwheat_ts):
                             # run GrowthWheat
@@ -267,7 +266,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         all_hiddenzones_inputs_outputs.to_csv(HIDDENZONES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
-        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & ### TODO: temporary ; to remove when there will be default input values for each element in the mtg 
+        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & ### TODO: temporary ; to remove when there will be default input values for each element in the mtg
                                                                       (all_elements_inputs_outputs.axis == 'MS')]
         all_elements_inputs_outputs.reset_index(0, inplace=True)
         all_elements_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
@@ -288,7 +287,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # 1) Photosynthetic organs
         ph_elements_output_df = pd.read_csv(ELEMENTS_STATES_FILEPATH)
 
-        graph_variables_ph_elements = {'Eabsm2': u'Absorbed PAR (µmol m$^{-2}$ s$^{-1}$)', 'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
+        graph_variables_ph_elements = {'Eabsm2': u'Relative absorbed PAR', 'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
                            'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
                            'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
                            'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
@@ -320,7 +319,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
                             'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N h$^{-1}$)', 'Export_Nitrates': u'Total export of nitrates (µmol N h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N h$^{-1}$)',
                             'R_Nnit_upt': u'Respiration nitrates uptake (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)', 'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
                             'R_grain_growth_struct': u'Respiration grain structural growth (µmol C h$^{-1}$)', 'R_grain_growth_starch': u'Respiration grain starch growth (µmol C h$^{-1}$)',
-                            'R_growth': u'Growth respiration of roots (µmol C h$^{-1}$)', 'mstruct': u'Structural mass (g)',
+                            'R_growth': u'Growth respiration of roots (µmol C h$^{-1}$)', 'mstruct': u'Structural mass (g)', 'mstruct_death': u'Structural mass death (g)', 'mstruct_growth': u'Structural mass growth (g)',
                             'C_exudation': u'Carbon lost by root exudation (µmol C g$^{-1}$ mstruct h$^{-1}$', 'N_exudation': u'Nitrogen lost by root exudation (µmol N g$^{-1}$ mstruct h$^{-1}$',
                             'Conc_cytokinins':u'[cytokinins] (UA g$^{-1}$ mstruct)', 'S_cytokinins':u'Rate of cytokinins synthesis (UA g$^{-1}$ mstruct)', 'Export_cytokinins': 'Export of cytokinins from roots (UA h$^{-1}$)',
                             'HATS_LATS': u'Potential uptake (µmol h$^{-1}$)' , 'regul_transpiration':'Regulating transpiration function'}
@@ -357,7 +356,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         for variable_name, variable_label in graph_variables_hiddenzones.iteritems():
             graph_name = variable_name + '_hz' + '.PNG'
-            cnwheat_tools.plot_cnwheat_ouputs(all_hiddenzones_inputs_outputs_df,
+            tools.plot_cnwheat_ouputs(all_hiddenzones_inputs_outputs_df,
                           x_name = x_name,
                           y_name = variable_name,
                           x_label = x_label,
@@ -372,7 +371,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         for variable_name, variable_label in graph_variables_organs.iteritems():
             graph_name = variable_name + '.PNG'
-            cnwheat_tools.plot_cnwheat_ouputs(all_organs_inputs_outputs_df,
+            tools.plot_cnwheat_ouputs(all_organs_inputs_outputs_df,
                           x_name = x_name,
                           y_name = variable_name,
                           x_label = x_label,
@@ -382,4 +381,4 @@ def main(stop_time, run_simu=True, make_graphs=True):
                           explicit_label=False)
 
 if __name__ == '__main__':
-    main(8, run_simu=True, make_graphs=False)
+    main(2, run_simu=True, make_graphs=True)
