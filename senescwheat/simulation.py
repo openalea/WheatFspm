@@ -83,14 +83,14 @@ class Simulation(object):
         all_roots_outputs = self.outputs['roots']
         for roots_inputs_id, roots_inputs_dict in all_roots_inputs.iteritems():
             # loss of mstruct and Nstruct
-            mstruct_death, Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'], self.delta_t)
-            relative_delta_mstruct = model.SenescenceModel.calculate_relative_delta_mstruct_roots(mstruct_death, roots_inputs_dict['mstruct'])
+            rate_mstruct_death, rate_Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'])
+            relative_delta_mstruct = model.SenescenceModel.calculate_relative_delta_mstruct_roots(rate_mstruct_death, roots_inputs_dict['mstruct'], self.delta_t)
             # loss of cytokinins (losses of nitrates, amino acids and sucrose are neglected)
             loss_cytokinins = model.SenescenceModel.calculate_remobilisation(roots_inputs_dict['cytokinins'], relative_delta_mstruct)
             # Update of root outputs
-            all_roots_outputs[roots_inputs_id] = {'mstruct': roots_inputs_dict['mstruct'] - mstruct_death,
-                                                  'mstruct_death': mstruct_death,
-                                                  'Nstruct': roots_inputs_dict['Nstruct'] - Nstruct_death,
+            all_roots_outputs[roots_inputs_id] = {'mstruct': roots_inputs_dict['mstruct'] - (rate_mstruct_death * self.delta_t), #: TODO: a faire dans une fonction a part et apres growth-wheat
+                                                  'rate_mstruct_death': rate_mstruct_death,
+                                                  'Nstruct': roots_inputs_dict['Nstruct'] - (rate_Nstruct_death * self.delta_t),#: TODO: a faire dans une fonction a part et apres growth-wheat
                                                   'cytokinins': roots_inputs_dict['cytokinins'] - loss_cytokinins}
 
         # Elements

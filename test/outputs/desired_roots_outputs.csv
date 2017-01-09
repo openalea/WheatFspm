@@ -1,2 +1,2 @@
-plant,axis,Nstruct,cytokinins,mstruct,mstruct_death
-1,MS,0.0005293322,3.49559,0.049937,6.3e-05
+plant,axis,Nstruct,cytokinins,mstruct,rate_mstruct_death
+1,MS,0.0005293322,3.49559,0.049937,1.75e-08

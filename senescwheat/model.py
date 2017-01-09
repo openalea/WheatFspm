@@ -80,12 +80,12 @@ class SenescenceModel(object):
             fraction_N_max = cls.FRACTION_N_MAX['stem']
 
         # Overwrite max proteins
-        if max_proteins < proteins:
+        if max_proteins < proteins and update_max_protein:
             max_proteins = proteins
             new_green_area = prev_green_area
             relative_delta_green_area = 0
         # Senescence if (actual proteins/max_proteins) < fraction_N_max
-        elif (proteins / max_proteins) < fraction_N_max and update_max_protein:
+        elif (proteins / max_proteins) < fraction_N_max:
             senesced_area = min(prev_green_area, cls.SENESCENCE_MAX_RATE * delta_t)
             new_green_area = max(0, prev_green_area - senesced_area)
             relative_delta_green_area = senesced_area / prev_green_area
@@ -122,7 +122,7 @@ class SenescenceModel(object):
         return metabolite * relative_delta_structure
 
     @classmethod
-    def calculate_roots_senescence(cls, mstruct, Nstruct, delta_t):
+    def calculate_roots_senescence(cls, mstruct, Nstruct):
         """Root senescence
 
         : Parameters:
@@ -130,20 +130,20 @@ class SenescenceModel(object):
             - `Nstruct` (:class:`float`) - structural N (g)
 
         : Returns:
-            Amount of C lost by root senescence over DELTA_T (g mstruct), amount of N lost by root senescence over DELTA_T (g Nstruct)
+            Rate of mstruct loss by root senescence (g mstruct s-1), rate of Nstruct loss by root senescence (g Nstruct s-1)
 
         :Returns Type:
             :class:`float`
         """
-        return mstruct * cls.SENESCENCE_ROOTS * delta_t, Nstruct * cls.SENESCENCE_ROOTS * delta_t
+        return mstruct * cls.SENESCENCE_ROOTS, Nstruct * cls.SENESCENCE_ROOTS
 
 
     @classmethod
-    def calculate_relative_delta_mstruct_roots(cls, mstruct_death, root_mstruct):
-        """Relative delta of root structural dry matter (g)
+    def calculate_relative_delta_mstruct_roots(cls, rate_mstruct_death, root_mstruct, delta_t):
+        """Relative delta of root structural dry matter (g) over delta_t
 
         : Parameters:
-            - `mstruct_death` (:class:`float`) - amount of C lost through root death (g mstruct)
+            - `rate_mstruct_death` (:class:`float`) - Rate of mstruct loss by root senescence (g mstruct s-1)
             - `root_mstruct` (:class:`float`) - actual mstruct of roots (g)
 
         : Returns:
@@ -152,4 +152,4 @@ class SenescenceModel(object):
         :Returns Type:
             :class:`float`
         """
-        return mstruct_death / root_mstruct
+        return (rate_mstruct_death * delta_t) / root_mstruct

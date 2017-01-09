@@ -6,7 +6,7 @@ from __future__ import division # use "//" to do integer division
     senescwheat.converter
     ~~~~~~~~~~~~~~~~~~~~~
 
-    The module :mod:`senescwheat.converter` defines functions to convert 
+    The module :mod:`senescwheat.converter` defines functions to convert
     :class:`dataframes <pandas.DataFrame>` to/from SenescWheat inputs or outputs format.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
@@ -34,7 +34,7 @@ SENESCWHEAT_ROOTS_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'cyt
 SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'proteins', 'mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan', 'cytokinins', 'sucrose', 'is_growing']
 
 #: the outputs computed by SenescWheat at roots scale
-SENESCWHEAT_ROOTS_OUTPUTS = ['mstruct_death', 'mstruct', 'Nstruct', 'cytokinins']
+SENESCWHEAT_ROOTS_OUTPUTS = ['rate_mstruct_death', 'mstruct', 'Nstruct', 'cytokinins']
 
 #: the outputs computed by SenescWheat at elements scale
 SENESCWHEAT_ELEMENTS_OUTPUTS = ['green_area', 'mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinins']
