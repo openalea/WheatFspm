@@ -11,7 +11,7 @@ from __future__ import division # use "//" to do integer division
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
+    .. seealso:: Barillot et al. 2016.
 """
 
 """
