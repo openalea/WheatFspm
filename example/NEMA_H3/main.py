@@ -4,7 +4,7 @@
     main
     ~~~~
 
-    An example to show how to couple models CN-Wheat, Farquhar-Wheat and Senesc-Wheat using a static topology from Adel-Wheat.
+    Script readatpted from example NEMA_H3 used in the paper Barillot et al. (2016).
     This example uses the format MTG to exchange data between the models.
 
     You must first install :mod:`alinea.adel`, :mod:`cnwheat`, :mod:`farquharwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
