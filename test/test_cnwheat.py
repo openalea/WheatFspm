@@ -61,11 +61,13 @@ ACTUAL_HIDDENZONES_OUTPUTS_FILENAME = 'actual_hiddenzones_outputs.csv'
 ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
 ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
 
+# Define culm density (culm m-2)
+CULM_DENSITY = {1:410}
 
 def test_run():
 
     # create the simulation
-    simulation_ = simulation.Simulation(delta_t=3600)
+    simulation_ = simulation.Simulation(delta_t=3600, culm_density=CULM_DENSITY)
     # read inputs from Pandas dataframes
     inputs_dataframes = {}
     for inputs_filename in (ORGANS_INPUTS_FILENAME, HIDDENZONES_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):

@@ -161,7 +161,7 @@ class Simulation(object):
                                      model.Soil: 'cnwheat.derivatives.soils'}}
 
 
-    def __init__(self, delta_t=1):
+    def __init__(self, delta_t=1, culm_density=410):
 
         self.population = model.Population() #: the population to simulate on
 
@@ -181,6 +181,8 @@ class Simulation(object):
         self.show_progressbar = False #: True: show the progress bar ; False: DO NOT show the progress bar
 
         self.delta_t = delta_t #: the delta t of the simulation (in seconds)
+
+        self.culm_density = culm_density
 
 
     def initialize(self, population, soils):
@@ -489,6 +491,12 @@ class Simulation(object):
 
         y_derivatives = np.zeros_like(y)
 
+        # TODO: TEMP !!!!
+        soil_contributors = []
+        soil = self.soils[(1, 'MS')]
+        soil.nitrates = y[self.initial_conditions_mapping[soil]['nitrates']]
+        conc_nitrates_soil = soil.calculate_conc_nitrates(soil.nitrates)
+
         for plant in self.population.plants:
             for axis in plant.axes:
                 # Phloem
@@ -501,9 +509,6 @@ class Simulation(object):
                 axis.roots.sucrose = y[self.initial_conditions_mapping[axis.roots]['sucrose']]
                 axis.roots.cytokinins = y[self.initial_conditions_mapping[axis.roots]['cytokinins']]
                 phloem_contributors.append(axis.roots)
-
-                soil = self.soils[(plant.index, axis.label)]
-                soil.nitrates = y[self.initial_conditions_mapping[soil]['nitrates']]
 
                 # compute total transpiration at t_inf
                 total_transpiration = 0.0 # mmol s-1
@@ -527,8 +532,8 @@ class Simulation(object):
                 regul_transpiration = axis.roots.calculate_regul_transpiration(total_surfacic_transpiration)
 
                 # compute the flows from/to the roots to/from photosynthetic organs
-                conc_nitrates_soil = soil.calculate_conc_nitrates(soil.nitrates)
                 roots_uptake_nitrate, _ = axis.roots.calculate_uptake_nitrates(conc_nitrates_soil, axis.roots.nitrates, axis.roots.sucrose, self.delta_t)
+                soil_contributors.append((roots_uptake_nitrate, plant.index)) # TODO: TEMP!!!
                 R_Nnit_upt = RespirationModel.R_Nnit_upt(roots_uptake_nitrate, axis.roots.sucrose)
                 roots_export_nitrates = axis.roots.calculate_export_nitrates(axis.roots.nitrates, regul_transpiration, self.delta_t)
                 roots_export_amino_acids = axis.roots.calculate_export_amino_acids(axis.roots.amino_acids, regul_transpiration, self.delta_t)
@@ -668,10 +673,6 @@ class Simulation(object):
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['proteins']] = proteins_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['age_from_flowering']] += self.delta_t
 
-                # compute the derivative of each compartment of soil
-                mineralisation = soil.calculate_mineralisation(self.delta_t)
-                y_derivatives[self.initial_conditions_mapping[soil]['nitrates']] = soil.calculate_nitrates_derivative(mineralisation, roots_uptake_nitrate)
-
                 # compute the derivative of each compartment of roots
                 # flows
                 axis.roots.unloading_sucrose = axis.roots.calculate_unloading_sucrose(axis.phloem.sucrose, axis.mstruct, self.delta_t)
@@ -701,6 +702,9 @@ class Simulation(object):
                 y_derivatives[self.initial_conditions_mapping[axis.phloem]['sucrose']] = sucrose_phloem_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.phloem]['amino_acids']] = amino_acids_phloem_derivative
 
+        # compute the derivative of each compartment of soil
+        mineralisation = soil.calculate_mineralisation(self.delta_t)
+        y_derivatives[self.initial_conditions_mapping[soil]['nitrates']] = soil.calculate_nitrates_derivative(mineralisation, soil_contributors, self.culm_density)
 
         if self.show_progressbar:
             self.progressbar.update(t)
@@ -762,6 +766,19 @@ class Simulation(object):
 
         delta_t_repeated = [self.delta_t] * len(self._time_grid)
 
+        # format soil output
+        soils_df = pd.DataFrame(columns=all_soils_df.columns)
+        soils_df['t'] = self._time_grid
+        soils_df['plant'] = 1
+        soils_df['axis'] = 'MS'
+        soil = self.soils[(1, 'MS')]
+        soils_df['volume'] = soil.volume
+        soils_df['nitrates'] = solver_output_transposed[self.initial_conditions_mapping[soil]['nitrates']]
+        soils_df['Tsoil'] = soil.Tsoil
+        conc_nitrates_soil = map(soil.calculate_conc_nitrates, soils_df['nitrates'])
+        soils_df['Conc_Nitrates_Soil'] = conc_nitrates_soil
+        all_soils_df = all_soils_df.append(soils_df, ignore_index=True)
+
         for plant in self.population.plants:
 
             plants_df = pd.DataFrame(columns=all_plants_df.columns)
@@ -805,19 +822,6 @@ class Simulation(object):
                 organs_df['Conc_Sucrose'] = axis.phloem.calculate_conc_sucrose(organs_df['sucrose'], axes_df['mstruct'])
                 organs_df['Conc_Amino_Acids'] = axis.phloem.calculate_conc_amino_acids(organs_df['amino_acids'], axes_df['mstruct'])
                 all_organs_df = all_organs_df.append(organs_df, ignore_index=True)
-
-                # format soil output
-                soils_df = pd.DataFrame(columns=all_soils_df.columns)
-                soils_df['t'] = self._time_grid
-                soils_df['plant'] = plant.index
-                soils_df['axis'] = axis.label
-                soil = self.soils[(plant.index, axis.label)]
-                soils_df['volume'] = soil.volume
-                soils_df['nitrates'] = solver_output_transposed[self.initial_conditions_mapping[soil]['nitrates']]
-                soils_df['Tsoil'] = soil.Tsoil
-                conc_nitrates_soil = map(soil.calculate_conc_nitrates, soils_df['nitrates'])
-                soils_df['Conc_Nitrates_Soil'] = conc_nitrates_soil
-                all_soils_df = all_soils_df.append(soils_df, ignore_index=True)
 
                 # format roots outputs
                 organs_df = pd.DataFrame(columns=all_organs_df.columns)
@@ -1001,15 +1005,6 @@ class Simulation(object):
         all_organs_df.sort_values(by=Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
         all_elements_df.sort_values(by=Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
         all_soils_df.sort_values(by=Simulation.SOILS_OUTPUTS_INDEXES, inplace=True)
-
-        # infer the right types of the columns
-##        all_plants_df = all_plants_df.convert_objects(copy=False)
-##        all_axes_df = all_axes_df.convert_objects(copy=False)
-##        all_metamers_df = all_metamers_df.convert_objects(copy=False)
-##        all_hiddenzones_df = all_hiddenzones_df.convert_objects(copy=False)
-##        all_organs_df = all_organs_df.convert_objects(copy=False)
-##        all_elements_df = all_elements_df.convert_objects(copy=False)
-##        all_soils_df = all_soils_df.convert_objects(copy=False)
 
         # convert the indexes of plants and metamers to integers
         all_plants_df['plant'] = all_plants_df['plant'].astype(int)

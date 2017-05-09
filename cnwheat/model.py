@@ -1395,6 +1395,8 @@ class PhotosyntheticOrganElement(object):
             :class:`float`
         """
         conc_sucrose_element = sucrose / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
+        if self.mstruct==0:
+            print self.label
         conc_sucrose_phloem  = sucrose_phloem / (mstruct_axis * parameters.OrganParameters.ALPHA_AXIS)
         #: Driving compartment (µmol C g-1 mstruct)
         driving_sucrose_compartment = max(conc_sucrose_element, conc_sucrose_phloem)
@@ -1824,15 +1826,19 @@ class Soil(object):
 
     # COMPARTMENTS
 
-    def calculate_nitrates_derivative(self, mineralisation, uptake_nitrates):
+    def calculate_nitrates_derivative(self, mineralisation, soil_contributors, culm_density):
         """delta soil nitrates.
 
         :Parameters:
             - `mineralisation` (:class:`float`) - N mineralisation in soil (µmol m-2 N nitrates)
-            - `uptake_nitrates` (:class:`float`) - Nitrate uptake (µmol N nitrates)
+            - `soil_contributors` (:class:`tuple`) - A tuple with (Nitrate uptake per axis (µmol N nitrates), the plant id)
+            - `culm_density` (:class:`dict`) - A dictionary of culm density (culm_density = {plant_id: culm_density, ...})
         :Returns:
             delta nitrates (µmol N nitrates)
         :Returns Type:
             :class:`float`
         """
-        return mineralisation - uptake_nitrates * parameters.SoilParameters.CULM_DENSITY #TODO: attention calcul densité
+        uptake_nitrates = 0
+        for root_uptake, plant_id in soil_contributors:
+            uptake_nitrates += root_uptake * culm_density[plant_id] #TODO: temporary, will be removed in next version
+        return mineralisation - uptake_nitrates

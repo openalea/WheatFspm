@@ -270,5 +270,4 @@ class SoilParameters:
     """
     Internal parameters of soil.
     """
-    CULM_DENSITY = 410                      # culms m-2 #TODO: mettre en variable
     MINERALISATION_RATE = 2.05E-6           # Mineralisation rate (µmol N nitrates m-3 s-1)

@@ -58,6 +58,9 @@ HIDDENZONES_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS
 ELEMENTS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME)
 SOILS_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, SOILS_OUTPUTS_FILENAME)
 
+# Define culm density (culm m-2)
+CULM_DENSITY = {1:410}
+
 # precision of floats in the output CSV files
 OUTPUTS_PRECISION = 6
 
@@ -70,7 +73,7 @@ for inputs_filename in (ORGANS_INPUTS_FILENAME, HIDDENZONES_INPUTS_FILENAME, ELE
     inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
 
 # Initialize a simulation from CN exchange inputs
-simulation_ = simulation.Simulation(delta_t=3600)
+simulation_ = simulation.Simulation(delta_t=3600, culm_density=CULM_DENSITY)
 population, soils = converter.from_dataframes(inputs_dataframes[ORGANS_INPUTS_FILENAME],
                                               inputs_dataframes[HIDDENZONES_INPUTS_FILENAME],
                                               inputs_dataframes[ELEMENTS_INPUTS_FILENAME],
