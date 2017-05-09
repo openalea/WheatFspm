@@ -5,8 +5,8 @@ from __future__ import division # use "//" to do integer division
 """
     farquharwheat.converter
     ~~~~~~~~~~~~~~~~~~~~~~~
-    
-    The module :mod:`farquharwheat.converter` defines functions to convert 
+
+    The module :mod:`farquharwheat.converter` defines functions to convert
     :class:`dataframes <pandas.DataFrame>` to/from FarquharWheat inputs or outputs format.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
@@ -28,7 +28,7 @@ import pandas as pd
 
 
 #: the inputs needed by FarquharWheat at element scale
-FARQUHARWHEAT_INPUTS = ['width', 'height', 'Eabsm2', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
+FARQUHARWHEAT_INPUTS = ['width', 'height', 'PARa', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
 
 #: the outputs computed by FarquharWheat
 FARQUHARWHEAT_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs']

@@ -74,7 +74,7 @@ def test_run():
     # compare inputs
     compare_actual_to_desired('.', reconverted_inputs, INPUTS_FILENAME)
     # run the simulation
-    simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.530000, Ur=2.200000, PARi=3838000)
+    simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.530000, Ur=2.200000)
     # convert the outputs to Pandas dataframe
     outputs_df = converter.to_dataframe(simulation_.outputs)
     # compare outputs

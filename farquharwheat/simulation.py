@@ -66,7 +66,7 @@ class Simulation(object):
         self.inputs.update(inputs)
 
 
-    def run(self, Ta, ambient_CO2, RH, Ur, PARi):
+    def run(self, Ta, ambient_CO2, RH, Ur):
         """
         Compute Farquhar variables for each element in :attr:`inputs` and put
         the results in :attr:`outputs`.
@@ -81,8 +81,6 @@ class Simulation(object):
 
             - `Ur` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
 
-            - `PARi` (:class:`float`) - the incident PAR above the canopy (µmol m-2 s-1)
-
         """
         self.outputs.update({inputs_type: {} for inputs_type in self.inputs.iterkeys()})
         for (element_id, element_inputs) in self.inputs.iteritems():
@@ -90,8 +88,7 @@ class Simulation(object):
                 element_outputs = dict.fromkeys(['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs'], 0.0)
             else:
                 organ_label = element_id[3]
-                Eabsm2 = element_inputs['Eabsm2'] #: Relative absorbed PAR per unit area
-                PARa = Eabsm2 * PARi              #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
+                PARa = element_inputs['PARa']     #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
                 surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
                                                                             element_inputs['amino_acids'],
                                                                             element_inputs['proteins'],

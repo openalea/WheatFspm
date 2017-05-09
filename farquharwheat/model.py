@@ -112,6 +112,9 @@ class Model(object):
         d = 0.7*Zh                                          #: Zero plane displacement height (m)
         Zo = 0.1*Zh                                         #: Roughness length (m)
 
+        # TODO: Temporary patch to avoid div 0 error
+        Ur = max (Ur, 0.1)
+
         #: Wind speed
         u_star = (Ur * cls.K) / log((cls.ZR - d)/Zo)        #: Friction velocity (m s-1)
         Uh = (u_star/cls.K) * log((Zh-d)/Zo)                #: Wind speed at the top of canopy (m s-1)
@@ -285,7 +288,7 @@ class Model(object):
 
         #: Mitochondrial respiration rate of organ in light Rd (processes other than photorespiration)
         Rdark25 = cls.PARAM_N['S_surfacic_nitrogen']['Rdark25'] * (surfacic_nitrogen - cls.PARAM_N['surfacic_nitrogen_min']['Rdark25'])  #: Relation between Rdark25 (respiration in obscurity at 25 degree C) and surfacic_nitrogen (µmol m-2 s-1)
-        Rdark = cls._f_temperature('Rdark', Rdark25, Ts)                                  #: Relation between Rdark and temperature (µmol m-2 s-1)
+        Rdark = cls._f_temperature('Rdark', Rdark25, Ts)                                    #: Relation between Rdark and temperature (µmol m-2 s-1)
         Rd = Rdark * (0.33 + (1-0.33)*(0.5)**(PAR/15))                                      # Found in Muller et al. (2005), eq. 19 (µmol m-2 s-1)
 
         #: Net C assimilation (µmol m-2 s-1)
