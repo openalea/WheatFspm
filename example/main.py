@@ -32,7 +32,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from elongwheat import simulation as elongwheat_simulation, model as elongwheat_model, converter as elongwheat_converter, interface as  elongwheat_interface
+from elongwheat import simulation as elongwheat_simulation, model as elongwheat_model, converter as elongwheat_converter
 
 INPUTS_DIRPATH = 'inputs'
 
