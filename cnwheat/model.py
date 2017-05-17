@@ -1461,12 +1461,11 @@ class PhotosyntheticOrganElement(object):
         d_actual = min(d_potential , max(0, fructan))
         return d_actual
 
-    def calculate_nitrates_import(self, roots_uptake_nitrates, roots_export_nitrates, element_transpiration, total_transpiration):
+    def calculate_nitrates_import(self, roots_export_nitrates, element_transpiration, total_transpiration):
         """Total nitrates imported from roots (µmol N nitrates integrated over delta_t).
         Nitrates coming from roots (fraction of uptake + direct export) are distributed according to the contribution of the element to culm transpiration.
 
         :Parameters:
-            - `roots_uptake_nitrates` (:class:`float`) - Nitrate uptake by roots (µmol N)
             - `roots_export_nitrates` (:class:`float`) - Exported nitrates by roots (µmol N)
             - `element_transpiration` (:class:`float`) - Element transpiration (mmol H2O s-1)
             - `total_transpiration` (:class:`float`) - Culm transpiration (mmol H2O s-1)
