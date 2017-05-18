@@ -161,7 +161,7 @@ class Simulation(object):
                                      model.Soil: 'cnwheat.derivatives.soils'}}
 
 
-    def __init__(self, delta_t=1, culm_density=410):
+    def __init__(self, delta_t=1, culm_density={1:410}):
 
         self.population = model.Population() #: the population to simulate on
 
