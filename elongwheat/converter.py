@@ -6,9 +6,9 @@ from __future__ import division # use "//" to do integer division
     elongwheat.converter
     ~~~~~~~~~~~~~~~~~~~~~~~
 
-    The module :mod:`elongwheat.converter` defines functions to convert 
+    The module :mod:`elongwheat.converter` defines functions to convert
     :class:`dataframes <pandas.DataFrame>` to/from ElongWheat inputs or outputs format.
-    
+
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -31,9 +31,10 @@ import simulation
 #: the columns which define the topology in the input/output dataframe
 HIDDENZONE_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer']
 ORGAN_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ'] # exposed organs
+SAM_TOPOLOGY_COLUMNS = ['plant', 'axis']
 
 
-def from_dataframes(hiddenzone_inputs, organ_inputs):
+def from_dataframes(hiddenzone_inputs, organ_inputs, SAM_inputs):
     """
     Convert inputs/outputs from Pandas dataframe to Elong-Wheat format.
 
@@ -53,11 +54,20 @@ def from_dataframes(hiddenzone_inputs, organ_inputs):
     """
     all_hiddenzone_dict = {}
     all_organ_dict = {}
+    all_SAM_dict = {}
+    all__dict = {}
     hiddenzone_L_calculation_dict = {}
     hiddenzone_inputs_columns = hiddenzone_inputs.columns.difference(HIDDENZONE_TOPOLOGY_COLUMNS)
     organ_inputs_columns = organ_inputs.columns.difference(ORGAN_TOPOLOGY_COLUMNS)
+    SAM_inputs_columns = SAM_inputs.columns.difference(SAM_TOPOLOGY_COLUMNS)
     sheath_inputs_grouped = organ_inputs[organ_inputs.organ == 'sheath'].groupby(ORGAN_TOPOLOGY_COLUMNS)
     sheath_inputs_grouped_all_metamers = organ_inputs[organ_inputs.organ == 'sheath'].groupby(['plant', 'axis'])
+
+    for SAM_inputs_id, SAM_inputs_group in SAM_inputs.groupby(SAM_TOPOLOGY_COLUMNS):
+        # SAM
+        SAM_inputs_series = SAM_inputs_group.loc[SAM_inputs_group.first_valid_index()]
+        SAM_inputs_dict = SAM_inputs_series[SAM_inputs_columns].to_dict()
+        all_SAM_dict[SAM_inputs_id] = SAM_inputs_dict
 
     for organ_inputs_id, organ_inputs_group in organ_inputs.groupby(ORGAN_TOPOLOGY_COLUMNS):
         # organ
@@ -96,7 +106,7 @@ def from_dataframes(hiddenzone_inputs, organ_inputs):
                                                  'previous_sheath_visible_length': previous_sheath_visible_length,
                                                  'previous_sheath_final_hidden_length': previous_sheath_final_hidden_length} #TODO: ajouter les entrenoeuds
 
-    return {'hiddenzone': all_hiddenzone_dict, 'organs': all_organ_dict, 'hiddenzone_L_calculation': hiddenzone_L_calculation_dict}
+    return {'hiddenzone': all_hiddenzone_dict, 'organs': all_organ_dict, 'SAM': all_SAM_dict , 'hiddenzone_L_calculation': hiddenzone_L_calculation_dict}
 
 def to_dataframes(data_dict):
     """
@@ -117,7 +127,8 @@ def to_dataframes(data_dict):
     """
     dataframes_dict = {}
     for (current_key, current_topology_columns, current_outputs_names) in (('hiddenzone', HIDDENZONE_TOPOLOGY_COLUMNS, simulation.HIDDENZONE_OUTPUTS),
-                                                                           ('organs', ORGAN_TOPOLOGY_COLUMNS, simulation.ORGAN_OUTPUTS)):
+                                                                           ('organs', ORGAN_TOPOLOGY_COLUMNS, simulation.ORGAN_OUTPUTS),
+                                                                           ('SAM', SAM_TOPOLOGY_COLUMNS, simulation.SAM_OUTPUTS) ):
         current_data_dict = data_dict[current_key]
         current_ids_df = pd.DataFrame(current_data_dict.keys(), columns=current_topology_columns)
         current_data_df = pd.DataFrame(current_data_dict.values())
@@ -127,4 +138,4 @@ def to_dataframes(data_dict):
         current_df = current_df.reindex_axis(current_columns_sorted, axis=1, copy=False)
         current_df.reset_index(drop=True, inplace=True)
         dataframes_dict[current_key] = current_df
-    return dataframes_dict['hiddenzone'], dataframes_dict['organs']
+    return dataframes_dict['hiddenzone'], dataframes_dict['organs'], dataframes_dict['SAM']

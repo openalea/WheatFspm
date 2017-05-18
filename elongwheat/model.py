@@ -25,6 +25,23 @@ from __future__ import division # use "//" to do integer division
 
 import parameters
 
+def calculate_SAM_sumTT(T, sum_TT_prev_init, status, delta_t):
+    init_leaf = 0
+    if status != 'retired': # TODO: peut-etre a deplacer dans le convertisseur
+        sum_TT_prev_init +=  (T*delta_t)/(24*3600)
+        if sum_TT_prev_init >= parameters.PLASTO_leaf:
+            init_leaf = min(parameters.max_nb_leaves, int(sum_TT_prev_init/parameters.PLASTO_leaf) )
+            if init_leaf > 1:
+                raise ValueError('Error : {} leaf primordia have been created in one time step.'.format(init_leaf) )
+            sum_TT_prev_init = sum_TT_prev_init % parameters.PLASTO_leaf
+    return sum_TT_prev_init, init_leaf
+
+def calculate_SAM_status(status, nb_leaves, init_leaf):
+    if (nb_leaves + init_leaf) >= parameters.max_nb_leaves:
+        status = 'retired'
+    nb_leaves += init_leaf
+    return status, nb_leaves
+
 def calculate_hiddenzone_length(previous_hiddenzone_L, previous_sheath_visible_L, previous_sheath_final_hidden_L):
     """ length of the hidden zone given by the previous sheaths.
 

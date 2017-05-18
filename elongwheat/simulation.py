@@ -25,21 +25,24 @@ from __future__ import division # use "//" to do integer division
 
 import numpy as np
 
-import model
+import model, parameters
 import warnings
 import copy
 
 #: the inputs needed by ElongWheat
 HIDDENZONE_INPUTS = ['leaf_is_growing', 'hiddenzone_L', 'leaf_L', 'leaf_Lmax', 'leaf_Lem_prev', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'sucrose', 'amino_acids', 'fructan', 'mstruct']
 ORGAN_INPUTS = ['visible_length', 'is_growing', 'final_hidden_length', 'length']
+SAM_INPUTS = ['T', 'sum_TT_prev_init', 'status','nb_leaves']
 
 #: the outputs computed by ElongWheat
 HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'hiddenzone_L', 'delta_hiddenzone_L', 'leaf_L', 'delta_leaf_L', 'leaf_Lmax', 'leaf_Lem_prev', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'sucrose', 'amino_acids', 'fructan', 'mstruct']
 ORGAN_OUTPUTS = ['visible_length', 'is_growing', 'final_hidden_length', 'length']
+SAM_OUTPUTS = ['sum_TT_prev_init', 'status','nb_leaves']
 
 #: the inputs and outputs of ElongWheat.
 HIDDENZONE_INPUTS_OUTPUTS = sorted(set(HIDDENZONE_INPUTS + HIDDENZONE_OUTPUTS))
 ORGAN_INPUTS_OUTPUTS = sorted(set(ORGAN_INPUTS + ORGAN_OUTPUTS))
+SAM_INPUTS_OUTPUTS = sorted(set(SAM_INPUTS + SAM_OUTPUTS))
 
 
 class SimulationError(Exception): pass
@@ -93,8 +96,9 @@ class Simulation(object):
         self.inputs.update(inputs)
 
     def run(self):
+
         # Copy the inputs into the output dict
-        self.outputs.update({inputs_type: copy.deepcopy(all_inputs) for inputs_type, all_inputs in self.inputs.iteritems() if inputs_type in set(['hiddenzone', 'organs', 'hiddenzone_L_calculation'])})
+        self.outputs.update({inputs_type: copy.deepcopy(all_inputs) for inputs_type, all_inputs in self.inputs.iteritems() if inputs_type in set(['hiddenzone', 'organs', 'SAM','hiddenzone_L_calculation'])})
 
         # Hidden zones
         all_hiddenzone_inputs = self.inputs['hiddenzone']
@@ -103,6 +107,26 @@ class Simulation(object):
         # organs
         all_organs_inputs = self.inputs['organs']
         all_organs_outputs = self.outputs['organs']
+
+        # SAM
+        all_SAM_inputs = self.inputs['SAM']
+        all_SAM_outputs = self.outputs['SAM']
+
+        # SAM
+        for SAM_id, SAM_inputs in all_SAM_inputs.iteritems():
+            curr_SAM_outputs = all_SAM_outputs[SAM_id]
+            ## update sum_TT
+            curr_SAM_outputs['sum_TT_prev_init'] , init_leaf = model.calculate_SAM_sumTT(SAM_inputs['T'], SAM_inputs['sum_TT_prev_init'],  SAM_inputs['status'], self.delta_t)
+            ## update SAM status
+            curr_SAM_outputs['status'], curr_SAM_outputs['nb_leaves'] = model.calculate_SAM_status(SAM_inputs['status'],SAM_inputs['nb_leaves'],init_leaf)
+            ## add hiddenzone
+            for i in range(0,init_leaf):
+                # Initialise sheath outputs
+                hiddenzone_id = SAM_id + tuple([ 1+i+curr_SAM_outputs['nb_leaves']-init_leaf ])
+                new_hiddenzone = parameters.HiddenZoneInit().__dict__
+                self.outputs['hiddenzone'][hiddenzone_id] = new_hiddenzone
+
+            self.outputs['SAM'][SAM_id] = curr_SAM_outputs
 
         # Hidden zone lengths
         all_hiddenzone_L_calculation_inputs = self.inputs['hiddenzone_L_calculation']
