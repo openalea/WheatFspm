@@ -27,7 +27,7 @@
 
 import os
 import time, datetime
-import profile, pstats
+import cProfile, pstats
 
 import random
 
@@ -38,7 +38,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from alinea.adel.astk_interface import AdelWheat
-from fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat_facade, growthwheat_facade
+from fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat_facade, growthwheat_facade, caribu_facade
+from cnwheat import tools as cnwheat_tools
 
 random.seed(1234)
 np.random.seed(1234)
@@ -63,6 +64,7 @@ CNWHEAT_SOILS_INPUTS_FILEPATH = os.path.join(CNWHEAT_INPUTS_DIRPATH, 'soils_inpu
 FARQUHARWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'farquharwheat')
 FARQUHARWHEAT_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'inputs.csv')
 METEO_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'meteo_Clermont_rebuild.csv')
+CARIBU_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'inputs_eabs.csv')
 
 # senescwheat inputs at t0
 SENESCWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'senescwheat')
@@ -89,14 +91,16 @@ SOILS_INDEX_COLUMNS = ['t','plant','axis']
 
 INPUTS_OUTPUTS_PRECISION = 5 # 10
 
-LOGGING_CONFIG_FILEPATH = os.path.join('..', '..', 'logging.json')
+LOGGING_CONFIG_FILEPATH = os.path.join('logging.json')
 
 LOGGING_LEVEL = logging.INFO # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
+cnwheat_tools.setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL, log_model=False, log_compartments=False, log_derivatives=False)
 
 def main(stop_time, run_simu=True, make_graphs=True):
     if run_simu:
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
+        Eabs_df = pd.read_csv(CARIBU_FILEPATH)
 
         current_time_of_the_system = time.time()
 
@@ -110,7 +114,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         # read adelwheat inputs at t0
         adel_wheat = AdelWheat(seed=1234, convUnit=1)
-        g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)[0]
+        g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -120,6 +124,12 @@ def main(stop_time, run_simu=True, make_graphs=True):
         shared_soils_inputs_outputs_df = pd.DataFrame()
 
         # read the inputs at t0 and create the facades
+
+        # caribu
+        caribu_facade_ = caribu_facade.CaribuFacade(g,
+                                                    shared_elements_inputs_outputs_df,
+                                                    adel_wheat)
+
         # senescwheat
         senescwheat_roots_inputs_t0 = pd.read_csv(SENESCWHEAT_ROOTS_INPUTS_FILEPATH)
         senescwheat_elements_inputs_t0 = pd.read_csv(SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH)
@@ -168,7 +178,8 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
 
         # define organs for which the variable 'max_proteins' is fixed
-        forced_max_protein_elements = set(((1,'MS',9,'blade', 'LeafElement1'), (1,'MS',10,'blade', 'LeafElement1'), (1,'MS',11,'blade', 'LeafElement1')))
+        forced_max_protein_elements = set(((1,'MS',9,'blade', 'LeafElement1'), (1,'MS',10,'blade', 'LeafElement1'), (1,'MS',11,'blade', 'LeafElement1'),
+                                           (2,'MS',9,'blade', 'LeafElement1'), (2,'MS',10,'blade', 'LeafElement1'), (2,'MS',11,'blade', 'LeafElement1')))
 
         # define the start and the end of the whole simulation (in hours)
         start_time = 0
@@ -194,12 +205,13 @@ def main(stop_time, run_simu=True, make_graphs=True):
                 for t_farquharwheat in xrange(t_growthwheat, t_growthwheat + growthwheat_ts, farquharwheat_ts):
                     # get the meteo of the current step
                     Ta, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
+                    # get PARa for current step
+                    caribu_facade_.run_from_df(Eabs_df, PARi)
                     # run FarquharWheat
-                    farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur, PARi)
+                    farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
                     for t_cnwheat in xrange(t_farquharwheat, t_farquharwheat + senescwheat_ts, cnwheat_ts):
                             # run CNWheat
                             cnwheat_facade_.run()
-
                             # append the inputs and outputs at current step to global lists
                             all_simulation_steps.append(t_cnwheat)
                             axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
@@ -222,8 +234,8 @@ def main(stop_time, run_simu=True, make_graphs=True):
         all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
-        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & ### TODO: temporary ; to remove when there will be default input values for each element in the mtg
-                                                                      (all_elements_inputs_outputs.axis == 'MS')]
+##        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & ### TODO: temporary ; to remove when there will be default input values for each element in the mtg
+##                                                                      (all_elements_inputs_outputs.axis == 'MS')]
         all_elements_inputs_outputs.reset_index(0, inplace=True)
         all_elements_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
@@ -243,7 +255,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # 1) Photosynthetic organs
         ph_elements_output_df = pd.read_csv(ELEMENTS_STATES_FILEPATH)
 
-        graph_variables_ph_elements = {'Eabsm2': u'Relative absorbed PAR', 'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
+        graph_variables_ph_elements = {'PARa': u'Absorbed PAR (µmol m$^{-2}$ s$^{-1}$)', 'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
                            'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
                            'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
                            'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
@@ -306,3 +318,4 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
 if __name__ == '__main__':
     main(1200, run_simu=True, make_graphs=True)
+##    cProfile.run('main(10, run_simu=True, make_graphs=False)', 'output.pstats')

@@ -1,0 +1,12 @@
+species,metamer,organ,element,Eabs
+Soissons,1,blade,LeafElement1,0.010462693
+Soissons,1,sheath,StemElement,0.004372265
+Soissons,2,blade,LeafElement1,0.024590485
+Soissons,2,sheath,StemElement,0.002482997
+Soissons,3,blade,LeafElement1,0.074893076
+Soissons,3,sheath,StemElement,0.00737574
+Soissons,4,blade,LeafElement1,0.242101869
+Soissons,4,internode,StemElement,0.015359737
+Soissons,4,sheath,StemElement,0.032403008
+Soissons,5,internode,StemElement,0.070944974
+Soissons,6,internode,StemElement,0.193476959

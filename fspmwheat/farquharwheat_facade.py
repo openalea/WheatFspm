@@ -68,7 +68,7 @@ class FarquharWheatFacade(object):
         self._update_shared_dataframes(model_elements_inputs_df)
 
 
-    def run(self, Ta, ambient_CO2, RH, Ur, PARi):
+    def run(self, Ta, ambient_CO2, RH, Ur):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
@@ -82,11 +82,9 @@ class FarquharWheatFacade(object):
 
             - `Ur` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
 
-            - `PARi` (:class:`float`) - the incident PAR above the canopy (µmol m-2 s-1)
-
         """
         self._initialize_model()
-        self._simulation.run(Ta, ambient_CO2, RH, Ur, PARi)
+        self._simulation.run(Ta, ambient_CO2, RH, Ur)
         self._update_shared_MTG(self._simulation.outputs)
         farquharwheat_elements_outputs_df = converter.to_dataframe(self._simulation.outputs)
         self._update_shared_dataframes(farquharwheat_elements_outputs_df)
@@ -118,7 +116,7 @@ class FarquharWheatFacade(object):
                                     farquharwheat_element_inputs_dict[farquharwheat_element_input_name] = mtg_element_properties[farquharwheat_element_input_name]
                                 all_farquharwheat_elements_inputs_dict[element_id] = farquharwheat_element_inputs_dict
                                 # TODO: temporary ; replace 'FARQUHARWHEAT_ELEMENT_PROPERTIES_TEMP' by default values
-                                FARQUHARWHEAT_ELEMENT_PROPERTIES_TEMP = {'width': 0, 'height': 0.6, 'Eabsm2': 0}
+                                FARQUHARWHEAT_ELEMENT_PROPERTIES_TEMP = {'width': 0, 'height': 0.6, 'PARa': 0}
                                 farquharwheat_element_inputs_dict = {}
                                 for farquharwheat_element_input_name in converter.FARQUHARWHEAT_INPUTS:
                                     if farquharwheat_element_input_name in mtg_element_properties:

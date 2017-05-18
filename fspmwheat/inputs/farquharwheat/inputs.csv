@@ -1,4 +1,4 @@
-plant,axis,metamer,organ,element,width,height,Eabsm2
+plant,axis,metamer,organ,element,width,height,PARa
 1,MS,1,blade,LeafElement1,0.005,0.17,0
 1,MS,1,sheath,StemElement,0.003,0.12,0
 1,MS,2,blade,LeafElement1,0.005,0.28,0

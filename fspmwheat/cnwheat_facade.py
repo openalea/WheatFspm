@@ -64,6 +64,7 @@ class CNWheatFacade(object):
 
         - `shared_mtg` (:class:`openalea.mtg.mtg.MTG`) - The MTG shared between all models.
         - `delta_t` (:class:`int`) - The delta between two runs, in seconds.
+        - `culm_density` (:class:`dict`) - The density of culm. One key per plant.
         - `model_organs_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at organs scale.
         - `model_hiddenzones_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at hiddenzones scale.
         - `model_elements_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at elements scale.
@@ -76,7 +77,7 @@ class CNWheatFacade(object):
 
     """
 
-    def __init__(self, shared_mtg, delta_t,
+    def __init__(self, shared_mtg, delta_t, culm_density,
                  model_organs_inputs_df,
                  model_hiddenzones_inputs_df,
                  model_elements_inputs_df,
@@ -89,7 +90,7 @@ class CNWheatFacade(object):
 
         self._shared_mtg = shared_mtg #: the MTG shared between all models
 
-        self._simulation = simulation.Simulation(delta_t=delta_t) #: the simulator to use to run the model
+        self._simulation = simulation.Simulation(delta_t=delta_t, culm_density=culm_density) #: the simulator to use to run the model
 
         cnwheat_population, self.cnwheat_soils = converter.from_dataframes(model_organs_inputs_df, model_hiddenzones_inputs_df, model_elements_inputs_df, model_soils_inputs_df)
         self._update_shared_MTG(cnwheat_population)

@@ -67,6 +67,7 @@ ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
 ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
 
 
+
 def test_run():
 
     # create the simulation
@@ -109,7 +110,7 @@ def test_run():
     senescence_elements_data_grouped = senescence_elements_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
 
     start_time = 0
-    stop_time = 48
+    stop_time = 2
     time_step = 4
 
     all_plants_df_list = []

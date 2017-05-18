@@ -78,7 +78,7 @@ class SenescWheatFacade(object):
         self._update_shared_dataframes(model_roots_inputs_df, model_elements_inputs_df)
 
 
-    def run(self, forced_max_protein_elements):
+    def run(self, forced_max_protein_elements=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
         """
