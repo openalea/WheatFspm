@@ -73,6 +73,7 @@ SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(SENESCWHEAT_INPUTS_DIRPATH, 
 ELONGWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'elongwheat')
 ELONGWHEAT_HIDDENZONE_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
 ELONGWHEAT_ORGANS_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'organs_inputs.csv')
+ELONGWHEAT_SAM_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 
 # growthwheat inputs at t0
 GROWTHWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'growthwheat')
@@ -83,6 +84,7 @@ GROWTHWHEAT_ROOTS_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'ro
 # the path of the CSV files where to save the states of the modeled system at each step
 OUTPUTS_DIRPATH = 'outputs'
 AXES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'axes_states.csv')
+SAM_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'SAM_states.csv')
 ORGANS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'organs_states.csv')
 HIDDENZONES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hiddenzones_states.csv')
 ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'elements_states.csv')
@@ -92,6 +94,7 @@ AXES_INDEX_COLUMNS = ['t','plant','axis']
 ELEMENTS_INDEX_COLUMNS = ['t','plant','axis', 'metamer', 'organ', 'element']
 HIDDENZONES_INDEX_COLUMNS = ['t','plant','axis', 'metamer']
 ORGANS_INDEX_COLUMNS = ['t','plant','axis', 'organ']
+SAM_INDEX_COLUMNS = ['t','plant','axis']
 SOILS_INDEX_COLUMNS = ['t','plant','axis']
 
 # Define culm density (culm m-2)
@@ -126,6 +129,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
+        shared_SAM_inputs_outputs_df = pd.DataFrame()
         shared_organs_inputs_outputs_df = pd.DataFrame()
         shared_hiddenzones_inputs_outputs_df = pd.DataFrame()
         shared_elements_inputs_outputs_df = pd.DataFrame()
@@ -156,10 +160,13 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # elongwheat
         elongwheat_hiddenzones_inputs_t0 = pd.read_csv(ELONGWHEAT_HIDDENZONE_INPUTS_FILEPATH)
         elongwheat_organ_inputs_t0 = pd.read_csv(ELONGWHEAT_ORGANS_INPUTS_FILEPATH)
+        elongwheat_SAM_inputs_t0 = pd.read_csv(ELONGWHEAT_SAM_INPUTS_FILEPATH)
         elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
                                                                 elongwheat_ts * hour_to_second_conversion_factor,
+                                                                elongwheat_SAM_inputs_t0,
                                                                 elongwheat_hiddenzones_inputs_t0,
                                                                 elongwheat_organ_inputs_t0,
+                                                                shared_SAM_inputs_outputs_df,
                                                                 shared_hiddenzones_inputs_outputs_df,
                                                                 shared_elements_inputs_outputs_df,
                                                                 adel_wheat)
@@ -198,7 +205,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # Update geometry
         adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Returns mtg with non-SI units
 ##        adel_wheat.convert_to_SI_units(g, properties_to_convert)
-##        adel_wheat.plot(g)
+        adel_wheat.plot(g)
 
         # define the start and the end of the whole simulation (in hours)
         start_time = 0
@@ -209,6 +216,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         organs_all_data_list = [] # organs which belong to axes: roots, phloem, grains
         hiddenzones_all_data_list = []
         elements_all_data_list = []
+        SAM_all_data_list = []
         soils_all_data_list = []
 
         all_simulation_steps = [] # to store the steps of the simulation
@@ -249,6 +257,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
                                 organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
                                 hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
                                 elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                                SAM_all_data_list.append(shared_SAM_inputs_outputs_df.copy())
                                 soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
 
         execution_time = int(time.time() - current_time_of_the_system)
@@ -269,6 +278,11 @@ def main(stop_time, run_simu=True, make_graphs=True):
         all_hiddenzones_inputs_outputs.reset_index(0, inplace=True)
         all_hiddenzones_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_hiddenzones_inputs_outputs.to_csv(HIDDENZONES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+
+        all_SAM_inputs_outputs = pd.concat(SAM_all_data_list, keys=all_simulation_steps)
+        all_SAM_inputs_outputs.reset_index(0, inplace=True)
+        all_SAM_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
+        all_SAM_inputs_outputs.to_csv(SAM_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
         all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & ### TODO: temporary ; to remove when there will be default input values for each element in the mtg

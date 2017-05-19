@@ -34,6 +34,8 @@ import tools
 #: the name of the organs representing a leaf
 LEAF_ORGANS_NAMES = set(['sheath', 'blade'])
 
+SHARED_SAM_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
+
 SHARED_HIDDENZONES_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer']
 
 SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
@@ -58,8 +60,10 @@ class ElongWheatFacade(object):
     """
 
     def __init__(self, shared_mtg, delta_t,
+                model_SAM_inputs_df,
                  model_hiddenzones_inputs_df,
                  model_organs_inputs_df,
+                 shared_SAM_inputs_outputs_df,
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
                  geometrical_model):
@@ -70,12 +74,13 @@ class ElongWheatFacade(object):
 
         self.geometrical_model = geometrical_model #: the model which deals with geometry
 
-        all_elongwheat_inputs_dict = converter.from_dataframes(model_hiddenzones_inputs_df, model_organs_inputs_df)
-        self._update_shared_MTG(all_elongwheat_inputs_dict['hiddenzone'], all_elongwheat_inputs_dict['organs'])
+        all_elongwheat_inputs_dict = converter.from_dataframes(model_hiddenzones_inputs_df, model_organs_inputs_df, model_SAM_inputs_df)
+        self._update_shared_MTG(all_elongwheat_inputs_dict['hiddenzone'], all_elongwheat_inputs_dict['organs'], all_elongwheat_inputs_dict['SAM'])
 
+        self._shared_SAM_inputs_outputs_df = shared_SAM_inputs_outputs_df #: the dataframe at SAM scale shared between all models
         self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df #: the dataframe at hiddenzones scale shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df #: the dataframe at elements scale shared between all models
-        self._update_shared_dataframes(model_hiddenzones_inputs_df, model_organs_inputs_df)
+        self._update_shared_dataframes(model_hiddenzones_inputs_df, model_organs_inputs_df, model_SAM_inputs_df)
 
 
     def run(self):
@@ -84,10 +89,10 @@ class ElongWheatFacade(object):
         """
         self._initialize_model()
         self._simulation.run()
-        self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['organs'])
-        elongwheat_hiddenzones_outputs_df, elongwheat_organs_outputs_df = converter.to_dataframes(self._simulation.outputs)
+        self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['organs'], self._simulation.outputs['SAM'])
+        elongwheat_hiddenzones_outputs_df, elongwheat_organs_outputs_df, elongwheat_SAM_outputs_df = converter.to_dataframes(self._simulation.outputs)
 
-        self._update_shared_dataframes(elongwheat_hiddenzones_outputs_df, elongwheat_organs_outputs_df)
+        self._update_shared_dataframes(elongwheat_hiddenzones_outputs_df, elongwheat_organs_outputs_df, elongwheat_SAM_outputs_df)
 
 
     def _initialize_model(self):
@@ -96,12 +101,31 @@ class ElongWheatFacade(object):
         """
         all_elongwheat_hiddenzones_dict = {}
         all_elongwheat_organs_dict = {}
+        all_elongwheat_SAM_dict = {}
         all_elongwheat_hiddenzones_L_calculation_dict = {}
 
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+
+                mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
+                if 'SAM' in mtg_axis_properties:
+                    SAM_id = (mtg_plant_index, mtg_axis_label)
+                    mtg_SAM_properties = mtg_axis_properties['SAM']
+                    elongwheat_SAM_inputs_dict = {}
+
+                    is_valid_SAM = True
+                    for SAM_input_name in simulation.SAM_INPUTS:
+                        if SAM_input_name in mtg_SAM_properties:
+                            # use the input from the MTG
+                            elongwheat_SAM_inputs_dict[SAM_input_name] = mtg_SAM_properties[SAM_input_name]
+                        else:
+                            is_valid_SAM = False
+                            break
+                    if is_valid_SAM:
+                        all_elongwheat_SAM_dict[SAM_id] = elongwheat_SAM_inputs_dict
+
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     elongwheat_hiddenzone_data_from_mtg_organs_data = {}
@@ -168,20 +192,22 @@ class ElongWheatFacade(object):
                         else:
                             raise Exception('No previous metamer found for hiddenzone {}.'.format(hiddenzone_id))
 
-        self._simulation.initialize({'hiddenzone': all_elongwheat_hiddenzones_dict, 'organs': all_elongwheat_organs_dict, 'hiddenzone_L_calculation': all_elongwheat_hiddenzones_L_calculation_dict})
+        self._simulation.initialize({'hiddenzone': all_elongwheat_hiddenzones_dict, 'organs': all_elongwheat_organs_dict, 'hiddenzone_L_calculation': all_elongwheat_hiddenzones_L_calculation_dict, 'SAM': all_elongwheat_SAM_dict})
 
 
-    def _update_shared_MTG(self, all_elongwheat_hiddenzones_data_dict, all_elongwheat_organs_data_dict):
+    def _update_shared_MTG(self, all_elongwheat_hiddenzones_data_dict, all_elongwheat_organs_data_dict, all_elongwheat_SAM_data_dict):
         """
         Update the MTG shared between all models from the inputs or the outputs of the model.
         """
         # add the properties if needed
         mtg_property_names = self._shared_mtg.property_names()
-        for elongwheat_data_name in set(simulation.HIDDENZONE_INPUTS_OUTPUTS + simulation.ORGAN_INPUTS_OUTPUTS):
+        for elongwheat_data_name in set(simulation.HIDDENZONE_INPUTS_OUTPUTS + simulation.ORGAN_INPUTS_OUTPUTS + simulation.SAM_INPUTS_OUTPUTS):
             if elongwheat_data_name not in mtg_property_names:
                 self._shared_mtg.add_property(elongwheat_data_name)
         if 'hiddenzone' not in mtg_property_names:
             self._shared_mtg.add_property('hiddenzone')
+        if 'SAM' not in mtg_property_names:
+            self._shared_mtg.add_property('SAM')
 
         # add new metamer(s)
         axis_to_metamers_mapping = {}
@@ -206,6 +232,15 @@ class ElongWheatFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                SAM_id = (mtg_plant_index, mtg_axis_label)
+                if SAM_id in all_elongwheat_SAM_data_dict:
+                    elongwheat_SAM_data_dict = all_elongwheat_SAM_data_dict[SAM_id]
+                    mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
+                    if 'SAM' not in mtg_axis_properties:
+                        self._shared_mtg.property('SAM')[mtg_axis_vid] = {}
+                    for SAM_data_name, SAM_data_value in elongwheat_SAM_data_dict.iteritems():
+                        self._shared_mtg.property('SAM')[mtg_axis_vid][SAM_data_name] = SAM_data_value
+
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     hiddenzone_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index)
@@ -257,7 +292,7 @@ class ElongWheatFacade(object):
     ####                                        self._shared_mtg.property('green_area')[mtg_element_vid] = self._shared_mtg.property('area')[mtg_element_vid]
 
 
-    def _update_shared_dataframes(self, elongwheat_hiddenzones_data_df, elongwheat_organs_data_df):
+    def _update_shared_dataframes(self, elongwheat_hiddenzones_data_df, elongwheat_organs_data_df, elongwheat_SAM_data_df):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
         """
@@ -265,7 +300,8 @@ class ElongWheatFacade(object):
         for elongwheat_data_df, \
             shared_inputs_outputs_indexes, \
             shared_inputs_outputs_df in ((elongwheat_hiddenzones_data_df, SHARED_HIDDENZONES_INPUTS_OUTPUTS_INDEXES, self._shared_hiddenzones_inputs_outputs_df),
-                                         (elongwheat_organs_data_df, SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES, self._shared_elements_inputs_outputs_df)):
+                                         (elongwheat_organs_data_df, SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES, self._shared_elements_inputs_outputs_df),
+                                         (elongwheat_SAM_data_df, SHARED_SAM_INPUTS_OUTPUTS_INDEXES, self._shared_SAM_inputs_outputs_df) ):
 
             if elongwheat_data_df is elongwheat_organs_data_df:
                 elongwheat_data_df = elongwheat_data_df.copy()
