@@ -44,7 +44,7 @@ class HiddenZoneInit(object):
     """
     def __init__(self):
         self.leaf_is_growing = True
-        self.hiddenzone_L = 0
+        self.hiddenzone_L = 4E-08
         self.delta_hiddenzone_L = 0
         self.leaf_L = 4E-08
         self.delta_leaf_L = 0
@@ -53,13 +53,15 @@ class HiddenZoneInit(object):
         self.lamina_Lmax = 0
         self.sheath_Lmax = 0
         self.leaf_Wmax = 0
-        self.SSLW = 0
-        self.SSSW = 0
+        self.SSLW = None # no calculation before emergence Ln-1
+        self.SSSW = None # no calculation before emergence Ln-1
         self.leaf_is_emerged = False
         self.sucrose = 1E-3
         self.amino_acids = 1E-3
         self.fructan = 0
         self.mstruct = 2.65E-08
+        self.Nstruct = self.mstruct * 0.0322 # parameter value in growth wheat
+        self.proteins = 0
 
 class OrganInit:
     """
