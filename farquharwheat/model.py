@@ -148,7 +148,7 @@ class Model(object):
         else:
             es_Tl = 0.611 * exp((17.4*Ts)/(239+Ts))         #: Saturated vapour pressure at organ level (kPa), Ts in degree Celsius
             Ts_K, Ta_K = Ts + cls.KELVIN_DEGREE, Ta + cls.KELVIN_DEGREE
-            s = (es_Tl - es_Ta)/(Ts - Ta_K)                 #: Slope of the curve relating saturation vapour pressure to temperature (kPa K-1)
+            s = (es_Tl - es_Ta)/(Ts_K - Ta_K)                 #: Slope of the curve relating saturation vapour pressure to temperature (kPa K-1)
 
         VPDa = es_Ta - V
         rbw = 0.96 * rbh                                                   #: Boundary layer resistance for water (s m-1)
