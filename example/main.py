@@ -70,7 +70,7 @@ if __name__ == '__main__':
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
     # run the simulation
-    simulation_.run()
+    simulation_.run(Ta = 25, Ts = 20)
     # convert the outputs to Pandas dataframe
     hiddenzone_outputs_df, organ_outputs_df, SAM_outputs_df = elongwheat_converter.to_dataframes(simulation_.outputs)
     # write the dataframe to CSV

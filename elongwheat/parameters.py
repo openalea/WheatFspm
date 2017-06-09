@@ -37,6 +37,7 @@ RERmax = 4e-06 #: s-1
 EPSILON = 0.01 #: A threshold, expressed in relative leaf length that remains to be produced, under which the rate of leaf elongation will be assumed as constant
 PLASTO_leaf = 50 # Leaf pastochron (°C d-1)
 max_nb_leaves = 12 # Max number of leaves per axis
+sowing_depth = 0.05 # Sowing depth (m) used to define plant emergence
 
 class HiddenZoneInit(object):
     """
@@ -44,23 +45,31 @@ class HiddenZoneInit(object):
     """
     def __init__(self):
         self.leaf_is_growing = True
-        self.hiddenzone_L = 4E-08
-        self.delta_hiddenzone_L = 0
+        self.internode_is_growing = False
+        self.internode_is_mature = False
+        self.leaf_dist_to_emerge = 4E-08
+        self.delta_leaf_dist_to_emerge = 0
+        self.internode_dist_to_emerge = 0
+        self.delta_internode_dist_to_emerge = 0
         self.leaf_L = 4E-08
         self.delta_leaf_L = 0
-        self.leaf_Lmax = 0
-        self.leaf_Lem_prev = 0
-        self.lamina_Lmax = 0
-        self.sheath_Lmax = 0
-        self.leaf_Wmax = 0
+        self.internode_L = 0
+        self.delta_internode_L = 0
+        self.leaf_Lmax = None # no calculation before emergence Ln-1
+        self.lamina_Lmax = None # no calculation before emergence Ln-1
+        self.sheath_Lmax = None # no calculation before emergence Ln-1
+        self.leaf_Wmax = None # no calculation before emergence Ln-1
         self.SSLW = None # no calculation before emergence Ln-1
         self.SSSW = None # no calculation before emergence Ln-1
         self.leaf_is_emerged = False
         self.sucrose = 1E-3
         self.amino_acids = 1E-3
         self.fructan = 0
-        self.mstruct = 2.65E-08
-        self.Nstruct = self.mstruct * 0.0322 # parameter value in growth wheat
+        self.leaf_enclosed_mstruct = 2.65E-08
+        self.internode_mstruct = 0
+        self.mstruct = self.leaf_enclosed_mstruct + self.internode_mstruct
+        self.leaf_enclosed_Nstruct = self.leaf_enclosed_mstruct * 0.0322 # parameter value in growth wheat
+        self.internode_Nstruct = self.internode_mstruct * 0.0322 # parameter value in growth wheat
         self.proteins = 0
 
 class OrganInit:

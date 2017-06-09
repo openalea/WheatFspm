@@ -1,13 +1,11 @@
 plant,axis,metamer,organ,visible_length,final_hidden_length,length,is_growing
 1,MS,1,blade,0.0973,0,0.0973,False
 1,MS,1,sheath,0.02228,0,0.02228,False
+1,MS,1,internode,0,0,0,False
 1,MS,2,blade,0.08256,0,0.08256,False
 1,MS,2,sheath,0.00107,0.02228,0.02335,False
+1,MS,2,internode,0,0,0,False
 1,MS,3,blade,0.06382,0,0.06382,False
 1,MS,3,sheath,0.001,0.02335,0.02435,False
+1,MS,3,internode,0,0,0,False
 1,MS,4,blade,4.17E-05,NA,4.17E-05,True
-1,MS,4,sheath,0,NA,0,False
-1,MS,5,blade,0,NA,0,False
-1,MS,5,sheath,0,NA,0,False
-1,MS,6,blade,0,NA,0,False
-1,MS,6,sheath,0,NA,0,False

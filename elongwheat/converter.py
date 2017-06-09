@@ -40,6 +40,7 @@ def from_dataframes(hiddenzone_inputs, organ_inputs, SAM_inputs):
 
     :Parameters:
 
+        - `SAM_inputs` (:class:`pandas.DataFrame`) - Shoot Apical Meristem inputs dataframe to convert, with one line by SAM ie. one line per axis.
         - `hiddenzone_inputs` (:class:`pandas.DataFrame`) - Hidden zone inputs dataframe to convert, with one line by Hidden zone.
         - `organ_inputs` (:class:`pandas.DataFrame`) - Exposed organ inputs dataframe to convert, with one line by organ.
 
@@ -82,29 +83,37 @@ def from_dataframes(hiddenzone_inputs, organ_inputs, SAM_inputs):
         hiddenzone_inputs_dict = hiddenzone_inputs_series[hiddenzone_inputs_columns].to_dict()
         all_hiddenzone_dict[hiddenzone_inputs_id] = hiddenzone_inputs_dict
 
-        # Get lengths required for the calculation of the hiddenzone length
+        # Get lengths required for the calculation of the distances before internode emergence and leaf emergence
         previous_hiddenzone_id = tuple(list(hiddenzone_inputs_id[:2]) + [hiddenzone_inputs_id[-1]-1])
-        # previous hiddenzone length
+        # previous distance to leaf emergence
         if hiddenzone_inputs_grouped.groups.has_key(previous_hiddenzone_id):
             previous_hiddenzone = hiddenzone_inputs_grouped.get_group(previous_hiddenzone_id)
-            previous_hiddenzone_length = previous_hiddenzone.loc[previous_hiddenzone.first_valid_index(), 'hiddenzone_L']
+            previous_leaf_dist_to_emerge = previous_hiddenzone.loc[previous_hiddenzone.first_valid_index(), 'leaf_dist_to_emerge']
         else:
-            previous_hiddenzone_length = None
+            previous_leaf_dist_to_emerge = None
 
         # previous sheath length
         previous_sheath_id = tuple(list(hiddenzone_inputs_id[:2]) + [hiddenzone_inputs_id[-1]-1] + ['sheath'])
         if sheath_inputs_grouped.groups.has_key(previous_sheath_id):
             previous_sheath = sheath_inputs_grouped.get_group(previous_sheath_id)
             previous_sheath_visible_length = previous_sheath.loc[previous_sheath.first_valid_index(), 'visible_length']
-            if not previous_hiddenzone_length: #: if no previous hiddenzone found, get the final hidden length of the previous sheath (assumes that no previous hiddenzone means a mature sheath)
+            if not previous_leaf_dist_to_emerge: #: if no previous hiddenzone found, get the final hidden length of the previous sheath (assumes that no previous hiddenzone means a mature sheath)
                 previous_sheath_final_hidden_length = previous_sheath.loc[previous_sheath.first_valid_index(), 'final_hidden_length']
 
         else:
             previous_sheath_visible_length = 0
 
-        hiddenzone_L_calculation_dict[hiddenzone_inputs_id] = {'previous_hiddenzone_length': previous_hiddenzone_length,
+        # internode length
+        if hiddenzone_inputs_grouped.groups.has_key(hiddenzone_inputs_id):
+            curr_hiddenzone = hiddenzone_inputs_grouped.get_group(hiddenzone_inputs_id)
+            curr_internode_length = curr_hiddenzone.loc[curr_hiddenzone.first_valid_index(), 'internode_L']
+        else:
+            curr_internode_length = 0
+
+        hiddenzone_L_calculation_dict[hiddenzone_inputs_id] = {'previous_leaf_dist_to_emerge': previous_leaf_dist_to_emerge,
                                                  'previous_sheath_visible_length': previous_sheath_visible_length,
-                                                 'previous_sheath_final_hidden_length': previous_sheath_final_hidden_length} #TODO: ajouter les entrenoeuds
+                                                 'previous_sheath_final_hidden_length': previous_sheath_final_hidden_length,
+                                                 'internode_length': curr_internode_length}
 
     return {'hiddenzone': all_hiddenzone_dict, 'organs': all_organ_dict, 'SAM': all_SAM_dict , 'hiddenzone_L_calculation': hiddenzone_L_calculation_dict}
 

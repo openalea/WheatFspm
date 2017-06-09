@@ -61,7 +61,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'leaf_is_growing', 'leaf_is_emerged', 'is_growing','status'):
+    for column in ('axis', 'organ', 'leaf_is_growing', 'internode_is_growing','leaf_is_emerged', 'is_growing','status'):
         if column in desired_data_df.columns:
             assert desired_data_df[column].equals(actual_data_df[column])
             del desired_data_df[column]
@@ -89,7 +89,7 @@ def test_run():
 ##    compare_actual_to_desired('inputs', hiddenzone_inputs_reconverted_df, HIDDENZONE_INPUTS_FILENAME)
 ##    compare_actual_to_desired('inputs', organ_inputs_reconverted_df, ORGAN_INPUTS_FILENAME)
     # run the simulation
-    simulation_.run()
+    simulation_.run(Ta=25,Ts=20)
     # convert the outputs to Pandas dataframe
     hiddenzone_outputs_df, organ_outputs_df , SAM_outputs_df = converter.to_dataframes(simulation_.outputs)
     # compare outputs

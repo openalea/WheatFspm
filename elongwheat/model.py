@@ -25,6 +25,24 @@ from __future__ import division # use "//" to do integer division
 
 import parameters
 
+def calculate_growing_temp(Ta, Ts, plant_height):
+    """ Return temperature to be used for growthing zone
+
+    :Parameters:
+        - `Ta` (:class:`float`) - air temperature at t (degree Celsius)
+        - `Ts` (:class:`float`) - soil temperature at t (degree Celsius)
+        - `plant_height` (:class:`float`) - Sum of all internode lengths (m).
+    :Returns:
+        Return temperature to be used for growthing zone at t (degree Celsius)
+    :Returns Type:
+        :class:`float`
+    """
+    if plant_height > parameters.sowing_depth:
+       growth_temp = Ta
+    else:
+         growth_temp = Ts
+    return growth_temp
+
 def calculate_SAM_sumTT(T, sum_TT_prev_init, status, delta_t):
     init_leaf = 0
     if status != 'retired': # TODO: peut-etre a deplacer dans le convertisseur
@@ -42,23 +60,43 @@ def calculate_SAM_status(status, nb_leaves, init_leaf):
     nb_leaves += init_leaf
     return status, nb_leaves
 
-def calculate_hiddenzone_length(previous_hiddenzone_L, previous_sheath_visible_L, previous_sheath_final_hidden_L):
-    """ length of the hidden zone given by the previous sheaths.
+def calculate_leaf_dist_to_emerge(previous_leaf_dist_to_emerge, internode_L, previous_sheath_visible_L, previous_sheath_final_hidden_L):
+    """ length of the pseudostem given by the previous sheaths and internode length
 
     :Parameters:
-        - `previous_hiddenzone_L` (:class:`float`) - Length of the previous hidden zone (m). Could be None is no previous hiddenzone found.
+        - `previous_leaf_dist_to_emerge` (:class:`float`) - Distance for the previous leaf to emerge out of the pseudostem (m). Could be None is no previous hiddenzone found.
+        - `internode_L` (:class:`float`) - Length of the internode (hidden part) (m).
         - `previous_sheath_visible_L` (:class:`float`) - Visible length of the previous sheath (m).
         - `previous_sheath_final_hidden_L` (:class:`float`) - Final hidden length of the previous sheath (m).
     :Returns:
-        Hidden zone length (m)
+        Distance for the leaf to emerge out of the pseudostem (m)
     :Returns Type:
         :class:`float`
     """
-    if previous_hiddenzone_L:
-        hiddenzone_L = previous_hiddenzone_L + previous_sheath_visible_L
+    if previous_leaf_dist_to_emerge:
+        leaf_dist_to_emerge = previous_leaf_dist_to_emerge + previous_sheath_visible_L - internode_L
     else:
-        hiddenzone_L = previous_sheath_final_hidden_L + previous_sheath_visible_L # here 'previous_sheath_visible_L' is also the final visible length of the previous sheath
-    return hiddenzone_L
+        leaf_dist_to_emerge = previous_sheath_final_hidden_L + previous_sheath_visible_L - internode_L # here 'previous_sheath_visible_L' is also the final visible length of the previous sheath because the previous leaf has fully elongated.
+    return leaf_dist_to_emerge
+
+
+def calculate_internode_dist_to_emerge(previous_leaf_dist_to_emerge,  previous_sheath_visible_L, previous_sheath_final_hidden_L):
+    """ distance for the internnode to be visible given by the previous sheaths.
+
+    :Parameters:
+        - `previous_leaf_dist_to_emerge` (:class:`float`) - Distance for the previous leaf to emerge out of the pseudostem (m). Could be None is no previous hiddenzone found.
+        - `previous_sheath_visible_L` (:class:`float`) - Visible length of the previous sheath (m).
+        - `previous_sheath_final_hidden_L` (:class:`float`) - Final hidden length of the previous sheath (m).
+    :Returns:
+        Distance for the internode to be visible (m)
+    :Returns Type:
+        :class:`float`
+    """
+    if previous_leaf_dist_to_emerge:
+        internode_dist_to_emerge = previous_leaf_dist_to_emerge + previous_sheath_visible_L
+    else:
+        internode_dist_to_emerge = previous_sheath_final_hidden_L + previous_sheath_visible_L # here 'previous_sheath_visible_L' is also the final visible length of the previous sheath because the previous leaf has fully elongated.
+    return internode_dist_to_emerge
 
 
 def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_t):
@@ -191,45 +229,75 @@ def calculate_SSSW(SSLW):
     """
     return SSLW * parameters.ratio_SSSW_SSLW
 
-def calculate_leaf_emergence(leaf_L, hiddenzone_L):
+def calculate_leaf_emergence(leaf_L, leaf_dist_to_emerge):
     """Calculate if a given leaf has emerged from the hidden zone
 
     :Parameters:
         - `leaf_L` (:class:`float`) - Total leaf length (m)
-        - `hiddenzone_L` (:class:`float`) - Length of the hidden zone (m)
+        - `leaf_dist_to_emerge` (:class:`float`) - Length of the pseudostem (m)
     :Returns:
         Specifies if the leaf has emerged (True) or not (False)
     :Returns Type:
         :class:`bool`
     """
-    return leaf_L > hiddenzone_L
+    return leaf_L > leaf_dist_to_emerge
 
-def calculate_lamina_L(leaf_L, hiddenzone_L):
+def calculate_lamina_L(leaf_L, leaf_dist_to_emerge):
     """ Emerged lamina length given by the difference between leaf length and hidden zone length.
 
     :Parameters:
         - `leaf_L` (:class:`float`) - Total leaf length (m)
-        - `hiddenzone_L` (:class:`float`) - Length of the hidden zone (m)
+        - `leaf_dist_to_emerge` (:class:`float`) - Length of the pseudostem (m)
     :Returns:
         lamina length (m)
     :Returns Type:
         :class:`float`
     """
-    lamina_L = leaf_L - hiddenzone_L
+    lamina_L = leaf_L - leaf_dist_to_emerge
     if lamina_L <=0:
-        raise Warning('The leaf is shorther than its hidden zone')
+        raise Warning('The leaf is shorther than its pseudostem')
     return max(0, lamina_L)
 
-def calculate_sheath_L(leaf_L, hiddenzone_L, lamina_L):
-    """ Emerged sheath length. Assumes that leaf_L = hiddenzone_L + sheath_L + lamina_L
+def calculate_sheath_L(leaf_L, leaf_dist_to_emerge, lamina_L):
+    """ Emerged sheath length. Assumes that leaf_L = leaf_dist_to_emerge + sheath_L + lamina_L
 
     :Parameters:
         - `leaf_L` (:class:`float`) - Total leaf length (m)
-        - `hiddenzone_L` (:class:`float`) - Length of the hidden zone (m)
+        - `leaf_dist_to_emerge` (:class:`float`) - Length of the pseudostem (m)
         - `lamina_L` (:class:`float`) - Lamina length (m)
     :Returns:
         sheath length (m)
     :Returns Type:
         :class:`float`
     """
-    return leaf_L - hiddenzone_L - lamina_L
+    return leaf_L - leaf_dist_to_emerge - lamina_L
+
+
+
+def calculate_delta_internode_L(internode_L, delta_t): # Bidon
+    """ delta of internode length over delta_t as a function of ...
+
+    :Parameters:
+        - `internode_L` (:class:`float`) - Total internode length (m)
+    :Returns:
+        delta delta_internode_L (m)
+    :Returns Type:
+        :class:`float`
+    """
+    delta_internode_L = 0 #0.01 * delta_t / 3600
+
+    return delta_internode_L
+
+def calculate_end_internode_elongation(internode_L, internode_dist_to_emerge): # Bidon
+    """Calculate if a given internode has finished elongating
+
+    :Parameters:
+        - `internode_L` (:class:`float`) - Total internode length (m)
+        - `internode_dist_to_emerge` (:class:`float`) - Distance for the internode to be visible (m)
+    :Returns:
+        Specifies if the leaf has emerged (True) or not (False)
+    :Returns Type:
+        :class:`bool`
+    """
+    return internode_L >= internode_dist_to_emerge
+
