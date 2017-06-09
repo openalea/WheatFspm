@@ -192,6 +192,8 @@ class SenescWheatFacade(object):
             if senescwheat_data_df is senescwheat_roots_data_df:
                 senescwheat_data_df = senescwheat_data_df.copy()
                 senescwheat_data_df.loc[:, 'organ'] = 'roots'
+            else: ## pour le debug
+                pass
 
             tools.combine_dataframes_inplace(senescwheat_data_df, shared_inputs_outputs_indexes, shared_inputs_outputs_df)
 

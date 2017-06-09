@@ -31,6 +31,8 @@ from cnwheat import model, converter, simulation
 
 import tools
 
+import math ##MG
+
 #: the mapping of CNWheat organ classes to the attributes in axis and phytomer which represent an organ
 CNWHEAT_ATTRIBUTES_MAPPING = {model.Internode: 'internode', model.Lamina: 'lamina',
                               model.Sheath: 'sheath', model.Peduncle: 'peduncle', model.Chaff: 'chaff',
@@ -168,6 +170,14 @@ class CNWheatFacade(object):
                             cnwheat_organ_data_dict = {}
                             for cnwheat_organ_data_name in cnwheat_organ_data_names:
                                 cnwheat_organ_data_dict[cnwheat_organ_data_name] = mtg_organ_properties[cnwheat_organ_data_name]
+
+
+                                ##MG
+                                if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] == None:
+                                   print(mtg_axis_vid)
+                                   print(mtg_organ_label)
+                                   print(cnwheat_organ_data_name)
+
                             cnwheat_organ.__dict__.update(cnwheat_organ_data_dict)
                             cnwheat_organ.initialize()
                             # add the new organ to current axis
@@ -191,6 +201,7 @@ class CNWheatFacade(object):
 
                     mtg_hiddenzone_label = converter.CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[model.HiddenZone]
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
+
                     if mtg_hiddenzone_label in mtg_metamer_properties:
                         mtg_hiddenzone_properties = mtg_metamer_properties[mtg_hiddenzone_label]
                         if set(mtg_hiddenzone_properties).issuperset(simulation.Simulation.HIDDENZONE_STATE):
@@ -198,6 +209,13 @@ class CNWheatFacade(object):
                             cnwheat_hiddenzone_data_dict = {}
                             for cnwheat_hiddenzone_data_name in simulation.Simulation.HIDDENZONE_STATE:
                                 cnwheat_hiddenzone_data_dict[cnwheat_hiddenzone_data_name] = mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]
+
+                                ##MG
+                                if math.isnan(mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]) or mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name] == None:
+                                   print(mtg_metamer_vid)
+                                   print(mtg_hiddenzone_label)
+                                   print(cnwheat_hiddenzone_data_name)
+
                             # create a new hiddenzone
                             cnwheat_hiddenzone = model.HiddenZone(mtg_hiddenzone_label, **cnwheat_hiddenzone_data_dict)
                             cnwheat_hiddenzone.initialize()
@@ -228,6 +246,13 @@ class CNWheatFacade(object):
                                 cnwheat_element_data_dict = {}
                                 for cnwheat_element_data_name in simulation.Simulation.ELEMENTS_STATE:
                                     cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_properties[cnwheat_element_data_name]
+
+                                    ##MG
+                                    if math.isnan(mtg_element_properties[cnwheat_element_data_name]) or mtg_element_properties[cnwheat_element_data_name] == None:
+                                       print(mtg_element_vid)
+                                       print(mtg_element_label)
+                                       print(cnwheat_element_data_name)
+
                                 cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
                                 setattr(cnwheat_organ, converter.MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
                             elif mtg_plant_index == 1 and mtg_axis_label == 'MS' and mtg_metamer_index == 4 and mtg_organ_label == 'blade' and mtg_element_label == 'LeafElement1':
@@ -238,6 +263,13 @@ class CNWheatFacade(object):
                                 for cnwheat_element_data_name in simulation.Simulation.ELEMENTS_STATE:
                                     if cnwheat_element_data_name in mtg_element_properties:
                                         cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_properties[cnwheat_element_data_name]
+
+                                        ##MG
+                                        if math.isnan(mtg_element_properties[cnwheat_element_data_name]) or mtg_element_properties[cnwheat_element_data_name] == None:
+                                           print(mtg_element_vid)
+                                           print(mtg_element_label)
+                                           print(cnwheat_element_data_name)
+
                                     else:
                                         cnwheat_element_data_dict[cnwheat_element_data_name] = CNWHEAT_ELEMENT_PROPERTIES_TEMP[cnwheat_element_data_name]
                                 cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)

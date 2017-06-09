@@ -47,10 +47,12 @@ def combine_dataframes_inplace(model_dataframe, shared_column_indexes, shared_da
     if len(shared_dataframe_to_update) == 0:
         shared_dataframe_to_update_reindexed = shared_dataframe_to_update
     else:
+        shared_dataframe_to_update.sort_values(shared_column_indexes, inplace=True) ##RB
         shared_dataframe_to_update_reindexed = pd.DataFrame(shared_dataframe_to_update.values,
                                                             index=sorted(shared_dataframe_to_update.groupby(shared_column_indexes).groups.keys()),
                                                             columns=shared_dataframe_to_update.columns)
 
+    model_dataframe.sort_values(shared_column_indexes, inplace=True) ##RB
     model_dataframe_reindexed = pd.DataFrame(model_dataframe.values,
                                              index=sorted(model_dataframe.groupby(shared_column_indexes).groups.keys()),
                                              columns=model_dataframe.columns)

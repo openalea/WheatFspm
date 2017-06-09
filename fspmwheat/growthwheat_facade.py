@@ -30,7 +30,7 @@ from growthwheat import converter, simulation
 import tools
 
 #: the name of the organs representing a leaf
-LEAF_ORGANS_NAMES = set(['sheath', 'blade'])
+LEAF_ORGANS_NAMES = set(['sheath', 'blade', 'internode']) ##TODO: Change Name
 
 SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'organ']
 
@@ -118,6 +118,7 @@ class GrowthWheatFacade(object):
                         all_growthwheat_roots_inputs_dict[roots_id] = growthwheat_roots_inputs_dict
 
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
+
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)

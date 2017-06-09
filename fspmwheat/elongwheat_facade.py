@@ -32,7 +32,7 @@ from elongwheat import converter, simulation
 import tools
 
 #: the name of the organs representing a leaf
-LEAF_ORGANS_NAMES = set(['sheath', 'blade'])
+LEAF_ORGANS_NAMES = set(['sheath', 'blade','internode']) ## TODO: Change name
 
 SHARED_SAM_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
 
@@ -83,12 +83,18 @@ class ElongWheatFacade(object):
         self._update_shared_dataframes(model_hiddenzones_inputs_df, model_organs_inputs_df, model_SAM_inputs_df)
 
 
-    def run(self):
+    def run(self, Ta, Ts):
         """
         Run the model and update the MTG and the dataframes shared between all models.
+
+        :Parameters:
+
+            - `Ta` (:class:`float`) - air temperature at t (degree Celsius)
+
+            - `Ts` (:class:`float`) - soil temperature at t (degree Celsius)
         """
         self._initialize_model()
-        self._simulation.run()
+        self._simulation.run(Ta, Ts)
         self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['organs'], self._simulation.outputs['SAM'])
         elongwheat_hiddenzones_outputs_df, elongwheat_organs_outputs_df, elongwheat_SAM_outputs_df = converter.to_dataframes(self._simulation.outputs)
 
@@ -147,6 +153,9 @@ class ElongWheatFacade(object):
                             all_elongwheat_organs_dict[organ_id] = elongwheat_organ_inputs_dict
 
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
+                    if mtg_metamer_vid == 55:
+                       pass
+
                     if 'hiddenzone' in mtg_metamer_properties:
                         mtg_previous_metamer_vid = self._shared_mtg.parent(mtg_metamer_vid)
                         hiddenzone_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index)
@@ -170,25 +179,28 @@ class ElongWheatFacade(object):
                         if mtg_previous_metamer_vid is not None:
                             # previous hiddenzone length
                             if self._shared_mtg.get_vertex_property(mtg_previous_metamer_vid).has_key('hiddenzone'):
-                                mtg_previous_hiddenzone_length = self._shared_mtg.get_vertex_property(mtg_previous_metamer_vid)['hiddenzone']['hiddenzone_L']
+                                mtg_previous_leaf_dist_to_emerge = self._shared_mtg.get_vertex_property(mtg_previous_metamer_vid)['hiddenzone']['leaf_dist_to_emerge']
                             else:
-                                mtg_previous_hiddenzone_length = None
+                                mtg_previous_leaf_dist_to_emerge = None
                             # previous sheath length
                             mtg_previous_metamer_components = {self._shared_mtg.class_name(mtg_component_vid):
                                                                mtg_component_vid for mtg_component_vid in self._shared_mtg.components_at_scale(mtg_previous_metamer_vid, scale=4)}
                             if mtg_previous_metamer_components.has_key('sheath'):
                                 mtg_previous_sheath_visible_length = self._shared_mtg.get_vertex_property(mtg_previous_metamer_components['sheath'])['visible_length']
-                                if not mtg_previous_hiddenzone_length: #: if no previous hiddenzone found, get the final hidden length of the previous sheath (assumes that no previous hiddenzone means a mature sheath)
+                                if not mtg_previous_leaf_dist_to_emerge: #: if no previous hiddenzone found, get the final hidden length of the previous sheath (assumes that no previous hiddenzone means a mature sheath)
                                     mtg_previous_sheath_final_hidden_length = self._shared_mtg.get_vertex_property(mtg_previous_metamer_components['sheath'])['final_hidden_length']
                             else:
                                 mtg_previous_sheath_visible_length = 0
+                            # current internode length
+                            mtg_current_internode_length = self._shared_mtg.get_vertex_property(mtg_metamer_vid)['hiddenzone']['internode_L']
 
                             all_elongwheat_hiddenzones_L_calculation_dict[(mtg_plant_index,
                                                                            mtg_axis_label,
                                                                            mtg_metamer_index)] = \
-                                {'previous_hiddenzone_length': mtg_previous_hiddenzone_length,
+                                {'previous_leaf_dist_to_emerge': mtg_previous_leaf_dist_to_emerge,
                                  'previous_sheath_visible_length': mtg_previous_sheath_visible_length,
-                                 'previous_sheath_final_hidden_length': mtg_previous_sheath_final_hidden_length} #TODO: ajouter les entrenoeuds
+                                 'previous_sheath_final_hidden_length': mtg_previous_sheath_final_hidden_length,
+                                 'internode_length': mtg_current_internode_length }
                         else:
                             raise Exception('No previous metamer found for hiddenzone {}.'.format(hiddenzone_id))
 

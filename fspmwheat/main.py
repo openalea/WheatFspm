@@ -202,10 +202,10 @@ def main(stop_time, run_simu=True, make_graphs=True):
                                                        shared_elements_inputs_outputs_df,
                                                        shared_soils_inputs_outputs_df)
 
-        # Update geometry
-        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Returns mtg with non-SI units
-##        adel_wheat.convert_to_SI_units(g, properties_to_convert)
-        adel_wheat.plot(g)
+##        # Update geometry
+##        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Returns mtg with non-SI units
+####        adel_wheat.convert_to_SI_units(g, properties_to_convert)
+##        adel_wheat.plot(g)
 
         # define the start and the end of the whole simulation (in hours)
         start_time = 0
@@ -221,15 +221,22 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         all_simulation_steps = [] # to store the steps of the simulation
 
+        print('Début simulation')
+
         # run the simulators
         current_time_of_the_system = time.time()
 
         for t_caribu in xrange(start_time, stop_time, caribu_ts):
+
+          if t_caribu == start_time:
+
             # run Caribu
             PARi = meteo.loc[t_caribu, ['PARi']].iloc[0]
             caribu_facade_.run(PARi)
+            print('t caribu is {}'.format(t_caribu))
             for t_senescwheat in xrange(t_caribu, t_caribu + caribu_ts, senescwheat_ts):
                 # run SenescWheat
+                print('t senescwheat is {}'.format(t_senescwheat))
                 senescwheat_facade_.run()
                 for t_farquharwheat in xrange(t_senescwheat, t_senescwheat + senescwheat_ts, farquharwheat_ts):
                     # get the meteo of the current step
@@ -237,8 +244,10 @@ def main(stop_time, run_simu=True, make_graphs=True):
                     # run FarquharWheat
                     farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
                     for t_elongwheat in xrange(t_farquharwheat, t_farquharwheat + farquharwheat_ts, elongwheat_ts):
+                        print('t elongwheat is {}'.format(t_elongwheat))
                         # run ElongWheat
-                        elongwheat_facade_.run()
+                        Ta, Ts = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']] # TODO: Add soil temperature in the weather input file
+                        elongwheat_facade_.run(Ta, Ts)
                         # Update geometry
                         adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
                         #adel_wheat.plot(g)
@@ -246,9 +255,11 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
                         for t_growthwheat in xrange(t_elongwheat, t_elongwheat + elongwheat_ts, growthwheat_ts):
                             # run GrowthWheat
+                            print('t growthwheat is {}'.format(t_growthwheat))
                             growthwheat_facade_.run()
                             for t_cnwheat in xrange(t_growthwheat, t_growthwheat + growthwheat_ts, cnwheat_ts):
                                 # run CNWheat
+                                print('t cnwheat is {}'.format(t_cnwheat))
                                 cnwheat_facade_.run()
 
                                 # append the inputs and outputs at current step to global lists
@@ -259,6 +270,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
                                 elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
                                 SAM_all_data_list.append(shared_SAM_inputs_outputs_df.copy())
                                 soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+
 
         execution_time = int(time.time() - current_time_of_the_system)
         print '\n', 'Simulation run in ', str(datetime.timedelta(seconds=execution_time))
@@ -369,7 +381,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         # 4) Hidden zones
         all_hiddenzones_inputs_outputs_df = pd.read_csv(HIDDENZONES_STATES_FILEPATH)
-        graph_variables_hiddenzones = {'hiddenzone_L': u'Hidden zone length (m)','leaf_L': u'Leaf length (m)', 'delta_leaf_L':u'Delta leaf length (m)',
+        graph_variables_hiddenzones = {'leaf_dist_to_emerge': u'Length for leaf emergence (m)','leaf_L': u'Leaf length (m)', 'delta_leaf_L':u'Delta leaf length (m)',
                                        'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
                                         'Unloading_Sucrose':u'Sucrose unloading (µmol C)', 'Unloading_Amino_Acids':u'Amino_acids unloading (µmol N)', 'mstruct': u'Structural mass (g)', 'Respi_growth': u'Growth respiration (µmol C)', 'sucrose_consumption_mstruct': u'Consumption of sucrose for growth (µmol C)'}
 
