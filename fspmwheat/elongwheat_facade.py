@@ -153,8 +153,6 @@ class ElongWheatFacade(object):
                             all_elongwheat_organs_dict[organ_id] = elongwheat_organ_inputs_dict
 
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
-                    if mtg_metamer_vid == 55:
-                       pass
 
                     if 'hiddenzone' in mtg_metamer_properties:
                         mtg_previous_metamer_vid = self._shared_mtg.parent(mtg_metamer_vid)
