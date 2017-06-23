@@ -46,7 +46,6 @@ class HiddenZoneInit(object):
     def __init__(self):
         self.leaf_is_growing = True
         self.internode_is_growing = False
-        self.internode_is_mature = False
         self.leaf_dist_to_emerge = 4E-08
         self.delta_leaf_dist_to_emerge = 0
         self.internode_dist_to_emerge = 0
@@ -62,6 +61,9 @@ class HiddenZoneInit(object):
         self.SSLW = None # no calculation before emergence Ln-1
         self.SSSW = None # no calculation before emergence Ln-1
         self.leaf_is_emerged = False
+        self.internode_Lmax = None # no calculation before ligulation Ln
+        self.SSINW = None # no calculation before ligulation Ln
+        self.internode_is_visible = False
         self.sucrose = 1E-3
         self.amino_acids = 1E-3
         self.fructan = 0

@@ -1,4 +1,4 @@
-plant,axis,metamer,leaf_is_growing,internode_is_growing,leaf_dist_to_emerge,internode_dist_to_emerge,leaf_L,internode_L,leaf_Lmax,leaf_Lem_prev,lamina_Lmax,sheath_Lmax,leaf_Wmax,SSLW,SSSW,leaf_is_emerged,sucrose,amino_acids,fructan,proteins,leaf_enclosed_mstruct,internode_mstruct,mstruct,leaf_enclosed_Nstruct,internode_Nstruct
-1,MS,4,True,True,0.02335,0.02335,0.046636252,0,0.135,0.001,0.09815,0.03685,0.00789356,27.6,138,True,10,1.5,0.15,0,5.00E-03,0,5.00E-03,1.61E-04,0
-1,MS,5,True,True,0.02335,0.02335,0.001,0,0.16,0.001,0.1139,0.0461,0.006562296,27.3,136.5,False,0.03,0.003,0.03,0,1.30E-05,0,1.30E-05,4.19E-07,0
-1,MS,6,True,True,0.02335,0.02335,0.00004,0,NA,NA,NA,NA,NA,NA,NA,False,0.001,0.0002,0,0,6.39E-08,0,6.39E-08,2.06E-09,0
+plant,axis,metamer,leaf_is_growing,internode_is_growing,leaf_dist_to_emerge,internode_dist_to_emerge,leaf_L,internode_L,leaf_Lmax,lamina_Lmax,sheath_Lmax,leaf_Wmax,SSLW,SSSW,leaf_is_emerged,internode_Lmax,SSINW,internode_is_visible,sucrose,amino_acids,fructan,proteins,leaf_enclosed_mstruct,internode_mstruct,mstruct,leaf_enclosed_Nstruct,internode_Nstruct
+1,MS,4,True,True,0.031,0.031,0.031,0,0.135,0.100521221,0.034478779,0.00789356,27.6,138,True,NA,NA,False,0.1728,0.016848,0,0,1.44E-04,0,1.44E-04,4.64E-06,0
+1,MS,5,True,True,0.031,0.031,0.00154954,0,0.16,0.118677297,0.041322703,0.006562296,27.3,136.5,False,NA,NA,False,0.003732,0.000364,0,0,3.11E-06,0,3.11E-06,1.00E-07,0
+1,MS,6,True,True,0.031,0.031,0.00045,0,NA,NA,NA,NA,NA,NA,False,NA,NA,False,0.000768,0.000075,0,0,6.40E-07,0,6.40E-07,2.06E-08,0

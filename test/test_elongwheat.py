@@ -61,7 +61,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'leaf_is_growing', 'internode_is_growing','leaf_is_emerged', 'is_growing','status'):
+    for column in ('axis', 'organ', 'leaf_is_growing', 'internode_is_growing','leaf_is_emerged', 'internode_is_visible', 'is_growing','status'):
         if column in desired_data_df.columns:
             assert desired_data_df[column].equals(actual_data_df[column])
             del desired_data_df[column]
