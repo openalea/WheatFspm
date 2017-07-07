@@ -48,22 +48,40 @@ def calculate_growing_temp(Ta, Ts, plant_height):
          growth_temp = Ts
     return growth_temp
 
-def calculate_SAM_sumTT(T, sum_TT_prev_init, status, delta_t):
+def calculate_SAM_sumTT(T, sum_TT, nb_leaves, status, delta_t):
+    """ Return sum of thermal time of the SAM
+
+    :Parameters:
+        - `T` (:class:`float`) - growing temperature at t (degree Celsius)
+        - `sum_TT` (:class:`float`) - soil temperature at t (degree Celsius)
+        - `nb_leaves` (:class:`float`) - Number of leaves already emited by the SAM.
+        - `status` (:class:`interger`) - SAM status ('retired' or 'leaf' if emitting leaf primordia).
+        - `delta_t` (:class:`float`) - Time step of the simulation (s).
+    :Returns:
+        Return temperature to be used for growthing zone at t (degree Celsius)
+    :Returns Type:
+        :class:`float`
+    """
     init_leaf = 0
-    if status != 'retired': # TODO: peut-etre a deplacer dans le convertisseur
-        sum_TT_prev_init += (T*delta_t)/(24*3600)
-        if sum_TT_prev_init >= parameters.PLASTO_leaf:
-            init_leaf = min(parameters.max_nb_leaves, int(sum_TT_prev_init/parameters.PLASTO_leaf) )
+    sum_TT += (T*delta_t)/(24*3600)
+    if status == 'vegetative': # TODO: peut-etre a deplacer dans le convertisseur
+        if sum_TT >= parameters.PLASTO_leaf*(nb_leaves+1):
+            init_leaf = min(parameters.max_nb_leaves, int(sum_TT/parameters.PLASTO_leaf) - nb_leaves )
             if init_leaf > 1:
                 raise ValueError('Error : {} leaf primordia have been created in one time step.'.format(init_leaf) )
-            sum_TT_prev_init = sum_TT_prev_init % parameters.PLASTO_leaf
-    return sum_TT_prev_init, init_leaf
+    return sum_TT, init_leaf
 
 def calculate_SAM_status(status, nb_leaves, init_leaf):
     if (nb_leaves + init_leaf) >= parameters.max_nb_leaves:
-        status = 'retired'
+        status = 'reproductive'
     nb_leaves += init_leaf
     return status, nb_leaves
+
+def calculate_SAM_GA(status, nb_leaves, sum_TT):
+    is_producing_GA = False
+    if status == 'reproductive' and sum_TT > nb_leaves*parameters.PLASTO_leaf + parameters.delta_TT_GA :
+       is_producing_GA = True
+    return is_producing_GA
 
 
 # -------------------------------------------------------------------------------------------------------------------
@@ -360,16 +378,34 @@ def calculate_delta_internode_L_postL(internode_L, internode_Lmax, sucrose, delt
         delta_internode_L = 0
     return delta_internode_L
 
-def calculate_end_internode_elongation(internode_L, internode_dist_to_emerge): # Bidon
+def calculate_init_internode_elongation(sum_TT, metamer_rank):
+    """Initialize internode elongation.
+
+    :Parameters:
+        - `sum_TT` (:class:`float`) - soil temperature at t (degree Celsius)
+        - `metamer_rank` (:class:`float`) - Rank of the phytomer.
+    :Returns:
+        Specifies if the internode has started the elongation (True) or not (False), and initialize internode_L
+    :Returns Type:
+        :class:`bool`
+    """
+    is_growing = False
+    internode_L = 0
+    if (sum_TT - metamer_rank*parameters.PLASTO_leaf) > parameters.nb_PLASTO_internode_init*parameters.PLASTO_leaf:
+       is_growing = True
+       internode_L = parameters.internode_L_init
+    return is_growing, internode_L
+
+def calculate_end_internode_elongation(internode_L, internode_Lmax):
     """Calculate if a given internode has finished elongating
 
     :Parameters:
         - `internode_L` (:class:`float`) - Total internode length (m)
-        - `internode_dist_to_emerge` (:class:`float`) - Distance for the internode to be visible (m)
+        - `internode_Lmax` (:class:`float`) - Maximum internode length (m)
     :Returns:
-        Specifies if the leaf has emerged (True) or not (False)
+        Specifies if the internode has completed elongation (True) or not (False)
     :Returns Type:
         :class:`bool`
     """
-    return internode_L >= internode_dist_to_emerge
+    return internode_L >= internode_Lmax
 

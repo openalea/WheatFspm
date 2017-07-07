@@ -34,12 +34,12 @@ import math ##MG
 #: the inputs needed by ElongWheat
 HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing','leaf_dist_to_emerge','internode_dist_to_emerge', 'leaf_L', 'internode_L','leaf_Lmax',  'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'internode_Lmax','SSINW','internode_is_visible','sucrose', 'amino_acids', 'fructan','proteins', 'leaf_enclosed_mstruct','leaf_enclosed_Nstruct','internode_mstruct','internode_Nstruct','mstruct']
 ORGAN_INPUTS = ['visible_length', 'is_growing', 'final_hidden_length', 'length']
-SAM_INPUTS = ['sum_TT_prev_init', 'status','nb_leaves']
+SAM_INPUTS = ['sum_TT', 'status','nb_leaves','GA']
 
 #: the outputs computed by ElongWheat
 HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing','leaf_dist_to_emerge', 'delta_leaf_dist_to_emerge','internode_dist_to_emerge', 'delta_internode_dist_to_emerge','leaf_L', 'delta_leaf_L', 'internode_L','delta_internode_L','leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'internode_Lmax','SSINW','internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins','leaf_enclosed_mstruct','leaf_enclosed_Nstruct','internode_mstruct','internode_Nstruct','mstruct']
 ORGAN_OUTPUTS = ['visible_length', 'is_growing', 'final_hidden_length', 'length']
-SAM_OUTPUTS = ['sum_TT_prev_init', 'status','nb_leaves']
+SAM_OUTPUTS = ['sum_TT', 'status','nb_leaves','GA']
 
 #: the inputs and outputs of ElongWheat.
 HIDDENZONE_INPUTS_OUTPUTS = sorted(set(HIDDENZONE_INPUTS + HIDDENZONE_OUTPUTS))
@@ -140,9 +140,11 @@ class Simulation(object):
         for SAM_id, SAM_inputs in all_SAM_inputs.iteritems():
             curr_SAM_outputs = all_SAM_outputs[SAM_id]
             ## update sum_TT
-            curr_SAM_outputs['sum_TT_prev_init'] , init_leaf = model.calculate_SAM_sumTT(growth_temp, SAM_inputs['sum_TT_prev_init'],  SAM_inputs['status'], self.delta_t)
+            curr_SAM_outputs['sum_TT'] , init_leaf = model.calculate_SAM_sumTT(growth_temp, SAM_inputs['sum_TT'], SAM_inputs['nb_leaves'], SAM_inputs['status'], self.delta_t)
             ## update SAM status
             curr_SAM_outputs['status'], curr_SAM_outputs['nb_leaves'] = model.calculate_SAM_status(SAM_inputs['status'],SAM_inputs['nb_leaves'],init_leaf)
+            ## update GA production status
+            curr_SAM_outputs['GA'] = model.calculate_SAM_GA(curr_SAM_outputs['status'], curr_SAM_outputs['nb_leaves'], curr_SAM_outputs['sum_TT'])
             ## add hiddenzone
             for i in range(0,init_leaf):
                 # Initialise sheath outputs
@@ -288,25 +290,30 @@ class Simulation(object):
                 curr_hiddenzone_outputs['delta_leaf_L'] = np.nanmin([delta_leaf_L, (curr_hiddenzone_outputs['leaf_Lmax'] - hiddenzone_inputs['leaf_L'])])
 
             #: Internode elongation
-            if curr_hiddenzone_outputs['internode_is_growing']:
+            ## Initialisation internode elongation
+            if (not curr_hiddenzone_outputs['internode_is_growing']) and curr_hiddenzone_outputs['internode_L'] == 0 :
+               curr_hiddenzone_outputs['internode_is_growing'], curr_hiddenzone_outputs['internode_L'] = model.calculate_init_internode_elongation(curr_SAM_outputs['sum_TT'],hiddenzone_id[2]) # As for leaf primordia, we neglect CN growth due to IN length initialisation
+
+            ## Elongation only if Gibberelin production by SAM
+            if curr_SAM_outputs['GA'] and curr_hiddenzone_outputs['internode_is_growing']:
 
                lamina_id = hiddenzone_id + tuple(['blade'])
                #: Before ligulation of the leaf on the same phytomer. Exponential-like elong.
                if lamina_id in all_organs_inputs:
                   if all_organs_inputs[lamina_id]['is_growing']: # TODO : choose all_organs_outputs or all_organs_inputs[lamina_id]['is_growing'] ??
-                     delta_internode_L = model.calculate_delta_internode_L_preL(hiddenzone_inputs['sucrose'], hiddenzone_inputs['internode_L'], hiddenzone_inputs['amino_acids'], hiddenzone_inputs['mstruct'], self.delta_t)
-                     internode_L = hiddenzone_inputs['internode_L'] + delta_internode_L  # TODO: Ckeck internode_L is not too large (in the case of long delta_t)
+                     delta_internode_L = model.calculate_delta_internode_L_preL(curr_hiddenzone_outputs['sucrose'], curr_hiddenzone_outputs['internode_L'], curr_hiddenzone_outputs['amino_acids'], curr_hiddenzone_outputs['mstruct'], self.delta_t)
+                     internode_L = curr_hiddenzone_outputs['internode_L'] + delta_internode_L  # TODO: Ckeck internode_L is not too large (in the case of long delta_t)
 
                   #: After ligulation of the leaf on the same phytomer.
                   else:
-                       delta_internode_L = model.calculate_delta_internode_L_postL(hiddenzone_inputs['internode_L'], curr_hiddenzone_outputs['internode_Lmax'], hiddenzone_inputs['sucrose'], self.delta_t)
-                       internode_L = np.nanmin([curr_hiddenzone_outputs['internode_Lmax'], (hiddenzone_inputs['internode_L'] + delta_internode_L)])
+                       delta_internode_L = np.nanmin( model.calculate_delta_internode_L_postL(curr_hiddenzone_outputs['internode_L'], curr_hiddenzone_outputs['internode_Lmax'], curr_hiddenzone_outputs['sucrose'], self.delta_t), curr_hiddenzone_outputs['internode_Lmax'] - curr_hiddenzone_outputs['internode_L'])
+                       internode_L = curr_hiddenzone_outputs['internode_L'] + delta_internode_L
 
                        internode_id = hiddenzone_id + tuple(['internode'])
                        #: Internode is not visible
                        if not curr_hiddenzone_outputs['internode_is_visible']:
                           #: Test of internode visibility against distance to internode emergence.
-                          curr_hiddenzone_outputs['internode_is_visible'] = model.calculate_internode_visibility(hiddenzone_inputs['internode_L'], curr_hiddenzone_outputs['internode_dist_to_emerge']) # leaf_L from previous step (hiddenzone_inputs['leaf_L']) should be tested against current calculation of pseudostem length (curr_hiddenzone_outputs['leaf_dist_to_emerge']) for constitency
+                          curr_hiddenzone_outputs['internode_is_visible'] = model.calculate_internode_visibility(curr_hiddenzone_outputs['internode_L'], curr_hiddenzone_outputs['internode_dist_to_emerge']) # leaf_L from previous step (hiddenzone_inputs['leaf_L']) should be tested against current calculation of pseudostem length (curr_hiddenzone_outputs['leaf_dist_to_emerge']) for constitency
                           if curr_hiddenzone_outputs['internode_is_visible']: # Initialise internode outputs
                              new_internode_outputs = dict.fromkeys(ORGAN_OUTPUTS, 0)
                              new_internode_outputs['is_growing'] = True
@@ -332,18 +339,18 @@ class Simulation(object):
                               self.outputs['organs'][internode_id] = new_internode
 
                else : #: Before ligulation of the leaf on the same phytomer. Exponential-like elong.
-                     delta_internode_L = model.calculate_delta_internode_L_preL(hiddenzone_inputs['sucrose'], hiddenzone_inputs['internode_L'], hiddenzone_inputs['amino_acids'], hiddenzone_inputs['mstruct'], self.delta_t)
-                     internode_L = hiddenzone_inputs['internode_L'] + delta_internode_L  # TODO: Ckeck internode_L is not too large (in the case of long delta_t)
+                     delta_internode_L = model.calculate_delta_internode_L_preL(curr_hiddenzone_outputs['sucrose'], curr_hiddenzone_outputs['internode_L'], curr_hiddenzone_outputs['amino_acids'], curr_hiddenzone_outputs['mstruct'], self.delta_t)
+                     internode_L = curr_hiddenzone_outputs['internode_L'] + delta_internode_L  # TODO: Ckeck internode_L is not too large (in the case of long delta_t)
 
             #: IN not elongating (not yet or already mature)
             else:
-               internode_L = hiddenzone_inputs['internode_L']
+               internode_L = curr_hiddenzone_outputs['internode_L']
                delta_internode_L = 0
 
 
             # Update internodes outputs
             curr_hiddenzone_outputs['internode_L'] = internode_L
-            curr_hiddenzone_outputs['delta_internode_L'] = np.nanmin([delta_internode_L, (curr_hiddenzone_outputs['internode_dist_to_emerge'] - hiddenzone_inputs['internode_L'])])
+            curr_hiddenzone_outputs['delta_internode_L'] = delta_internode_L
 
             # Only growing hiddenzones are sent
             ## after end of elongation (leaf and/or internode), it should :

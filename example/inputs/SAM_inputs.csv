@@ -1,2 +1,2 @@
-plant,axis,sum_TT_prev_init,status,nb_leaves
-1,MS,49.5,leaf,6
+plant,axis,sum_TT,status,nb_leaves,GA
+1,MS,349.5,vegetative,6,False

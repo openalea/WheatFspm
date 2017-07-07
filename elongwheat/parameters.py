@@ -36,8 +36,11 @@ ratio_SSSW_SSLW = 5 # ratio gaine/limbe des matieres seches structurales spécifi
 RERmax = 4e-06 #: s-1
 EPSILON = 0.01 #: A threshold, expressed in relative leaf length that remains to be produced, under which the rate of leaf elongation will be assumed as constant
 PLASTO_leaf = 50 # Leaf pastochron (°C d-1)
-max_nb_leaves = 12 # Max number of leaves per axis
+max_nb_leaves = 10 # Max number of leaves per axis
 sowing_depth = 0.05 # Sowing depth (m) used to define plant emergence
+internode_L_init = 4E-08
+nb_PLASTO_internode_init = 5 # From Malvoisin 1984b, associated with priodia of 1.10-4 m
+delta_TT_GA = 0 # Thermal time between floral transition of SAM and Gibberelin production
 
 class HiddenZoneInit(object):
     """
