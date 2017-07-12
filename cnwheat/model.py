@@ -170,9 +170,11 @@ class HiddenZone(Organ):
     The class :class:`HiddenZone` defines the CN exchanges in the hidden zone.
     """
 
-    PARAMETERS = parameters.HiddenZoneParameters #: the internal parameters of the hidden zone
+    PARAMETERS = parameters.HiddenZoneParameters                #: the internal parameters of the hidden zone
+    INIT_COMPARTMENTS = parameters.HiddenZoneInitCompartments() #: the initial values of compartments and state parameters
 
-    def __init__(self, label=None, sucrose=None, fructan=None, mstruct=None, Nstruct=None, amino_acids=None, proteins=None):
+    def __init__(self, label='hiddenzone', mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
+                 sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan, amino_acids=INIT_COMPARTMENTS.amino_acids, proteins=INIT_COMPARTMENTS.proteins):
 
         super(HiddenZone, self).__init__(label)
 
@@ -414,9 +416,10 @@ class Phloem(Organ):
     The class :class:`Phloem` defines the CN exchanges in a phloem.
     """
 
-    PARAMETERS = parameters.PhloemParameters #: the internal parameters of the phloem
+    PARAMETERS = parameters.PhloemParameters                #: the internal parameters of the phloem
+    INIT_COMPARTMENTS = parameters.PhloemInitCompartments() #: the initial values of compartments and state parameters
 
-    def __init__(self, label=None, sucrose=None, amino_acids=None):
+    def __init__(self, label='phloem', sucrose=INIT_COMPARTMENTS.sucrose, amino_acids=INIT_COMPARTMENTS.amino_acids):
 
         super(Phloem, self).__init__(label)
 
@@ -506,9 +509,10 @@ class Grains(Organ):
     The class :class:`Grains` defines the CN exchanges in a set of grains.
     """
 
-    PARAMETERS = parameters.GrainsParameters #: the internal parameters of the grains
+    PARAMETERS = parameters.GrainsParameters                #: the internal parameters of the grains
+    INIT_COMPARTMENTS = parameters.GrainsInitCompartments() #: the initial values of compartments and state parameters
 
-    def __init__(self, label=None, age_from_flowering=None, starch=None, structure=None, proteins=None):
+    def __init__(self, label='grains', age_from_flowering=INIT_COMPARTMENTS.age_from_flowering, starch=INIT_COMPARTMENTS.starch, structure=INIT_COMPARTMENTS.structure, proteins=INIT_COMPARTMENTS.proteins):
 
         super(Grains, self).__init__(label)
 
@@ -700,9 +704,12 @@ class Roots(Organ):
     The class :class:`Roots` defines the CN exchanges in a set of roots.
     """
 
-    PARAMETERS = parameters.RootsParameters #: the internal parameters of the roots
+    PARAMETERS = parameters.RootsParameters                #: the internal parameters of the roots
+    INIT_COMPARTMENTS = parameters.RootsInitCompartments() #: the initial values of compartments and state parameters
 
-    def __init__(self, label=None, mstruct=None, Nstruct=None, sucrose=None, nitrates=None, amino_acids=None, cytokinins=None):
+    def __init__(self, label='roots', mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
+                                      sucrose=INIT_COMPARTMENTS.sucrose, nitrates=INIT_COMPARTMENTS.nitrates, amino_acids=INIT_COMPARTMENTS.amino_acids,
+                                      cytokinins=INIT_COMPARTMENTS.cytokinins):
 
         super(Roots, self).__init__(label)
 
@@ -1144,11 +1151,13 @@ class PhotosyntheticOrganElement(object):
     :class:`PhotosyntheticOrganElement` is the base class of all photosynthetic organs elements. DO NOT INSTANTIATE IT.
     """
 
-    PARAMETERS = parameters.PhotosyntheticOrganElementParameters #: the internal parameters of the photosynthetic organs elements
+    PARAMETERS = parameters.PhotosyntheticOrganElementParameters                #: the internal parameters of the photosynthetic organs elements
+    INIT_COMPARTMENTS = parameters.PhotosyntheticOrganElementInitCompartments() #: the initial values of compartments and state parameters
 
-    def __init__(self, label=None, green_area=None, mstruct=None, Nstruct=None, triosesP=None, starch=None,
-                 sucrose=None, fructan=None, nitrates=None, amino_acids=None, proteins=None, cytokinins=None,
-                 Tr=None, Ag=None, Ts=None, is_growing=None):
+    def __init__(self, label=None, green_area=INIT_COMPARTMENTS.green_area, mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
+                       triosesP=INIT_COMPARTMENTS.triosesP, starch=INIT_COMPARTMENTS.starch, sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan,
+                       nitrates=INIT_COMPARTMENTS.nitrates, amino_acids=INIT_COMPARTMENTS.amino_acids, proteins=INIT_COMPARTMENTS.proteins, cytokinins=INIT_COMPARTMENTS.cytokinins,
+                       Tr=INIT_COMPARTMENTS.Tr, Ag=INIT_COMPARTMENTS.Ag, Ts=INIT_COMPARTMENTS.Ts, is_growing=INIT_COMPARTMENTS.is_growing):
 
         self.label = label #: the label of the element
 

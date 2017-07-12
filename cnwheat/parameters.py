@@ -76,12 +76,31 @@ class HiddenZoneParameters(OrganParameters):
     Vmax_Sfructans = 0.2 # µmol/g/s
     delta_Dproteins = 1.85e-06
 
+class HiddenZoneInitCompartments(object):
+    """
+    Initial values for hidden zones
+    """
+    def __init__(self):
+        self.sucrose = 1E-3      #: µmol C
+        self.fructan = 0         #: µmol C
+        self.amino_acids = 1E-3  #: µmol N
+        self.proteins = 0        #: µmol N
+        self.mstruct = 6.39E-08  #: g
+        self.Nstruct = 2.06E-09  #: g
+
 class PhloemParameters(OrganParameters):
     """
     Internal parameters of phloems.
     """
     ALPHA = 1 #: Proportion of structural mass containing substrate
 
+class PhloemInitCompartments(object):
+    """
+    Initial values for phloem
+    """
+    def __init__(self):
+        self.sucrose = 500       #: µmol C
+        self.amino_acids = 100   #: µmol N
 
 class GrainsParameters(OrganParameters):
     """
@@ -101,6 +120,15 @@ class GrainsParameters(OrganParameters):
     FILLING_INIT = 360 * 3600                   #: Time (s) at which phloem loading switch from grain structure to accumulation of starch
     FILLING_END = 900 * 3600                    #: Time (s) at which grains filling stops. (Bertheloot et al., 2011)
 
+class GrainsInitCompartments(object):
+    """
+    Initial values for grains
+    """
+    def __init__(self):
+        self.age_from_flowering = 0 #: second
+        self.starch = 0             #: µmol C
+        self.structure = 1          #: µmol C
+        self.proteins = 0           #: µmol N
 
 class RootsParameters(OrganParameters):
     """
@@ -147,6 +175,17 @@ class RootsParameters(OrganParameters):
     N_NIT_CYTOKININS = 0.7          #: A parameter for cytokinins synthesis (dimensionless)
     K_CYTOKININS_EXPORT = 2E-4      #: Relative rate of cytokinins export from roots (s-1)
 
+class RootsInitCompartments(object):
+    """
+    Initial values for roots
+    """
+    def __init__(self):
+        self.sucrose = 0       #: µmol C
+        self.nitrates = 0      #: µmol C
+        self.amino_acids = 0   #: µmol N
+        self.cytokinins = 0    #: AU
+        self.mstruct = 0.15    #: g
+        self.Nstruct = 0.0045  #: g
 
 class PhotosyntheticOrganParameters(OrganParameters):
     """
@@ -189,6 +228,7 @@ class PhotosyntheticOrganParameters(OrganParameters):
     # cytokinins
     DELTA_D_CYTOKININS = 3.E-6      #: Relative rate of cytokinins degradation (s-1)
 
+
 class ChaffParameters(PhotosyntheticOrganParameters):
     """
     Internal parameters of chaffs.
@@ -230,6 +270,28 @@ class PhotosyntheticOrganElementParameters:
     """
     pass
 
+class PhotosyntheticOrganElementInitCompartments(object):
+    """
+    Initial values for photosynthetic organ elements
+    """
+    def __init__(self):
+        self.green_area = 1E-4  #: m2
+        self.mstruct = 5E-3     #: g
+        self.Nstruct = 1E-3     #: g
+
+        self.triosesP = 0       #: µmol C
+        self.starch = 0         #: µmol C
+        self.sucrose = 0        #: µmol C
+        self.fructan = 0        #: µmol C
+        self.nitrates = 0       #: µmol N
+        self.amino_acids = 0    #: µmol N
+        self.proteins = 0       #: µmol N
+        self.cytokinins = 15    #: AU
+
+        self.is_growing = False #: Flag indicating if the element is growing or not (:class:`bool`)
+        self.Tr = 0             #: Transpiration rate (mmol m-2 s-1)
+        self.Ag = 0             #: Gross assimilation (µmol m-2 s-1)
+        self.Ts = 15            #: Organ temperature (degree Celsius)
 
 class ChaffElementParameters(PhotosyntheticOrganElementParameters):
     """
