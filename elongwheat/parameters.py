@@ -49,40 +49,40 @@ class HiddenZoneInit(object):
     def __init__(self):
         self.leaf_is_growing = True
         self.internode_is_growing = False
-        self.leaf_dist_to_emerge = 4E-08
-        self.delta_leaf_dist_to_emerge = 0
-        self.internode_dist_to_emerge = 0
-        self.delta_internode_dist_to_emerge = 0
-        self.leaf_L = 4E-08
-        self.delta_leaf_L = 0
-        self.internode_L = 0
-        self.delta_internode_L = 0
-        self.leaf_Lmax = None # no calculation before emergence Ln-1
-        self.lamina_Lmax = None # no calculation before emergence Ln-1
-        self.sheath_Lmax = None # no calculation before emergence Ln-1
-        self.leaf_Wmax = None # no calculation before emergence Ln-1
-        self.SSLW = None # no calculation before emergence Ln-1
-        self.SSSW = None # no calculation before emergence Ln-1
+        self.leaf_dist_to_emerge = 4E-5          #: m TODO: ok comme valeur?
+        self.delta_leaf_dist_to_emerge = 0       #: m
+        self.internode_dist_to_emerge = 0        #: m
+        self.delta_internode_dist_to_emerge = 0  #: TODO: needed??
+        self.leaf_L = 4E-5                       #: m
+        self.delta_leaf_L = 0                    #: TODO: needed??
+        self.internode_L = 0                     #: m
+        self.delta_internode_L = 0 #: needed??
+        self.leaf_Lmax = None                    #: m, no calculation before emergence Ln-1
+        self.lamina_Lmax = None                  #: m, no calculation before emergence Ln-1
+        self.sheath_Lmax = None                  #: m, no calculation before emergence Ln-1
+        self.leaf_Wmax = None                    #: m, no calculation before emergence Ln-1
+        self.SSLW = None                         #: g m-2, no calculation before emergence Ln-1
+        self.SSSW = None                         #: g m-2, no calculation before emergence Ln-1
         self.leaf_is_emerged = False
-        self.internode_Lmax = None # no calculation before ligulation Ln
-        self.SSINW = None # no calculation before ligulation Ln
+        self.internode_Lmax = None               #: m, no calculation before ligulation Ln
+        self.SSIW = None                         #: g m-2, no calculation before ligulation Ln
         self.internode_is_visible = False
-        self.sucrose = 1E-3
-        self.amino_acids = 1E-3
-        self.fructan = 0
-        self.leaf_enclosed_mstruct = 2.65E-08
-        self.internode_mstruct = 0
-        self.mstruct = self.leaf_enclosed_mstruct + self.internode_mstruct
-        self.leaf_enclosed_Nstruct = self.leaf_enclosed_mstruct * 0.0322 # parameter value in growth wheat
-        self.internode_Nstruct = self.internode_mstruct * 0.0322 # parameter value in growth wheat
-        self.proteins = 0
+        self.sucrose = 1E-3                      #: µmol C
+        self.amino_acids = 1E-3                  #: µmol N
+        self.fructan = 0                         #: µmol C
+        self.leaf_enclosed_mstruct = 2.65E-08    #: g TODO: viens d'ou?
+        self.internode_mstruct = 0               #: g
+        self.mstruct = self.leaf_enclosed_mstruct + self.internode_mstruct #: g
+        self.leaf_enclosed_Nstruct = self.leaf_enclosed_mstruct * 0.0322 #: g, parameter value in growth wheat #: g
+        self.internode_Nstruct = self.internode_mstruct * 0.0322 #: g, parameter value in growth wheat
+        self.proteins = 0                        #: µmol N
 
 class OrganInit:
     """
-    Initial values for organs
+    Initial values for emerged and growing organs
     """
     def __init__(self):
-        self.visible_length = 0
+        self.length = 1E-3            #: m
+        self.visible_length = 1E-3    #: m
+        self.final_hidden_length = 0  #: m
         self.is_growing = True
-        self.final_hidden_length = 0
-        self.length = 0

@@ -31,21 +31,21 @@ import parameters
 # -------------------------------------------------------------------------------------------------------------------
 
 def calculate_growing_temp(Ta, Ts, plant_height):
-    """ Return temperature to be used for growthing zone
+    """ Return temperature to be used for growth zone
 
     :Parameters:
         - `Ta` (:class:`float`) - air temperature at t (degree Celsius)
         - `Ts` (:class:`float`) - soil temperature at t (degree Celsius)
         - `plant_height` (:class:`float`) - Sum of all internode lengths (m).
     :Returns:
-        Return temperature to be used for growthing zone at t (degree Celsius)
+        Return temperature to be used for growth zone at t (degree Celsius)
     :Returns Type:
         :class:`float`
     """
     if plant_height > parameters.sowing_depth:
-       growth_temp = Ta
+        growth_temp = Ta
     else:
-         growth_temp = Ts
+        growth_temp = Ts
     return growth_temp
 
 def calculate_SAM_sumTT(T, sum_TT, nb_leaves, status, delta_t):
@@ -53,7 +53,7 @@ def calculate_SAM_sumTT(T, sum_TT, nb_leaves, status, delta_t):
 
     :Parameters:
         - `T` (:class:`float`) - growing temperature at t (degree Celsius)
-        - `sum_TT` (:class:`float`) - soil temperature at t (degree Celsius)
+        - `sum_TT` (:class:`float`) - SAM cumul of temperature (degree Celsius)
         - `nb_leaves` (:class:`float`) - Number of leaves already emited by the SAM.
         - `status` (:class:`interger`) - SAM status ('retired' or 'leaf' if emitting leaf primordia).
         - `delta_t` (:class:`float`) - Time step of the simulation (s).
@@ -63,12 +63,13 @@ def calculate_SAM_sumTT(T, sum_TT, nb_leaves, status, delta_t):
         :class:`float`
     """
     init_leaf = 0
-    sum_TT += (T*delta_t)/(24*3600)
+    sum_TT += (T * delta_t) / (24 * 3600)
+
     if status == 'vegetative': # TODO: peut-etre a deplacer dans le convertisseur
         if sum_TT >= parameters.PLASTO_leaf*(nb_leaves+1):
-            init_leaf = min(parameters.max_nb_leaves, int(sum_TT/parameters.PLASTO_leaf) - nb_leaves )
+            init_leaf = min(parameters.max_nb_leaves, int(sum_TT / parameters.PLASTO_leaf) - nb_leaves)
             if init_leaf > 1:
-                raise ValueError('Error : {} leaf primordia have been created in one time step.'.format(init_leaf) )
+                raise ValueError('Error : {} leaf primordia have been created in one time step.'.format(init_leaf))
     return sum_TT, init_leaf
 
 def calculate_SAM_status(status, nb_leaves, init_leaf):
@@ -79,7 +80,7 @@ def calculate_SAM_status(status, nb_leaves, init_leaf):
 
 def calculate_SAM_GA(status, nb_leaves, sum_TT):
     is_producing_GA = False
-    if status == 'reproductive' and sum_TT > nb_leaves*parameters.PLASTO_leaf + parameters.delta_TT_GA :
+    if status == 'reproductive' and sum_TT > (nb_leaves * parameters.PLASTO_leaf) + parameters.delta_TT_GA :
        is_producing_GA = True
     return is_producing_GA
 
@@ -316,7 +317,7 @@ def calculate_internode_Lmax(internode_L_lig_curr):
     """
     return internode_L_lig_curr * parameters.Y0 # So far same parameter than for leaves
 
-def calculate_SSINW(SSSW):
+def calculate_SSIW(SSSW):
     """ Structural Specific Internode Weight.
 
     :Parameters:
