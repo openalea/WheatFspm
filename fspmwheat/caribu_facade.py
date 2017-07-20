@@ -38,7 +38,7 @@ import tools
 SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
 
 #: the outputs of Caribu
-CARIBU_OUTPUTS = ['Eabsm2']
+CARIBU_OUTPUTS = ['PARa']
 
 
 class CaribuFacade(object):
@@ -66,34 +66,39 @@ class CaribuFacade(object):
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df #: the dataframe at elements scale shared between all models
         self._geometrical_model = geometrical_model #: the model which deals with geometry
 
-    def run(self, PARi):
+    def run(self, energy=1, diffuse_model='soc', azimuts=4, zenits=5):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
         :Parameters:
-        - `PARi` (:class:`float`) - Incident PAR above the canopy (µmol m-2 s-1)
+        - `energy` (:class:`float`) - The incident PAR above the canopy (µmol m-2 s-1).
+        - `diffuse_model` (:class:`string`) - The kind of diffuse model, either soc or uoc.
+        - `azimuts` (:class:`int`) - The number of azimutal positions.
+        - `zenits` (:class:`int`) - The number of zenital positions.
 
         """
-        c_scene = self._initialize_model()
+        c_scene = self._initialize_model(energy, diffuse_model, azimuts, zenits)
         _, aggregated = c_scene.run(direct=True, infinite=True)
 
-        Eabs = aggregated['par']['Eabs']
-        Eabs.update((vid, Eabs * PARi) for vid, Eabs in Eabs.iteritems())
-
-##        # Visualisation
-##        c_scene.plot()
+        PARa = aggregated['par']['Eabs']
 
         # Eabs is the relative surfacic absorbed energy per organ
-        self._update_shared_MTG(aggregated['par']['Eabs'])
-        self._update_shared_dataframes(aggregated['par']['Eabs'])
+        self.update_shared_MTG(PARa)
+        self.update_shared_dataframes(PARa)
 
-    def _initialize_model(self):
+    def _initialize_model(self, energy, diffuse_model, azimuts, zenits):
         """
         Initialize the inputs of the model from the MTG shared
+
+        :Parameters:
+        - `energy` (:class:`float`) - The incident PAR above the canopy (µmol m-2 s-1).
+        - `diffuse_model` (:class:`string`) - The kind of diffuse model, either soc or uoc.
+        - `azimuts` (:class:`int`) - The number of azimutal positions.
+        - `zenits` (:class:`int`) - The number of zenital positions.
         """
 
         # Diffuse light sources
-        sky_string = GetLight.GetLight(GenSky.GenSky()(1, 'soc', 4, 5)) # (Energy, soc/uoc, azimuts, zenits)
+        sky_string = GetLight.GetLight(GenSky.GenSky()(energy, diffuse_model, azimuts, zenits)) # (Energy, soc/uoc, azimuts, zenits)
 
         sky = []
         for string in sky_string.split('\n'):
@@ -118,7 +123,7 @@ class CaribuFacade(object):
 
         return c_scene
 
-    def _update_shared_MTG(self, aggregated_PARa):
+    def update_shared_MTG(self, aggregated_PARa):
         """
         Update the MTG shared between all models from the population of Caribu.
         """
@@ -130,7 +135,7 @@ class CaribuFacade(object):
         self._shared_mtg.property('PARa').update(aggregated_PARa)
 
 
-    def _update_shared_dataframes(self, aggregated_PARa):
+    def update_shared_dataframes(self, aggregated_PARa):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
         """
@@ -146,48 +151,3 @@ class CaribuFacade(object):
         df = pd.concat([ids_df, data_df], axis=1)
         df.sort_values(['plant', 'axis', 'metamer', 'organ', 'element'], inplace=True)
         tools.combine_dataframes_inplace(df, SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES, self._shared_elements_inputs_outputs_df)
-
-    def run_from_df(self, Eabs_df, PARi, multiple_sources=False, ratio_diffus_PAR=None):
-        """
-        Update the MTG and the dataframes shared between all models from an input dataframe having Eabms2 values.
-        """
-
-
-        if 'species' in self._shared_mtg.properties():
-            Eabs_df_grouped = Eabs_df.groupby(['species', 'metamer', 'organ'])
-        else:
-            Eabs_df_grouped = Eabs_df.groupby(['metamer', 'organ'])
-
-        #: the name of the organs modeled by FarquharWheat
-        CARIBU_ORGANS_NAMES = set(['internode', 'blade', 'sheath', 'peduncle', 'ear'])
-        #: the name of the elements modeled by FarquharWheat
-        CARIBU_ELEMENTS_NAMES = set(['StemElement', 'LeafElement1'])
-
-        PARa_element_data_dict = {}
-        # traverse the MTG recursively from top ...
-        for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
-            for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
-                for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
-                    mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
-                    for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
-                        mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
-                            mtg_element_label = self._shared_mtg.label(mtg_element_vid)
-                            if mtg_element_label not in CARIBU_ELEMENTS_NAMES: continue
-                            if 'species' in self._shared_mtg.properties():
-                                element_id = (self._shared_mtg.property('species')[mtg_plant_vid], mtg_metamer_index, mtg_organ_label)
-                            else:
-                                element_id = (mtg_metamer_index, mtg_organ_label)
-                            if element_id in Eabs_df_grouped.groups.keys():
-                                if PARi == 0:
-                                    PARa_element_data_dict[mtg_element_vid] = 0
-                                elif multiple_sources:
-                                    PARa_diffuse = Eabs_df_grouped.get_group(element_id)['Eabs_diffuse'].iloc[0] * PARi * ratio_diffus_PAR
-                                    PARa_direct = Eabs_df_grouped.get_group(element_id)['Eabs_direct'].iloc[0] * PARi * (1 - ratio_diffus_PAR)
-                                    PARa_element_data_dict[mtg_element_vid] = PARa_diffuse + PARa_direct
-                                else:
-                                    PARa_element_data_dict[mtg_element_vid] = Eabs_df_grouped.get_group(element_id)['Eabs'].iloc[0] * PARi
-
-        # update MTG and datagrame
-        self._update_shared_MTG(PARa_element_data_dict)
-        self._update_shared_dataframes(PARa_element_data_dict)

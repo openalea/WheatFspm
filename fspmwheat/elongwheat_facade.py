@@ -26,13 +26,9 @@
 """
 
 import pandas as pd
-
 from elongwheat import converter, simulation
-
 import tools
 
-#: the name of the organs representing a leaf
-LEAF_ORGANS_NAMES = set(['sheath', 'blade','internode']) ## TODO: Change name
 
 SHARED_SAM_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
 
@@ -137,7 +133,6 @@ class ElongWheatFacade(object):
                     elongwheat_hiddenzone_data_from_mtg_organs_data = {}
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        if mtg_organ_label not in LEAF_ORGANS_NAMES: continue
 
                         mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_organ_vid)
                         if mtg_organ_label == 'blade':
@@ -189,6 +184,8 @@ class ElongWheatFacade(object):
                                     mtg_previous_sheath_final_hidden_length = self._shared_mtg.get_vertex_property(mtg_previous_metamer_components['sheath'])['final_hidden_length']
                             else:
                                 mtg_previous_sheath_visible_length = 0
+                                mtg_previous_sheath_final_hidden_length = 0
+
                             # current internode length
                             mtg_current_internode_length = self._shared_mtg.get_vertex_property(mtg_metamer_vid)['hiddenzone']['internode_L']
 
@@ -273,7 +270,6 @@ class ElongWheatFacade(object):
 
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        if mtg_organ_label not in LEAF_ORGANS_NAMES: continue
 
                         if len(mtg_organs_data_from_elongwheat_hiddenzone_data) != 0:
                             if mtg_organ_label == 'blade':
@@ -286,7 +282,7 @@ class ElongWheatFacade(object):
                             for organ_data_name in elongwheat_organ_data_dict.iterkeys():
                                 self._shared_mtg.property(organ_data_name)[mtg_organ_vid] = elongwheat_organ_data_dict.get(organ_data_name)
                             for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
-                                if self._shared_mtg.get_vertex_property(mtg_element_vid)['label'] in ('StemElement', 'LeafElement1'):
+                                if self._shared_mtg.get_vertex_property(mtg_element_vid)['label'] in ('StemElement', 'LeafElement1'): # Pas besoin des hiddenelements je crois. Par contre il faut limiter l'ecriture dans les elements de la seule propriete visible length ou length
                                     self._shared_mtg.property(organ_data_name)[mtg_element_vid] = elongwheat_organ_data_dict.get(organ_data_name)
 
     ##                        if self._shared_mtg.property('green_area').has_key(mtg_organ_vid):

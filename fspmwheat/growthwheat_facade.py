@@ -26,11 +26,9 @@
 """
 
 from growthwheat import converter, simulation
-
 import tools
 
-#: the name of the organs representing a leaf
-LEAF_ORGANS_NAMES = set(['sheath', 'blade', 'internode']) ##TODO: Change Name
+EMERGED_GROWING_ORGAN_LABELS = ['StemElement', 'LeafElement1']
 
 SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'organ']
 
@@ -122,19 +120,16 @@ class GrowthWheatFacade(object):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        if mtg_organ_label not in LEAF_ORGANS_NAMES: continue
                         mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_organ_vid)
                         organ_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label)
-                        if set(mtg_organ_properties).issuperset(simulation.ORGAN_INPUTS):
-                            growthwheat_organ_inputs_dict = {}
-                            #: TODO: a changer car ici je recopie les prop de l'élement dans le dict des organes
-                            for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
-                                if self._shared_mtg.get_vertex_property(mtg_element_vid)['label'] in ('StemElement', 'LeafElement1'):
-                                    mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
-                                    break
-                            for growthwheat_organ_input_name in simulation.ORGAN_INPUTS:
-                                growthwheat_organ_inputs_dict[growthwheat_organ_input_name] = mtg_element_properties[growthwheat_organ_input_name]
-                            all_growthwheat_organs_inputs_dict[organ_id] = growthwheat_organ_inputs_dict
+                        #: TODO: a changer car ici je recopie les prop de l'élement dans le dict des organes
+                        for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
+                            mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
+                            if set(mtg_element_properties).issuperset(simulation.ORGAN_INPUTS) and mtg_element_properties['label'] in EMERGED_GROWING_ORGAN_LABELS:
+                                growthwheat_organ_inputs_dict = {}
+                                for growthwheat_organ_input_name in simulation.ORGAN_INPUTS:
+                                    growthwheat_organ_inputs_dict[growthwheat_organ_input_name] = mtg_element_properties[growthwheat_organ_input_name]
+                                all_growthwheat_organs_inputs_dict[organ_id] = growthwheat_organ_inputs_dict
 
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
                     if 'hiddenzone' in mtg_metamer_properties:
@@ -189,7 +184,6 @@ class GrowthWheatFacade(object):
 
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        if mtg_organ_label not in LEAF_ORGANS_NAMES: continue
                         organ_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label)
 
                         if organ_id in all_growthwheat_organs_data_dict:

@@ -7,11 +7,11 @@ def launch_cmd(command):
     process.wait()
 
 def multi_script_launcher():
-##    commands = ['cd Asso_diffus && python main.py', 'cd Asso_direct && python main.py', 'cd Asso_mixte && python main.py',
-##                'cd Erect_diffus && python main.py', 'cd Erect_direct && python main.py', 'cd Erect_mixte && python main.py',
-##                'cd Plano_diffus && python main.py', 'cd Plano_direct && python main.py', 'cd Plano_mixte && python main.py']
+    commands = ['cd Asso_diffus && python main.py', 'cd Asso_direct && python main.py', 'cd Asso_mixte && python main.py',
+                'cd Erect_diffus && python main.py', 'cd Erect_direct && python main.py', 'cd Erect_mixte && python main.py',
+                'cd Plano_diffus && python main.py', 'cd Plano_direct && python main.py', 'cd Plano_mixte && python main.py']
 
-    commands = ['cd Asso_diffus && python main.py', 'cd Asso_direct && python main.py', 'cd Asso_mixte && python main.py']
+##    commands = ['cd Asso_diffus && python main.py', 'cd Asso_direct && python main.py', 'cd Asso_mixte && python main.py']
 
     tstart = time.time()
     num_processes = mp.cpu_count()-1

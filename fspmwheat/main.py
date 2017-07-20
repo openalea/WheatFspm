@@ -37,7 +37,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from alinea.adel.astk_interface import AdelWheat
+from alinea.adel.adel_dynamic import AdelWheatDyn
 import cnwheat_facade, elongwheat_facade, farquharwheat_facade, growthwheat_facade, senescwheat_facade, caribu_facade
 
 random.seed(1234)
@@ -123,9 +123,10 @@ def main(stop_time, run_simu=True, make_graphs=True):
         hour_to_second_conversion_factor = 3600
 
         # read adelwheat inputs at t0
-        adel_wheat = AdelWheat(seed=1234, convUnit=1)
-        g, domain = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
-        adel_wheat.domain = domain
+        adel_wheat = AdelWheatDyn(seed=1234, convUnit=1)
+        g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
+        adel_wheat.domain = g.get_vertex_property(0)['meta']['domain'] # temp (until Christian's commit)
+        adel_wheat.nplants = g.get_vertex_property(0)['meta']['nplants'] # temp (until Christian's commit)
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -232,7 +233,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
             # run Caribu
             PARi = meteo.loc[t_caribu, ['PARi']].iloc[0]
-            caribu_facade_.run(PARi)
+            caribu_facade_.run(energy=PARi)
             print('t caribu is {}'.format(t_caribu))
             for t_senescwheat in xrange(t_caribu, t_caribu + caribu_ts, senescwheat_ts):
                 # run SenescWheat
@@ -249,7 +250,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
                         Ta, Ts = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']] # TODO: Add soil temperature in the weather input file
                         elongwheat_facade_.run(Ta, Ts)
                         # Update geometry
-                        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
+#                        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
                         #adel_wheat.plot(g)
 ##                        adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
