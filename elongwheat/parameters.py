@@ -77,7 +77,7 @@ class HiddenZoneInit(object):
         self.internode_Nstruct = self.internode_mstruct * 0.0322 #: g, parameter value in growth wheat
         self.proteins = 0                        #: µmol N
 
-class OrganInit:
+class OrganInit(object):
     """
     Initial values for emerged and growing organs
     """

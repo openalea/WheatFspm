@@ -102,6 +102,7 @@ def from_dataframes(hiddenzone_inputs, organ_inputs, SAM_inputs):
 
         else:
             previous_sheath_visible_length = 0
+            previous_sheath_final_hidden_length = 0
 
         # internode length
         if hiddenzone_inputs_grouped.groups.has_key(hiddenzone_inputs_id):

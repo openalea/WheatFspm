@@ -89,7 +89,7 @@ def test_run():
 ##    compare_actual_to_desired('inputs', hiddenzone_inputs_reconverted_df, HIDDENZONE_INPUTS_FILENAME)
 ##    compare_actual_to_desired('inputs', organ_inputs_reconverted_df, ORGAN_INPUTS_FILENAME)
     # run the simulation
-    simulation_.run(Ta=25,Ts=20)
+    simulation_.run(Ta=25, Tsol=20)
     # convert the outputs to Pandas dataframe
     hiddenzone_outputs_df, organ_outputs_df , SAM_outputs_df = converter.to_dataframes(simulation_.outputs)
     # compare outputs
