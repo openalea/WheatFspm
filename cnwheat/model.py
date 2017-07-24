@@ -1828,7 +1828,7 @@ class Soil(object):
         """Mineralisation on organic N into nitrates in soil.
 
         :Parameters:
-            - `t` (:class:`float`) - Time of the simulation (s)
+            - `delta_t` (:class:`float`) - the delta t of the simulation (in seconds)
         :Returns:
             Nitrate mineralisation (µmol)
         :Returns Type:
