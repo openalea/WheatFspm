@@ -10,9 +10,13 @@
         * :mod:`cnwheat.simulation` for the front-end of the model,
         * :mod:`cnwheat.model` for the equations of the model,
         * :mod:`cnwheat.parameters` for the parameters of the model.
-         
-    :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+        
+    :copyright: Copyright 2014-2017 INRA-ECOSYS, see AUTHORS.
+    :license: CeCILL-C, see LICENSE for details.
+    
+    **Acknowledgments**: The research leading these results has received funding through the 
+    Investment for the Future programme managed by the Research National Agency 
+    (BreedWheat project ANR-10-BTBR-03).
     
     .. seealso:: Barillot et al. 2016.
 """

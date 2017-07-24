@@ -15,7 +15,6 @@ Module description
     :Release: |release|
     :Date: |today|
     :Author: See `Authors`_ section
-    :ChangeLog: See `ChangeLog`_ section
     
 .. topic:: Overview
 
@@ -38,16 +37,10 @@ Authors
 .. include:: ../AUTHORS
 
 
-ChangeLog
-=========
-
-.. include:: ../CHANGES
-
-
 License
 =======
 
-|cnwheat| is released under TODO License.
+|cnwheat| is released under CeCILL-C License. See file LICENSE for details.
 
 
 Indices and tables
