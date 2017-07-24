@@ -1197,7 +1197,7 @@ class PhotosyntheticOrganElement(object):
         self.total_organic_nitrogen = self.calculate_total_organic_nitrogen(self.amino_acids, self.proteins, self.Nstruct)
 
     # VARIABLES
-    def calculate_photosynthesis(self, Ag, green_area, delta_t):
+    def calculate_total_photosynthesis(self, Ag, green_area, delta_t):
         """Total photosynthesis of an element integrated over delta_t (µmol C m-2 s-1 * m2 * delta_t).
 
         :Parameters:
