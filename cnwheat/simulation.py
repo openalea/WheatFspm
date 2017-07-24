@@ -268,7 +268,6 @@ class Simulation(object):
         self.population.calculate_integrative_variables() # TODO: create method "calculate_preprocessing_variables" to compute integrative variables which do not change during the run of cnwheat (these integrative variables should be called "integrative parameters").
         #TODO: check the consistency of population and soils
         logger.info('Initialization of the simulation DONE')
-        y_isnan = np.isnan(self.initial_conditions)
 
 
     def run(self, start_time, stop_time, number_of_output_steps, odeint_mxstep=0, show_progressbar=False):
