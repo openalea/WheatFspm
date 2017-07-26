@@ -38,7 +38,7 @@ import pandas as pd
 from scipy import stats
 import matplotlib.pyplot as plt
 
-PRECISION = 5
+PRECISION = 4
 RELATIVE_TOLERANCE = 10**-PRECISION
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
