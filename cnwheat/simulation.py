@@ -38,6 +38,7 @@ from respiwheat.model import RespirationModel
 import model, tools
 
 class SimulationError(Exception): pass
+class SimulationInitializationError(SimulationError): pass
 class SimulationRunError(SimulationError): pass
 
 class Simulation(object):
@@ -219,9 +220,73 @@ class Simulation(object):
         del self.initial_conditions[:]
         self.initial_conditions_mapping.clear()
 
+        # create new population and soils
         self.population.plants.extend(population.plants)
         self.soils.update(soils)
-
+        
+        # check the consistency of population and soils
+        if len(self.population.plants) != 0: # population must contain at least 1 plant
+            for plant in self.population.plants:
+                if len(plant.axes) != 0: # each plant must contain at least 1 axis
+                    for axis in plant.axes:
+                        if axis.roots is None: # each axis must have a "roots"
+                            message = 'No roots found in (plant={},axis={})'.format(plant.index, axis.label)
+                            logger.exception(message)
+                            raise SimulationInitializationError(message)
+                        if axis.phloem is None: # each axis must have a phloem
+                            message = 'No phloem found in (plant={},axis={})'.format(plant.index, axis.label)
+                            logger.exception(message)
+                            raise SimulationInitializationError(message)
+                        if len(axis.phytomers) != 0: # each axis must contain at least 1 phytomer
+                            for phytomer in axis.phytomers:
+                                phytomer_organs = (phytomer.lamina, phytomer.internode, phytomer.sheath, phytomer.chaff, phytomer.peduncle)
+                                if phytomer_organs.count(None) != len(phytomer_organs) or phytomer.hiddenzone is not None: # each phytomer must contain at least 1 photosynthetic organ or an hidden growing zone
+                                    for organ in phytomer_organs:
+                                        if organ is not None:
+                                            organ_elements = (organ.exposed_element, organ.enclosed_element)
+                                            if organ_elements.count(None) != len(organ_elements): # each photosynthetic organ must contain at least 1 element
+                                                for element in organ_elements:
+                                                    if element is not None:
+                                                        if not organ.__class__.__name__ in element.__class__.__name__: # an element must belong to an organ of the same type (e.g. a LaminaElement must belong to a Lamina)
+                                                            message = 'In (plant={},axis={},phytomer={}), a {} belongs to a {}'.format(plant.index, 
+                                                                                                                                       axis.label, 
+                                                                                                                                       phytomer.index,
+                                                                                                                                       element.__class__.__name__, 
+                                                                                                                                       organ.__class__.__name__)
+                                                            logger.exception(message)
+                                                            raise SimulationInitializationError(message)
+                                            else:
+                                                message = 'No element found in (plant={},axis={},phytomer={},organ={})'.format(plant.index, 
+                                                                                                                               axis.label, 
+                                                                                                                               phytomer.index,
+                                                                                                                               organ.label)
+                                                logger.exception(message)
+                                                raise SimulationInitializationError(message)
+                                else:
+                                    message = 'Neither photosynthetic organ nor hidden growing zone found in (plant={},axis={},phytomer={})'.format(plant.index, 
+                                                                                                                                                    axis.label, 
+                                                                                                                                                    phytomer.index)
+                                    logger.exception(message)
+                                    raise SimulationInitializationError(message)
+                        else:
+                            message = 'No phytomer found in (plant={},axis={})'.format(plant.index, 
+                                                                                       axis.label)
+                            logger.exception(message)
+                            raise SimulationInitializationError(message)
+                        if (plant.index, axis.label) not in self.soils: # each axis must be associated to a soil
+                            message = 'No soil found in (plant={},axis={})'.format(plant.index, 
+                                                                                   axis.label)
+                            logger.exception(message)
+                            raise SimulationInitializationError(message)
+                else:
+                    message = 'No axis found in (plant={})'.format(plant.index)
+                    logger.exception(message)
+                    raise SimulationInitializationError(message) 
+        else:
+            message = 'No plant found in the population.'
+            logger.exception(message)
+            raise SimulationInitializationError(message)
+        
         # initialize initial conditions
         def _init_initial_conditions(model_object, i):
             class_ = model_object.__class__
@@ -266,7 +331,7 @@ class Simulation(object):
                             i = _init_initial_conditions(element, i)
 
         self.population.calculate_integrative_variables()
-        #TODO: check the consistency of population and soils
+        
         logger.info('Initialization of the simulation DONE')
 
 
