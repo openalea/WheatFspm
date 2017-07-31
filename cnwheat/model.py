@@ -598,7 +598,7 @@ class Grains(Organ):
         :Returns Type:
             :class:`float`
         """
-        return ((max(0, sucrose_phloem) / (mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_RGR) / ((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_RGR)
+        return ((max(0, sucrose_phloem) / (mstruct_axis * Axis.PARAMETERS.ALPHA)) * Grains.PARAMETERS.VMAX_RGR) / ((max(0, sucrose_phloem)/(mstruct_axis * Axis.PARAMETERS.ALPHA)) + Grains.PARAMETERS.K_RGR)
 
     # FLUXES
 
@@ -637,7 +637,7 @@ class Grains(Organ):
         elif self.age_from_flowering> Grains.PARAMETERS.FILLING_END:    #: Grain maturity
             s_grain_starch = 0
         else:                                                           #: Grain filling
-            s_grain_starch = (((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) * Grains.PARAMETERS.VMAX_STARCH) / ((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) + Grains.PARAMETERS.K_STARCH)) * delta_t
+            s_grain_starch = (((max(0, sucrose_phloem)/(mstruct_axis * Axis.PARAMETERS.ALPHA)) * Grains.PARAMETERS.VMAX_STARCH) / ((max(0, sucrose_phloem)/(mstruct_axis * Axis.PARAMETERS.ALPHA)) + Grains.PARAMETERS.K_STARCH)) * delta_t
         return s_grain_starch
 
     def calculate_s_proteins(self, s_grain_structure, s_grain_starch, amino_acids_phloem, sucrose_phloem, structural_dry_mass):
@@ -827,7 +827,7 @@ class Roots(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) * Roots.PARAMETERS.VMAX_SUCROSE_UNLOADING) / ((max(0, sucrose_phloem)/(mstruct_axis * Organ.PARAMETERS.ALPHA_AXIS)) + Roots.PARAMETERS.K_SUCROSE_UNLOADING)) * delta_t
+        return (((max(0, sucrose_phloem)/(mstruct_axis * Axis.PARAMETERS.ALPHA)) * Roots.PARAMETERS.VMAX_SUCROSE_UNLOADING) / ((max(0, sucrose_phloem)/(mstruct_axis * Axis.PARAMETERS.ALPHA)) + Roots.PARAMETERS.K_SUCROSE_UNLOADING)) * delta_t
 
     def calculate_unloading_amino_acids(self, unloading_sucrose, sucrose_phloem, amino_acids_phloem):
         """Unloading of amino_acids from phloem to roots integrated over delta_t.
@@ -1410,7 +1410,7 @@ class PhotosyntheticOrganElement(object):
         conc_sucrose_element = sucrose / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
         if self.mstruct==0:
             print self.label
-        conc_sucrose_phloem  = sucrose_phloem / (mstruct_axis * parameters.OrganParameters.ALPHA_AXIS)
+        conc_sucrose_phloem  = sucrose_phloem / (mstruct_axis * parameters.AxisParameters.ALPHA)
         #: Driving compartment (µmol C g-1 mstruct)
         driving_sucrose_compartment = max(conc_sucrose_element, conc_sucrose_phloem)
         #: Gradient of sucrose between the element and the phloem (µmol C g-1 mstruct)
@@ -1575,7 +1575,7 @@ class PhotosyntheticOrganElement(object):
             :class:`float`
         """
         conc_amino_acids_element = amino_acids / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
-        conc_amino_acids_phloem  = amino_acids_phloem / (mstruct_axis * parameters.OrganParameters.ALPHA_AXIS)
+        conc_amino_acids_phloem  = amino_acids_phloem / (mstruct_axis * parameters.AxisParameters.ALPHA)
         #: Driving compartment (µmol N g-1 mstruct)
         driving_amino_acids_compartment = max(conc_amino_acids_element, conc_amino_acids_phloem)
         #: Gradient of amino acids between the element and the phloem (µmol N g-1 mstruct)

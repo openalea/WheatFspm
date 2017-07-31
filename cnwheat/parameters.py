@@ -43,7 +43,7 @@ class AxisParameters:
     """
     Internal parameters of axes.
     """
-    pass
+    ALPHA = 1                          #: Proportion of the structural mass containing the substrates
 
 
 class PhytomerParameters:
@@ -57,8 +57,8 @@ class OrganParameters:
     """
     Internal parameters common to all the organs.
     """
-    ALPHA_AXIS = 1                          #: Proportion of the structural mass containing the substrates
 
+    # class model.Organ
     C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
     NB_C_TRIOSEP = 3                        #: Number of C in 1 mol of trioseP
     NB_C_HEXOSES = 6                        #: Number of C in 1 mol of hexoses (glucose, fructose)
