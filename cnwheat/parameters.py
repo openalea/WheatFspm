@@ -53,26 +53,7 @@ class PhytomerParameters:
     pass
 
 
-class OrganParameters:
-    """
-    Internal parameters common to all the organs.
-    """
-
-    # class model.Organ
-    C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
-    NB_C_TRIOSEP = 3                        #: Number of C in 1 mol of trioseP
-    NB_C_HEXOSES = 6                        #: Number of C in 1 mol of hexoses (glucose, fructose)
-    NB_C_SUCROSE = 12                       #: Number of C in 1 mol of sucrose
-    HEXOSE_MOLAR_MASS_C_RATIO = 0.4         #: Contribution of C in hexose mass
-    RATIO_C_MSTRUCT = 0.384                 #: Mean contribution of carbon to structural dry mass (g C g-1 Mstruct)
-
-    AMINO_ACIDS_C_RATIO = 3.67              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
-    N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
-
-
-class HiddenZoneParameters(OrganParameters):
+class HiddenZoneParameters:
     SIGMA = 5E-2                          #: Coefficient de diffusion surfacique. Utilisé dans la loi de Fick (g m-2 s-1)
     Vmax_Regul_Sfructans = 1
     K_Regul_Sfructans = 0.5
@@ -92,7 +73,7 @@ class HiddenZoneInitCompartments(object):
         self.mstruct = 6.39E-08  #: g
         self.Nstruct = 2.06E-09  #: g
 
-class PhloemParameters(OrganParameters):
+class PhloemParameters:
     """
     Internal parameters of phloems.
     """
@@ -106,12 +87,11 @@ class PhloemInitCompartments(object):
         self.sucrose = 500       #: µmol C
         self.amino_acids = 100   #: µmol N
 
-class GrainsParameters(OrganParameters):
+class GrainsParameters:
     """
     Internal parameters of grains.
     """
     ALPHA = 1                                   #: Proportion of structural mass containing substrate
-    AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.136      #: Mean contribution of N in amino acids mass contained in gluten (Glu, Gln and Pro)
 
     # Structure parameters
     VMAX_RGR = 1.5e-06                          #: Maximal value of the Relative Growth Rate of grain structure (s-1)
@@ -134,7 +114,7 @@ class GrainsInitCompartments(object):
         self.structure = 1          #: µmol C
         self.proteins = 0           #: µmol N
 
-class RootsParameters(OrganParameters):
+class RootsParameters:
     """
     Internal parameters of roots.
     """
@@ -191,7 +171,7 @@ class RootsInitCompartments(object):
         self.mstruct = 0.15    #: g
         self.Nstruct = 0.0045  #: g
 
-class PhotosyntheticOrganParameters(OrganParameters):
+class PhotosyntheticOrganParameters:
     """
     Internal parameters of photosynthetic organs.
     """
