@@ -32,6 +32,23 @@ import numpy as np
 import parameters
 
 
+class EcophysiologicalConstants:
+    """
+    Ecophysiological constants.
+    """
+    C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
+    NB_C_TRIOSEP = 3                        #: Number of C in 1 mol of trioseP
+    NB_C_HEXOSES = 6                        #: Number of C in 1 mol of hexoses (glucose, fructose)
+    NB_C_SUCROSE = 12                       #: Number of C in 1 mol of sucrose
+    HEXOSE_MOLAR_MASS_C_RATIO = 0.4         #: Contribution of C in hexose mass
+    RATIO_C_MSTRUCT = 0.384                 #: Mean contribution of carbon to structural dry mass (g C g-1 Mstruct)
+
+    AMINO_ACIDS_C_RATIO = 3.67              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
+    N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
+
+
 class Population(object):
     """
     The class :class:`Population` defines the CN exchanges at the population scale.
@@ -153,18 +170,6 @@ class Organ(object):
 
     :class:`Organ` is the base class of all organs. DO NOT INSTANTIATE IT.
     """
-    
-    C_MOLAR_MASS = 12                       #: Molar mass of carbon (g mol-1)
-    NB_C_TRIOSEP = 3                        #: Number of C in 1 mol of trioseP
-    NB_C_HEXOSES = 6                        #: Number of C in 1 mol of hexoses (glucose, fructose)
-    NB_C_SUCROSE = 12                       #: Number of C in 1 mol of sucrose
-    HEXOSE_MOLAR_MASS_C_RATIO = 0.4         #: Contribution of C in hexose mass
-    RATIO_C_MSTRUCT = 0.384                 #: Mean contribution of carbon to structural dry mass (g C g-1 Mstruct)
-
-    AMINO_ACIDS_C_RATIO = 3.67              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
-    N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
 
     def __init__(self, label):
         self.label = label #: the label of the organ
@@ -217,7 +222,7 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (sucrose/self.mstruct) / Organ.NB_C_SUCROSE
+        return (sucrose/self.mstruct) / EcophysiologicalConstants.NB_C_SUCROSE
 
     def calculate_conc_amino_acids(self, amino_acids):
         """Amino acid concentration.
@@ -229,7 +234,7 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (amino_acids/Organ.AMINO_ACIDS_N_RATIO) / self.mstruct
+        return (amino_acids/EcophysiologicalConstants.AMINO_ACIDS_N_RATIO) / self.mstruct
 
     def calculate_conc_fructan(self, fructan):
         """Fructan concentration.
@@ -241,7 +246,7 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (fructan/self.mstruct)/Organ.NB_C_HEXOSES
+        return (fructan/self.mstruct)/EcophysiologicalConstants.NB_C_HEXOSES
 
     def calculate_conc_protein(self, proteins):
         """Proteins concentration.
@@ -254,8 +259,8 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        mass_N_proteins = proteins*1E-6 * Organ.N_MOLAR_MASS                        #: Mass of N in proteins (g)
-        mass_proteins = mass_N_proteins / Organ.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
+        mass_N_proteins = proteins*1E-6 * EcophysiologicalConstants.N_MOLAR_MASS                        #: Mass of N in proteins (g)
+        mass_proteins = mass_N_proteins / EcophysiologicalConstants.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
 
     # fluxes
@@ -455,7 +460,7 @@ class Phloem(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (sucrose / Organ.NB_C_SUCROSE) / mstruct_axis
+        return (sucrose / EcophysiologicalConstants.NB_C_SUCROSE) / mstruct_axis
 
     def calculate_conc_amino_acids(self, amino_acids, mstruct_axis):
         """Amino_acids concentration. Related to the structural dry mass of the culm.
@@ -468,7 +473,7 @@ class Phloem(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (amino_acids / Organ.AMINO_ACIDS_N_RATIO) / mstruct_axis
+        return (amino_acids / EcophysiologicalConstants.AMINO_ACIDS_N_RATIO) / mstruct_axis
 
     # COMPARTMENTS
 
@@ -566,10 +571,10 @@ class Grains(Organ):
             :class:`float`
         """
         #: Carbohydrates mass, grain carbohydrates supposed to be mainly starch i.e. glucose polymers (C6 H12 O6)
-        C_mass = ((structure + starch)*1E-6*Organ.C_MOLAR_MASS) / Organ.HEXOSE_MOLAR_MASS_C_RATIO
+        C_mass = ((structure + starch)*1E-6*EcophysiologicalConstants.C_MOLAR_MASS) / EcophysiologicalConstants.HEXOSE_MOLAR_MASS_C_RATIO
 
         #: N mass, grain proteins were supposed to be gluten mainly composed of Glu, Gln and Pro
-        N_mass = (proteins*1E-6*Organ.N_MOLAR_MASS) / Grains.AMINO_ACIDS_MOLAR_MASS_N_RATIO
+        N_mass = (proteins*1E-6*EcophysiologicalConstants.N_MOLAR_MASS) / Grains.AMINO_ACIDS_MOLAR_MASS_N_RATIO
 
         return  C_mass + N_mass
 
@@ -583,7 +588,7 @@ class Grains(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (structure*1E-6*Organ.C_MOLAR_MASS) / Organ.RATIO_C_MSTRUCT
+        return (structure*1E-6*EcophysiologicalConstants.C_MOLAR_MASS) / EcophysiologicalConstants.RATIO_C_MSTRUCT
 
     def calculate_protein_N_mass(self, proteins):
         """Grain total protein mass.
@@ -595,8 +600,8 @@ class Grains(Organ):
         :Returns Type:
             :class:`float`
         """
-        mass_N_proteins = proteins*1E-6 * Organ.N_MOLAR_MASS                        #: Mass of nitrogen in proteins (g)
-        #mass_proteins = mass_N_proteins / Organ.AMINO_ACIDS_MOLAR_MASS_N_RATIO     #: Total mass of proteins (g)
+        mass_N_proteins = proteins*1E-6 * EcophysiologicalConstants.N_MOLAR_MASS                        #: Mass of nitrogen in proteins (g)
+        #mass_proteins = mass_N_proteins / EcophysiologicalConstants.AMINO_ACIDS_MOLAR_MASS_N_RATIO     #: Total mass of proteins (g)
         return mass_N_proteins
 
     def calculate_RGR_structure(self, sucrose_phloem, mstruct_axis):
@@ -761,7 +766,7 @@ class Roots(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (sucrose/self.mstruct)/Organ.NB_C_SUCROSE
+        return (sucrose/self.mstruct)/EcophysiologicalConstants.NB_C_SUCROSE
 
     def calculate_conc_nitrates(self, nitrates):
         """Nitrate concentration.
@@ -785,7 +790,7 @@ class Roots(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (amino_acids/Organ.AMINO_ACIDS_N_RATIO)/self.mstruct
+        return (amino_acids/EcophysiologicalConstants.AMINO_ACIDS_N_RATIO)/self.mstruct
 
     def calculate_conc_cytokinins(self, cytokinins):
         """Cytokinin concentration.
@@ -811,7 +816,7 @@ class Roots(Organ):
         :Returns Type:
             :class:`float`
         """
-        return amino_acids + (Nstruct / Organ.N_MOLAR_MASS)*1E6
+        return amino_acids + (Nstruct / EcophysiologicalConstants.N_MOLAR_MASS)*1E6
 
     def calculate_regul_transpiration(self, total_surfacic_transpiration):
         """A function to regulate metabolite exports from roots by shoot transpiration
@@ -1023,7 +1028,7 @@ class Roots(Organ):
         :Returns Type:
             :class:`float`
         """
-        sucrose_consumption_AA = (s_amino_acids / Organ.AMINO_ACIDS_N_RATIO) * Organ.AMINO_ACIDS_C_RATIO      #: Contribution of sucrose to the synthesis of amino_acids
+        sucrose_consumption_AA = (s_amino_acids / EcophysiologicalConstants.AMINO_ACIDS_N_RATIO) * EcophysiologicalConstants.AMINO_ACIDS_C_RATIO      #: Contribution of sucrose to the synthesis of amino_acids
         return (unloading_sucrose - sucrose_consumption_AA - C_exudated) * self.mstruct - sum_respi
 
     def calculate_nitrates_derivative(self, uptake_nitrates, export_nitrates, s_amino_acids):
@@ -1245,7 +1250,7 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        return (triosesP/self.mstruct)/Organ.NB_C_TRIOSEP
+        return (triosesP/self.mstruct)/EcophysiologicalConstants.NB_C_TRIOSEP
 
     def calculate_conc_sucrose(self, sucrose):
         """Sucrose concentration.
@@ -1257,7 +1262,7 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        return (sucrose/self.mstruct)/Organ.NB_C_SUCROSE
+        return (sucrose/self.mstruct)/EcophysiologicalConstants.NB_C_SUCROSE
 
     def calculate_conc_starch(self, starch):
         """Starch concentration.
@@ -1269,7 +1274,7 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        return (starch/self.mstruct)/Organ.NB_C_HEXOSES
+        return (starch/self.mstruct)/EcophysiologicalConstants.NB_C_HEXOSES
 
     def calculate_conc_fructan(self, fructan):
         """Fructan concentration.
@@ -1281,7 +1286,7 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        return (fructan/self.mstruct)/Organ.NB_C_HEXOSES
+        return (fructan/self.mstruct)/EcophysiologicalConstants.NB_C_HEXOSES
 
     def calculate_regul_s_fructan(self, loading_sucrose, delta_t):
         """Regulating function for fructan maximal rate of synthesis.
@@ -1322,7 +1327,7 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        return (amino_acids/PhotosyntheticOrgan.AMINO_ACIDS_N_RATIO) / self.mstruct
+        return (amino_acids/EcophysiologicalConstants.AMINO_ACIDS_N_RATIO) / self.mstruct
 
     def calculate_conc_proteins(self, proteins):
         """Protein concentration.
@@ -1334,8 +1339,8 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        mass_N_proteins = proteins*1E-6 * PhotosyntheticOrgan.N_MOLAR_MASS                        #: Mass of N in proteins (g)
-        mass_proteins = mass_N_proteins / PhotosyntheticOrgan.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
+        mass_N_proteins = proteins*1E-6 * EcophysiologicalConstants.N_MOLAR_MASS                        #: Mass of N in proteins (g)
+        mass_proteins = mass_N_proteins / EcophysiologicalConstants.AMINO_ACIDS_MOLAR_MASS_N_RATIO      #: Total mass of proteins (g)
         return (mass_proteins / self.mstruct)
 
     def calculate_total_organic_nitrogen(self, amino_acids, proteins, Nstruct):
@@ -1351,7 +1356,7 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        return amino_acids + proteins + (Nstruct / PhotosyntheticOrgan.N_MOLAR_MASS)*1E6
+        return amino_acids + proteins + (Nstruct / EcophysiologicalConstants.N_MOLAR_MASS)*1E6
 
     def calculate_conc_cytokinins(self, cytokinins):
         """Cytokinin concentration.
@@ -1666,7 +1671,7 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        triosesP_consumption_AA = (s_amino_acids / PhotosyntheticOrgan.AMINO_ACIDS_N_RATIO) * PhotosyntheticOrgan.AMINO_ACIDS_C_RATIO #: Contribution of triosesP to the synthesis of amino_acids
+        triosesP_consumption_AA = (s_amino_acids / EcophysiologicalConstants.AMINO_ACIDS_N_RATIO) * EcophysiologicalConstants.AMINO_ACIDS_C_RATIO #: Contribution of triosesP to the synthesis of amino_acids
         return photosynthesis - (s_sucrose + s_starch + triosesP_consumption_AA) * (self.mstruct*self.__class__.PARAMETERS.ALPHA)
 
     def calculate_starch_derivative(self, s_starch, d_starch):
