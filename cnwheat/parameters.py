@@ -28,28 +28,37 @@
 import pandas as pd
 
     
-def from_series(object_, series_):
-    """Set attributes of *object_* from data in *series_*.
+def from_dataframe(object_, dataframe_):
+    """Set attributes of *object_* from data in *dataframe_*.
 
     :Parameters:
         - `object_` (:class:`object`) - The object to set.
-        - `series_` (:class:`pandas.Series`) - The series used to set the attribute(s) 
+        - `dataframe_` (:class:`pandas.DataFrame`) - The dataframe used to set the attribute(s) 
           of *object_*. 
+          *dataframe_* must have only 2 rows:
+          
+              * one row is for the header and contains the name of each attribute,
+              * and one row contains the value of each attribute.
     """
-    object_.__dict__.update(series_)
+    object_.__dict__.update(dataframe_.to_dict(orient='index')[dataframe_.first_valid_index()])
     
     
-def to_series(object_):
-    """Create and return a series from attributes of *object_*.
+def to_dataframe(object_):
+    """Create and return a dataframe from attributes of *object_*.
 
     :Parameters:
-        - `object_` (:class:`object`) - The object used to create the series.
+        - `object_` (:class:`object`) - The object used to create the dataframe.
+        
     :Returns:
-        A series which contains the attributes of *object_*.
+        A dataframe which contains the attributes of *object_*, with only 2 row:
+          
+          * one row is for the header and contains the name of each attribute,
+          * and one row contains the value of each attribute.
+            
     :Returns Type:
-        :class:`pandas.Series`
+        :class:`pandas.DataFrame`
     """
-    return pd.Series(object_.__dict__)
+    return pd.DataFrame(object_.__dict__, index=[0]).sort_index(axis=1)
 
 
 class PopulationParameters(object):
