@@ -29,8 +29,20 @@ import parameters
 # -------------------------------------------------------------------------------------------------------------------
 # --- SAM
 # -------------------------------------------------------------------------------------------------------------------
+def calculate_SAM_height(previous_SAM_height, cumulated_growing_internode_length):
+    """ Calculate SAM height from lengths of growing internodes.
 
-def calculate_growing_temp(Ta, Ts, plant_height):
+    :Parameters:
+        - `previous_SAM_height` (:class:`float`) - (m)
+        - `cumulated_growing_internode_length` (:class:`float`) - soil temperature at t (degree Celsius)
+    :Returns:
+        Return updated SAM height (m)
+    :Returns Type:
+        :class:`float`
+    """
+    return previous_SAM_height + cumulated_growing_internode_length
+
+def calculate_growing_temperature(Ta, Ts, plant_height):
     """ Return temperature to be used for growth zone
 
     :Parameters:
@@ -43,10 +55,10 @@ def calculate_growing_temp(Ta, Ts, plant_height):
         :class:`float`
     """
     if plant_height > parameters.sowing_depth:
-        growth_temp = Ta
+        growth_temperature = Ta
     else:
-        growth_temp = Ts
-    return growth_temp
+        growth_temperature = Ts
+    return growth_temperature
 
 def calculate_SAM_sumTT(T, sum_TT, nb_leaves, status, delta_t):
     """ Return sum of thermal time of the SAM

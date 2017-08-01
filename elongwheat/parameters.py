@@ -83,6 +83,4 @@ class OrganInit(object):
     """
     def __init__(self):
         self.length = 1E-3            #: m
-        self.visible_length = 1E-3    #: m
-        self.final_hidden_length = 0  #: m
         self.is_growing = True

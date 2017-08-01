@@ -36,15 +36,15 @@ from elongwheat import simulation, converter
 
 INPUTS_DIRPATH = 'inputs'
 HIDDENZONE_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
-ORGAN_INPUTS_FILENAME = 'organs_inputs.csv'
+ELEMENT_INPUTS_FILENAME = 'elements_inputs.csv'
 SAM_INPUTS_FILENAME = 'SAM_inputs.csv'
 
 OUTPUTS_DIRPATH = 'outputs'
 DESIRED_HIDDENZONE_OUTPUTS_FILENAME = 'desired_hiddenzone_outputs.csv'
-DESIRED_ORGAN_OUTPUTS_FILENAME = 'desired_organ_outputs.csv'
+DESIRED_ELEMENT_OUTPUTS_FILENAME = 'desired_element_outputs.csv'
 DESIRED_SAM_OUTPUTS_FILENAME = 'desired_SAM_outputs.csv'
 ACTUAL_HIDDENZONE_OUTPUTS_FILENAME = 'actual_hiddenzone_outputs.csv'
-ACTUAL_ORGAN_OUTPUTS_FILENAME = 'actual_organ_outputs.csv'
+ACTUAL_ELEMENT_OUTPUTS_FILENAME = 'actual_element_outputs.csv'
 ACTUAL_SAM_OUTPUTS_FILENAME = 'actual_SAM_outputs.csv'
 
 PRECISION = 6
@@ -61,7 +61,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'leaf_is_growing', 'internode_is_growing','leaf_is_emerged', 'internode_is_visible', 'is_growing','status','GA'):
+    for column in ('axis', 'organ', 'element', 'leaf_is_growing', 'internode_is_growing','leaf_is_emerged', 'internode_is_visible', 'is_growing','status','GA'):
         if column in desired_data_df.columns:
             assert desired_data_df[column].equals(actual_data_df[column])
             del desired_data_df[column]
@@ -77,10 +77,10 @@ def test_run():
     simulation_ = simulation.Simulation(delta_t=3600)
     # read inputs from Pandas dataframe
     hiddenzone_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, HIDDENZONE_INPUTS_FILENAME))
-    organ_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ORGAN_INPUTS_FILENAME))
+    element_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENT_INPUTS_FILENAME))
     SAM_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, SAM_INPUTS_FILENAME))
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframes(hiddenzone_inputs_df, organ_inputs_df, SAM_inputs_df)
+    inputs = converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, SAM_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
 ##    # convert the inputs to Pandas dataframe
@@ -91,10 +91,10 @@ def test_run():
     # run the simulation
     simulation_.run(Ta=25, Tsol=20)
     # convert the outputs to Pandas dataframe
-    hiddenzone_outputs_df, organ_outputs_df , SAM_outputs_df = converter.to_dataframes(simulation_.outputs)
+    hiddenzone_outputs_df, element_outputs_df , SAM_outputs_df = converter.to_dataframes(simulation_.outputs)
     # compare outputs
     compare_actual_to_desired('outputs', hiddenzone_outputs_df, DESIRED_HIDDENZONE_OUTPUTS_FILENAME, ACTUAL_HIDDENZONE_OUTPUTS_FILENAME)
-    compare_actual_to_desired('outputs', organ_outputs_df, DESIRED_ORGAN_OUTPUTS_FILENAME, ACTUAL_ORGAN_OUTPUTS_FILENAME)
+    compare_actual_to_desired('outputs', element_outputs_df, DESIRED_ELEMENT_OUTPUTS_FILENAME, ACTUAL_ELEMENT_OUTPUTS_FILENAME)
     compare_actual_to_desired('outputs', SAM_outputs_df, DESIRED_SAM_OUTPUTS_FILENAME, ACTUAL_SAM_OUTPUTS_FILENAME)
 
 
