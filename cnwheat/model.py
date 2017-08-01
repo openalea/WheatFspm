@@ -39,7 +39,7 @@ class Population(object):
     A :class:`population <Population>` must have one or several :class:`plants <Plant>`.
     """
 
-    PARAMETERS = parameters.PopulationParameters #: the internal parameters of the population
+    PARAMETERS = parameters.POPULATION_PARAMETERS #: the internal parameters of the population
 
     def __init__(self, plants=None):
         if plants is None:
@@ -60,7 +60,7 @@ class Plant(object):
     A :class:`plant <Plant>` must have one or several :class:`axes <Axis>`.
     """
 
-    PARAMETERS = parameters.PlantParameters #: the internal parameters of the plants
+    PARAMETERS = parameters.PLANT_PARAMETERS #: the internal parameters of the plants
 
     def __init__(self, index=None, axes=None):
         self.index = index #: the index of the plant
@@ -86,7 +86,7 @@ class Axis(object):
         * one or several :class:`phytomer<Phytomer>.
     """
 
-    PARAMETERS = parameters.AxisParameters #: the internal parameters of the axes
+    PARAMETERS = parameters.AXIS_PARAMETERS #: the internal parameters of the axes
 
     def __init__(self, label=None, roots=None, phloem=None, grains=None, phytomers=None):
         self.label = label #: the label of the axis
@@ -125,7 +125,7 @@ class Phytomer(object):
         * OR one :class:`lamina <Lamina>`, one :class:`internode <Internode>` and one :class:`sheath <Sheath>`.
     """
 
-    PARAMETERS = parameters.PhytomerParameters #: the internal parameters of the phytomers
+    PARAMETERS = parameters.PHYTOMER_PARAMETERS #: the internal parameters of the phytomers
 
     def __init__(self, index=None, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None, hiddenzone=None):
         self.index = index #: the index of the phytomer
@@ -184,8 +184,8 @@ class HiddenZone(Organ):
     The class :class:`HiddenZone` defines the CN exchanges in the hidden zone.
     """
 
-    PARAMETERS = parameters.HiddenZoneParameters                #: the internal parameters of the hidden zone
-    INIT_COMPARTMENTS = parameters.HiddenZoneInitCompartments() #: the initial values of compartments and state parameters
+    PARAMETERS = parameters.HIDDEN_ZONE_PARAMETERS                #: the internal parameters of the hidden zone
+    INIT_COMPARTMENTS = parameters.HIDDEN_ZONE_INIT_COMPARTMENTS #: the initial values of compartments and state parameters
 
     def __init__(self, label='hiddenzone', mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
                  sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan, amino_acids=INIT_COMPARTMENTS.amino_acids, proteins=INIT_COMPARTMENTS.proteins):
@@ -272,7 +272,7 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        conductance = parameters.HiddenZoneParameters.SIGMA * parameters.PhotosyntheticOrganParameters.BETA * self.mstruct**(2/3)
+        conductance = parameters.HIDDEN_ZONE_PARAMETERS.SIGMA * parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.BETA * self.mstruct**(2/3)
         return ((sucrose_phloem / mstruct_axis) - (sucrose / self.mstruct)) * conductance * delta_t
 
 
@@ -289,7 +289,7 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        conductance = parameters.HiddenZoneParameters.SIGMA * parameters.PhotosyntheticOrganParameters.BETA * self.mstruct**(2/3)
+        conductance = parameters.HIDDEN_ZONE_PARAMETERS.SIGMA * parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.BETA * self.mstruct**(2/3)
         return ((amino_acids_phloem / mstruct_axis) - (amino_acids / self.mstruct)) * conductance * delta_t
 
     def calculate_s_proteins(self, amino_acids, delta_t):
@@ -303,7 +303,7 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        return (parameters.PhotosyntheticOrganParameters.VMAX_SPROTEINS*max(0, (amino_acids / self.mstruct)))/(parameters.PhotosyntheticOrganParameters.K_SPROTEINS + max(0, (amino_acids / self.mstruct))) * delta_t
+        return (parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.VMAX_SPROTEINS*max(0, (amino_acids / self.mstruct)))/(parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.K_SPROTEINS + max(0, (amino_acids / self.mstruct))) * delta_t
 
     def calculate_d_proteins(self, proteins, delta_t):
         """Rate of protein degradation (µmol N proteins s-1 g-1 MS * delta_t).
@@ -316,7 +316,7 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        return max(0,(parameters.HiddenZoneParameters.delta_Dproteins * (proteins / self.mstruct))) * delta_t
+        return max(0,(parameters.HIDDEN_ZONE_PARAMETERS.delta_Dproteins * (proteins / self.mstruct))) * delta_t
 
 
     def calculate_regul_s_fructan(self, loading_sucrose, delta_t):
@@ -430,8 +430,8 @@ class Phloem(Organ):
     The class :class:`Phloem` defines the CN exchanges in a phloem.
     """
 
-    PARAMETERS = parameters.PhloemParameters                #: the internal parameters of the phloem
-    INIT_COMPARTMENTS = parameters.PhloemInitCompartments() #: the initial values of compartments and state parameters
+    PARAMETERS = parameters.PHLOEM_PARAMETERS                #: the internal parameters of the phloem
+    INIT_COMPARTMENTS = parameters.PHLOEM_INIT_COMPARTMENTS #: the initial values of compartments and state parameters
 
     def __init__(self, label='phloem', sucrose=INIT_COMPARTMENTS.sucrose, amino_acids=INIT_COMPARTMENTS.amino_acids):
 
@@ -525,8 +525,8 @@ class Grains(Organ):
 
     AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.136      #: Mean contribution of N in amino acids mass contained in gluten (Glu, Gln and Pro)
 
-    PARAMETERS = parameters.GrainsParameters                #: the internal parameters of the grains
-    INIT_COMPARTMENTS = parameters.GrainsInitCompartments() #: the initial values of compartments and state parameters
+    PARAMETERS = parameters.GRAINS_PARAMETERS                #: the internal parameters of the grains
+    INIT_COMPARTMENTS = parameters.GRAINS_INIT_COMPARTMENTS #: the initial values of compartments and state parameters
 
     def __init__(self, label='grains', age_from_flowering=INIT_COMPARTMENTS.age_from_flowering, starch=INIT_COMPARTMENTS.starch, structure=INIT_COMPARTMENTS.structure, proteins=INIT_COMPARTMENTS.proteins):
 
@@ -720,8 +720,8 @@ class Roots(Organ):
     The class :class:`Roots` defines the CN exchanges in a set of roots.
     """
 
-    PARAMETERS = parameters.RootsParameters                #: the internal parameters of the roots
-    INIT_COMPARTMENTS = parameters.RootsInitCompartments() #: the initial values of compartments and state parameters
+    PARAMETERS = parameters.ROOTS_PARAMETERS                #: the internal parameters of the roots
+    INIT_COMPARTMENTS = parameters.ROOTS_INIT_COMPARTMENTS #: the initial values of compartments and state parameters
 
     def __init__(self, label='roots', mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
                                       sucrose=INIT_COMPARTMENTS.sucrose, nitrates=INIT_COMPARTMENTS.nitrates, amino_acids=INIT_COMPARTMENTS.amino_acids,
@@ -1078,7 +1078,7 @@ class PhotosyntheticOrgan(Organ):
     :class:`PhotosyntheticOrgan` is the base class of all photosynthetic organs. DO NOT INSTANTIATE IT.
     """
 
-    PARAMETERS = parameters.PhotosyntheticOrganParameters #: the internal parameters of the photosynthetic organs
+    PARAMETERS = parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS #: the internal parameters of the photosynthetic organs
 
     def __init__(self, label, exposed_element, enclosed_element):
 
@@ -1110,7 +1110,7 @@ class Chaff(PhotosyntheticOrgan):
     The class :class:`Chaff` defines the CN exchanges in a chaff.
     """
 
-    PARAMETERS = parameters.ChaffParameters #: the internal parameters of the chaffs
+    PARAMETERS = parameters.CHAFF_PARAMETERS #: the internal parameters of the chaffs
 
     def __init__(self, label=None, exposed_element=None, enclosed_element=None):
         super(Chaff, self).__init__(label, exposed_element, enclosed_element)
@@ -1121,7 +1121,7 @@ class Lamina(PhotosyntheticOrgan):
     The class :class:`Lamina` defines the CN exchanges in a lamina.
     """
 
-    PARAMETERS = parameters.LaminaParameters #: the internal parameters of the laminae
+    PARAMETERS = parameters.LAMINA_PARAMETERS #: the internal parameters of the laminae
 
     def __init__(self, label=None, exposed_element=None, enclosed_element=None):
         super(Lamina, self).__init__(label, exposed_element, enclosed_element)
@@ -1132,7 +1132,7 @@ class Internode(PhotosyntheticOrgan):
     The class :class:`Internode` defines the CN exchanges in an internode.
     """
 
-    PARAMETERS = parameters.InternodeParameters #: the internal parameters of the internodes
+    PARAMETERS = parameters.INTERNODE_PARAMETERS #: the internal parameters of the internodes
 
     def __init__(self, label=None, exposed_element=None, enclosed_element=None):
         super(Internode, self).__init__(label, exposed_element, enclosed_element)
@@ -1143,7 +1143,7 @@ class Peduncle(PhotosyntheticOrgan):
     The class :class:`Peduncle` defines the CN exchanges in a peduncle.
     """
 
-    PARAMETERS = parameters.PeduncleParameters #: the internal parameters of the peduncles
+    PARAMETERS = parameters.PEDUNCLE_PARAMETERS #: the internal parameters of the peduncles
 
     def __init__(self, label=None, exposed_element=None, enclosed_element=None):
         super(Peduncle, self).__init__(label, exposed_element, enclosed_element)
@@ -1154,7 +1154,7 @@ class Sheath(PhotosyntheticOrgan):
     The class :class:`Sheath` defines the CN exchanges in a sheath.
     """
 
-    PARAMETERS = parameters.SheathParameters #: the internal parameters of the sheaths
+    PARAMETERS = parameters.SHEATH_PARAMETERS #: the internal parameters of the sheaths
 
     def __init__(self, label=None, exposed_element=None, enclosed_element=None):
         super(Sheath, self).__init__(label, exposed_element, enclosed_element)
@@ -1167,8 +1167,8 @@ class PhotosyntheticOrganElement(object):
     :class:`PhotosyntheticOrganElement` is the base class of all photosynthetic organs elements. DO NOT INSTANTIATE IT.
     """
 
-    PARAMETERS = parameters.PhotosyntheticOrganElementParameters                #: the internal parameters of the photosynthetic organs elements
-    INIT_COMPARTMENTS = parameters.PhotosyntheticOrganElementInitCompartments() #: the initial values of compartments and state parameters
+    PARAMETERS = parameters.PHOTOSYNTHETIC_ORGAN_ELEMENT_PARAMETERS                #: the internal parameters of the photosynthetic organs elements
+    INIT_COMPARTMENTS = parameters.PHOTOSYNTHETIC_ORGAN_ELEMENT_INIT_COMPARTMENTS #: the initial values of compartments and state parameters
 
     def __init__(self, label=None, green_area=INIT_COMPARTMENTS.green_area, mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
                        triosesP=INIT_COMPARTMENTS.triosesP, starch=INIT_COMPARTMENTS.starch, sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan,
@@ -1422,7 +1422,7 @@ class PhotosyntheticOrganElement(object):
         conc_sucrose_element = sucrose / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
         if self.mstruct==0:
             print self.label
-        conc_sucrose_phloem  = sucrose_phloem / (mstruct_axis * parameters.AxisParameters.ALPHA)
+        conc_sucrose_phloem  = sucrose_phloem / (mstruct_axis * parameters.AXIS_PARAMETERS.ALPHA)
         #: Driving compartment (µmol C g-1 mstruct)
         driving_sucrose_compartment = max(conc_sucrose_element, conc_sucrose_phloem)
         #: Gradient of sucrose between the element and the phloem (µmol C g-1 mstruct)
@@ -1587,7 +1587,7 @@ class PhotosyntheticOrganElement(object):
             :class:`float`
         """
         conc_amino_acids_element = amino_acids / (self.mstruct*self.__class__.PARAMETERS.ALPHA)
-        conc_amino_acids_phloem  = amino_acids_phloem / (mstruct_axis * parameters.AxisParameters.ALPHA)
+        conc_amino_acids_phloem  = amino_acids_phloem / (mstruct_axis * parameters.AXIS_PARAMETERS.ALPHA)
         #: Driving compartment (µmol N g-1 mstruct)
         driving_amino_acids_compartment = max(conc_amino_acids_element, conc_amino_acids_phloem)
         #: Gradient of amino acids between the element and the phloem (µmol N g-1 mstruct)
@@ -1773,7 +1773,7 @@ class ChaffElement(PhotosyntheticOrganElement):
     The class :class:`ChaffElement` defines the CN exchanges in a chaff element.
     """
 
-    PARAMETERS = parameters.ChaffElementParameters #: the internal parameters of the chaffs elements
+    PARAMETERS = parameters.CHAFF_ELEMENT_PARAMETERS #: the internal parameters of the chaffs elements
 
 
 class LaminaElement(PhotosyntheticOrganElement):
@@ -1781,14 +1781,14 @@ class LaminaElement(PhotosyntheticOrganElement):
     The class :class:`LaminaElement` defines the CN exchanges in a lamina element.
     """
 
-    PARAMETERS = parameters.LaminaElementParameters #: the internal parameters of the laminae elements
+    PARAMETERS = parameters.LAMINA_ELEMENT_PARAMETERS #: the internal parameters of the laminae elements
 
 class InternodeElement(PhotosyntheticOrganElement):
     """
     The class :class:`InternodeElement` defines the CN exchanges in an internode element.
     """
 
-    PARAMETERS = parameters.InternodeElementParameters #: the internal parameters of the internodes elements
+    PARAMETERS = parameters.INTERNODE_ELEMENT_PARAMETERS #: the internal parameters of the internodes elements
 
 
 class PeduncleElement(PhotosyntheticOrganElement):
@@ -1796,7 +1796,7 @@ class PeduncleElement(PhotosyntheticOrganElement):
     The class :class:`PeduncleElement` defines the CN exchanges in a peduncle element.
     """
 
-    PARAMETERS = parameters.PeduncleElementParameters #: the internal parameters of the peduncles elements
+    PARAMETERS = parameters.PEDUNCLE_ELEMENT_PARAMETERS #: the internal parameters of the peduncles elements
 
 
 class SheathElement(PhotosyntheticOrganElement):
@@ -1804,7 +1804,7 @@ class SheathElement(PhotosyntheticOrganElement):
     The class :class:`SheathElement` defines the CN exchanges in a sheath element.
     """
 
-    PARAMETERS = parameters.SheathElementParameters #: the internal parameters of the sheaths elements
+    PARAMETERS = parameters.SHEATH_ELEMENT_PARAMETERS #: the internal parameters of the sheaths elements
 
 
 class Soil(object):
@@ -1812,7 +1812,7 @@ class Soil(object):
     The class :class:`Soil` defines the amount of nitrogen in the volume of soil explored by roots.
     """
 
-    PARAMETERS = parameters.SoilParameters #: the internal parameters of the soil
+    PARAMETERS = parameters.SOIL_PARAMETERS #: the internal parameters of the soil
 
     def __init__(self, volume=None, nitrates=None, Tsoil=None):
 
@@ -1846,7 +1846,7 @@ class Soil(object):
         :Returns Type:
             :class:`float`
         """
-        return parameters.SoilParameters.MINERALISATION_RATE * delta_t
+        return parameters.SOIL_PARAMETERS.MINERALISATION_RATE * delta_t
 
     # COMPARTMENTS
 
