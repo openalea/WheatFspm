@@ -78,7 +78,7 @@ def calculate_SAM_sumTT(T, sum_TT, nb_leaves, status, delta_t):
     sum_TT += (T * delta_t) / (24 * 3600)
 
     if status == 'vegetative': # TODO: peut-etre a deplacer dans le convertisseur
-        if sum_TT >= parameters.PLASTO_leaf*(nb_leaves+1):
+        if sum_TT >= parameters.PLASTO_leaf*(nb_leaves+1-3): #first 3 leaves are initiated in the seed
             init_leaf = min(parameters.max_nb_leaves, int(sum_TT / parameters.PLASTO_leaf) - nb_leaves)
             if init_leaf > 1:
                 raise ValueError('Error : {} leaf primordia have been created in one time step.'.format(init_leaf))
@@ -90,9 +90,9 @@ def calculate_SAM_status(status, nb_leaves, init_leaf):
     nb_leaves += init_leaf
     return status, nb_leaves
 
-def calculate_SAM_GA(status, nb_leaves, sum_TT):
+def calculate_SAM_GA(status, sum_TT):
     is_producing_GA = False
-    if status == 'reproductive' and sum_TT > (nb_leaves * parameters.PLASTO_leaf) + parameters.delta_TT_GA :
+    if status == 'reproductive' and sum_TT > (parameters.max_nb_leaves * parameters.PLASTO_leaf) + parameters.delta_TT_GA :
        is_producing_GA = True
     return is_producing_GA
 
@@ -118,10 +118,10 @@ def calculate_leaf_dist_to_emerge(previous_leaf_dist_to_emerge, internode_L, pre
         leaf_dist_to_emerge = previous_leaf_dist_to_emerge + previous_sheath_visible_L - internode_L
     else:
         leaf_dist_to_emerge = previous_sheath_final_hidden_L + previous_sheath_visible_L - internode_L # here 'previous_sheath_visible_L' is also the final visible length of the previous sheath because the previous leaf has fully elongated.
-    return leaf_dist_to_emerge
+    return max(leaf_dist_to_emerge,0)
 
 
-def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_t):
+def calculate_deltaL_preE(leaf_rank, sucrose, leaf_L, amino_acids, mstruct, delta_t):
     """ delta of leaf length over delta_t as a function of sucrose and amino acids, from initiation to the emergence of the previous leaf.
 
     :Parameters:
@@ -134,8 +134,12 @@ def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_t):
     :Returns Type:
         :class:`float`
     """
+    if leaf_rank == 6:
+       RER_max = parameters.RERmax_6
+    else:
+         RER_max = parameters.RERmax
     if sucrose > 0:
-        delta_leaf_L = leaf_L * ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * (((amino_acids/mstruct) **3) / (parameters.Kn**3 + (amino_acids / mstruct)**3)) * parameters.RERmax * delta_t
+        delta_leaf_L = leaf_L * RER_max * delta_t #* ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * (((amino_acids/mstruct) **3) / (parameters.Kn**3 + (amino_acids / mstruct)**3))
     else:
         delta_leaf_L = 0
     return delta_leaf_L
@@ -315,7 +319,7 @@ def calculate_internode_dist_to_emerge(previous_leaf_dist_to_emerge,  previous_s
         internode_dist_to_emerge = previous_leaf_dist_to_emerge + previous_sheath_visible_L
     else:
         internode_dist_to_emerge = previous_sheath_final_hidden_L + previous_sheath_visible_L # here 'previous_sheath_visible_L' is also the final visible length of the previous sheath because the previous leaf has fully elongated.
-    return internode_dist_to_emerge
+    return max(internode_dist_to_emerge,0)
 
 def calculate_internode_Lmax(internode_L_lig_curr):
     """ Final internode length.
@@ -327,7 +331,7 @@ def calculate_internode_Lmax(internode_L_lig_curr):
     :Returns Type:
         :class:`float`
     """
-    return internode_L_lig_curr * parameters.Y0 # So far same parameter than for leaves
+    return internode_L_lig_curr * parameters.Y0_IN
 
 def calculate_SSIW(SSSW):
     """ Structural Specific Internode Weight.
