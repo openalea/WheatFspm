@@ -366,7 +366,7 @@ def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
             color_map = [0,155,0]
         return color_map
 
-    def calculate_total_organic_nitrogen(amino_acids, proteins, Nstruct):
+    def calculate_Total_Organic_Nitrogen(amino_acids, proteins, Nstruct):
         """Total amount of organic N (amino acids + proteins + Nstruct).
 
         :Parameters:
@@ -392,7 +392,7 @@ def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
         id_map = (pid, axid, mid, org, elid)
         if groups_df.groups.has_key(id_map):
             N = (g.property('proteins')[vid]*14E-3) / groups_df.get_group(id_map)['mstruct'].iloc[0]
-            #N = (calculate_total_organic_nitrogen(g.property('amino_acids')[vid], g.property('proteins')[vid], g.property('Nstruct')[vid])) / g.property('mstruct')[vid]
+            #N = (calculate_Total_Organic_Nitrogen(g.property('amino_acids')[vid], g.property('proteins')[vid], g.property('Nstruct')[vid])) / g.property('mstruct')[vid]
             colors[vid] = color_map(N)
         else:
             g.property('geometry')[vid] = None
