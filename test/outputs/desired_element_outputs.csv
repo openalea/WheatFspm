@@ -7,4 +7,4 @@ plant,axis,metamer,organ,element,length,is_growing
 1,MS,3,blade,LeafElement1,0.0935,False
 1,MS,3,sheath,HiddenElement,0.0304,False
 1,MS,3,sheath,StemElement,0.0006,False
-1,MS,4,blade,LeafElement1,0.000486889905208,True
+1,MS,4,blade,LeafElement1,0.000703829872121,True
