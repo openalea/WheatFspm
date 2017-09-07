@@ -3,7 +3,12 @@
     cnwheat.tools
     ~~~~~~~~~~~~~
 
-    This module provides tools to validate the outputs of the model CN-Wheat.
+    This module provides tools to help for the validation of the outputs: 
+    
+        * plot of multiple variables on the same graph, 
+        * set up of loggers,
+        * quantitative comparison test,
+        * and progress-bar to follow the evolution of long simulations.  
 
     :copyright: Copyright 2014-2017 INRA-ECOSYS, see AUTHORS.
     :license: CeCILL-C, see LICENSE for details.
@@ -35,89 +40,27 @@ import json
 
 import numpy as np
 import pandas as pd
-from scipy import stats
+
 import matplotlib.pyplot as plt
 
+# the precision to use for quantitative comparison test
 PRECISION = 4
+# the relative tolerance associated to `PRECISION`
 RELATIVE_TOLERANCE = 10**-PRECISION
+# the absolute tolerance associated to `PRECISION`
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
-OUTPUTS_INDEXES = ['t', 'plant', 'axis', 'metamer', 'organ', 'element'] #: All the possible indexes of CN-Wheat outputs.
+OUTPUTS_INDEXES = ['t', 'plant', 'axis', 'metamer', 'organ', 'element'] #: All the possible indexes of CN-Wheat outputs
 
 class DataWarning(UserWarning):
-    '''No data to plot for a variable.'''
+    '''Raised when there is no data to plot for a variable.'''
     def __init__(self, variable, keys):
         self.message = 'No data to plot for variable {} at {}.'.format(variable, keys)
     def __str__(self):
         return repr(self.message)
 
+# show all DataWarning (not only the first one which occurred)
 warnings.simplefilter('always', DataWarning)
-
-
-def plot_linear_regression(x_array, y_array, x_label='x', y_label='y', plot_filepath=None):
-    """Perform a linear regression of `x_array` vs `y_array`
-    and create a plot showing the fit against the original data.
-    If `plot_filepath` is not None, save the plot to a PNG file. Otherwise display the plot.
-
-    This is derived from http://www.landmap.ac.uk/index.php/Learning-Materials/Python-Scripting/6.4-Fitting-linear-equations#sthash.wDZ5zBrD.dpuf,
-    which is: Copyright TODO
-
-    :Parameters:
-
-        - `x_array` (:class:`numpy.ndarray`) - The x.
-
-        - `y_array` (:class:`numpy.ndarray`) - The y.
-
-        - `x_label` (:class:`str`) - The label of the axis 'x'. Default is 'x'.
-
-        - `y_label` (:class:`str`) - The label of the axis 'y'. Default is 'y'.
-
-        - `plot_filepath` (:class:`str`) - The file path to save the plot in.
-            If `None`, do not save the plot.
-
-    :Examples:
-
-    >>> import pandas as pd
-    >>> modelmaker_output_df = pd.read_csv('modelmaker_output.csv') # 'modelmaker_output.csv' must contain at least the column 'Sucrose_Phloem'
-    >>> cnwheat_output_df = pd.read_csv('cnwheat_output.csv') # 'cnwheat_output.csv' must contain at least the column 'Sucrose_Phloem'
-    >>> plot_linear_regression(modelmaker_output_df.Sucrose_Phloem,
-                               cnwheat_output_df.Sucrose_Phloem,
-                               x_label='modelmaker_{}'.format('Sucrose_Phloem'),
-                               y_label='cnwheat_{}'.format('Sucrose_Phloem'),
-                               plot_filepath='compare.png')
-
-    """
-    # Perform fit
-    (aCoeff, bCoeff, rVal, pVal, stdError) = stats.linregress(x_array, y_array)
-
-    # Use fits to predict y output for a range of diameters
-    x_samples_array = np.linspace(min(x_array), max(x_array), 1000)
-    y_predict_array = aCoeff * x_samples_array + bCoeff
-
-    # Create a string, showing the form of the equation (with fitted coefficients) and r squared value.
-    # Coefficients are rounded to two decimal places.
-    equation = 'y = {} x + {} (R$^2$ = {})'.format(round(aCoeff,2), round(bCoeff,2), round(rVal**2,2))
-
-    plt.figure()
-
-    # Plot fit against original data
-    plt.plot(x_array, y_array,'.')
-    plt.plot(x_samples_array, y_predict_array)
-    plt.title('{} vs {}'.format(x_label, y_label))
-
-    x_label = 'x = {}'.format(x_label)
-    plt.xlabel(x_label)
-    y_label = 'y = {}'.format(y_label)
-    plt.ylabel(y_label)
-
-    plt.legend(['x vs y', equation])
-
-    # Save plot
-    if plot_filepath is None:
-        plt.show()
-    else:
-        plt.savefig(plot_filepath, dpi=200, format='PNG')
-        plt.close()
 
 
 def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}, plot_filepath=None, colors=[], linestyles=[], explicit_label=True):
@@ -330,79 +273,24 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
     # read desired data
     desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
     desired_data_df = pd.read_csv(desired_data_filepath)
-
-    # keep only the rows to test
-    if 't' in actual_data_df and 't' in desired_data_df:
-        actual_data_df = actual_data_df[actual_data_df['t'].isin(desired_data_df['t'])]
-
-    # keep only the columns to test
-    actual_data_df = actual_data_df[desired_data_df.columns]
-
+    
     if actual_data_filename is not None:
+        # save actual outputs to CSV file
         actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(PRECISION))
 
-    # keep only numerical data
+    # keep only numerical data (np.testing can compare only numerical data) 
     for column in ('axis', 'organ', 'element', 'is_growing'):
         if column in desired_data_df.columns:
             del desired_data_df[column]
             del actual_data_df[column]
 
-    # compare to the desired data
+    # convert the actual outputs to floats
     actual_data_df = actual_data_df.astype(np.float)
+    
+    # compare actual data to desired data, using tolerance defined by :attr:`RELATIVE_TOLERANCE`, :attr:`ABSOLUTE_TOLERANCE`
     np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
 
-
-def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
-    from alinea.adel.mtg import to_plantgl
-    from openalea.plantgl.all import Viewer,Vector3
-
-    def color_map(N):
-        if 0 <= N <= 0.5: # TODO: organe senescent (prendre prop)
-            color_map = [150, 100, 0]
-        elif 0.5 < N < 5: # Fvertes
-            color_map = [int(255 - N*51), int(255 - N*20), 50]
-        else:
-            color_map = [0,155,0]
-        return color_map
-
-    def calculate_Total_Organic_Nitrogen(amino_acids, proteins, Nstruct):
-        """Total amount of organic N (amino acids + proteins + Nstruct).
-
-        :Parameters:
-            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
-            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
-            - `Nstruct` (:class:`float`) - Structural N mass (g)
-        :Returns:
-            Total amount of organic N (mg)
-        :Returns Type:
-            :class:`float`
-        """
-        return (amino_acids + proteins)*14E-3 + Nstruct*1E3
-
-    colors = {}
-
-    groups_df = df.groupby(['plant', 'axis', 'metamer', 'organ', 'element'])
-    for vid in g.components_at_scale(g.root, scale=5):
-        pid = int(g.index(g.complex_at_scale(vid, scale =1)))
-        axid = g.property('label')[g.complex_at_scale(vid, scale =2)]
-        mid = int(g.index(g.complex_at_scale(vid, scale =3)))
-        org = g.property('label')[g.complex_at_scale(vid, scale =4)]
-        elid = g.property('label')[vid]
-        id_map = (pid, axid, mid, org, elid)
-        if groups_df.groups.has_key(id_map):
-            N = (g.property('proteins')[vid]*14E-3) / groups_df.get_group(id_map)['mstruct'].iloc[0]
-            #N = (calculate_Total_Organic_Nitrogen(g.property('amino_acids')[vid], g.property('proteins')[vid], g.property('Nstruct')[vid])) / g.property('mstruct')[vid]
-            colors[vid] = color_map(N)
-        else:
-            g.property('geometry')[vid] = None
-
-    # plantgl
-    s = to_plantgl(g, colors=colors)[0]
-    Viewer.add(s)
-    Viewer.camera.setPosition(Vector3(83.883,12.3239,93.4706))
-    Viewer.camera.lookAt(Vector3(0.,0,50))
-    Viewer.saveSnapshot(os.path.join(SCREENSHOT_DIRPATH, 'Day_{}.png'.format(t/24+1)))
 
 class ProgressBarError(Exception): pass
 

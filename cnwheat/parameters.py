@@ -50,7 +50,7 @@ def to_dataframe(object_):
         - `object_` (:class:`object`) - The object used to create the dataframe.
         
     :Returns:
-        A dataframe which contains the attributes of *object_*, with only 2 row:
+        A dataframe which contains the attributes of *object_*, with only 2 rows:
           
           * one row is for the header and contains the name of each attribute,
           * and one row contains the value of each attribute.
