@@ -47,7 +47,7 @@ ChangeLog
 License
 =======
 
-|respiwheat| is released under TODO License.
+|respiwheat| is released under CeCILL-C License. See file LICENSE for details.
 
 
 Indices and tables
