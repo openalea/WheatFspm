@@ -93,7 +93,7 @@ class Simulation(object):
                     - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
                     - `root` (:class:`bool`) - specifies if the nitrate reduction-linked respiration is computed for shoot (False) or root (True) tissues.
                 * Returns: _R_Nnit_upt (µmol C respired)
-                * :Returns Type: :class:`float`
+                * Returns Type: :class:`float`
         
             * R_residual(sucrose, mstruct, Ntot, delta_t, Ts): Residual maintenance respiration (cost from protein turn-over, cell ion gradients, futile cycles...)
                 * Parameters:
