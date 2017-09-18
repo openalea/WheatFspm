@@ -71,10 +71,10 @@ describing what they are and what they do.
     :show-inheritance:
     :synopsis:
     
-:mod:`cnwheat.postprocessings` module
+:mod:`cnwheat.postprocessing` module
 *********************************************************
 
-.. automodule:: cnwheat.postprocessings
+.. automodule:: cnwheat.postprocessing
     :members:
     :undoc-members:
     :show-inheritance:

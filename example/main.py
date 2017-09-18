@@ -4,7 +4,7 @@
     main
     ~~~~
 
-    An example to show how to run the model CN-Wheat, compute the post-processings, and generate the plots for validation.
+    An example to show how to run the model CN-Wheat, compute the post-processing, and generate the plots for validation.
 
     You must first install :mod:`cnwheat` (and add it to your PYTHONPATH)
     before running this script with the command `python`.
@@ -35,7 +35,7 @@ import pandas as pd
 
 from respiwheat import model as respiwheat_model
 from cnwheat import simulation as cnwheat_simulation, converter as cnwheat_converter, \
-    tools as cnwheat_tools, postprocessings as cnwheat_postprocessings
+    tools as cnwheat_tools, postprocessing as cnwheat_postprocessing
 
 
 # inputs directory path
@@ -62,12 +62,12 @@ HIDDENZONES_OUTPUTS_FILENAME = 'hiddenzones_outputs.csv'
 ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
 SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
 
-# CSV file paths to save the post-processings of the model in
-AXES_POSTPROCESSINGS_FILENAME = 'axes_postprocessings.csv'
-ORGANS_POSTPROCESSINGS_FILENAME = 'organs_postprocessings.csv'
-HIDDENZONES_POSTPROCESSINGS_FILENAME = 'hiddenzones_postprocessings.csv'
-ELEMENTS_POSTPROCESSINGS_FILENAME = 'elements_postprocessings.csv'
-SOILS_POSTPROCESSINGS_FILENAME = 'soils_postprocessings.csv'
+# CSV file paths to save the post-processing of the model in
+AXES_POSTPROCESSING_FILENAME = 'axes_postprocessing.csv'
+ORGANS_POSTPROCESSING_FILENAME = 'organs_postprocessing.csv'
+HIDDENZONES_POSTPROCESSING_FILENAME = 'hiddenzones_postprocessing.csv'
+ELEMENTS_POSTPROCESSING_FILENAME = 'elements_postprocessing.csv'
+SOILS_POSTPROCESSING_FILENAME = 'soils_postprocessing.csv'
 
 # the path of the directory to save the generated graphs in
 GRAPHS_DIRPATH = 'graphs'
@@ -114,7 +114,7 @@ def force_senescence_and_photosynthesis(t, population, senescence_roots_data_gro
                             
 
 
-def main(stop_time, run_simu=True, run_postprocessings=True, generate_graphs=True):
+def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True):
     
     if run_simu:
 
@@ -221,7 +221,7 @@ def main(stop_time, run_simu=True, run_postprocessings=True, generate_graphs=Tru
 
 
 
-    if run_postprocessings:
+    if run_postprocessing:
         
         if not run_simu:
             
@@ -246,78 +246,78 @@ def main(stop_time, run_simu=True, run_postprocessings=True, generate_graphs=Tru
         else:
             delta_t = simulation_.delta_t
                 
-        print 'Compute the post-processings...'
+        print 'Compute the post-processing...'
 
-        axes_postprocessings_file_basename = AXES_POSTPROCESSINGS_FILENAME.split('.')[0]
-        hiddenzones_postprocessings_file_basename = HIDDENZONES_POSTPROCESSINGS_FILENAME.split('.')[0]
-        organs_postprocessings_file_basename = ORGANS_POSTPROCESSINGS_FILENAME.split('.')[0]
-        elements_postprocessings_file_basename = ELEMENTS_POSTPROCESSINGS_FILENAME.split('.')[0]
-        soils_postprocessings_file_basename = SOILS_POSTPROCESSINGS_FILENAME.split('.')[0]
+        axes_postprocessing_file_basename = AXES_POSTPROCESSING_FILENAME.split('.')[0]
+        hiddenzones_postprocessing_file_basename = HIDDENZONES_POSTPROCESSING_FILENAME.split('.')[0]
+        organs_postprocessing_file_basename = ORGANS_POSTPROCESSING_FILENAME.split('.')[0]
+        elements_postprocessing_file_basename = ELEMENTS_POSTPROCESSING_FILENAME.split('.')[0]
+        soils_postprocessing_file_basename = SOILS_POSTPROCESSING_FILENAME.split('.')[0]
 
-        postprocessings_df_dict = {}
+        postprocessing_df_dict = {}
         
-        (postprocessings_df_dict[axes_postprocessings_file_basename], 
-         postprocessings_df_dict[hiddenzones_postprocessings_file_basename], 
-         postprocessings_df_dict[organs_postprocessings_file_basename], 
-         postprocessings_df_dict[elements_postprocessings_file_basename], 
-         postprocessings_df_dict[soils_postprocessings_file_basename]) \
-            = cnwheat_postprocessings.postprocessings(axes_df=outputs_df_dict[AXES_OUTPUTS_FILENAME.split('.')[0]], 
+        (postprocessing_df_dict[axes_postprocessing_file_basename], 
+         postprocessing_df_dict[hiddenzones_postprocessing_file_basename], 
+         postprocessing_df_dict[organs_postprocessing_file_basename], 
+         postprocessing_df_dict[elements_postprocessing_file_basename], 
+         postprocessing_df_dict[soils_postprocessing_file_basename]) \
+            = cnwheat_postprocessing.postprocessing(axes_df=outputs_df_dict[AXES_OUTPUTS_FILENAME.split('.')[0]], 
                                                       hiddenzones_df=outputs_df_dict[HIDDENZONES_OUTPUTS_FILENAME.split('.')[0]], 
                                                       organs_df=outputs_df_dict[ORGANS_OUTPUTS_FILENAME.split('.')[0]], 
                                                       elements_df=outputs_df_dict[ELEMENTS_OUTPUTS_FILENAME.split('.')[0]], 
                                                       soils_df=outputs_df_dict[SOILS_OUTPUTS_FILENAME.split('.')[0]], 
                                                       delta_t=delta_t)
             
-        print 'Compute the post-processings... DONE!'
+        print 'Compute the post-processing... DONE!'
         
         
-        print 'Write the postprocessings to CSV files...'
+        print 'Write the postprocessing to CSV files...'
         
-        for postprocessings_file_basename, postprocessings_filename in ((axes_postprocessings_file_basename, AXES_POSTPROCESSINGS_FILENAME),
-                                                                        (hiddenzones_postprocessings_file_basename, HIDDENZONES_POSTPROCESSINGS_FILENAME),
-                                                                        (organs_postprocessings_file_basename, ORGANS_POSTPROCESSINGS_FILENAME),
-                                                                        (elements_postprocessings_file_basename, ELEMENTS_POSTPROCESSINGS_FILENAME),
-                                                                        (soils_postprocessings_file_basename, SOILS_POSTPROCESSINGS_FILENAME)):
+        for postprocessing_file_basename, postprocessing_filename in ((axes_postprocessing_file_basename, AXES_POSTPROCESSING_FILENAME),
+                                                                        (hiddenzones_postprocessing_file_basename, HIDDENZONES_POSTPROCESSING_FILENAME),
+                                                                        (organs_postprocessing_file_basename, ORGANS_POSTPROCESSING_FILENAME),
+                                                                        (elements_postprocessing_file_basename, ELEMENTS_POSTPROCESSING_FILENAME),
+                                                                        (soils_postprocessing_file_basename, SOILS_POSTPROCESSING_FILENAME)):
             
-            postprocessings_filepath = os.path.join(OUTPUTS_DIRPATH, postprocessings_filename)
-            postprocessings_df_dict[postprocessings_file_basename].to_csv(postprocessings_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+            postprocessing_filepath = os.path.join(OUTPUTS_DIRPATH, postprocessing_filename)
+            postprocessing_df_dict[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
             
-        print 'Write the postprocessings to CSV files... DONE!'
+        print 'Write the postprocessing to CSV files... DONE!'
 
 
 
     if generate_graphs:
         
-        if not run_postprocessings:
+        if not run_postprocessing:
             
-            print 'Retrieve last computed post-processings dataframes...'
+            print 'Retrieve last computed post-processing dataframes...'
             
-            postprocessings_df_dict = {}
+            postprocessing_df_dict = {}
             
-            for postprocessings_filename in (ORGANS_POSTPROCESSINGS_FILENAME,
-                                             HIDDENZONES_POSTPROCESSINGS_FILENAME,
-                                             ELEMENTS_POSTPROCESSINGS_FILENAME,
-                                             SOILS_POSTPROCESSINGS_FILENAME):
+            for postprocessing_filename in (ORGANS_POSTPROCESSING_FILENAME,
+                                             HIDDENZONES_POSTPROCESSING_FILENAME,
+                                             ELEMENTS_POSTPROCESSING_FILENAME,
+                                             SOILS_POSTPROCESSING_FILENAME):
                 
-                postprocessings_filepath = os.path.join(OUTPUTS_DIRPATH, postprocessings_filename)
-                postprocessings_df = pd.read_csv(postprocessings_filepath)
-                postprocessings_file_basename = postprocessings_filename.split('.')[0]
-                postprocessings_df_dict[postprocessings_file_basename] = postprocessings_df
+                postprocessing_filepath = os.path.join(OUTPUTS_DIRPATH, postprocessing_filename)
+                postprocessing_df = pd.read_csv(postprocessing_filepath)
+                postprocessing_file_basename = postprocessing_filename.split('.')[0]
+                postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
                 
-            print 'Retrieve last computed post-processings dataframes... DONE!'    
+            print 'Retrieve last computed post-processing dataframes... DONE!'    
         
         
         print 'Generate graphs for validation...'
         
-        cnwheat_postprocessings.generate_graphs(hiddenzones_df=postprocessings_df_dict[HIDDENZONES_POSTPROCESSINGS_FILENAME.split('.')[0]],
-                                                organs_df=postprocessings_df_dict[ORGANS_POSTPROCESSINGS_FILENAME.split('.')[0]],
-                                                elements_df=postprocessings_df_dict[ELEMENTS_POSTPROCESSINGS_FILENAME.split('.')[0]],
-                                                soils_df=postprocessings_df_dict[SOILS_POSTPROCESSINGS_FILENAME.split('.')[0]],
+        cnwheat_postprocessing.generate_graphs(hiddenzones_df=postprocessing_df_dict[HIDDENZONES_POSTPROCESSING_FILENAME.split('.')[0]],
+                                                organs_df=postprocessing_df_dict[ORGANS_POSTPROCESSING_FILENAME.split('.')[0]],
+                                                elements_df=postprocessing_df_dict[ELEMENTS_POSTPROCESSING_FILENAME.split('.')[0]],
+                                                soils_df=postprocessing_df_dict[SOILS_POSTPROCESSING_FILENAME.split('.')[0]],
                                                 graphs_dirpath=GRAPHS_DIRPATH)
         
         print 'Generate graphs for validation... DONE!'
         
 
 if __name__ == '__main__':
-    main(48, run_simu=True, run_postprocessings=False, generate_graphs=False)
+    main(48, run_simu=True, run_postprocessing=False, generate_graphs=False)
     
