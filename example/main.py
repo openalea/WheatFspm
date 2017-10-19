@@ -324,5 +324,5 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         
 
 if __name__ == '__main__':
-    main(4, run_simu=True, run_postprocessing=True, generate_graphs=True)
+    main(48, run_simu=True, run_postprocessing=True, generate_graphs=True)
     
