@@ -960,15 +960,18 @@ class Simulation(object):
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is not None:
                             for element in (organ.exposed_element, organ.enclosed_element):
-                                if element is not None: # and element.green_area != 0:
+                                if element is not None and element.green_area != 0:
                                     element.Transpiration = element.calculate_Total_Transpiration(element.Tr, element.green_area)
                                     axis.Total_Transpiration += element.Transpiration
                                     total_green_area += element.green_area
 
-                total_surfacic_transpiration = axis.Total_Transpiration/total_green_area #: total transpiration rate of plant per unit area (mmol m-2 s-1)
+                if total_green_area == 0.0:
+                    total_surfacic_transpiration = 0.0
+                else:
+                    total_surfacic_transpiration = axis.Total_Transpiration/total_green_area #: total transpiration rate of plant per unit area (mmol m-2 s-1)
 
                 # Compute the regulating factor of root exports by shoot transpiration
-                axis.roots.regul_transpiration = axis.roots.calculate_regul_transpiration(axis.Total_Transpiration)
+                axis.roots.regul_transpiration = axis.roots.calculate_regul_transpiration(total_surfacic_transpiration)
 
                 # compute the flows from/to the roots to/from photosynthetic organs
                 axis.roots.Uptake_Nitrates, axis.roots.HATS_LATS = axis.roots.calculate_Uptake_Nitrates(soil.Conc_Nitrates_Soil, axis.roots.nitrates, axis.roots.sucrose, self.delta_t)
