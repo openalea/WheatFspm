@@ -7,13 +7,13 @@
     
     CN-Wheat computes the CN exchanges in a wheat architecture. See:
     
-        * :mod:`cnwheat.converter` for functions to convert CN-Wheat inputs/outputs to/from Pandas dataframes,
-        * :mod:`cnwheat.model` for the equations of the model,
-        * :mod:`cnwheat.parameters` for the parameters of the model,
-        * :mod:`cnwheat.postprocessing` for post-processing and graphs functions,
-        * :mod:`cnwheat.simulation` for the front-end of the model,
-        * and :mod:`cnwheat.tools` for tools to help for the validation of the outputs. 
-         
+        * :mod:`cnwheat.simulation`: the simulator (front-end) to run the model,
+        * :mod:`cnwheat.model`: the state and the equations of the model,
+        * :mod:`cnwheat.parameters`: the parameters of the model,
+        * :mod:`cnwheat.postprocessing`: the post-processing and graph functions,
+        * :mod:`cnwheat.tools`: tools to help for the validation of the outputs,
+        * and :mod:`cnwheat.converter`: functions to convert CN-Wheat inputs/outputs to/from Pandas dataframes.
+
     :copyright: Copyright 2014-2017 INRA-ECOSYS, see AUTHORS.
     :license: CeCILL-C, see LICENSE for details.
     

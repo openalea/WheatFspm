@@ -148,7 +148,8 @@ def test_run():
     # force the senescence and photosynthesis of the population
     force_senescence_and_photosynthesis(0, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped)
     
-    #TODO: shouldn't we call "simulation_.initialize(population, soils)" here, to reinitialize the simulation from forced population and soils?
+    # reinitialize the simulation from forced population and soils
+    simulation_.initialize(population, soils)
 
     # run the model on the time grid
     for t in time_grid:
@@ -171,7 +172,8 @@ def test_run():
             
             # force the senescence and photosynthesis of the population
             force_senescence_and_photosynthesis(t, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped)
-            #TODO: shouldn't we call "simulation_.initialize(population, soils)" here, to reinitialize the simulation from forced population and soils?
+            # reinitialize the simulation from forced population and soils
+            simulation_.initialize(population, soils)
     
     # compare actual to desired outputs at each scale level (an exception is raised if the test failed)  
     for (outputs_df_list, 

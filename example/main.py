@@ -62,6 +62,9 @@ HIDDENZONES_OUTPUTS_FILENAME = 'hiddenzones_outputs.csv'
 ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
 SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
 
+# post-processing directory path
+POSTPROCESSING_DIRPATH = 'postprocessing'
+
 # CSV file paths to save the post-processing of the model in
 AXES_POSTPROCESSING_FILENAME = 'axes_postprocessing.csv'
 ORGANS_POSTPROCESSING_FILENAME = 'organs_postprocessing.csv'
@@ -170,7 +173,8 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         # force the senescence and photosynthesis of the population
         force_senescence_and_photosynthesis(0, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped)
     
-        #TODO: shouldn't we call "simulation_.initialize(population, soils)" here, to reinitialize the simulation from forced population and soils?
+        # reinitialize the simulation from forced population and soils
+        simulation_.initialize(population, soils)
         
         print 'Prepare the simulation... DONE!'
         
@@ -198,7 +202,8 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
                 
                 # force the senescence and photosynthesis of the population
                 force_senescence_and_photosynthesis(t, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped)
-                #TODO: shouldn't we call "simulation_.initialize(population, soils)" here, to reinitialize the simulation from forced population and soils?
+                # reinitialize the simulation from forced population and soils
+                simulation_.initialize(population, soils)
             
         print 'Run the simulation... DONE!'
         
@@ -279,7 +284,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
                                                                         (elements_postprocessing_file_basename, ELEMENTS_POSTPROCESSING_FILENAME),
                                                                         (soils_postprocessing_file_basename, SOILS_POSTPROCESSING_FILENAME)):
             
-            postprocessing_filepath = os.path.join(OUTPUTS_DIRPATH, postprocessing_filename)
+            postprocessing_filepath = os.path.join(POSTPROCESSING_DIRPATH, postprocessing_filename)
             postprocessing_df_dict[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
             
         print 'Write the postprocessing to CSV files... DONE!'
@@ -299,7 +304,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
                                              ELEMENTS_POSTPROCESSING_FILENAME,
                                              SOILS_POSTPROCESSING_FILENAME):
                 
-                postprocessing_filepath = os.path.join(OUTPUTS_DIRPATH, postprocessing_filename)
+                postprocessing_filepath = os.path.join(POSTPROCESSING_DIRPATH, postprocessing_filename)
                 postprocessing_df = pd.read_csv(postprocessing_filepath)
                 postprocessing_file_basename = postprocessing_filename.split('.')[0]
                 postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
@@ -319,5 +324,5 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         
 
 if __name__ == '__main__':
-    main(48, run_simu=True, run_postprocessing=False, generate_graphs=False)
+    main(4, run_simu=True, run_postprocessing=True, generate_graphs=True)
     

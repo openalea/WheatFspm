@@ -5,7 +5,7 @@
     ~~~~~~~~~~~~~~~~~
 
     The module :mod:`cnwheat.converter` defines functions to convert
-    :class:`dataframes <pandas.DataFrame>` to/from CNWheat inputs or outputs format.
+    :class:`dataframes <pandas.DataFrame>` to/from CN-Wheat inputs or outputs format.
 
     :copyright: Copyright 2014-2017 INRA-ECOSYS, see AUTHORS.
     :license: CeCILL-C, see LICENSE for details.
@@ -52,12 +52,12 @@ ELEMENTS_VARIABLES = simulation.Simulation.ELEMENTS_INDEXES + simulation.Simulat
 #: the columns of the outputs dataframe at SOIL scale
 SOILS_VARIABLES = simulation.Simulation.SOILS_INDEXES + simulation.Simulation.SOILS_RUN_VARIABLES
 
-#: the mapping of the CNWheat organ classes to organ names in MTG
+#: the mapping of the CN-Wheat organ classes to organ names in MTG
 CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING = {model.Internode: 'internode', model.Lamina: 'blade',
                                          model.Sheath: 'sheath', model.Peduncle: 'peduncle', model.Chaff: 'ear',
                                          model.Roots: 'roots', model.Grains: 'grains', model.Phloem: 'phloem', model.HiddenZone: 'hiddenzone'}
 
-#: the mapping of the name of each element, from MTG to CNWheat
+#: the mapping of the name of each element, from MTG to CN-Wheat
 MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING = {'HiddenElement': 'enclosed_element', 'StemElement': 'exposed_element', 'LeafElement1': 'exposed_element'}
 
 
@@ -185,14 +185,14 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
 
 def to_dataframes(population=None, soils=None):
     """
-    Convert a CNWheat :class:`population <model.Population>` and/or a dictionary of :class:`soils <model.Soil>` to Pandas dataframes.
+    Convert a CN-Wheat :class:`population <model.Population>` and/or a dictionary of :class:`soils <model.Soil>` to Pandas dataframes.
     
     If `population` is not None, convert `population` to Pandas dataframes.
     If `soils` is not None, convert `soils` to Pandas dataframe.
 
     :Parameters:
 
-        - `population` (:class:`model.Population`) - The CNWheat population to convert.
+        - `population` (:class:`model.Population`) - The CN-Wheat population to convert.
 
         - `soils` (:class:`dict` of `model.Soil`) - The soils to convert.
 

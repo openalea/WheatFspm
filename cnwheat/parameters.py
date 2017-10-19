@@ -67,7 +67,8 @@ class PopulationParameters(object):
     """
     def __init__(self):
         pass
-    
+
+#: The instance of class :class:`cnwheat.parameters.PopulationParameters` for current process
 POPULATION_PARAMETERS = PopulationParameters()
 
 
@@ -77,7 +78,8 @@ class PlantParameters(object):
     """
     def __init__(self):
         pass
-        
+
+#: The instance of class :class:`cnwheat.parameters.PlantParameters` for current process
 PLANT_PARAMETERS = PlantParameters()
 
 
@@ -87,7 +89,8 @@ class AxisParameters(object):
     """
     def __init__(self):
         self.ALPHA = 1                          #: Proportion of the structural mass containing the substrates
-        
+
+#: The instance of class :class:`cnwheat.parameters.AxisParameters` for current process   
 AXIS_PARAMETERS = AxisParameters() 
 
 
@@ -97,7 +100,8 @@ class PhytomerParameters(object):
     """
     def __init__(self):
         pass
-    
+
+#: The instance of class :class:`cnwheat.parameters.PhytomerParameters` for current process
 PHYTOMER_PARAMETERS = PhytomerParameters()
 
 
@@ -106,28 +110,30 @@ class HiddenZoneParameters(object):
     Internal parameters of hidden growing zones.
     """
     def __init__(self):
-        self.SIGMA = 5E-2                          #: Coefficient de diffusion surfacique. Utilisé dans la loi de Fick (g m-2 s-1)
-        self.Vmax_Regul_Sfructans = 1
-        self.K_Regul_Sfructans = 0.5
-        self.n_Regul_Sfructans = 15
-        self.Vmax_Sfructans = 0.2 # µmol/g/s
-        self.delta_Dproteins = 1.85e-06
-        
+        self.SIGMA = 5E-2                          #: Coefficient of surface diffusion. Used in Fick's law (g m-2 s-1).
+        self.Vmax_Regul_Sfructans = 1 #: Maximal rate of fructan synthesis in the regulation function of fructan synthesis (µmol C s-1 g-1 MS)
+        self.K_Regul_Sfructans = 0.5 #: Affinity coefficient of the regulation function of fructan synthesis (µmol g-1 MS)
+        self.n_Regul_Sfructans = 15 #: Parameter of the regulation function of fructan synthesis (dimensionless)
+        self.Vmax_Sfructans = 0.2 #: Maximal rate of fructan synthesis (µmol C s-1 g-1 MS)
+        self.delta_Dproteins = 1.85e-06 #: Relative rate of proteins degradation (s-1)
+
+#: The instance of class :class:`cnwheat.parameters.HiddenZoneParameters` for current process
 HIDDEN_ZONE_PARAMETERS = HiddenZoneParameters()
 
 
 class HiddenZoneInitCompartments(object):
     """
-    Initial values for hidden zones
+    Initial values for compartments of hidden zones.
     """
     def __init__(self):
-        self.sucrose = 1E-3      #: µmol C
-        self.fructan = 0         #: µmol C
-        self.amino_acids = 1E-3  #: µmol N
-        self.proteins = 0        #: µmol N
-        self.mstruct = 6.39E-08  #: g
-        self.Nstruct = 2.06E-09  #: g
-        
+        self.sucrose = 1E-3      #: initial value of sucrose (µmol C)
+        self.fructan = 0         #: initial value of fructan (µmol C)
+        self.amino_acids = 1E-3  #: initial value of amino_acids (µmol N)
+        self.proteins = 0        #: initial value of proteins (µmol N)
+        self.mstruct = 6.39E-08  #: initial value of mstruct (g)
+        self.Nstruct = 2.06E-09  #: initial value of Nstruct (g)
+
+#: The instance of class :class:`cnwheat.parameters.HiddenZoneInitCompartments` for current process
 HIDDEN_ZONE_INIT_COMPARTMENTS = HiddenZoneInitCompartments()
 
 
@@ -137,18 +143,20 @@ class PhloemParameters(object):
     """
     def __init__(self):
         self.ALPHA = 1 #: Proportion of structural mass containing substrate
-        
+
+#: The instance of class :class:`cnwheat.parameters.PhloemParameters` for current process
 PHLOEM_PARAMETERS = PhloemParameters()
         
 
 class PhloemInitCompartments(object):
     """
-    Initial values for phloem
+    Initial values for compartments of phloem.
     """
     def __init__(self):
-        self.sucrose = 500       #: µmol C
-        self.amino_acids = 100   #: µmol N
-        
+        self.sucrose = 500       #: initial value of sucrose (µmol C)
+        self.amino_acids = 100   #: initial value of amino_acids (µmol N)
+
+#: The instance of class :class:`cnwheat.parameters.PhloemInitCompartments` for current process
 PHLOEM_INIT_COMPARTMENTS = PhloemInitCompartments()
 
 
@@ -169,20 +177,22 @@ class GrainsParameters(object):
     
         self.FILLING_INIT = 360 * 3600                   #: Time (s) at which phloem loading switch from grain structure to accumulation of starch
         self.FILLING_END = 900 * 3600                    #: Time (s) at which grains filling stops. (Bertheloot et al., 2011)
-        
+
+#: The instance of class :class:`cnwheat.parameters.GrainsParameters` for current process
 GRAINS_PARAMETERS = GrainsParameters()
 
 
 class GrainsInitCompartments(object):
     """
-    Initial values for grains
+    Initial values for compartments of grains.
     """
     def __init__(self):
-        self.age_from_flowering = 0 #: second
-        self.starch = 0             #: µmol C
-        self.structure = 1          #: µmol C
-        self.proteins = 0           #: µmol N
-        
+        self.age_from_flowering = 0 #: initial value of age_from_flowering (s)
+        self.starch = 0             #: initial value of starch (µmol C)
+        self.structure = 1          #: initial value of structure (µmol C)
+        self.proteins = 0           #: initial value of proteins (µmol N)
+
+#: The instance of class :class:`cnwheat.parameters.GrainsInitCompartments` for current process
 GRAINS_INIT_COMPARTMENTS = GrainsInitCompartments()
 
 
@@ -231,22 +241,24 @@ class RootsParameters(object):
         self.N_SUC_CYTOKININS = 10           #: A parameter for cytokinins synthesis (dimensionless)
         self.N_NIT_CYTOKININS = 0.7          #: A parameter for cytokinins synthesis (dimensionless)
         self.K_CYTOKININS_EXPORT = 2E-4      #: Relative rate of cytokinins export from roots (s-1)
-        
+
+#: The instance of class :class:`cnwheat.parameters.RootsParameters` for current process
 ROOTS_PARAMETERS = RootsParameters()
 
 
 class RootsInitCompartments(object):
     """
-    Initial values for roots
+    Initial values for compartments of roots.
     """
     def __init__(self):
-        self.sucrose = 0       #: µmol C
-        self.nitrates = 0      #: µmol C
-        self.amino_acids = 0   #: µmol N
-        self.cytokinins = 0    #: AU
-        self.mstruct = 0.15    #: g
-        self.Nstruct = 0.0045  #: g
+        self.sucrose = 0       #: initial value of sucrose (µmol C)
+        self.nitrates = 0      #: initial value of nitrates (µmol C)
+        self.amino_acids = 0   #: initial value of amino_acids (µmol N)
+        self.cytokinins = 0    #: initial value of cytokinins (AU)
+        self.mstruct = 0.15    #: initial value of mstruct (g)
+        self.Nstruct = 0.0045  #: initial value of Nstruct (g)
         
+#: The instance of class :class:`cnwheat.parameters.RootsInitCompartments` for current process
 ROOTS_INIT_COMPARTMENTS = RootsInitCompartments()
  
 
@@ -291,7 +303,8 @@ class PhotosyntheticOrganParameters(object):
     
         # cytokinins
         self.DELTA_D_CYTOKININS = 3.E-6      #: Relative rate of cytokinins degradation (s-1)
-        
+
+#: The instance of class :class:`cnwheat.parameters.PhotosyntheticOrganParameters` for current process
 PHOTOSYNTHETIC_ORGAN_PARAMETERS = PhotosyntheticOrganParameters()
 
 
@@ -301,7 +314,8 @@ class ChaffParameters(PhotosyntheticOrganParameters):
     """
     def __init__(self):
         pass
-    
+
+#: The instance of class :class:`cnwheat.parameters.ChaffParameters` for current process
 CHAFF_PARAMETERS = ChaffParameters()
 
 
@@ -311,7 +325,8 @@ class LaminaParameters(PhotosyntheticOrganParameters):
     """
     def __init__(self):
         pass
-    
+
+#: The instance of class :class:`cnwheat.parameters.LaminaParameters` for current process
 LAMINA_PARAMETERS = LaminaParameters()
 
 
@@ -321,7 +336,8 @@ class InternodeParameters(PhotosyntheticOrganParameters):
     """
     def __init__(self):
         pass
-    
+
+#: The instance of class :class:`cnwheat.parameters.InternodeParameters` for current process
 INTERNODE_PARAMETERS = InternodeParameters()
 
 
@@ -331,7 +347,8 @@ class PeduncleParameters(PhotosyntheticOrganParameters):
     """
     def __init__(self):
         pass
-    
+
+#: The instance of class :class:`cnwheat.parameters.PeduncleParameters` for current process
 PEDUNCLE_PARAMETERS = PeduncleParameters()
 
 
@@ -341,7 +358,8 @@ class SheathParameters(PhotosyntheticOrganParameters):
     """
     def __init__(self):
         pass
-    
+
+#: The instance of class :class:`cnwheat.parameters.SheathParameters` for current process
 SHEATH_PARAMETERS = SheathParameters()
 
 
@@ -351,33 +369,35 @@ class PhotosyntheticOrganElementParameters(object):
     """
     def __init__(self):
         pass
-    
+
+#: The instance of class :class:`cnwheat.parameters.PhotosyntheticOrganElementParameters` for current process
 PHOTOSYNTHETIC_ORGAN_ELEMENT_PARAMETERS = PhotosyntheticOrganElementParameters()
 
 
 class PhotosyntheticOrganElementInitCompartments(object):
     """
-    Initial values for photosynthetic organ elements.
+    Initial values for compartments of photosynthetic organ elements.
     """
     def __init__(self):
-        self.green_area = 1E-4  #: m2
-        self.mstruct = 5E-3     #: g
-        self.Nstruct = 1E-3     #: g
+        self.green_area = 1E-4  #: initial value of green_area (m2)
+        self.mstruct = 5E-3     #: initial value of mstruct (g)
+        self.Nstruct = 1E-3     #: initial value of Nstruct (g)
 
-        self.triosesP = 0       #: µmol C
-        self.starch = 0         #: µmol C
-        self.sucrose = 0        #: µmol C
-        self.fructan = 0        #: µmol C
-        self.nitrates = 0       #: µmol N
-        self.amino_acids = 0    #: µmol N
-        self.proteins = 0       #: µmol N
-        self.cytokinins = 15    #: AU
+        self.triosesP = 0       #: initial value of triosesP (µmol C)
+        self.starch = 0         #: initial value of starch (µmol C)
+        self.sucrose = 0        #: initial value of sucrose (µmol C)
+        self.fructan = 0        #: initial value of fructan (µmol C)
+        self.nitrates = 0       #: initial value of nitrates (µmol N)
+        self.amino_acids = 0    #: initial value of amino_acids (µmol N)
+        self.proteins = 0       #: initial value of proteins (µmol N)
+        self.cytokinins = 15    #: initial value of cytokinins (AU)
 
-        self.is_growing = False #: Flag indicating if the element is growing or not (:class:`bool`)
-        self.Tr = 0             #: Transpiration rate (mmol m-2 s-1)
-        self.Ag = 0             #: Gross assimilation (µmol m-2 s-1)
-        self.Ts = 15            #: Organ temperature (degree Celsius)
-        
+        self.is_growing = False #: initial value of is_growing (Flag indicating if the element is growing or not (:class:`bool`)
+        self.Tr = 0             #: initial value of Tr (Transpiration rate (mmol m-2 s-1)
+        self.Ag = 0             #: initial value of Ag (Gross assimilation (µmol m-2 s-1)
+        self.Ts = 15            #: initial value of Ts (Organ temperature (degree Celsius)
+
+#: The instance of class :class:`cnwheat.parameters.PhotosyntheticOrganElementInitCompartments` for current process
 PHOTOSYNTHETIC_ORGAN_ELEMENT_INIT_COMPARTMENTS = PhotosyntheticOrganElementInitCompartments()
 
 
@@ -387,7 +407,8 @@ class ChaffElementParameters(PhotosyntheticOrganElementParameters):
     """
     def __init__(self):
         self.ALPHA = 1 #: Proportion of structural mass containing substrate
-        
+
+#: The instance of class :class:`cnwheat.parameters.ChaffElementParameters` for current process
 CHAFF_ELEMENT_PARAMETERS = ChaffElementParameters()
 
 
@@ -397,7 +418,8 @@ class LaminaElementParameters(PhotosyntheticOrganElementParameters):
     """
     def __init__(self):
         self.ALPHA = 1 #: Proportion of structural mass containing substrate
-        
+
+#: The instance of class :class:`cnwheat.parameters.LaminaElementParameters` for current process
 LAMINA_ELEMENT_PARAMETERS = LaminaElementParameters()
 
 
@@ -407,7 +429,8 @@ class InternodeElementParameters(PhotosyntheticOrganElementParameters):
     """
     def __init__(self):
         self.ALPHA = 1 #: Proportion of structural mass containing substrate
-        
+
+#: The instance of class :class:`cnwheat.parameters.InternodeElementParameters` for current process
 INTERNODE_ELEMENT_PARAMETERS = InternodeElementParameters()
 
 
@@ -417,7 +440,8 @@ class PeduncleElementParameters(PhotosyntheticOrganElementParameters):
     """
     def __init__(self):
         self.ALPHA = 1 #: Proportion of structural mass containing substrate
-        
+
+#: The instance of class :class:`cnwheat.parameters.PeduncleElementParameters` for current process
 PEDUNCLE_ELEMENT_PARAMETERS = PeduncleElementParameters()
 
 
@@ -427,7 +451,8 @@ class SheathElementParameters(PhotosyntheticOrganElementParameters):
     """
     def __init__(self):
         self.ALPHA = 1 #: Proportion of structural mass containing substrate
-        
+
+#: The instance of class :class:`cnwheat.parameters.SheathElementParameters` for current process
 SHEATH_ELEMENT_PARAMETERS = SheathElementParameters()
 
 
@@ -437,6 +462,7 @@ class SoilParameters(object):
     """
     def __init__(self):
         self.MINERALISATION_RATE = 2.05E-6           # Mineralisation rate (µmol N nitrates m-3 s-1)
-    
+
+#: The instance of class :class:`cnwheat.parameters.SoilParameters` for current process
 SOIL_PARAMETERS = SoilParameters()
     
