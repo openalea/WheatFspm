@@ -72,7 +72,7 @@ SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(SENESCWHEAT_INPUTS_DIRPATH, 
 # elongwheat inputs at t0
 ELONGWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'elongwheat')
 ELONGWHEAT_HIDDENZONE_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
-ELONGWHEAT_ORGANS_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'organs_inputs.csv')
+ELONGWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'elements_inputs.csv')
 ELONGWHEAT_SAM_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 
 # growthwheat inputs at t0
@@ -160,13 +160,13 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         # elongwheat
         elongwheat_hiddenzones_inputs_t0 = pd.read_csv(ELONGWHEAT_HIDDENZONE_INPUTS_FILEPATH)
-        elongwheat_organ_inputs_t0 = pd.read_csv(ELONGWHEAT_ORGANS_INPUTS_FILEPATH)
+        elongwheat_element_inputs_t0 = pd.read_csv(ELONGWHEAT_ELEMENTS_INPUTS_FILEPATH)
         elongwheat_SAM_inputs_t0 = pd.read_csv(ELONGWHEAT_SAM_INPUTS_FILEPATH)
         elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
                                                                 elongwheat_ts * hour_to_second_conversion_factor,
                                                                 elongwheat_SAM_inputs_t0,
                                                                 elongwheat_hiddenzones_inputs_t0,
-                                                                elongwheat_organ_inputs_t0,
+                                                                elongwheat_element_inputs_t0,
                                                                 shared_SAM_inputs_outputs_df,
                                                                 shared_hiddenzones_inputs_outputs_df,
                                                                 shared_elements_inputs_outputs_df,
@@ -247,10 +247,10 @@ def main(stop_time, run_simu=True, make_graphs=True):
                     for t_elongwheat in xrange(t_farquharwheat, t_farquharwheat + farquharwheat_ts, elongwheat_ts):
                         print('t elongwheat is {}'.format(t_elongwheat))
                         # run ElongWheat
-                        Ta, Ts = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']] # TODO: Add soil temperature in the weather input file
-                        elongwheat_facade_.run(Ta, Ts)
+                        Ta, Tsol = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']] # TODO: Add soil temperature in the weather input file
+                        elongwheat_facade_.run(Ta, Tsol)
                         # Update geometry
-#                        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
+                        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
                         #adel_wheat.plot(g)
 ##                        adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
@@ -413,4 +413,4 @@ def main(stop_time, run_simu=True, make_graphs=True):
                           explicit_label=False)
 
 if __name__ == '__main__':
-    main(2, run_simu=True, make_graphs=True)
+    main(2, run_simu=True, make_graphs=False)

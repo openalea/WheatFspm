@@ -246,34 +246,27 @@ class CNWheatFacade(object):
                                 cnwheat_element_data_dict = {}
                                 for cnwheat_element_data_name in simulation.Simulation.ELEMENTS_STATE:
                                     cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_properties[cnwheat_element_data_name]
-
-                                    ##MG
-                                    if math.isnan(mtg_element_properties[cnwheat_element_data_name]) or mtg_element_properties[cnwheat_element_data_name] == None:
-                                       print(mtg_element_vid)
-                                       print(mtg_element_label)
-                                       print(cnwheat_element_data_name)
-
                                 cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
                                 setattr(cnwheat_organ, converter.MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
-                            elif mtg_plant_index == 1 and mtg_axis_label == 'MS' and mtg_metamer_index == 4 and mtg_organ_label == 'blade' and mtg_element_label == 'LeafElement1':
-                                # TODO: temporary ; replace 'CNWHEAT_ELEMENT_PROPERTIES_TEMP' by default values
-                                CNWHEAT_ELEMENT_PROPERTIES_TEMP = {'nitrates': 0, 'Ag': 0, 'starch': 0, 'proteins': 0, 'fructan': 0, 'Tr': 0, 'Ts': 18, 'cytokinins': 0, 'triosesP': 0}
-                                has_valid_element = True
-                                cnwheat_element_data_dict = {}
-                                for cnwheat_element_data_name in simulation.Simulation.ELEMENTS_STATE:
-                                    if cnwheat_element_data_name in mtg_element_properties:
-                                        cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_properties[cnwheat_element_data_name]
-
-                                        ##MG
-                                        if math.isnan(mtg_element_properties[cnwheat_element_data_name]) or mtg_element_properties[cnwheat_element_data_name] == None:
-                                           print(mtg_element_vid)
-                                           print(mtg_element_label)
-                                           print(cnwheat_element_data_name)
-
-                                    else:
-                                        cnwheat_element_data_dict[cnwheat_element_data_name] = CNWHEAT_ELEMENT_PROPERTIES_TEMP[cnwheat_element_data_name]
-                                cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
-                                setattr(cnwheat_organ, converter.MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
+##                            elif mtg_plant_index == 1 and mtg_axis_label == 'MS' and mtg_metamer_index == 4 and mtg_organ_label == 'blade' and mtg_element_label == 'LeafElement1':
+##                                # TODO: temporary ; replace 'CNWHEAT_ELEMENT_PROPERTIES_TEMP' by default values
+##                                CNWHEAT_ELEMENT_PROPERTIES_TEMP = {'nitrates': 0, 'Ag': 0, 'starch': 0, 'proteins': 0, 'fructan': 0, 'Tr': 0, 'Ts': 18, 'cytokinins': 0, 'triosesP': 0}
+##                                has_valid_element = True
+##                                cnwheat_element_data_dict = {}
+##                                for cnwheat_element_data_name in simulation.Simulation.ELEMENTS_STATE:
+##                                    if cnwheat_element_data_name in mtg_element_properties:
+##                                        cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_properties[cnwheat_element_data_name]
+##
+##                                        ##MG
+##                                        if math.isnan(mtg_element_properties[cnwheat_element_data_name]) or mtg_element_properties[cnwheat_element_data_name] == None:
+##                                           print(mtg_element_vid)
+##                                           print(mtg_element_label)
+##                                           print(cnwheat_element_data_name)
+##
+##                                    else:
+##                                        cnwheat_element_data_dict[cnwheat_element_data_name] = CNWHEAT_ELEMENT_PROPERTIES_TEMP[cnwheat_element_data_name]
+##                                cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
+##                                setattr(cnwheat_organ, converter.MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
 
                         if has_valid_element:
                             has_valid_organ = True
