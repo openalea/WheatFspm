@@ -43,8 +43,10 @@ import cnwheat_facade, elongwheat_facade, farquharwheat_facade, growthwheat_faca
 random.seed(1234)
 np.random.seed(1234)
 
+# number of seconds in 1 hour  
+HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
+
 INPUTS_DIRPATH = 'inputs'
-GRAPHS_DIRPATH = 'graphs'
 
 # adelwheat inputs at t0
 ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat') # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
@@ -90,6 +92,16 @@ HIDDENZONES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hiddenzones_states.
 ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'elements_states.csv')
 SOILS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'soils_states.csv')
 
+# post-processing directory path
+POSTPROCESSING_DIRPATH = 'postprocessing'
+AXES_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'axes_postprocessing.csv')
+ORGANS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'organs_postprocessing.csv')
+HIDDENZONES_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'hiddenzones_postprocessing.csv')
+ELEMENTS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'elements_postprocessing.csv')
+SOILS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'soils_postprocessing.csv')
+
+GRAPHS_DIRPATH = 'graphs'
+
 AXES_INDEX_COLUMNS = ['t','plant','axis']
 ELEMENTS_INDEX_COLUMNS = ['t','plant','axis', 'metamer', 'organ', 'element']
 HIDDENZONES_INDEX_COLUMNS = ['t','plant','axis', 'metamer']
@@ -105,8 +117,8 @@ INPUTS_OUTPUTS_PRECISION = 5 # 10
 LOGGING_CONFIG_FILEPATH = os.path.join('..', '..', 'logging.json')
 
 LOGGING_LEVEL = logging.INFO # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
-
-def main(stop_time, run_simu=True, make_graphs=True):
+ 
+def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True):
     if run_simu:
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
 
@@ -119,8 +131,6 @@ def main(stop_time, run_simu=True, make_graphs=True):
         elongwheat_ts = 1
         growthwheat_ts = 1
         cnwheat_ts = 1
-
-        hour_to_second_conversion_factor = 3600
 
         # read adelwheat inputs at t0
         adel_wheat = AdelWheatDyn(seed=1234, convUnit=1)
@@ -146,7 +156,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         senescwheat_roots_inputs_t0 = pd.read_csv(SENESCWHEAT_ROOTS_INPUTS_FILEPATH)
         senescwheat_elements_inputs_t0 = pd.read_csv(SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH)
         senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
-                                                                   senescwheat_ts * hour_to_second_conversion_factor,
+                                                                   senescwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                    senescwheat_roots_inputs_t0,
                                                                    senescwheat_elements_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
@@ -163,7 +173,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         elongwheat_element_inputs_t0 = pd.read_csv(ELONGWHEAT_ELEMENTS_INPUTS_FILEPATH)
         elongwheat_SAM_inputs_t0 = pd.read_csv(ELONGWHEAT_SAM_INPUTS_FILEPATH)
         elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
-                                                                elongwheat_ts * hour_to_second_conversion_factor,
+                                                                elongwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                 elongwheat_SAM_inputs_t0,
                                                                 elongwheat_hiddenzones_inputs_t0,
                                                                 elongwheat_element_inputs_t0,
@@ -177,7 +187,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         growthwheat_organ_inputs_t0 = pd.read_csv(GROWTHWHEAT_ORGANS_INPUTS_FILEPATH)
         growthwheat_root_inputs_t0 = pd.read_csv(GROWTHWHEAT_ROOTS_INPUTS_FILEPATH)
         growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
-                                                                   growthwheat_ts * hour_to_second_conversion_factor,
+                                                                   growthwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                    growthwheat_hiddenzones_inputs_t0,
                                                                    growthwheat_organ_inputs_t0,
                                                                    growthwheat_root_inputs_t0,
@@ -191,7 +201,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         cnwheat_elements_inputs_t0 = pd.read_csv(CNWHEAT_ELEMENTS_INPUTS_FILEPATH)
         cnwheat_soils_inputs_t0 = pd.read_csv(CNWHEAT_SOILS_INPUTS_FILEPATH)
         cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
-                                                       cnwheat_ts * hour_to_second_conversion_factor,
+                                                       cnwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                        CULM_DENSITY,
                                                        cnwheat_organs_inputs_t0,
                                                        cnwheat_hiddenzones_inputs_t0,
@@ -259,9 +269,10 @@ def main(stop_time, run_simu=True, make_graphs=True):
                             print('t growthwheat is {}'.format(t_growthwheat))
                             growthwheat_facade_.run()
                             for t_cnwheat in xrange(t_growthwheat, t_growthwheat + growthwheat_ts, cnwheat_ts):
-                                # run CNWheat
-                                print('t cnwheat is {}'.format(t_cnwheat))
-                                cnwheat_facade_.run()
+                                if t_cnwheat > 0:
+                                    # run CNWheat 
+                                    print('t cnwheat is {}'.format(t_cnwheat))
+                                    cnwheat_facade_.run()
 
                                 # append the inputs and outputs at current step to global lists
                                 all_simulation_steps.append(t_cnwheat)
@@ -280,21 +291,25 @@ def main(stop_time, run_simu=True, make_graphs=True):
         all_axes_inputs_outputs = pd.concat(axes_all_data_list, keys=all_simulation_steps)
         all_axes_inputs_outputs.reset_index(0, inplace=True)
         all_axes_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
+        all_axes_inputs_outputs = all_axes_inputs_outputs.reindex_axis(AXES_INDEX_COLUMNS+all_axes_inputs_outputs.columns.difference(AXES_INDEX_COLUMNS).tolist(), axis=1, copy=False)
         all_axes_inputs_outputs.to_csv(AXES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps)
         all_organs_inputs_outputs.reset_index(0, inplace=True)
         all_organs_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
+        all_organs_inputs_outputs = all_organs_inputs_outputs.reindex_axis(ORGANS_INDEX_COLUMNS+all_organs_inputs_outputs.columns.difference(ORGANS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
         all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_hiddenzones_inputs_outputs = pd.concat(hiddenzones_all_data_list, keys=all_simulation_steps)
         all_hiddenzones_inputs_outputs.reset_index(0, inplace=True)
         all_hiddenzones_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
+        all_hiddenzones_inputs_outputs = all_hiddenzones_inputs_outputs.reindex_axis(HIDDENZONES_INDEX_COLUMNS+all_hiddenzones_inputs_outputs.columns.difference(HIDDENZONES_INDEX_COLUMNS).tolist(), axis=1, copy=False)
         all_hiddenzones_inputs_outputs.to_csv(HIDDENZONES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_SAM_inputs_outputs = pd.concat(SAM_all_data_list, keys=all_simulation_steps)
         all_SAM_inputs_outputs.reset_index(0, inplace=True)
         all_SAM_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
+        all_SAM_inputs_outputs = all_SAM_inputs_outputs.reindex_axis(SAM_INDEX_COLUMNS+all_SAM_inputs_outputs.columns.difference(SAM_INDEX_COLUMNS).tolist(), axis=1, copy=False)
         all_SAM_inputs_outputs.to_csv(SAM_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
@@ -302,115 +317,84 @@ def main(stop_time, run_simu=True, make_graphs=True):
                                                                       (all_elements_inputs_outputs.axis == 'MS')]
         all_elements_inputs_outputs.reset_index(0, inplace=True)
         all_elements_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
+        all_elements_inputs_outputs = all_elements_inputs_outputs.reindex_axis(ELEMENTS_INDEX_COLUMNS+all_elements_inputs_outputs.columns.difference(ELEMENTS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
         all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_soils_inputs_outputs = pd.concat(soils_all_data_list, keys=all_simulation_steps)
         all_soils_inputs_outputs.reset_index(0, inplace=True)
         all_soils_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
+        all_soils_inputs_outputs = all_soils_inputs_outputs.reindex_axis(SOILS_INDEX_COLUMNS+all_soils_inputs_outputs.columns.difference(SOILS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
         all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
-    ########POST-PROCESSING##
-    if make_graphs:
-        from cnwheat import parameters
-        from cnwheat import tools
-        x_name = 't'
-        x_label='Time (Hour)'
 
-        # 1) Photosynthetic organs
-        ph_elements_output_df = pd.read_csv(ELEMENTS_STATES_FILEPATH)
-
-        graph_variables_ph_elements = {'PARa': u'Absorbed PAR (µmol m$^{-2}$ s$^{-1}$)', 'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
-                           'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
-                           'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
-                           'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
-                           'S_Amino_Acids': u'[Rate of amino acids synthesis] (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'D_Proteins': u'Rate of protein degradation (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'k_proteins': u'Relative rate of protein degradation (s$^{-1}$)',
-                           'Loading_Sucrose': u'Loading Sucrose (µmol C sucrose h$^{-1}$)', 'Loading_Amino_Acids': u'Loading Amino acids (µmol N amino acids h$^{-1}$)',
-                           'green_area': u'Green area (m$^{2}$)', 'R_phloem_loading': u'Respiration phloem loading (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)', 'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
-                           'mstruct': u'Structural mass (g)', 'Nstruct': u'Structural N mass (g)',
-                           'Conc_cytokinins':u'[cytokinins] (UA g$^{-1}$ mstruct)', 'D_cytokinins':u'Cytokinin degradation (UA g$^{-1}$ mstruct)', 'cytokinins_import':u'Cytokinin import (UA)'}
-
-
-        for org_ph in (['blade'], ['sheath'], ['internode'], ['peduncle', 'ear']):
-            for variable_name, variable_label in graph_variables_ph_elements.iteritems():
-                graph_name = variable_name + '_' + '_'.join(org_ph) + '.PNG'
-                tools.plot_cnwheat_ouputs(ph_elements_output_df,
-                              x_name = x_name,
-                              y_name = variable_name,
-                              x_label=x_label,
-                              y_label=variable_label,
-                              filters={'organ': org_ph},
-                              plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
-                              explicit_label=False)
-
-        # 2) Roots, grains and phloem
-        organs_output_df = pd.read_csv(ORGANS_STATES_FILEPATH)
-
-        graph_variables_organs = {'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Dry_Mass':'Dry mass (g)',
-                            'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Proteins_N_Mass': u'[N Proteins] (g)',
-                            'Uptake_Nitrates':u'Nitrates uptake (µmol h$^{-1}$)', 'Unloading_Sucrose':u'Unloaded sucrose (µmol C g$^{-1}$ mstruct h$^{-1}$)', 'Unloading_Amino_Acids':u'Unloaded Amino Acids (µmol N AA g$^{-1}$ mstruct h$^{-1}$)',
-                            'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N h$^{-1}$)', 'Export_Nitrates': u'Total export of nitrates (µmol N h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N h$^{-1}$)',
-                            'R_Nnit_upt': u'Respiration nitrates uptake (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)', 'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
-                            'R_grain_growth_struct': u'Respiration grain structural growth (µmol C h$^{-1}$)', 'R_grain_growth_starch': u'Respiration grain starch growth (µmol C h$^{-1}$)',
-                            'R_growth': u'Growth respiration of roots (µmol C h$^{-1}$)', 'mstruct': u'Structural mass (g)',
-                            'C_exudation': u'Carbon lost by root exudation (µmol C g$^{-1}$ mstruct h$^{-1}$', 'N_exudation': u'Nitrogen lost by root exudation (µmol N g$^{-1}$ mstruct h$^{-1}$',
-                            'Conc_cytokinins':u'[cytokinins] (UA g$^{-1}$ mstruct)', 'S_cytokinins':u'Rate of cytokinins synthesis (UA g$^{-1}$ mstruct)', 'Export_cytokinins': 'Export of cytokinins from roots (UA h$^{-1}$)',
-                            'HATS_LATS': u'Potential uptake (µmol h$^{-1}$)' , 'regul_transpiration':'Regulating transpiration function'}
-
-        for org in (['roots'], ['grains'], ['phloem']):
-            for variable_name, variable_label in graph_variables_organs.iteritems():
-                graph_name = variable_name + '_' + '_'.join(org) + '.PNG'
-                tools.plot_cnwheat_ouputs(organs_output_df,
-                              x_name = x_name,
-                              y_name = variable_name,
-                              x_label=x_label,
-                              y_label=variable_label,
-                              filters={'organ': org},
-                              plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
-                              explicit_label=False)
-
-        # 3) Soil
-        soil_output_df = pd.read_csv(SOILS_STATES_FILEPATH)
-
-        fig, (ax1) = plt.subplots(1)
-        conc_nitrates_soil = soil_output_df['Conc_Nitrates_Soil']*14E-6
-        ax1.plot(soil_output_df['t'], conc_nitrates_soil)
-        ax1.set_ylabel(u'[Nitrates] (g m$^{-3}$)')
-        ax1.set_xlabel('Time from flowering (hour)')
-        ax1.set_title = 'Conc Nitrates Soil'
-        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Conc_Nitrates_Soil.PNG'), format='PNG', bbox_inches='tight')
-        plt.close()
-
-        # 4) Hidden zones
-        all_hiddenzones_inputs_outputs_df = pd.read_csv(HIDDENZONES_STATES_FILEPATH)
-        graph_variables_hiddenzones = {'leaf_dist_to_emerge': u'Length for leaf emergence (m)','leaf_L': u'Leaf length (m)', 'delta_leaf_L':u'Delta leaf length (m)',
-                                       'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
-                                        'Unloading_Sucrose':u'Sucrose unloading (µmol C)', 'Unloading_Amino_Acids':u'Amino_acids unloading (µmol N)', 'mstruct': u'Structural mass (g)', 'Respi_growth': u'Growth respiration (µmol C)', 'sucrose_consumption_mstruct': u'Consumption of sucrose for growth (µmol C)'}
-
-        for variable_name, variable_label in graph_variables_hiddenzones.iteritems():
-            graph_name = variable_name + '_hz' + '.PNG'
-            tools.plot_cnwheat_ouputs(all_hiddenzones_inputs_outputs_df,
-                          x_name = x_name,
-                          y_name = variable_name,
-                          x_label = x_label,
-                          y_label = variable_label,
-                          filters={'plant': 1, 'axis': 'MS'},
-                          plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
-                          explicit_label=False)
-
-        # 5) Organs
-        all_organs_inputs_outputs_df = pd.read_csv(ELEMENTS_STATES_FILEPATH)
-        graph_variables_organs = {'visible_length': u'Length (m)'}
-
-        for variable_name, variable_label in graph_variables_organs.iteritems():
-            graph_name = variable_name + '.PNG'
-            tools.plot_cnwheat_ouputs(all_organs_inputs_outputs_df,
-                          x_name = x_name,
-                          y_name = variable_name,
-                          x_label = x_label,
-                          y_label = variable_label,
-                          filters={'plant': 1, 'axis': 'MS'},
-                          plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
-                          explicit_label=False)
-
+    if run_postprocessing:
+        
+        # cnwheat postprocessing only
+        
+        # Retrieve outputs dataframes from precedent simulation run
+        states_df_dict = {}
+        for states_filepath in (AXES_STATES_FILEPATH,
+                                ORGANS_STATES_FILEPATH,
+                                HIDDENZONES_STATES_FILEPATH,
+                                ELEMENTS_STATES_FILEPATH,
+                                SOILS_STATES_FILEPATH):
+            states_df = pd.read_csv(states_filepath)
+            states_file_basename = os.path.basename(states_filepath).split('.')[0]
+            states_df_dict[states_file_basename] = states_df
+        time_grid = states_df_dict.values()[0].t
+        delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
+        
+        # run the postprocessing
+        axes_postprocessing_file_basename = os.path.basename(AXES_POSTPROCESSING_FILEPATH).split('.')[0]
+        hiddenzones_postprocessing_file_basename = os.path.basename(HIDDENZONES_POSTPROCESSING_FILEPATH).split('.')[0]
+        organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
+        elements_postprocessing_file_basename = os.path.basename(ELEMENTS_POSTPROCESSING_FILEPATH).split('.')[0]
+        soils_postprocessing_file_basename = os.path.basename(SOILS_POSTPROCESSING_FILEPATH).split('.')[0]
+        postprocessing_df_dict = {}
+        (postprocessing_df_dict[axes_postprocessing_file_basename], 
+         postprocessing_df_dict[hiddenzones_postprocessing_file_basename], 
+         postprocessing_df_dict[organs_postprocessing_file_basename], 
+         postprocessing_df_dict[elements_postprocessing_file_basename], 
+         postprocessing_df_dict[soils_postprocessing_file_basename]) \
+            = cnwheat_facade.CNWheatFacade.postprocessing(axes_outputs_df=states_df_dict[os.path.basename(AXES_STATES_FILEPATH).split('.')[0]], 
+                                                          hiddenzone_outputs_df=states_df_dict[os.path.basename(HIDDENZONES_STATES_FILEPATH).split('.')[0]], 
+                                                          organs_outputs_df=states_df_dict[os.path.basename(ORGANS_STATES_FILEPATH).split('.')[0]], 
+                                                          elements_outputs_df=states_df_dict[os.path.basename(ELEMENTS_STATES_FILEPATH).split('.')[0]], 
+                                                          soils_outputs_df=states_df_dict[os.path.basename(SOILS_STATES_FILEPATH).split('.')[0]], 
+                                                          delta_t=delta_t)
+        
+        # save the postprocessing to disk
+        for postprocessing_file_basename, postprocessing_filepath in ((axes_postprocessing_file_basename, AXES_POSTPROCESSING_FILEPATH),
+                                                                      (hiddenzones_postprocessing_file_basename, HIDDENZONES_POSTPROCESSING_FILEPATH),
+                                                                      (organs_postprocessing_file_basename, ORGANS_POSTPROCESSING_FILEPATH),
+                                                                      (elements_postprocessing_file_basename, ELEMENTS_POSTPROCESSING_FILEPATH),
+                                                                      (soils_postprocessing_file_basename, SOILS_POSTPROCESSING_FILEPATH)):
+            postprocessing_df_dict[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        
+        
+    if generate_graphs:
+        
+        # Retrieve last computed post-processing dataframes
+        organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
+        hiddenzones_postprocessing_file_basename = os.path.basename(HIDDENZONES_POSTPROCESSING_FILEPATH).split('.')[0]
+        elements_postprocessing_file_basename = os.path.basename(ELEMENTS_POSTPROCESSING_FILEPATH).split('.')[0]
+        soils_postprocessing_file_basename = os.path.basename(SOILS_POSTPROCESSING_FILEPATH).split('.')[0]
+        postprocessing_df_dict = {}
+        for (postprocessing_filepath, postprocessing_file_basename) in ((ORGANS_POSTPROCESSING_FILEPATH, organs_postprocessing_file_basename),
+                                                                        (HIDDENZONES_POSTPROCESSING_FILEPATH, hiddenzones_postprocessing_file_basename),
+                                                                        (ELEMENTS_POSTPROCESSING_FILEPATH, elements_postprocessing_file_basename),
+                                                                        (SOILS_POSTPROCESSING_FILEPATH, soils_postprocessing_file_basename)):
+            postprocessing_df = pd.read_csv(postprocessing_filepath)
+            postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
+                
+        # Generate graphs
+        cnwheat_facade.CNWheatFacade.graphs(hiddenzones_postprocessing_df=postprocessing_df_dict[hiddenzones_postprocessing_file_basename],
+                                            organs_postprocessing_df=postprocessing_df_dict[organs_postprocessing_file_basename],
+                                            elements_postprocessing_df=postprocessing_df_dict[elements_postprocessing_file_basename],
+                                            soils_postprocessing_df=postprocessing_df_dict[soils_postprocessing_file_basename],
+                                            graphs_dirpath=GRAPHS_DIRPATH)
+        
+        
 if __name__ == '__main__':
-    main(2, run_simu=True, make_graphs=False)
+    main(2, run_simu=True, run_postprocessing=True, generate_graphs=True)
+    
