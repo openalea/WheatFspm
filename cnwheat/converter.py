@@ -53,12 +53,12 @@ ELEMENTS_VARIABLES = simulation.Simulation.ELEMENTS_INDEXES + simulation.Simulat
 SOILS_VARIABLES = simulation.Simulation.SOILS_INDEXES + simulation.Simulation.SOILS_RUN_VARIABLES
 
 #: the mapping of the CN-Wheat organ classes to organ names in MTG
-CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING = {model.Internode: 'internode', model.Lamina: 'blade',
+CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING = {model.Internode: 'internode', model.Lamina: 'blade',
                                          model.Sheath: 'sheath', model.Peduncle: 'peduncle', model.Chaff: 'ear',
                                          model.Roots: 'roots', model.Grains: 'grains', model.Phloem: 'phloem', model.HiddenZone: 'hiddenzone'}
 
-#: the mapping of the name of each element, from MTG to CN-Wheat
-MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING = {'HiddenElement': 'enclosed_element', 'StemElement': 'exposed_element', 'LeafElement1': 'exposed_element'}
+#: the mapping of the name of each element, from Dataframe to CN-Wheat
+DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING = {'HiddenElement': 'enclosed_element', 'StemElement': 'exposed_element', 'LeafElement1': 'exposed_element'}
 
 
 def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs=None, soils_inputs=None):
@@ -104,7 +104,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                 axis = model.Axis(axis_label)
                 curr_organs_inputs = organs_inputs[(organs_inputs['plant'] == plant_index) & (organs_inputs['axis'] == axis_label)]
                 for axis_attribute_name, axis_attribute_class in (('roots', model.Roots), ('phloem', model.Phloem), ('grains', model.Grains)):
-                    organ_label = CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[axis_attribute_class]
+                    organ_label = CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[axis_attribute_class]
                     organ_inputs = curr_organs_inputs[curr_organs_inputs['organ'] == organ_label]
                     if not organ_inputs.empty:
                         # create a new organ
@@ -133,7 +133,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                          ('peduncle', model.Peduncle, model.PeduncleElement),
                          ('sheath', model.Sheath, model.SheathElement)):
 
-                        organ_label = CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[phytomer_attribute_class]
+                        organ_label = CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[phytomer_attribute_class]
 
                         if metamer_index in curr_metamers_indexes_for_elements:
                             curr_elements_inputs = elements_inputs[(elements_inputs['plant'] == plant_index) & (elements_inputs['axis'] == axis_label) & (elements_inputs['metamer'] == metamer_index) & (elements_inputs['organ'] == organ_label)]
@@ -144,7 +144,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                             organ.initialize()
                             setattr(phytomer, phytomer_attribute_name, organ)
 
-                            for mtg_element_label, cnwheat_element_name in MTG_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING.iteritems():
+                            for mtg_element_label, cnwheat_element_name in DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING.iteritems():
                                 element_inputs = curr_elements_inputs[curr_elements_inputs['element'] == mtg_element_label]
                                 if len(element_inputs) == 0:
                                     continue
@@ -161,7 +161,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                         hiddenzone_inputs = hiddenzone_inputs.loc[:, simulation.Simulation.HIDDENZONE_STATE]
                         hiddenzone_dict = hiddenzone_inputs.loc[hiddenzone_inputs.first_valid_index()].to_dict()
                         # create a new hidden zone
-                        hiddenzone = model.HiddenZone(CNWHEAT_CLASSES_TO_MTG_ORGANS_MAPPING[model.HiddenZone], **hiddenzone_dict)
+                        hiddenzone = model.HiddenZone(CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[model.HiddenZone], **hiddenzone_dict)
                         hiddenzone.initialize()
                         phytomer.hiddenzone = hiddenzone
 
