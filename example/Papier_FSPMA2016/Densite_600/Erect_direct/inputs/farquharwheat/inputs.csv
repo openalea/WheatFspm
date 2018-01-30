@@ -1,0 +1,17 @@
+plant,axis,metamer,organ,element,width,height,PARa
+1,MS,1,blade,LeafElement1,0.011,0.23,0
+1,MS,1,internode,HiddenElement,0.002,0.03,0
+1,MS,1,sheath,StemElement,0.002,0.11,0
+1,MS,2,blade,LeafElement1,0.014,0.36,0
+1,MS,2,internode,HiddenElement,0.0029,0.11,0
+1,MS,2,sheath,StemElement,0.003,0.22,0
+1,MS,3,blade,LeafElement1,0.019,0.52,0
+1,MS,3,internode,HiddenElement,0.0031,0.21,0
+1,MS,3,sheath,StemElement,0.004,0.33,0
+1,MS,4,blade,LeafElement1,0.025,0.67,0
+1,MS,4,internode,HiddenElement,0.0026,0.36,0
+1,MS,4,internode,StemElement,0.0026,0.43,0
+1,MS,4,sheath,StemElement,0.004,0.52,0
+1,MS,5,internode,HiddenElement,0.0035,0.5,0
+1,MS,5,internode,StemElement,0.0035,0.63,0
+1,MS,6,internode,StemElement,0.017,0.71,0
