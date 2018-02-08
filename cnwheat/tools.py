@@ -12,11 +12,11 @@
 
     :copyright: Copyright 2014-2017 INRA-ECOSYS, see AUTHORS.
     :license: CeCILL-C, see LICENSE for details.
-
-    **Acknowledgments**: The research leading these results has received funding through the
-    Investment for the Future programme managed by the Research National Agency
+    
+    **Acknowledgments**: The research leading these results has received funding through the 
+    Investment for the Future programme managed by the Research National Agency 
     (BreedWheat project ANR-10-BTBR-03).
-
+    
     .. seealso:: Barillot et al. 2016.
 """
 
@@ -291,59 +291,6 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
     # compare actual data to desired data, using tolerance defined by :attr:`RELATIVE_TOLERANCE`, :attr:`ABSOLUTE_TOLERANCE`
     np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
 
-
-def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
-    from alinea.adel.mtg import to_plantgl
-    from openalea.plantgl.all import Viewer,Vector3
-
-    def color_map(N):
-        if 0 <= N <= 0.5: # TODO: organe senescent (prendre prop)
-            color_map = [150, 100, 0]
-        elif 0.5 < N < 5: # Fvertes
-            color_map = [int(255 - N*51), int(255 - N*20), 50]
-        else:
-            color_map = [0,155,0]
-        return color_map
-
-    def calculate_total_organic_nitrogen(amino_acids, proteins, Nstruct):
-        """Total amount of organic N (amino acids + proteins + Nstruct).
-
-        :Parameters:
-            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
-            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
-            - `Nstruct` (:class:`float`) - Structural N mass (g)
-        :Returns:
-            Total amount of organic N (mg)
-        :Returns Type:
-            :class:`float`
-        """
-        return (amino_acids + proteins)*14E-3 + Nstruct*1E3
-
-    colors = {}
-
-    groups_df = df.groupby(['plant', 'axis', 'metamer', 'organ', 'element'])
-    for vid in g.components_at_scale(g.root, scale=5):
-        pid = int(g.index(g.complex_at_scale(vid, scale =1)))
-        axid = g.property('label')[g.complex_at_scale(vid, scale =2)]
-        mid = int(g.index(g.complex_at_scale(vid, scale =3)))
-        org = g.property('label')[g.complex_at_scale(vid, scale =4)]
-        elid = g.property('label')[vid]
-        if elid == 'HiddenElement': continue
-        id_map = (pid, axid, mid, org, elid)
-        if groups_df.groups.has_key(id_map):
-            gp = groups_df.get_group(id_map)
-            N = (gp[gp['t'] == t]['proteins'].iloc[0]*14E-3) / gp[gp['t'] == 0]['mstruct'].iloc[0]
-            #N = (calculate_total_organic_nitrogen(gp[gp['t'] == t]['amino_acids'].iloc[0], gp[gp['t'] == t]['proteins'].iloc[0], gp[gp['t'] == t]['Nstruct'].iloc[0])) / gp[gp['t'] == t]['mstruct'].iloc[0]
-            colors[vid] = color_map(N)
-        else:
-            g.property('geometry')[vid] = None
-
-    # plantgl
-    s = to_plantgl(g, colors=colors)[0]
-    Viewer.add(s)
-    Viewer.camera.setPosition(Vector3(71.4821,-65.8233,93.1339))
-    Viewer.camera.lookAt(Vector3(0.,0,50))
-    Viewer.saveSnapshot(os.path.join(SCREENSHOT_DIRPATH, 'Day_{}.png'.format(t/24+1)))
 
 class ProgressBarError(Exception): pass
 
