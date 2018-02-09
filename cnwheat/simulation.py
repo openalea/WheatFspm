@@ -6,16 +6,16 @@ from __future__ import division # use "//" to do integer division
     cnwheat.simulation
     ~~~~~~~~~~~~~~~~~~
 
-    The module :mod:`cnwheat.simulation` is the front-end to run the model CN-Wheat. 
+    The module :mod:`cnwheat.simulation` is the front-end to run the model CN-Wheat.
     The public API consists of methods :meth:`initialize` and :meth:`run`.
 
     :copyright: Copyright 2014-2017 INRA-ECOSYS, see AUTHORS.
     :license: CeCILL-C, see LICENSE for details.
-    
-    **Acknowledgments**: The research leading these results has received funding through the 
-    Investment for the Future programme managed by the Research National Agency 
+
+    **Acknowledgments**: The research leading these results has received funding through the
+    Investment for the Future programme managed by the Research National Agency
     (BreedWheat project ANR-10-BTBR-03).
-    
+
     .. seealso:: Barillot et al. 2016.
 """
 
@@ -35,23 +35,23 @@ from scipy.integrate import odeint
 
 import model, tools
 
-class SimulationError(Exception): 
+class SimulationError(Exception):
     """
-    Abstract class for the management of simulation errors. Do not instance it directly. 
+    Abstract class for the management of simulation errors. Do not instance it directly.
     """
     pass
 
 class SimulationInitializationError(SimulationError):
     """
-    Exception raised when a problem occurs at initialization time, in particular 
+    Exception raised when a problem occurs at initialization time, in particular
     when checking the consistency of inputs `population` and `soils` (see :meth:`initialize`).
     """
     pass
 
 class SimulationRunError(SimulationError):
     """
-    Exception raised when running a simulation, for example when a problem occurs 
-    during the integration of the system of differential equations. 
+    Exception raised when running a simulation, for example when a problem occurs
+    during the integration of the system of differential equations.
     """
     pass
 
@@ -60,22 +60,22 @@ class Simulation(object):
     """
     The Simulation class permits to initialize and run the model.
 
-    User should use method :meth:`initialize` to initialize the model, and method 
+    User should use method :meth:`initialize` to initialize the model, and method
     :meth:`run` to run the model.
 
     :Parameters:
 
-        - respiration_model (:mod:`*`) - the model of respiration to use. 
-        
+        - respiration_model (:mod:`*`) - the model of respiration to use.
+
           This model must define a class implementing these functions:
-                 
-            * R_Nnit_upt(U_Nnit, sucrose): Nitrate uptake respiration. 
-                * Parameters: 
+
+            * R_Nnit_upt(U_Nnit, sucrose): Nitrate uptake respiration.
+                * Parameters:
                     - `U_Nnit` (:class:`float`) - uptake of N nitrates (µmol N)
                     - `sucrose` (:class:`float`) -  amount of C sucrose in organ (µmol C)
                 * Returns: _R_Nnit_upt (µmol C respired)
                 * Returns Type: :class:`float`
-            
+
             * R_phloem(sucrose_loading, sucrose, mstruct): Phloem loading respiration
                 * Parameters:
                     - `sucrose_loading` (:class:`float`) -  Loading flux from the C substrate pool to phloem (µmol C g-1 mstruct)
@@ -83,11 +83,11 @@ class Simulation(object):
                     - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
                 * Returns: _R_phloem (µmol C respired)
                 * Returns Type: :class:`float`
-        
+
             * R_Nnit_red(s_amino_acids, sucrose, mstruct, root=False): Nitrate reduction-linked respiration
               Distinction is made between nitrate realised in roots or in shoots where a part of the energy required is derived from ATP
               and reducing power obtained directly from photosynthesis (rather than C substrate)
-              
+
                 * Parameters:
                     - `s_amino_acids` (:class:`float`) - consumption of N for the synthesis of amino acids (µmol N g-1 mstruct)
                       (in the present version, this is used to approximate nitrate reduction needed in the original model of Thornley and Cannell, 2000)
@@ -96,7 +96,7 @@ class Simulation(object):
                     - `root` (:class:`bool`) - specifies if the nitrate reduction-linked respiration is computed for shoot (False) or root (True) tissues.
                 * Returns: _R_Nnit_upt (µmol C respired)
                 * Returns Type: :class:`float`
-        
+
             * R_residual(sucrose, mstruct, Ntot, delta_t, Ts): Residual maintenance respiration (cost from protein turn-over, cell ion gradients, futile cycles...)
                 * Parameters:
                     - `sucrose` (:class:`float`) - amount of C sucrose (µmol C)
@@ -106,7 +106,7 @@ class Simulation(object):
                     - `Ts` (:class:`float`) - organ temperature (°C)
                 * Returns: _R_residual (µmol C respired)
                 * Returns Type: :class:`float`
-        
+
             * R_grain_growth(mstruct_growth, starch_filling, mstruct): Grain growth respiration
                 * Parameters:
                     - `mstruct_growth` (:class:`float`) - gross growth of grain structure (µmol C added in grain structure)
@@ -114,27 +114,27 @@ class Simulation(object):
                     - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
                 * Returns: R_grain_growth (µmol C respired)
                 * Returns Type: :class:`float`
-        
+
         - delta_t (:class:`int`) - the delta t of the simulation (in seconds) ; default is `1`.
-        
+
         - culm_density (:class:`dict`) - culm density (culm m-2) ; default is `{1:410}`.
 
     """
 
-    #: the name of the compartments attributes in the model, for objects of types 
+    #: the name of the compartments attributes in the model, for objects of types
     #: :class:`model.Plant`, :class:`model.Axis`, :class:`model.Phytomer`,
     #: :class:`model.Organ`, :class:`model.HiddenZone`, :class:`model.PhotosyntheticOrganElement`,
-    #: and :class:`model.Soil`. 
+    #: and :class:`model.Soil`.
     MODEL_COMPARTMENTS_NAMES = {model.Plant: [],
                                 model.Axis: [],
                                 model.Phytomer: [],
-                                model.Organ: ['Nstruct', 'age_from_flowering', 'amino_acids', 'cytokinins', 
+                                model.Organ: ['Nstruct', 'age_from_flowering', 'amino_acids', 'cytokinins',
                                               'nitrates', 'proteins', 'starch', 'structure', 'sucrose'],
                                 model.HiddenZone: ['amino_acids', 'fructan', 'proteins', 'sucrose'],
-                                model.PhotosyntheticOrganElement: ['amino_acids', 'cytokinins', 'fructan', 
+                                model.PhotosyntheticOrganElement: ['amino_acids', 'cytokinins', 'fructan',
                                                                    'nitrates', 'proteins', 'starch', 'sucrose', 'triosesP'],
                                 model.Soil: ['nitrates']}
-    
+
     #: the time index
     T_INDEX = ['t']
 
@@ -152,9 +152,9 @@ class Simulation(object):
     PLANTS_T_INDEXES = T_INDEX + PLANTS_INDEXES
     #: the parameters which define the state of the modeled system at plant scale
     PLANTS_STATE_PARAMETERS = []
-    #: the variables which define the state of the modeled system at plant scale, 
-    #: formed be the concatenation of :attr:`PLANTS_STATE_PARAMETERS` and the names 
-    #: of the compartments associated to each plant (see :attr:`MODEL_COMPARTMENTS_NAMES`) 
+    #: the variables which define the state of the modeled system at plant scale,
+    #: formed be the concatenation of :attr:`PLANTS_STATE_PARAMETERS` and the names
+    #: of the compartments associated to each plant (see :attr:`MODEL_COMPARTMENTS_NAMES`)
     PLANTS_STATE = PLANTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Plant, [])
     #: the variables that we need to compute in order to compute fluxes and/or compartments values at plant scale
     PLANTS_INTERMEDIATE_VARIABLES = []
@@ -167,16 +167,16 @@ class Simulation(object):
 
 
     ########### AXIS scale ############
-    
+
     #: the indexes to locate the axes in the modeled system
     AXES_INDEXES = ['plant', 'axis']
     #: concatenation of :attr:`T_INDEX` and :attr:`AXES_INDEXES`
     AXES_T_INDEXES = T_INDEX + AXES_INDEXES
     #: the parameters which define the state of the modeled system at axis scale
     AXES_STATE_PARAMETERS = ['mstruct']
-    #: the variables which define the state of the modeled system at axis scale, 
-    #: formed be the concatenation of :attr:`AXES_STATE_PARAMETERS` and the names 
-    #: of the compartments associated to each axis (see :attr:`MODEL_COMPARTMENTS_NAMES`) 
+    #: the variables which define the state of the modeled system at axis scale,
+    #: formed be the concatenation of :attr:`AXES_STATE_PARAMETERS` and the names
+    #: of the compartments associated to each axis (see :attr:`MODEL_COMPARTMENTS_NAMES`)
     AXES_STATE = AXES_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Axis, [])
     #: the variables that we need to compute in order to compute fluxes and/or compartments values at axis scale
     AXES_INTERMEDIATE_VARIABLES = []
@@ -196,9 +196,9 @@ class Simulation(object):
     PHYTOMERS_T_INDEXES = T_INDEX + PHYTOMERS_INDEXES
     #: the parameters which define the state of the modeled system at phytomer scale
     PHYTOMERS_STATE_PARAMETERS = ['mstruct']
-    #: the variables which define the state of the modeled system at phytomer scale, 
-    #: formed be the concatenation of :attr:`PHYTOMERS_STATE_PARAMETERS` and the names 
-    #: of the compartments associated to each phytomer (see :attr:`MODEL_COMPARTMENTS_NAMES`) 
+    #: the variables which define the state of the modeled system at phytomer scale,
+    #: formed be the concatenation of :attr:`PHYTOMERS_STATE_PARAMETERS` and the names
+    #: of the compartments associated to each phytomer (see :attr:`MODEL_COMPARTMENTS_NAMES`)
     PHYTOMERS_STATE = PHYTOMERS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Phytomer, [])
     #: the variables that we need to compute in order to compute fluxes and/or compartments values at phytomer scale
     PHYTOMERS_INTERMEDIATE_VARIABLES = []
@@ -218,33 +218,33 @@ class Simulation(object):
     ORGANS_T_INDEXES = T_INDEX + ORGANS_INDEXES
     #: the parameters which define the state of the modeled system at organ scale
     ORGANS_STATE_PARAMETERS = ['mstruct']
-    #: the variables which define the state of the modeled system at organ scale, 
-    #: formed be the concatenation of :attr:`ORGANS_STATE_PARAMETERS` and the names 
-    #: of the compartments associated to each organ (see :attr:`MODEL_COMPARTMENTS_NAMES`) 
+    #: the variables which define the state of the modeled system at organ scale,
+    #: formed be the concatenation of :attr:`ORGANS_STATE_PARAMETERS` and the names
+    #: of the compartments associated to each organ (see :attr:`MODEL_COMPARTMENTS_NAMES`)
     ORGANS_STATE = ORGANS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Organ, [])
     #: the variables that we need to compute in order to compute fluxes and/or compartments values at organ scale
-    ORGANS_INTERMEDIATE_VARIABLES = ['C_exudation', 'HATS_LATS', 'N_exudation', 'RGR_Structure', 'R_Nnit_red', 'R_Nnit_upt', 
+    ORGANS_INTERMEDIATE_VARIABLES = ['C_exudation', 'HATS_LATS', 'N_exudation', 'RGR_Structure', 'R_Nnit_red', 'R_Nnit_upt',
                                      'R_grain_growth_starch', 'R_grain_growth_struct', 'R_residual', 'regul_transpiration', 'sum_respi']
     #: the fluxes exchanged between the compartments at organ scale
-    ORGANS_FLUXES = ['Export_Amino_Acids', 'Export_Nitrates', 'Export_cytokinins', 'S_Amino_Acids', 'S_cytokinins', 'S_grain_starch', 
+    ORGANS_FLUXES = ['Export_Amino_Acids', 'Export_Nitrates', 'Export_cytokinins', 'S_Amino_Acids', 'S_cytokinins', 'S_grain_starch',
                      'S_grain_structure', 'S_Proteins', 'Unloading_Amino_Acids', 'Unloading_Sucrose', 'Uptake_Nitrates']
     #: the variables computed by integrating values of organ components parameters/variables recursively
     ORGANS_INTEGRATIVE_VARIABLES = ['Total_Organic_Nitrogen']
     #: all the variables computed during a run step of the simulation at organ scale
     ORGANS_RUN_VARIABLES = ORGANS_STATE + ORGANS_INTERMEDIATE_VARIABLES + ORGANS_FLUXES + ORGANS_INTEGRATIVE_VARIABLES
-    
-    
+
+
     ########### HIDDENZONE scale ############
-    
+
     #: the indexes to locate the hidden zones in the modeled system
     HIDDENZONE_INDEXES = ['plant', 'axis', 'metamer']
     #: concatenation of :attr:`T_INDEX` and :attr:`HIDDENZONE_INDEXES`
     HIDDENZONE_T_INDEXES = T_INDEX + HIDDENZONE_INDEXES
     #: the parameters which define the state of the modeled system at hidden zone scale
     HIDDENZONE_STATE_PARAMETERS = ['Nstruct', 'mstruct']
-    #: the variables which define the state of the modeled system at hidden zone scale, 
-    #: formed be the concatenation of :attr:`HIDDENZONE_STATE_PARAMETERS` and the names 
-    #: of the compartments associated to each hidden zone (see :attr:`MODEL_COMPARTMENTS_NAMES`) 
+    #: the variables which define the state of the modeled system at hidden zone scale,
+    #: formed be the concatenation of :attr:`HIDDENZONE_STATE_PARAMETERS` and the names
+    #: of the compartments associated to each hidden zone (see :attr:`MODEL_COMPARTMENTS_NAMES`)
     HIDDENZONE_STATE = HIDDENZONE_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.HiddenZone, [])
     #: the variables that we need to compute in order to compute fluxes and/or compartments values at hidden zone scale
     HIDDENZONE_INTERMEDIATE_VARIABLES = []
@@ -254,32 +254,32 @@ class Simulation(object):
     HIDDENZONE_INTEGRATIVE_VARIABLES = []
     #: all the variables computed during a run step of the simulation at plnat scale
     HIDDENZONE_RUN_VARIABLES = HIDDENZONE_STATE + HIDDENZONE_INTERMEDIATE_VARIABLES + HIDDENZONE_FLUXES + HIDDENZONE_INTEGRATIVE_VARIABLES
-    
-    
+
+
     ########### ELEMENT scale ############
-    
+
     #: the indexes to locate the elements in the modeled system
     ELEMENTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
     #: concatenation of :attr:`T_INDEX` and :attr:`ELEMENTS_INDEXES`
     ELEMENTS_T_INDEXES = T_INDEX + ELEMENTS_INDEXES
     #: the parameters which define the state of the modeled system at element scale
     ELEMENTS_STATE_PARAMETERS = ['Ag', 'Nstruct', 'Tr', 'Ts', 'green_area', 'is_growing', 'mstruct']
-    #: the variables which define the state of the modeled system at element scale, 
-    #: formed be the concatenation of :attr:`ELEMENTS_STATE_PARAMETERS` and the names 
-    #: of the compartments associated to each element (see :attr:`MODEL_COMPARTMENTS_NAMES`) 
+    #: the variables which define the state of the modeled system at element scale,
+    #: formed be the concatenation of :attr:`ELEMENTS_STATE_PARAMETERS` and the names
+    #: of the compartments associated to each element (see :attr:`MODEL_COMPARTMENTS_NAMES`)
     ELEMENTS_STATE = ELEMENTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, [])
     #: the variables that we need to compute in order to compute fluxes and/or compartments values at element scale
     ELEMENTS_INTERMEDIATE_VARIABLES = ['Photosynthesis', 'R_Nnit_red', 'R_phloem_loading', 'R_residual', 'Transpiration', 'sum_respi']
     #: the fluxes exchanged between the compartments at element scale
-    ELEMENTS_FLUXES = ['Amino_Acids_import', 'D_Fructan', 'D_Proteins', 'D_Starch', 'D_cytokinins', 'Loading_Amino_Acids', 'Loading_Sucrose', 
-                       'Nitrates_import', 'Regul_S_Fructan', 'S_Fructan', 'S_Starch', 'S_Sucrose', 'S_Amino_Acids', 'S_Proteins', 
+    ELEMENTS_FLUXES = ['Amino_Acids_import', 'D_Fructan', 'D_Proteins', 'D_Starch', 'D_cytokinins', 'Loading_Amino_Acids', 'Loading_Sucrose',
+                       'Nitrates_import', 'Regul_S_Fructan', 'S_Fructan', 'S_Starch', 'S_Sucrose', 'S_Amino_Acids', 'S_Proteins',
                        'cytokinins_import', 'k_proteins']
     #: the variables computed by integrating values of element components parameters/variables recursively
     ELEMENTS_INTEGRATIVE_VARIABLES = ['Total_Organic_Nitrogen']
     #: all the variables computed during a run step of the simulation at element scale
     ELEMENTS_RUN_VARIABLES = ELEMENTS_STATE + ELEMENTS_INTERMEDIATE_VARIABLES + ELEMENTS_FLUXES + ELEMENTS_INTEGRATIVE_VARIABLES
 
-    
+
     ########### SOIL scale ############
 
     #: the indexes to locate the soils in the modeled system
@@ -288,9 +288,9 @@ class Simulation(object):
     SOILS_T_INDEXES = T_INDEX + SOILS_INDEXES
     #: the parameters which define the state of the modeled system at soil scale
     SOILS_STATE_PARAMETERS = ['Tsoil', 'volume']
-    #: the variables which define the state of the modeled system at soil scale, 
-    #: formed be the concatenation of :attr:`SOILS_STATE_PARAMETERS` and the names 
-    #: of the compartments associated to each soil (see :attr:`MODEL_COMPARTMENTS_NAMES`) 
+    #: the variables which define the state of the modeled system at soil scale,
+    #: formed be the concatenation of :attr:`SOILS_STATE_PARAMETERS` and the names
+    #: of the compartments associated to each soil (see :attr:`MODEL_COMPARTMENTS_NAMES`)
     SOILS_STATE = SOILS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Soil, [])
     #: the variables that we need to compute in order to compute fluxes and/or compartments values at soil scale
     SOILS_INTERMEDIATE_VARIABLES = ['Conc_Nitrates_Soil', 'mineralisation']
@@ -301,7 +301,7 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at soil scale
     SOILS_RUN_VARIABLES = SOILS_STATE + SOILS_INTERMEDIATE_VARIABLES + SOILS_FLUXES + SOILS_INTEGRATIVE_VARIABLES
 
-    #: 
+    #:
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
                                       model.Axis: 'cnwheat.compartments.axes',
                                       model.Phytomer: 'cnwheat.compartments.phytomers',
@@ -319,7 +319,7 @@ class Simulation(object):
 
 
     def __init__(self, respiration_model, delta_t=1, culm_density={1:410}):
-        
+
         self.respiration_model = respiration_model #: the model of respiration to use
 
         self.population = model.Population() #: the population to simulate on
@@ -337,11 +337,11 @@ class Simulation(object):
         self.show_progressbar = False #: True: show the progress bar ; False: DO NOT show the progress bar
 
         self.delta_t = delta_t #: the delta t of the simulation (in seconds)
-        
+
         self.time_step = self.delta_t / 3600.0 #: time step of the simulation (in hours)
 
         self.culm_density = culm_density #: culm density (culm m-2)
-        
+
 
     def initialize(self, population, soils):
         """
@@ -376,7 +376,7 @@ class Simulation(object):
         # create new population and soils
         self.population.plants.extend(population.plants)
         self.soils.update(soils)
-        
+
         # check the consistency of population and soils
         if len(self.population.plants) != 0: # population must contain at least 1 plant
             for plant in self.population.plants:
@@ -401,45 +401,45 @@ class Simulation(object):
                                                 for element in organ_elements:
                                                     if element is not None:
                                                         if not organ.__class__.__name__ in element.__class__.__name__: # an element must belong to an organ of the same type (e.g. a LaminaElement must belong to a Lamina)
-                                                            message = 'In (plant={},axis={},phytomer={}), a {} belongs to a {}'.format(plant.index, 
-                                                                                                                                       axis.label, 
+                                                            message = 'In (plant={},axis={},phytomer={}), a {} belongs to a {}'.format(plant.index,
+                                                                                                                                       axis.label,
                                                                                                                                        phytomer.index,
-                                                                                                                                       element.__class__.__name__, 
+                                                                                                                                       element.__class__.__name__,
                                                                                                                                        organ.__class__.__name__)
                                                             logger.exception(message)
                                                             raise SimulationInitializationError(message)
                                             else:
-                                                message = 'No element found in (plant={},axis={},phytomer={},organ={})'.format(plant.index, 
-                                                                                                                               axis.label, 
+                                                message = 'No element found in (plant={},axis={},phytomer={},organ={})'.format(plant.index,
+                                                                                                                               axis.label,
                                                                                                                                phytomer.index,
                                                                                                                                organ.label)
                                                 logger.exception(message)
                                                 raise SimulationInitializationError(message)
                                 else:
-                                    message = 'Neither photosynthetic organ nor hidden growing zone found in (plant={},axis={},phytomer={})'.format(plant.index, 
-                                                                                                                                                    axis.label, 
+                                    message = 'Neither photosynthetic organ nor hidden growing zone found in (plant={},axis={},phytomer={})'.format(plant.index,
+                                                                                                                                                    axis.label,
                                                                                                                                                     phytomer.index)
                                     logger.exception(message)
                                     raise SimulationInitializationError(message)
                         else:
-                            message = 'No phytomer found in (plant={},axis={})'.format(plant.index, 
+                            message = 'No phytomer found in (plant={},axis={})'.format(plant.index,
                                                                                        axis.label)
                             logger.exception(message)
                             raise SimulationInitializationError(message)
                         if (plant.index, axis.label) not in self.soils: # each axis must be associated to a soil
-                            message = 'No soil found in (plant={},axis={})'.format(plant.index, 
+                            message = 'No soil found in (plant={},axis={})'.format(plant.index,
                                                                                    axis.label)
                             logger.exception(message)
                             raise SimulationInitializationError(message)
                 else:
                     message = 'No axis found in (plant={})'.format(plant.index)
                     logger.exception(message)
-                    raise SimulationInitializationError(message) 
+                    raise SimulationInitializationError(message)
         else:
             message = 'No plant found in the population.'
             logger.exception(message)
             raise SimulationInitializationError(message)
-        
+
         # initialize initial conditions
         def _init_initial_conditions(model_object, i):
             class_ = model_object.__class__
@@ -482,15 +482,15 @@ class Simulation(object):
                             if element is None:
                                 continue
                             i = _init_initial_conditions(element, i)
-        
+
         self.population.calculate_integrative_variables()
-        
+
         logger.info('Initialization of the simulation DONE')
-        
-        
+
+
     def run(self, show_progressbar=False):
         """
-        Compute CN exchanges which occurred in :attr:`population` and :attr:`soils` over :attr:`delta_t`. 
+        Compute CN exchanges which occurred in :attr:`population` and :attr:`soils` over :attr:`delta_t`.
 
         :Parameters:
 
@@ -544,15 +544,15 @@ class Simulation(object):
                 soils_derivatives_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
 
         self._update_initial_conditions()
-        
+
         # Maximum number of (internally defined) steps allowed for each integration point in time grid.
-        # ODEINT_MXSTEP is passed to :func:`scipy.integrate.odeint` as mxstep. 
+        # ODEINT_MXSTEP is passed to :func:`scipy.integrate.odeint` as mxstep.
         # If ODEINT_MXSTEP = 0 (the default), then mxstep is determined by the solver.
         # Normally, the mxstep determined by the solver permits to solve the current model. User can try to increase this value if a more complex model is defined
         # and if the integration failed. However, take care that the origin of an integration failure could be a discontinuity in the RHS function used
         # by scipy.integrate.odeint, and that this discontinuity could be due to a bug in your model. To summary: if the integration failed, first check the logs.
-        ODEINT_MXSTEP = 0 
-    
+        ODEINT_MXSTEP = 0
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 """Run the solver with:
@@ -560,23 +560,23 @@ class Simulation(object):
                     - odeint mxstep = %s""",
                 self.time_step, ODEINT_MXSTEP)
 
-        # call :func:`scipy.integrate.odeint` to integrate the system during 1 time step ; 
-        # :func:`scipy.integrate.odeint` computes the derivatives of each function by calling :meth:`_calculate_all_derivatives` 
+        # call :func:`scipy.integrate.odeint` to integrate the system during 1 time step ;
+        # :func:`scipy.integrate.odeint` computes the derivatives of each function by calling :meth:`_calculate_all_derivatives`
         soln, infodict = odeint(self._calculate_all_derivatives, self.initial_conditions, np.array([0.0, self.time_step]), full_output=True, mxstep=ODEINT_MXSTEP)
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 """Run of the solver DONE: infodict = %s""",
                 infodict)
-        
-        # check the integration ; raise an exception if the integration failed 
+
+        # check the integration ; raise an exception if the integration failed
         if not set(infodict['mused']).issubset([1,2]):
             message = "Integration failed. See the logs of lsoda or try to increase the value of 'mxstep'."
             logger.exception(message)
             raise SimulationRunError(message)
 
         self._update_model(soln[-1])
-        
+
         self.population.calculate_integrative_variables()
 
         logger.info('Run of CN-Wheat DONE')
@@ -596,9 +596,9 @@ class Simulation(object):
         """Log the values in `y` to the loggers in `loggers_names`.
         """
         def update_rows(model_object, indexes, rows, i):
-            """Update list `rows` appending a new row corresponding to the compartment 
-            values associated to object `model_object` located at indexes `indexes`. 
-            `i` is used to reach the values associated to object `model_object` 
+            """Update list `rows` appending a new row corresponding to the compartment
+            values associated to object `model_object` located at indexes `indexes`.
+            `i` is used to reach the values associated to object `model_object`
             from array `y`.
             """
             row = []
@@ -860,7 +860,6 @@ class Simulation(object):
                         y_derivatives[self.initial_conditions_mapping[hiddenzone]['fructan']] = hiddenzone.calculate_fructan_derivative(hiddenzone.S_Fructan, hiddenzone.D_Fructan)
                         y_derivatives[self.initial_conditions_mapping[hiddenzone]['proteins']] = hiddenzone.calculate_proteins_derivative(hiddenzone.S_Proteins, hiddenzone.D_Proteins)
 
-
                 if axis.grains is not None:
                     phloem_contributors.append(axis.grains)
                     # compute the derivative of each compartment of grains
@@ -933,7 +932,7 @@ class Simulation(object):
         """
         logger = logging.getLogger(__name__)
         logger.debug('Updating the attributes of the population and soils...')
-        
+
         # TODO: TEMP !!!!
         # soil_contributors = []
         soil = self.soils[(1, 'MS')]
@@ -1009,13 +1008,13 @@ class Simulation(object):
 
                         # Degradation proteins
                         hiddenzone.D_Proteins = hiddenzone.calculate_D_Proteins(hiddenzone.proteins, self.delta_t)
-                    
+
                     # photosynthetic organs
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
 
                         if organ is None:
                             continue
-                        
+
                         # elements
                         for element in (organ.exposed_element, organ.enclosed_element):
                             if element is None or element.green_area == 0:
@@ -1060,14 +1059,15 @@ class Simulation(object):
 
                             element.R_residual,_ = self.respiration_model.RespirationModel.R_residual(element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA, element.Total_Organic_Nitrogen, self.delta_t, element.Ts)
                             element.sum_respi = element.R_phloem_loading + element.R_Nnit_red + element.R_residual
-                
+
                 # grains
                 if axis.grains is not None:
                     phloem_contributors.append(axis.grains)
-                    
+
                     axis.grains.structure = compartments_values[self.initial_conditions_mapping[axis.grains]['structure']]
                     axis.grains.starch = compartments_values[self.initial_conditions_mapping[axis.grains]['starch']]
                     axis.grains.proteins = compartments_values[self.initial_conditions_mapping[axis.grains]['proteins']]
+                    axis.grains.age_from_flowering = compartments_values[self.initial_conditions_mapping[axis.grains]['age_from_flowering']]
 
                     # intermediate variables
                     axis.grains.RGR_Structure = axis.grains.calculate_RGR_Structure(axis.phloem.sucrose, axis.mstruct)
