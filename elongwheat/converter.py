@@ -25,6 +25,7 @@ from __future__ import division # use "//" to do integer division
 """
 
 import pandas as pd
+import numpy as np
 
 import simulation
 
@@ -56,21 +57,18 @@ def from_dataframes(hiddenzone_inputs, element_inputs, SAM_inputs):
     all_hiddenzone_dict = {}
     all_element_dict = {}
     all_SAM_dict = {}
-    hiddenzone_L_calculation_dict = {}
-    SAM_height_calculation_dict = {}
+
+    ## -- Convert input dataframe into dictionaries
 
     hiddenzone_inputs_columns = hiddenzone_inputs.columns.difference(HIDDENZONE_TOPOLOGY_COLUMNS)
     emerging_element_inputs_columns = element_inputs.columns.difference(ELEMENT_TOPOLOGY_COLUMNS)
     SAM_inputs_columns = SAM_inputs.columns.difference(SAM_TOPOLOGY_COLUMNS)
-    sheath_inputs_grouped = element_inputs[element_inputs.organ == 'sheath'].groupby(['plant', 'axis', 'metamer', 'organ'])
 
     for SAM_inputs_id, SAM_inputs_group in SAM_inputs.groupby(SAM_TOPOLOGY_COLUMNS):
         # SAM
         SAM_inputs_series = SAM_inputs_group.loc[SAM_inputs_group.first_valid_index()]
         SAM_inputs_dict = SAM_inputs_series[SAM_inputs_columns].to_dict()
         all_SAM_dict[SAM_inputs_id] = SAM_inputs_dict
-
-        SAM_height_calculation_dict[SAM_inputs_id] = 0
 
     for element_inputs_id, element_inputs_group in element_inputs.groupby(ELEMENT_TOPOLOGY_COLUMNS):
         # Elements
@@ -85,44 +83,7 @@ def from_dataframes(hiddenzone_inputs, element_inputs, SAM_inputs):
         hiddenzone_inputs_dict = hiddenzone_inputs_series[hiddenzone_inputs_columns].to_dict()
         all_hiddenzone_dict[hiddenzone_inputs_id] = hiddenzone_inputs_dict
 
-        # Get lengths required for the calculation of the distances before internode emergence and leaf emergence
-        previous_hiddenzone_id = tuple(list(hiddenzone_inputs_id[:2]) + [hiddenzone_inputs_id[-1]-1])
-        # previous distance to leaf emergence
-        if hiddenzone_inputs_grouped.groups.has_key(previous_hiddenzone_id):
-            previous_hiddenzone = hiddenzone_inputs_grouped.get_group(previous_hiddenzone_id)
-            previous_leaf_dist_to_emerge = previous_hiddenzone.loc[previous_hiddenzone.first_valid_index(), 'leaf_dist_to_emerge']
-        else:
-            previous_leaf_dist_to_emerge = None
-
-        # previous sheath length
-        previous_sheath_id = tuple(list(hiddenzone_inputs_id[:2]) + [hiddenzone_inputs_id[-1]-1] + ['sheath'])
-        if sheath_inputs_grouped.groups.has_key(previous_sheath_id):
-            previous_sheath = sheath_inputs_grouped.get_group(previous_sheath_id)
-            previous_sheath_visible_length =  previous_sheath[previous_sheath['element']=='StemElement']['length'].iloc[0]
-            if not previous_leaf_dist_to_emerge: #: if no previous hiddenzone found, get the final hidden length of the previous sheath (assumes that no previous hiddenzone means a mature sheath)
-                previous_sheath_hidden_length = previous_sheath[previous_sheath['element']=='HiddenElement']['length'].iloc[0]
-
-        else:
-            previous_sheath_visible_length = 0
-            previous_sheath_hidden_length = 0
-
-        # Growing internode length
-        if hiddenzone_inputs_grouped.groups.has_key(hiddenzone_inputs_id):
-            curr_hiddenzone = hiddenzone_inputs_grouped.get_group(hiddenzone_inputs_id)
-            curr_internode_length = curr_hiddenzone.loc[curr_hiddenzone.first_valid_index(), 'internode_L']
-            # For SAM height calculation
-            SAM_id = tuple(curr_hiddenzone[SAM_TOPOLOGY_COLUMNS].iloc[0])
-            SAM_height_calculation_dict[SAM_id] += curr_internode_length
-
-        else:
-            curr_internode_length = 0
-
-        hiddenzone_L_calculation_dict[hiddenzone_inputs_id] = {'previous_leaf_dist_to_emerge': previous_leaf_dist_to_emerge,
-                                                 'previous_sheath_visible_length': previous_sheath_visible_length,
-                                                 'previous_sheath_hidden_length': previous_sheath_hidden_length,
-                                                 'internode_length': curr_internode_length}
-
-    return {'hiddenzone': all_hiddenzone_dict, 'elements': all_element_dict, 'SAM': all_SAM_dict , 'hiddenzone_L_calculation': hiddenzone_L_calculation_dict, 'SAM_height_calculation': SAM_height_calculation_dict}
+    return {'hiddenzone': all_hiddenzone_dict, 'elements': all_element_dict, 'SAM': all_SAM_dict }
 
 def to_dataframes(data_dict):
     """
