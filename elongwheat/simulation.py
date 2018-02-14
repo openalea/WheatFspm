@@ -198,7 +198,7 @@ class Simulation(object):
 
             # Update distance for the leaf to emerge
             curr_hiddenzone_outputs['leaf_dist_to_emerge'] = model.calculate_leaf_dist_to_emerge(all_ligule_height, bottom_hiddenzone_height, SAM_id, hiddenzone_id)
-            curr_hiddenzone_outputs['delta_leaf_dist_to_emerge'] = curr_hiddenzone_outputs['leaf_dist_to_emerge'] - hiddenzone_inputs['leaf_dist_to_emerge'] # Cette variable est utilisé dans growthwheat
+            curr_hiddenzone_outputs['delta_leaf_dist_to_emerge'] = curr_hiddenzone_outputs['leaf_dist_to_emerge'] - hiddenzone_inputs['leaf_dist_to_emerge'] # Cette variable est utilisée dans growthwheat
 
             # In case leaf is already mature but internode is growing, we update sheath visible and hidden lengths.
             if not curr_hiddenzone_outputs['leaf_is_growing'] and curr_hiddenzone_outputs['leaf_is_emerged']:
@@ -213,7 +213,7 @@ class Simulation(object):
 
             # Update distance for the internode to be visible
             curr_hiddenzone_outputs['internode_dist_to_emerge'] = model.calculate_internode_dist_to_emerge(curr_hiddenzone_outputs['leaf_dist_to_emerge'], curr_internode_L)
-            curr_hiddenzone_outputs['delta_internode_dist_to_emerge'] = curr_hiddenzone_outputs['internode_dist_to_emerge'] - hiddenzone_inputs['internode_dist_to_emerge']  # Cette variable est utilisé dans growthwheat
+            curr_hiddenzone_outputs['delta_internode_dist_to_emerge'] = curr_hiddenzone_outputs['internode_dist_to_emerge'] - hiddenzone_inputs['internode_dist_to_emerge']  # Cette variable est utilisée dans growthwheat
 
             #: Leaf elongation
             if curr_hiddenzone_outputs['leaf_is_growing']:
@@ -333,7 +333,7 @@ class Simulation(object):
             # Update of leaf outputs, #TODO: attention aux valeurs negatives
             curr_hiddenzone_outputs['leaf_L'] = leaf_L
 
-            if curr_hiddenzone_outputs['leaf_Lmax'] == None or math.isnan(curr_hiddenzone_outputs['leaf_Lmax']): #TODO: Find a nicer way
+            if curr_hiddenzone_outputs['leaf_Lmax'] is None or math.isnan(curr_hiddenzone_outputs['leaf_Lmax']): #TODO: Find a nicer way
                curr_hiddenzone_outputs['delta_leaf_L'] = delta_leaf_L
             else:
                 curr_hiddenzone_outputs['delta_leaf_L'] = np.nanmin([delta_leaf_L, (curr_hiddenzone_outputs['leaf_Lmax'] - hiddenzone_inputs['leaf_L'])])
@@ -345,7 +345,6 @@ class Simulation(object):
 
             if  curr_hiddenzone_outputs['internode_is_growing']:
 
-               lamina_id = hiddenzone_id + tuple(['blade', 'LeafElement1'])
                # Found previous lamina to know if the previous leaf is ligulated. TODO: a améliorer
                prev_lamina_id = tuple(list(hiddenzone_id[:2]) + [hiddenzone_id[2]-1]) + tuple(['blade', 'LeafElement1'])
                if prev_lamina_id in all_element_inputs:
@@ -427,11 +426,12 @@ class Simulation(object):
 
             # Only growing hiddenzones are sent
             ## after end of elongation (leaf and/or internode), it should :
-            ##       - pass by growth wheat for CN flux + remobilisation
+            ##       - pass by growth wheat for remobilisation
             ##       - pass another time by elong wheat for update of curr_element_outputs['final_hidden_length']
             ## the hiddenzone will then be deleted since both growing flags are False and both delta_L are zeros.
+            ## For "internode_is_growing", the test is made on the inputs so we make sure it goes at least once for remobilisation by growthwheat.
 
-            if (curr_hiddenzone_outputs['internode_is_growing'] or curr_hiddenzone_outputs['leaf_is_growing'] or curr_hiddenzone_outputs['delta_internode_L'] > 0 or curr_hiddenzone_outputs['delta_leaf_L'] > 0):
+            if hiddenzone_inputs['internode_is_growing'] or curr_hiddenzone_outputs['leaf_is_growing'] or curr_hiddenzone_outputs['delta_internode_L'] > 0 or curr_hiddenzone_outputs['delta_leaf_L'] > 0:
                 self.outputs['hiddenzone'][hiddenzone_id] = curr_hiddenzone_outputs
             else: # End of internode elong
                 del self.outputs['hiddenzone'][hiddenzone_id]
