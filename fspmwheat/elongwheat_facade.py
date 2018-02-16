@@ -105,8 +105,6 @@ class ElongWheatFacade(object):
         all_elongwheat_hiddenzones_dict = {}
         all_elongwheat_elements_dict = {}
         all_elongwheat_SAM_dict = {}
-        all_elongwheat_hiddenzones_L_calculation_dict = {}
-        all_elongwheat_SAM_height_calculation_dict = {}
 
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
@@ -130,7 +128,7 @@ class ElongWheatFacade(object):
                             break
                     if is_valid_SAM:
                         all_elongwheat_SAM_dict[SAM_vid] = elongwheat_SAM_inputs_dict
-                        all_elongwheat_SAM_height_calculation_dict[SAM_vid] = 0
+##                        all_elongwheat_SAM_height_calculation_dict[SAM_vid] = 0
                 # Metamer scale
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
@@ -138,7 +136,7 @@ class ElongWheatFacade(object):
 
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
                     if 'hiddenzone' in mtg_metamer_properties:
-                        mtg_previous_metamer_vid = self._shared_mtg.parent(mtg_metamer_vid)
+##                        mtg_previous_metamer_vid = self._shared_mtg.parent(mtg_metamer_vid)
                         hiddenzone_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index)
                         mtg_hiddenzone_properties = mtg_metamer_properties['hiddenzone']
                         elongwheat_hiddenzone_inputs_dict = {}
@@ -151,50 +149,11 @@ class ElongWheatFacade(object):
                             elif hiddenzone_input_name in elongwheat_hiddenzone_data_from_mtg_organs_data:
                                 elongwheat_hiddenzone_inputs_dict[hiddenzone_input_name] = elongwheat_hiddenzone_data_from_mtg_organs_data[hiddenzone_input_name]
                             else:
+                                print hiddenzone_input_name
                                 is_valid_hiddenzone = False
                                 break
                         if is_valid_hiddenzone:
                             all_elongwheat_hiddenzones_dict[hiddenzone_id] = elongwheat_hiddenzone_inputs_dict
-
-                        # Get lengths required for the calculation of the distances before internode emergence and leaf emergence
-                        if mtg_previous_metamer_vid is not None:
-                            # previous hiddenzone length
-                            if self._shared_mtg.get_vertex_property(mtg_previous_metamer_vid).has_key('hiddenzone'):
-                                mtg_previous_leaf_dist_to_emerge = self._shared_mtg.get_vertex_property(mtg_previous_metamer_vid)['hiddenzone']['leaf_dist_to_emerge']
-                            else:
-                                mtg_previous_leaf_dist_to_emerge = None
-                            # previous sheath length
-                            mtg_previous_metamer_components = {self._shared_mtg.class_name(mtg_component_vid):
-                                                               mtg_component_vid for mtg_component_vid in self._shared_mtg.components_at_scale(mtg_previous_metamer_vid, scale=4)}
-                            if mtg_previous_metamer_components.has_key('sheath'):
-                                previous_sheath_vid = mtg_previous_metamer_components['sheath']
-                                mtg_previous_sheath_components = {self._shared_mtg.class_name(mtg_component_vid):
-                                                               mtg_component_vid for mtg_component_vid in self._shared_mtg.components_at_scale(previous_sheath_vid, scale=5)}
-                                if mtg_previous_sheath_components.has_key('StemElement'):
-                                    previous_sheath_visible_length_vid = mtg_previous_sheath_components['StemElement']
-                                    mtg_previous_sheath_visible_length = self._shared_mtg.get_vertex_property(previous_sheath_visible_length_vid)['length']
-                                if not mtg_previous_leaf_dist_to_emerge: #: if no previous hiddenzone found, get the final hidden length of the previous sheath (assumes that no previous hiddenzone means a mature sheath)
-                                    previous_sheath_hidden_length_vid = mtg_previous_sheath_components['HiddenElement']
-                                    mtg_previous_sheath_hidden_length = self._shared_mtg.get_vertex_property(previous_sheath_hidden_length_vid)['length']
-                            else:
-                                mtg_previous_sheath_visible_length = 0
-                                mtg_previous_sheath_hidden_length = 0
-
-                            # Growing internode length
-                            mtg_current_internode_length = self._shared_mtg.get_vertex_property(mtg_metamer_vid)['hiddenzone']['internode_L']
-                            # For SAM height calculation
-                            all_elongwheat_SAM_height_calculation_dict[SAM_vid] += mtg_current_internode_length
-
-
-                            all_elongwheat_hiddenzones_L_calculation_dict[(mtg_plant_index,
-                                                                           mtg_axis_label,
-                                                                           mtg_metamer_index)] = \
-                                {'previous_leaf_dist_to_emerge': mtg_previous_leaf_dist_to_emerge,
-                                 'previous_sheath_visible_length': mtg_previous_sheath_visible_length,
-                                 'previous_sheath_hidden_length': mtg_previous_sheath_hidden_length,
-                                 'internode_length': mtg_current_internode_length }
-                        else:
-                            raise Exception('No previous metamer found for hiddenzone {}.'.format(hiddenzone_id))
 
                     # Organ scale
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
@@ -215,10 +174,7 @@ class ElongWheatFacade(object):
 
                                 all_elongwheat_elements_dict[element_id] = elongwheat_element_inputs_dict
 
-
-        self._simulation.initialize({'hiddenzone': all_elongwheat_hiddenzones_dict, 'elements': all_elongwheat_elements_dict, 'SAM': all_elongwheat_SAM_dict,
-                                     'hiddenzone_L_calculation': all_elongwheat_hiddenzones_L_calculation_dict, 'SAM_height_calculation': all_elongwheat_SAM_height_calculation_dict})
-
+        self._simulation.initialize({'hiddenzone': all_elongwheat_hiddenzones_dict, 'elements': all_elongwheat_elements_dict, 'SAM': all_elongwheat_SAM_dict})
 
     def _update_shared_MTG(self, all_elongwheat_hiddenzones_data_dict, all_elongwheat_elements_data_dict, all_elongwheat_SAM_data_dict):
         """
@@ -250,11 +206,12 @@ class ElongWheatFacade(object):
                 if (mtg_plant_index, mtg_axis_label) not in axis_to_metamers_mapping: continue
                 new_metamer_ids = set(axis_to_metamers_mapping[(mtg_plant_index, mtg_axis_label)]).difference(mtg_metamer_ids)
                 for _ in new_metamer_ids:
-                    self.geometrical_model.add_metamer(self._shared_mtg, mtg_plant_index, mtg_axis_label)
+                    self.geometrical_model.add_metamer(self._shared_mtg, mtg_plant_index, mtg_axis_label) ## MG : Ici sont ajoutés les metamers même cachés, uniquement avec des top et base elements. POURQUOI ?
 
         # update the properties of the MTG
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
+
             # Axis scale
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
@@ -266,6 +223,7 @@ class ElongWheatFacade(object):
                         self._shared_mtg.property('SAM')[mtg_axis_vid] = {}
                     for SAM_data_name, SAM_data_value in elongwheat_SAM_data_dict.iteritems():
                         self._shared_mtg.property('SAM')[mtg_axis_vid][SAM_data_name] = SAM_data_value
+
                 # metamer scale
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
@@ -285,6 +243,7 @@ class ElongWheatFacade(object):
                     elif 'hiddenzone' in self._shared_mtg.get_vertex_property(mtg_metamer_vid):
                         # remove the 'hiddenzone' property from this metamer
                         del self._shared_mtg.property('hiddenzone')[mtg_metamer_vid]
+
                     # Organ scale
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
@@ -294,7 +253,7 @@ class ElongWheatFacade(object):
                         if len(mtg_organs_data_from_elongwheat_hiddenzone_data) != 0 and mtg_organ_label == 'blade':
                             self._shared_mtg.property('shape_mature_length')[mtg_organ_vid] = mtg_organs_data_from_elongwheat_hiddenzone_data['lamina_Lmax']
                             self._shared_mtg.property('shape_max_width')[mtg_organ_vid] = mtg_organs_data_from_elongwheat_hiddenzone_data['leaf_Wmax']
-                        # Element scale. Most of the code is temporary, wiating for an update of adel in order that the model could update organ properties from elements.
+                        # Element scale. Most of the code is temporary, waiting for an update of adel in order that the model could update organ properties from elements.
                         mtg_element_labels = {}
                         for actual_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             actual_element_label = self._shared_mtg.label(actual_element_vid)
@@ -306,10 +265,11 @@ class ElongWheatFacade(object):
                                 elongwheat_element_data_dict = all_elongwheat_elements_data_dict[element_id]
                                 # Element just created by elongwheat but not yet in MTG
                                 if element_label not in mtg_element_labels.keys():
-                                    self._shared_mtg.property('visible_length')[mtg_organ_vid] = elongwheat_element_data_dict['length']
+                                    if element_label in ('StemElement', 'LeafElement1'):
+                                       self._shared_mtg.property('visible_length')[mtg_organ_vid] = elongwheat_element_data_dict['length']
                                     self._shared_mtg.property('length')[mtg_organ_vid] = elongwheat_element_data_dict['length'] # TODO: see if the following is necessary because not very correct
-                                    self.geometrical_model.update_geometry(self._shared_mtg)
-                                    mtg_element_vid = [vid for vid in self._shared_mtg.components_iter(mtg_organ_vid) if self._shared_mtg.label(vid) in ('StemElement', 'LeafElement1')]
+                                    self.geometrical_model.update_geometry(self._shared_mtg) ## Update element scale based on organ infos
+                                    mtg_element_vid = [vid for vid in self._shared_mtg.components_iter(mtg_organ_vid) if self._shared_mtg.label(vid) == element_label] ##if self._shared_mtg.label(vid) in ('StemElement', 'LeafElement1')
                                     for element_data_name, element_data_value in elongwheat_element_data_dict.iteritems():
                                         self._shared_mtg.property(element_data_name)[mtg_element_vid[0]] = element_data_value
 
