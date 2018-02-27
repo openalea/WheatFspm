@@ -168,9 +168,11 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
                                                                    shared_elements_inputs_outputs_df)
 
         # farquharwheat
-        farquharwheat_elements_inputs_t0 = pd.read_csv(FARQUHARWHEAT_INPUTS_FILEPATH)
+        farquharwheat_elements_inputs_t0 = pd.read_csv(FARQUHARWHEAT_ELEMENTS_INPUTS_FILEPATH)
+        farquharwheat_SAMs_inputs_t0 = pd.read_csv(FARQUHARWHEAT_SAMS_INPUTS_FILEPATH)
         farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
                                                                          farquharwheat_elements_inputs_t0,
+                                                                         farquharwheat_SAMs_inputs_t0,
                                                                          shared_elements_inputs_outputs_df)
 
         # elongwheat
