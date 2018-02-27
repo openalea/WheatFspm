@@ -25,16 +25,15 @@
         $Id$
 """
 
-import pandas as pd
-
 from respiwheat import model as respiwheat_model
 
 from cnwheat import model as cnwheat_model, simulation as cnwheat_simulation, \
-    converter as cnwheat_converter, postprocessing as cnwheat_postprocessing
-    
+    converter as cnwheat_converter, postprocessing as cnwheat_postprocessing, parameters as cnwheat_parameters
+
 from fspmwheat import tools
-    
+
 import math ##MG
+import numpy as np
 
 #: the mapping of CNWheat organ classes to the attributes in axis and phytomer which represent an organ
 CNWHEAT_ATTRIBUTES_MAPPING = {cnwheat_model.Internode: 'internode', cnwheat_model.Lamina: 'lamina',
@@ -44,10 +43,10 @@ CNWHEAT_ATTRIBUTES_MAPPING = {cnwheat_model.Internode: 'internode', cnwheat_mode
 
 #: the mapping of organs (which belong to an axis) labels in MTG to organ classes in CNWheat
 MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING = {'grains': cnwheat_model.Grains, 'phloem': cnwheat_model.Phloem, 'roots': cnwheat_model.Roots}
- 
+
 #: the mapping of organs (which belong to a phytomer) labels in MTG to organ classes in CNWheat
 MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING = {'internode': cnwheat_model.Internode, 'blade': cnwheat_model.Lamina, 'sheath': cnwheat_model.Sheath, 'peduncle': cnwheat_model.Peduncle, 'ear': cnwheat_model.Chaff, 'hiddenzone': cnwheat_model.HiddenZone}
- 
+
 # # the mapping of CNWheat photosynthetic organs to CNWheat photosynthetic organ elements
 CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING = {cnwheat_model.Internode: cnwheat_model.InternodeElement, cnwheat_model.Lamina: cnwheat_model.LaminaElement, cnwheat_model.Sheath: cnwheat_model.SheathElement, cnwheat_model.Peduncle: cnwheat_model.PeduncleElement, cnwheat_model.Chaff: cnwheat_model.ChaffElement}
 
@@ -56,7 +55,7 @@ POPULATION_STATE_VARIABLE = set(cnwheat_simulation.Simulation.PLANTS_STATE + cnw
                                 cnwheat_simulation.Simulation.PHYTOMERS_STATE + cnwheat_simulation.Simulation.ORGANS_STATE +
                                 cnwheat_simulation.Simulation.HIDDENZONE_STATE + cnwheat_simulation.Simulation.ELEMENTS_STATE)
 
-# number of seconds in 1 hour  
+# number of seconds in 1 hour
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
 
@@ -101,9 +100,9 @@ class CNWheatFacade(object):
         self._simulation = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=delta_t, culm_density=culm_density)
 
         self.population, self.soils = cnwheat_converter.from_dataframes(model_organs_inputs_df, model_hiddenzones_inputs_df, model_elements_inputs_df, model_soils_inputs_df)
-        
+
         self._simulation.initialize(self.population, self.soils)
-        
+
         self._update_shared_MTG()
 
         self._shared_axes_inputs_outputs_df = shared_axes_inputs_outputs_df #: the dataframe at axes scale shared between all models
@@ -124,7 +123,7 @@ class CNWheatFacade(object):
         self._initialize_model()
         self._simulation.run()
         self._update_shared_MTG()
-        
+
         _, cnwheat_axes_inputs_outputs_df, _, cnwheat_organs_inputs_outputs_df, \
         cnwheat_hiddenzones_inputs_outputs_df, cnwheat_elements_inputs_outputs_df, \
         cnwheat_soils_inputs_outputs_df \
@@ -135,18 +134,18 @@ class CNWheatFacade(object):
                                        cnwheat_hiddenzones_data_df=cnwheat_hiddenzones_inputs_outputs_df,
                                        cnwheat_elements_data_df=cnwheat_elements_inputs_outputs_df,
                                        cnwheat_soils_data_df=cnwheat_soils_inputs_outputs_df)
-        
+
     @staticmethod
     def postprocessing(axes_outputs_df, organs_outputs_df, hiddenzone_outputs_df, elements_outputs_df, soils_outputs_df, delta_t):
         """
         Run the postprocessing.
         """
-        (axes_postprocessing_df, 
+        (axes_postprocessing_df,
          hiddenzones_postprocessing_df,
          organs_postprocessing_df,
          elements_postprocessing_df,
-         soils_postprocessing_df) = cnwheat_postprocessing.postprocessing(axes_df=axes_outputs_df, hiddenzones_df=hiddenzone_outputs_df, 
-                                                                          organs_df=organs_outputs_df, elements_df=elements_outputs_df, 
+         soils_postprocessing_df) = cnwheat_postprocessing.postprocessing(axes_df=axes_outputs_df, hiddenzones_df=hiddenzone_outputs_df,
+                                                                          organs_df=organs_outputs_df, elements_df=elements_outputs_df,
                                                                           soils_df=soils_outputs_df, delta_t=delta_t)
         return axes_postprocessing_df, hiddenzones_postprocessing_df, organs_postprocessing_df, \
             elements_postprocessing_df, soils_postprocessing_df
@@ -161,7 +160,7 @@ class CNWheatFacade(object):
                                                 elements_df=elements_postprocessing_df,
                                                 soils_df=soils_postprocessing_df,
                                                 graphs_dirpath=graphs_dirpath)
-        
+
 
     def _initialize_model(self):
         """
@@ -194,7 +193,7 @@ class CNWheatFacade(object):
                                 cnwheat_organ_data_dict[cnwheat_organ_data_name] = mtg_organ_properties[cnwheat_organ_data_name]
 
                                 ##MG
-                                if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] == None:
+                                if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] is None:
                                     print(mtg_axis_vid)
                                     print(mtg_organ_label)
                                     print(cnwheat_organ_data_name)
@@ -232,7 +231,7 @@ class CNWheatFacade(object):
                                 cnwheat_hiddenzone_data_dict[cnwheat_hiddenzone_data_name] = mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]
 
                                 ##MG
-                                if math.isnan(mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]) or mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name] == None:
+                                if math.isnan(mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]) or mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name] is None:
                                     print(mtg_metamer_vid)
                                     print(mtg_hiddenzone_label)
                                     print(cnwheat_hiddenzone_data_name)
@@ -253,41 +252,31 @@ class CNWheatFacade(object):
                         if mtg_organ_label not in MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING \
                             or self._shared_mtg.get_vertex_property(mtg_organ_vid)['length'] == 0:
                             continue
+
                         # create a new organ
                         cnwheat_organ_class = MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]
                         cnwheat_organ = cnwheat_organ_class(mtg_organ_label)
                         cnwheat_organ.initialize()
                         has_valid_element = False
+
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
+
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
-                            if mtg_element_label not in cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING: continue
-                            if set(mtg_element_properties).issuperset(cnwheat_simulation.Simulation.ELEMENTS_STATE):
-                                has_valid_element = True
-                                cnwheat_element_data_dict = {}
-                                for cnwheat_element_data_name in cnwheat_simulation.Simulation.ELEMENTS_STATE:
-                                    cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_properties[cnwheat_element_data_name]
-                                cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
-                                setattr(cnwheat_organ, cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
-##                            elif mtg_plant_index == 1 and mtg_axis_label == 'MS' and mtg_metamer_index == 4 and mtg_organ_label == 'blade' and mtg_element_label == 'LeafElement1':
-##                                # TODO: temporary ; replace 'CNWHEAT_ELEMENT_PROPERTIES_TEMP' by default values
-##                                CNWHEAT_ELEMENT_PROPERTIES_TEMP = {'nitrates': 0, 'Ag': 0, 'starch': 0, 'proteins': 0, 'fructan': 0, 'Tr': 0, 'Ts': 18, 'cytokinins': 0, 'triosesP': 0}
-##                                has_valid_element = True
-##                                cnwheat_element_data_dict = {}
-##                                for cnwheat_element_data_name in cnwheat_simulation.Simulation.ELEMENTS_STATE:
-##                                    if cnwheat_element_data_name in mtg_element_properties:
-##                                        cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_properties[cnwheat_element_data_name]
-##
-##                                        ##MG
-##                                        if math.isnan(mtg_element_properties[cnwheat_element_data_name]) or mtg_element_properties[cnwheat_element_data_name] == None:
-##                                           print(mtg_element_vid)
-##                                           print(mtg_element_label)
-##                                           print(cnwheat_element_data_name)
-##
-##                                    else:
-##                                        cnwheat_element_data_dict[cnwheat_element_data_name] = CNWHEAT_ELEMENT_PROPERTIES_TEMP[cnwheat_element_data_name]
-##                                cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
-##                                setattr(cnwheat_organ, cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
+                            if mtg_element_label not in cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING \
+                               or (self._shared_mtg.get_vertex_property(mtg_element_vid)['length'] == 0)  \
+                               or ( (mtg_element_label == 'HiddenElement') and ( self._shared_mtg.get_vertex_property(mtg_organ_vid).get('is_growing',True)) ) :
+                               continue
+
+                            has_valid_element = True
+                            cnwheat_element_data_dict = {}
+                            for cnwheat_element_data_name in cnwheat_simulation.Simulation.ELEMENTS_STATE:
+                                mtg_element_data_value = mtg_element_properties.get( cnwheat_element_data_name )
+                                if mtg_element_data_value is None or np.isnan(mtg_element_data_value): # In case the value is None, or the proprety is not even defined, we take default value from InitCompartment
+                                    mtg_element_data_value = cnwheat_parameters.PhotosyntheticOrganElementInitCompartments().__dict__[cnwheat_element_data_name]
+                                cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_data_value
+                            cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
+                            setattr(cnwheat_organ, cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
 
                         if has_valid_element:
                             has_valid_organ = True
