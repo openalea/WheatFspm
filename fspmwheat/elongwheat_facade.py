@@ -38,6 +38,9 @@ SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', '
 
 ELEMENT_TYPES = ('HiddenElement', 'StemElement', 'LeafElement1')
 
+ELEMENTS_DATA_FROM_ORGAN_DATA = {'width','diameter'}
+
+
 class ElongWheatFacade(object):
     """
     The ElongWheatFacade class permits to initialize, run the model ElongWheat
@@ -108,10 +111,12 @@ class ElongWheatFacade(object):
 
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
+
             # Axis scale
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
                 mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
+
                 # SAM
                 if 'SAM' in mtg_axis_properties:
                     SAM_vid = (mtg_plant_index, mtg_axis_label)
@@ -128,7 +133,7 @@ class ElongWheatFacade(object):
                             break
                     if is_valid_SAM:
                         all_elongwheat_SAM_dict[SAM_vid] = elongwheat_SAM_inputs_dict
-##                        all_elongwheat_SAM_height_calculation_dict[SAM_vid] = 0
+
                 # Metamer scale
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
@@ -136,7 +141,7 @@ class ElongWheatFacade(object):
 
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
                     if 'hiddenzone' in mtg_metamer_properties:
-##                        mtg_previous_metamer_vid = self._shared_mtg.parent(mtg_metamer_vid)
+
                         hiddenzone_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index)
                         mtg_hiddenzone_properties = mtg_metamer_properties['hiddenzone']
                         elongwheat_hiddenzone_inputs_dict = {}
@@ -162,7 +167,7 @@ class ElongWheatFacade(object):
                         if mtg_organ_label == 'blade':
                             elongwheat_hiddenzone_data_from_mtg_organs_data['lamina_Lmax'] = mtg_organ_properties['shape_mature_length']
                             elongwheat_hiddenzone_data_from_mtg_organs_data['leaf_Wmax'] = mtg_organ_properties['shape_max_width']
-                        # ELement scale
+                        # Element scale
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
@@ -208,6 +213,8 @@ class ElongWheatFacade(object):
                 for _ in new_metamer_ids:
                     self.geometrical_model.add_metamer(self._shared_mtg, mtg_plant_index, mtg_axis_label) ## MG : Ici sont ajoutés les metamers même cachés, uniquement avec des top et base elements. POURQUOI ?
 
+        self.geometrical_model.update_geometry( self._shared_mtg ) ## Add HiddenElement and Stem/Leaf Element
+
         # update the properties of the MTG
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
@@ -247,12 +254,23 @@ class ElongWheatFacade(object):
                     # Organ scale
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
+
                         if mtg_organ_label not in ('blade', 'sheath', 'internode'): continue
+
                         organ_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label)
+
+                        mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_organ_vid)
+                        mtg_elements_data_from_organ_data = {}
+                        # Extract data from organs to be stored at element scale (see below)
+                        for organ_data_name in ELEMENTS_DATA_FROM_ORGAN_DATA:
+                            if organ_data_name in mtg_organ_properties.keys():
+                                mtg_elements_data_from_organ_data[organ_data_name] = mtg_organ_properties[organ_data_name]
+
                         # Data from hidden zones to be stored at organ scale
                         if len(mtg_organs_data_from_elongwheat_hiddenzone_data) != 0 and mtg_organ_label == 'blade':
                             self._shared_mtg.property('shape_mature_length')[mtg_organ_vid] = mtg_organs_data_from_elongwheat_hiddenzone_data['lamina_Lmax']
                             self._shared_mtg.property('shape_max_width')[mtg_organ_vid] = mtg_organs_data_from_elongwheat_hiddenzone_data['leaf_Wmax']
+
                         # Element scale. Most of the code is temporary, waiting for an update of adel in order that the model could update organ properties from elements.
                         mtg_element_labels = {}
                         for actual_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
@@ -264,7 +282,7 @@ class ElongWheatFacade(object):
                             if element_id in all_elongwheat_elements_data_dict:
                                 elongwheat_element_data_dict = all_elongwheat_elements_data_dict[element_id]
                                 # Element just created by elongwheat but not yet in MTG
-                                if element_label not in mtg_element_labels.keys():
+                                if element_label not in mtg_element_labels.keys(): # MG : This case doen't seem to be usefull
                                     if element_label in ('StemElement', 'LeafElement1'):
                                        self._shared_mtg.property('visible_length')[mtg_organ_vid] = elongwheat_element_data_dict['length']
                                     self._shared_mtg.property('length')[mtg_organ_vid] = elongwheat_element_data_dict['length'] # TODO: see if the following is necessary because not very correct
@@ -278,6 +296,10 @@ class ElongWheatFacade(object):
                                     mtg_element_vid = mtg_element_labels[element_label]
                                     for element_data_name, element_data_value in elongwheat_element_data_dict.iteritems():
                                         self._shared_mtg.property(element_data_name)[mtg_element_vid] = element_data_value
+
+                                # Put some properties from organ scale at element scale
+                                for organ_data_name in mtg_elements_data_from_organ_data:
+                                    self._shared_mtg.property(organ_data_name)[mtg_element_vid] = mtg_elements_data_from_organ_data[organ_data_name]
 
                         # update of organ scale from elements
                         new_mtg_element_labels = {}
