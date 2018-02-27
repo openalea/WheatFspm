@@ -42,7 +42,7 @@ SAM_INPUTS = ['sum_TT', 'status', 'nb_leaves', 'GA', 'height']
 #: the outputs computed by ElongWheat # TODO : add be default all the attributes of the class HiddenZoneInit and ElementInit, and define which attribute is set by growthwheat.parameters or elongwheat.parameters
 HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing','leaf_pseudo_age','internode_pseudo_age','leaf_pseudostem_length', 'delta_leaf_pseudostem_length','internode_distance_to_emergence', 'delta_internode_distance_to_emergence','leaf_L', 'delta_leaf_L', 'internode_L','delta_internode_L','leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'internode_Lmax','SSINW','internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins','leaf_enclosed_mstruct','leaf_enclosed_Nstruct','internode_mstruct','internode_Nstruct','mstruct']
 ELEMENT_OUTPUTS = ['length','is_growing', 'diameter', 'sucrose', 'amino_acids','fructan','proteins','mstruct','Nstruct']
-SAM_OUTPUTS = ['sum_TT', 'status', 'nb_leaves', 'GA', 'height']
+SAM_OUTPUTS = ['T_SAM','sum_TT', 'status', 'nb_leaves', 'GA', 'height']
 
 #: the inputs and outputs of ElongWheat.
 HIDDENZONE_INPUTS_OUTPUTS = sorted(set(HIDDENZONE_INPUTS + HIDDENZONE_OUTPUTS))
@@ -200,6 +200,7 @@ class Simulation(object):
 
             # In case leaf is already mature but internode is growing, we update sheath visible and hidden lengths.
             if not curr_hiddenzone_outputs['leaf_is_growing'] and curr_hiddenzone_outputs['leaf_is_emerged']:
+
                hidden_sheath_id = hiddenzone_id + tuple(['sheath', 'HiddenElement'])
                visible_sheath_id = hiddenzone_id + tuple(['sheath', 'StemElement'])
                total_sheath_L = self.inputs['elements'][hidden_sheath_id]['length'] + self.inputs['elements'][visible_sheath_id]['length']

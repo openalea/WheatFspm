@@ -168,11 +168,10 @@ def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_t, leaf_r
     :Returns Type:
         :class:`float`
     """
-
-##    RER_max = parameters.RERmax
-    RER_max = parameters.RERmax_dict[leaf_rank]
-    if sucrose > 0:
-        delta_leaf_L = leaf_L * RER_max * delta_t# * ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * (((amino_acids/mstruct) **3) / (parameters.Kn**3 + (amino_acids / mstruct)**3))
+    #RER_max = parameters.RERmax_dict[leaf_rank]
+    RER_max = parameters.RERmax #
+    if sucrose > 0 and amino_acids > 0 :
+        delta_leaf_L = leaf_L * RER_max * delta_t * ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * (((amino_acids/mstruct) **3) / (parameters.Kn**3 + (amino_acids / mstruct)**3))
     else:
         delta_leaf_L = 0
 
@@ -206,7 +205,7 @@ def calculate_L_postE(leaf_pseudo_age, leaf_Lmax):
     if leaf_pseudo_age <= parameters.tb:
         leaf_L = parameters.FITTED_L0 * leaf_Lmax
     elif leaf_pseudo_age < parameters.te :
-        leaf_L = min(leaf_Lmax, leaf_Lmax * (abs((1+ (max(0, (parameters.te - leaf_pseudo_age)) / (parameters.te - parameters.tm))) * (min(1, float(leaf_pseudo_age - parameters.tb) / float(parameters.te - parameters.tb))**((parameters.te - parameters.tb)/(parameters.te - parameters.tm)))) + parameters.OFFSET_LEAF))
+        leaf_L = min(leaf_Lmax, leaf_Lmax * (abs((1+ (max(0, (parameters.te - leaf_pseudo_age)) / (parameters.te - parameters.tm))) * (min(1.0 , float(leaf_pseudo_age - parameters.tb) / float(parameters.te - parameters.tb))**((parameters.te - parameters.tb)/(parameters.te - parameters.tm)))) + parameters.OFFSET_LEAF))
     else:
         leaf_L = leaf_Lmax
 
@@ -447,11 +446,10 @@ def calculate_delta_internode_L_preL(internode_rank, sucrose, internode_L, amino
     :Returns Type:
         :class:`float`
     """
-    #RER_max = parameters.RERmax
-    RER_max = parameters.RERmax_dict[internode_rank]
-
-    if sucrose > 0:
-        delta_internode_L = internode_L  * RER_max * delta_t# * ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * (((amino_acids/mstruct) **3) / (parameters.Kn**3 + (amino_acids / mstruct)**3))
+    RER_max = parameters.RERmax
+    #RER_max = parameters.RERmax_dict[internode_rank]
+    if sucrose > 0 and amino_acids > 0:
+        delta_internode_L = internode_L  * RER_max * delta_t * ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * (((amino_acids/mstruct) **3) / (parameters.Kn**3 + (amino_acids / mstruct)**3))
     else:
         delta_internode_L = 0
 
@@ -501,7 +499,7 @@ def calculate_internode_L_postL(internode_pseudo_age, internode_Lmax):
     if internode_pseudo_age <= parameters.tb_IN:
         internode_L = (1 / parameters.SCALING_FACTOR_INT) * internode_Lmax
     elif internode_pseudo_age < parameters.te_IN :
-        internode_L = min(internode_Lmax, internode_Lmax * (abs((1 + (max(0, (parameters.te_IN - internode_pseudo_age)) / (parameters.te_IN - parameters.tm_IN))) * (min(1, float(internode_pseudo_age - parameters.tb_IN) / float(parameters.te_IN - parameters.tb_IN))**((parameters.te_IN - parameters.tb_IN) / (parameters.te_IN - parameters.tm_IN)))) + parameters.OFFSET_INT))
+        internode_L = min(internode_Lmax, internode_Lmax * (abs((1 + (max(0, (parameters.te_IN - internode_pseudo_age)) / (parameters.te_IN - parameters.tm_IN))) * (min(1.0 , float(internode_pseudo_age - parameters.tb_IN) / float(parameters.te_IN - parameters.tb_IN))**((parameters.te_IN - parameters.tb_IN) / (parameters.te_IN - parameters.tm_IN)))) + parameters.OFFSET_INT))
     else:
         internode_L = internode_Lmax
     return internode_L

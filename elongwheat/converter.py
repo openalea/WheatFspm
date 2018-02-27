@@ -25,7 +25,6 @@ from __future__ import division # use "//" to do integer division
 """
 
 import pandas as pd
-import numpy as np
 
 import simulation
 
