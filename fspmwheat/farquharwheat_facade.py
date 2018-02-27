@@ -62,13 +62,14 @@ class FarquharWheatFacade(object):
 
     def __init__(self, shared_mtg,
                  model_elements_inputs_df,
+                 model_SAMs_inputs_df,
                  shared_elements_inputs_outputs_df):
 
         self._shared_mtg = shared_mtg #: the MTG shared between all models
 
         self._simulation = simulation.Simulation() #: the simulator to use to run the model
 
-        all_farquharwheat_inputs_dict = converter.from_dataframe(model_elements_inputs_df)
+        all_farquharwheat_inputs_dict = converter.from_dataframe(model_elements_inputs_df, model_SAMs_inputs_df)
         self._update_shared_MTG(all_farquharwheat_inputs_dict)
 
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df #: the dataframe at elements scale shared between all models

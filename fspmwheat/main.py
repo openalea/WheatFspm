@@ -66,7 +66,8 @@ CNWHEAT_SOILS_INPUTS_FILEPATH = os.path.join(CNWHEAT_INPUTS_DIRPATH, 'soils_inpu
 
 # farquharwheat inputs at t0
 FARQUHARWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'farquharwheat')
-FARQUHARWHEAT_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'inputs.csv')
+FARQUHARWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'elements_inputs.csv')
+FARQUHARWHEAT_SAMS_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'SAMs_inputs.csv')
 METEO_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'meteo_Clermont_rebuild.csv')
 
 # senescwheat inputs at t0
@@ -408,6 +409,4 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
 
 if __name__ == '__main__':
-    main(281, run_simu=True, run_postprocessing=True, generate_graphs=True)
-    execfile( "graphs.py" )
-    raw_input()
+    main(10, run_simu=True, run_postprocessing=True, generate_graphs=True)
