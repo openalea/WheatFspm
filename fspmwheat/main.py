@@ -25,31 +25,34 @@
         $Id$
 '''
 
-import os
-import time, datetime
-import profile, pstats
-
-import random
-
+import datetime
 import logging
+import os
+import random
+import time
 
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
+
+import caribu_facade
+import cnwheat_facade
+import elongwheat_facade
+import farquharwheat_facade
+import growthwheat_facade
+import senescwheat_facade
 
 from alinea.adel.adel_dynamic import AdelWheatDyn
-import cnwheat_facade, elongwheat_facade, farquharwheat_facade, growthwheat_facade, senescwheat_facade, caribu_facade
 
 random.seed(1234)
 np.random.seed(1234)
 
-# number of seconds in 1 hour  
+# number of seconds in 1 hour
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
 INPUTS_DIRPATH = 'inputs'
 
 # adelwheat inputs at t0
-ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat') # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
+ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat') # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
 
 # cnwheat inputs at t0
 CNWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'cnwheat')
@@ -117,7 +120,7 @@ INPUTS_OUTPUTS_PRECISION = 5 # 10
 LOGGING_CONFIG_FILEPATH = os.path.join('..', '..', 'logging.json')
 
 LOGGING_LEVEL = logging.INFO # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
- 
+
 def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True):
     if run_simu:
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
@@ -137,6 +140,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
         adel_wheat.domain = g.get_vertex_property(0)['meta']['domain'] # temp (until Christian's commit)
         adel_wheat.nplants = g.get_vertex_property(0)['meta']['nplants'] # temp (until Christian's commit)
+
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -213,16 +217,16 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
                                                        shared_elements_inputs_outputs_df,
                                                        shared_soils_inputs_outputs_df)
 
-##        # Update geometry
-##        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Returns mtg with non-SI units
-####        adel_wheat.convert_to_SI_units(g, properties_to_convert)
-##        adel_wheat.plot(g)
+        ##        # Update geometry
+        adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Returns mtg with non-SI units
+        ####        adel_wheat.convert_to_SI_units(g, properties_to_convert)
+        adel_wheat.plot(g)
 
         # define the start and the end of the whole simulation (in hours)
         start_time = 0
         stop_time = stop_time
 
-        # define lists of dataframes to store the inputs and the outputs of the models at each step.
+        # define lists of dataframes to store the inputs and the outputs of the models at each step.
         axes_all_data_list = []
         organs_all_data_list = [] # organs which belong to axes: roots, phloem, grains
         hiddenzones_all_data_list = []
@@ -232,45 +236,53 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
         all_simulation_steps = [] # to store the steps of the simulation
 
-        print('Début simulation')
+        print('Simulation starts')
 
         # run the simulators
         current_time_of_the_system = time.time()
 
         for t_caribu in xrange(start_time, stop_time, caribu_ts):
 
-          if t_caribu == start_time:
-
             # run Caribu
             PARi = meteo.loc[t_caribu, ['PARi']].iloc[0]
             caribu_facade_.run(energy=PARi)
             print('t caribu is {}'.format(t_caribu))
+
             for t_senescwheat in xrange(t_caribu, t_caribu + caribu_ts, senescwheat_ts):
+
                 # run SenescWheat
                 print('t senescwheat is {}'.format(t_senescwheat))
                 senescwheat_facade_.run()
+
                 for t_farquharwheat in xrange(t_senescwheat, t_senescwheat + senescwheat_ts, farquharwheat_ts):
                     # get the meteo of the current step
                     Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
+
                     # run FarquharWheat
                     farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
+
                     for t_elongwheat in xrange(t_farquharwheat, t_farquharwheat + farquharwheat_ts, elongwheat_ts):
                         print('t elongwheat is {}'.format(t_elongwheat))
+
                         # run ElongWheat
                         Ta, Tsol = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']] # TODO: Add soil temperature in the weather input file
                         elongwheat_facade_.run(Ta, Tsol)
+
                         # Update geometry
                         adel_wheat.update_geometry(g)#, SI_units=True, properties_to_convert=properties_to_convert) # Return mtg with non-SI units
-                        #adel_wheat.plot(g)
-##                        adel_wheat.convert_to_SI_units(g, properties_to_convert)
+                        adel_wheat.plot(g)
+                        ##                        adel_wheat.convert_to_SI_units(g, properties_to_convert)
 
                         for t_growthwheat in xrange(t_elongwheat, t_elongwheat + elongwheat_ts, growthwheat_ts):
+
                             # run GrowthWheat
                             print('t growthwheat is {}'.format(t_growthwheat))
                             growthwheat_facade_.run()
+
                             for t_cnwheat in xrange(t_growthwheat, t_growthwheat + growthwheat_ts, cnwheat_ts):
                                 if t_cnwheat > 0:
-                                    # run CNWheat 
+
+                                    # run CNWheat
                                     print('t cnwheat is {}'.format(t_cnwheat))
                                     cnwheat_facade_.run()
 
@@ -328,9 +340,9 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
 
     if run_postprocessing:
-        
+
         # cnwheat postprocessing only
-        
+
         # Retrieve outputs dataframes from precedent simulation run
         states_df_dict = {}
         for states_filepath in (AXES_STATES_FILEPATH,
@@ -343,7 +355,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
             states_df_dict[states_file_basename] = states_df
         time_grid = states_df_dict.values()[0].t
         delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
-        
+
         # run the postprocessing
         axes_postprocessing_file_basename = os.path.basename(AXES_POSTPROCESSING_FILEPATH).split('.')[0]
         hiddenzones_postprocessing_file_basename = os.path.basename(HIDDENZONES_POSTPROCESSING_FILEPATH).split('.')[0]
@@ -351,18 +363,18 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         elements_postprocessing_file_basename = os.path.basename(ELEMENTS_POSTPROCESSING_FILEPATH).split('.')[0]
         soils_postprocessing_file_basename = os.path.basename(SOILS_POSTPROCESSING_FILEPATH).split('.')[0]
         postprocessing_df_dict = {}
-        (postprocessing_df_dict[axes_postprocessing_file_basename], 
-         postprocessing_df_dict[hiddenzones_postprocessing_file_basename], 
-         postprocessing_df_dict[organs_postprocessing_file_basename], 
-         postprocessing_df_dict[elements_postprocessing_file_basename], 
+        (postprocessing_df_dict[axes_postprocessing_file_basename],
+         postprocessing_df_dict[hiddenzones_postprocessing_file_basename],
+         postprocessing_df_dict[organs_postprocessing_file_basename],
+         postprocessing_df_dict[elements_postprocessing_file_basename],
          postprocessing_df_dict[soils_postprocessing_file_basename]) \
-            = cnwheat_facade.CNWheatFacade.postprocessing(axes_outputs_df=states_df_dict[os.path.basename(AXES_STATES_FILEPATH).split('.')[0]], 
-                                                          hiddenzone_outputs_df=states_df_dict[os.path.basename(HIDDENZONES_STATES_FILEPATH).split('.')[0]], 
-                                                          organs_outputs_df=states_df_dict[os.path.basename(ORGANS_STATES_FILEPATH).split('.')[0]], 
-                                                          elements_outputs_df=states_df_dict[os.path.basename(ELEMENTS_STATES_FILEPATH).split('.')[0]], 
-                                                          soils_outputs_df=states_df_dict[os.path.basename(SOILS_STATES_FILEPATH).split('.')[0]], 
+            = cnwheat_facade.CNWheatFacade.postprocessing(axes_outputs_df=states_df_dict[os.path.basename(AXES_STATES_FILEPATH).split('.')[0]],
+                                                          hiddenzone_outputs_df=states_df_dict[os.path.basename(HIDDENZONES_STATES_FILEPATH).split('.')[0]],
+                                                          organs_outputs_df=states_df_dict[os.path.basename(ORGANS_STATES_FILEPATH).split('.')[0]],
+                                                          elements_outputs_df=states_df_dict[os.path.basename(ELEMENTS_STATES_FILEPATH).split('.')[0]],
+                                                          soils_outputs_df=states_df_dict[os.path.basename(SOILS_STATES_FILEPATH).split('.')[0]],
                                                           delta_t=delta_t)
-        
+
         # save the postprocessing to disk
         for postprocessing_file_basename, postprocessing_filepath in ((axes_postprocessing_file_basename, AXES_POSTPROCESSING_FILEPATH),
                                                                       (hiddenzones_postprocessing_file_basename, HIDDENZONES_POSTPROCESSING_FILEPATH),
@@ -370,10 +382,10 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
                                                                       (elements_postprocessing_file_basename, ELEMENTS_POSTPROCESSING_FILEPATH),
                                                                       (soils_postprocessing_file_basename, SOILS_POSTPROCESSING_FILEPATH)):
             postprocessing_df_dict[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
-        
-        
+
+
     if generate_graphs:
-        
+
         # Retrieve last computed post-processing dataframes
         organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
         hiddenzones_postprocessing_file_basename = os.path.basename(HIDDENZONES_POSTPROCESSING_FILEPATH).split('.')[0]
@@ -386,15 +398,16 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
                                                                         (SOILS_POSTPROCESSING_FILEPATH, soils_postprocessing_file_basename)):
             postprocessing_df = pd.read_csv(postprocessing_filepath)
             postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
-                
+
         # Generate graphs
         cnwheat_facade.CNWheatFacade.graphs(hiddenzones_postprocessing_df=postprocessing_df_dict[hiddenzones_postprocessing_file_basename],
                                             organs_postprocessing_df=postprocessing_df_dict[organs_postprocessing_file_basename],
                                             elements_postprocessing_df=postprocessing_df_dict[elements_postprocessing_file_basename],
                                             soils_postprocessing_df=postprocessing_df_dict[soils_postprocessing_file_basename],
                                             graphs_dirpath=GRAPHS_DIRPATH)
-        
-        
+
+
 if __name__ == '__main__':
-    main(2, run_simu=True, run_postprocessing=True, generate_graphs=True)
-    
+    main(281, run_simu=True, run_postprocessing=True, generate_graphs=True)
+    execfile( "graphs.py" )
+    raw_input()

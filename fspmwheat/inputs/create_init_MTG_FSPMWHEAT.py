@@ -17,13 +17,13 @@ def create_init_MTG_FSPMWHEAT(dirpath):
     """
 
     # Organ dimensions
-    blades = blade_dimension(length=[0.0814, 0.0924, 0.0935],
-                             area=[9.73318E-4, 2.33465E-4, 8.2562E-4],
-                             ntop=[3, 2, 1])
+    blades = blade_dimension(length=[ 0.0924, 0.0935],
+                             area=[ 2.33465E-4, 8.2562E-4],
+                             ntop=[ 2, 1])
 
-    stem = stem_dimension(ntop=[3, 2, 1],
-                          sheath=[0.0302, 0.0304, 0.031], d_sheath=[0.003, 0.003, 0.003],
-                          internode=[0, 0, 0], d_internode=[0, 0, 0])
+    stem = stem_dimension(ntop=[2, 1],
+                          sheath=[ 0.0304, 0.031], d_sheath=[ 0.003, 0.003],
+                          internode=[0, 0], d_internode=[ 0, 0])
 
     dimT = dimension_table(blades, stem)
 
