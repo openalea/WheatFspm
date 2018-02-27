@@ -28,25 +28,30 @@ import pandas as pd
 
 
 #: the inputs needed by FarquharWheat at element scale
-FARQUHARWHEAT_INPUTS = ['width', 'height', 'PARa', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
+FARQUHARWHEAT_ELEMENTS_INPUTS = ['width', 'height', 'PARa', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
+#: the inputs needed by FarquharWheat at axis scale
+FARQUHARWHEAT_SAMS_INPUTS = ['T_SAM', 'H_Canopy']
 
 #: the outputs computed by FarquharWheat
-FARQUHARWHEAT_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs']
+FARQUHARWHEAT_ELEMENTS_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs','width', 'height']
 
 #: the inputs and outputs of FarquharWheat.
-FARQUHARWHEAT_INPUTS_OUTPUTS = FARQUHARWHEAT_INPUTS + FARQUHARWHEAT_OUTPUTS
+FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS = set(FARQUHARWHEAT_ELEMENTS_INPUTS + FARQUHARWHEAT_ELEMENTS_OUTPUTS)
 
-#: the columns which define the topology in the input/output dataframe
-DATAFRAME_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ', 'element']
+#: the columns which define the topology in the input/output elements dataframe
+ELEMENT_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ', 'element']
+#: the columns which define the topology in the input/output elements dataframe
+SAM_TOPOLOGY_COLUMNS = ['plant', 'axis']
 
 
-def from_dataframe(dataframe):
+def from_dataframe(element_inputs, SAM_inputs):
     """
     Convert inputs/outputs from Pandas dataframe to Farquhar-Wheat format.
 
     :Parameters:
 
-        - `dataframe` (:class:`pandas.DataFrame`) - Inputs/outputs dataframe to convert, with one line by element.
+        - `SAM_inputs` (:class:`pandas.DataFrame`) - Shoot Apical Meristem inputs dataframe to convert, with one line by SAM ie. one line per axis.
+        - `element_inputs` (:class:`pandas.DataFrame`) - Emergeing and mature element inputs dataframe to convert, with one line by element.
 
     :Returns:
         The inputs/outputs in a dictionary.
@@ -58,13 +63,21 @@ def from_dataframe(dataframe):
        for the structure of Farquhar-Wheat inputs/outputs.
 
     """
-    data_dict = {}
-    data_columns = dataframe.columns.difference(DATAFRAME_TOPOLOGY_COLUMNS)
-    for current_id, current_group in dataframe.groupby(DATAFRAME_TOPOLOGY_COLUMNS):
+    all_elements_dict = {}
+    data_columns = element_inputs.columns.difference( ELEMENT_TOPOLOGY_COLUMNS )
+    for current_id, current_group in element_inputs.groupby( ELEMENT_TOPOLOGY_COLUMNS ):
         current_series = current_group.loc[current_group.first_valid_index()]
         current_dict = current_series[data_columns].to_dict()
-        data_dict[current_id] = current_dict
-    return data_dict
+        all_elements_dict[current_id] = current_dict
+
+    all_SAMs_dict = {}
+    data_columns = SAM_inputs.columns.difference(SAM_TOPOLOGY_COLUMNS)
+    for current_id, current_group in SAM_inputs.groupby(SAM_TOPOLOGY_COLUMNS):
+        current_series = current_group.loc[current_group.first_valid_index()]
+        current_dict = current_series[data_columns].to_dict()
+        all_SAMs_dict[current_id] = current_dict
+
+    return {'elements': all_elements_dict, 'SAMs': all_SAMs_dict}
 
 
 def to_dataframe(data_dict):
@@ -76,7 +89,7 @@ def to_dataframe(data_dict):
         - `data_dict` (:class:`dict`) - The inputs/outputs in Farquhar-Wheat format.
 
     :Returns:
-        The inputs/outputs in a dataframe.
+         - one dataframe for element outputs
 
     :Returns Type:
         :class:`pandas.DataFrame`
@@ -85,11 +98,11 @@ def to_dataframe(data_dict):
        for the structure of Farquhar-Wheat inputs/outputs.
 
     """
-    ids_df = pd.DataFrame(data_dict.keys(), columns=DATAFRAME_TOPOLOGY_COLUMNS)
+    ids_df = pd.DataFrame(data_dict.keys(), columns=ELEMENT_TOPOLOGY_COLUMNS)
     data_df = pd.DataFrame(data_dict.values())
     df = pd.concat([ids_df, data_df], axis=1)
-    df.sort_values(by=DATAFRAME_TOPOLOGY_COLUMNS, inplace=True)
-    columns_sorted = DATAFRAME_TOPOLOGY_COLUMNS + [column_name for column_name in FARQUHARWHEAT_INPUTS_OUTPUTS if column_name in df.columns]
+    df.sort_values(by=ELEMENT_TOPOLOGY_COLUMNS, inplace=True)
+    columns_sorted = ELEMENT_TOPOLOGY_COLUMNS + [column_name for column_name in FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS if column_name in df.columns]
     df = df.reindex_axis(columns_sorted, axis=1, copy=False)
     df.reset_index(drop=True, inplace=True)
     return df

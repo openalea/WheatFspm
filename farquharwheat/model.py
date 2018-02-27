@@ -322,7 +322,7 @@ class Model(object):
 
 
     @classmethod
-    def run(cls, surfacic_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name):
+    def run(cls, surfacic_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name, H_Canopy):
         """
         Computes the photosynthesis of a photosynthetic element. The photosynthesis is computed by using the biochemical FCB model (Farquhar et al., 1980) coupled to the semiempirical
         BWB model of stomatal conductance (Ball, 1987).
@@ -360,9 +360,6 @@ class Model(object):
         if surfacic_nitrogen is None:
             surfacic_nitrogen = cls.NA_0
 
-        #: Organ parameters
-        H_CANOPY = 0.78                              #TODO: temporary (m)
-
         ### Iterations to find organ temperature and Ci ###
         Ci, Ts = 0.7*ambient_CO2, Ta # Initial values
         count = 0
@@ -377,7 +374,7 @@ class Model(object):
             Ci = cls._calculate_Ci(ambient_CO2, An, gsw)
 
             # New value of Ts
-            Ts, Tr = cls._organ_temperature(width, height, H_CANOPY, Ur, PAR, gsw, Ta, Ts, RH, organ_name)
+            Ts, Tr = cls._organ_temperature(width, height, H_Canopy, Ur, PAR, gsw, Ta, Ts, RH, organ_name)
             count +=1
 
             if count >=30: # TODO: test a faire? Semble prendre du tps de calcul

@@ -56,7 +56,9 @@ class Simulation(object):
 
         :Parameters:
 
-            - `inputs` (:class:`dict`) - The inputs by element.
+            - `inputs` (:class:`dict`) - Dictionary of two dictionaries :
+                    - `elements` : The inputs by element.
+                    - `SAMs` : The inputs by axis.
               `inputs` must be a dictionary with the same structure as :attr:`inputs`.
 
             See :meth:`Model.run <farquharwheat.model.Model.run>`
@@ -82,22 +84,35 @@ class Simulation(object):
             - `Ur` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
 
         """
-        self.outputs.update({inputs_type: {} for inputs_type in self.inputs.iterkeys()})
-        for (element_id, element_inputs) in self.inputs.iteritems():
+        self.outputs.update({inputs_type: {} for inputs_type in self.inputs['elements'].iterkeys()})
+        for (element_id, element_inputs) in self.inputs['elements'].iteritems():
+            SAM_id = element_id[:2]
+
             if element_inputs['green_area'] == 0.0:
                 element_outputs = dict.fromkeys(['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs'], 0.0)
             else:
                 organ_label = element_id[3]
-                PARa = element_inputs['PARa']     #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
-                surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
+
+                element_label = element_id[4]
+                if element_label == 'HiddenElement' or element_inputs['height'] is None: # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
+                    Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
+                    Ts = self.inputs['SAMs'][SAM_id]['T_SAM']
+                else:
+                    PARa = element_inputs['PARa']     #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
+
+                    surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
                                                                             element_inputs['amino_acids'],
                                                                             element_inputs['proteins'],
                                                                             element_inputs['Nstruct'],
                                                                             element_inputs['green_area'])
-                Ag, An, Rd, Tr, Ts, gs = model.Model.run(surfacic_nitrogen,
-                                                                  element_inputs['width'],
-                                                                  element_inputs['height'],
-                                                                  PARa, Ta, ambient_CO2, RH, Ur, organ_label)
-                element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
+
+                    H_Canopy = self.inputs['SAMs'][SAM_id]['H_Canopy']
+                    Ag, An, Rd, Tr, Ts, gs = model.Model.run(surfacic_nitrogen,
+                                                                      element_inputs['width'],
+                                                                      element_inputs['height'],
+                                                                      PARa, Ta, ambient_CO2, RH, Ur, organ_label, H_Canopy)
+
+                element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs, \
+                                   'width': element_inputs['width'], 'height' : element_inputs['height'] }
 
             self.outputs[element_id] = element_outputs

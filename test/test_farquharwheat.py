@@ -30,7 +30,8 @@ import pandas as pd
 
 from farquharwheat import simulation, converter
 
-INPUTS_FILENAME = 'inputs.csv'
+INPUTS_ELEMENT_FILENAME = 'elements_inputs.csv'
+INPUTS_SAM_FILENAME = 'SAMs_inputs.csv'
 
 DESIRED_OUTPUTS_FILENAME = 'desired_outputs.csv'
 ACTUAL_OUTPUTS_FILENAME = 'actual_outputs.csv'
@@ -64,15 +65,12 @@ def test_run():
     # create a simulation and a converter
     simulation_ = simulation.Simulation()
     # read inputs from Pandas dataframe
-    inputs_df = pd.read_csv(INPUTS_FILENAME)
+    elements_inputs_df = pd.read_csv(INPUTS_ELEMENT_FILENAME)
+    SAMs_inputs_df = pd.read_csv( INPUTS_SAM_FILENAME )
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframe(inputs_df)
+    inputs = converter.from_dataframe(elements_inputs_df, SAMs_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
-    # convert the inputs to Pandas dataframe
-    reconverted_inputs = converter.to_dataframe(simulation_.inputs)
-    # compare inputs
-    compare_actual_to_desired('.', reconverted_inputs, INPUTS_FILENAME)
     # run the simulation
     simulation_.run(Ta=18.8, ambient_CO2=360, RH=0.530000, Ur=2.200000)
     # convert the outputs to Pandas dataframe
