@@ -84,7 +84,7 @@ ELONGWHEAT_SAM_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'SAM_in
 # growthwheat inputs at t0
 GROWTHWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'growthwheat')
 GROWTHWHEAT_HIDDENZONE_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
-GROWTHWHEAT_ORGANS_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'organs_inputs.csv')
+GROWTHWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'elements_inputs.csv')
 GROWTHWHEAT_ROOTS_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'roots_inputs.csv')
 
 # the path of the CSV files where to save the states of the modeled system at each step
@@ -191,12 +191,12 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
         # growthwheat
         growthwheat_hiddenzones_inputs_t0 = pd.read_csv(GROWTHWHEAT_HIDDENZONE_INPUTS_FILEPATH)
-        growthwheat_organ_inputs_t0 = pd.read_csv(GROWTHWHEAT_ORGANS_INPUTS_FILEPATH)
+        growthwheat_element_inputs_t0 = pd.read_csv(GROWTHWHEAT_ELEMENTS_INPUTS_FILEPATH)
         growthwheat_root_inputs_t0 = pd.read_csv(GROWTHWHEAT_ROOTS_INPUTS_FILEPATH)
         growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
                                                                    growthwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                    growthwheat_hiddenzones_inputs_t0,
-                                                                   growthwheat_organ_inputs_t0,
+                                                                   growthwheat_element_inputs_t0,
                                                                    growthwheat_root_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
                                                                    shared_hiddenzones_inputs_outputs_df,
@@ -328,7 +328,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         all_SAM_inputs_outputs.to_csv(SAM_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
-        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & ### TODO: temporary ; to remove when there will be default input values for each element in the mtg
+        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & # TODO: temporary ; to remove when there will be default input values for each element in the mtg
                                                                       (all_elements_inputs_outputs.axis == 'MS')]
         all_elements_inputs_outputs.reset_index(0, inplace=True)
         all_elements_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
