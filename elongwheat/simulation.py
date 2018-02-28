@@ -35,12 +35,12 @@ import model, parameters
 
 
 #: the inputs needed by ElongWheat
-HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing','leaf_pseudo_age','internode_pseudo_age','leaf_pseudostem_length','internode_distance_to_emergence', 'leaf_L', 'internode_L','leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'internode_Lmax','SSINW','internode_is_visible','sucrose', 'amino_acids', 'fructan','proteins', 'leaf_enclosed_mstruct','leaf_enclosed_Nstruct','internode_mstruct','internode_Nstruct','mstruct']
+HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing','leaf_pseudo_age','internode_pseudo_age','leaf_pseudostem_length','internode_distance_to_emergence', 'leaf_L', 'internode_L','leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'internode_Lmax','SSINW','internode_is_visible','sucrose', 'amino_acids', 'fructan','proteins', 'leaf_enclosed_mstruct','leaf_enclosed_Nstruct','internode_enclosed_mstruct','internode_enclosed_Nstruct','mstruct']
 ELEMENT_INPUTS = ['length', 'is_growing']
 SAM_INPUTS = ['sum_TT', 'status', 'nb_leaves', 'GA', 'height']
 
 #: the outputs computed by ElongWheat # TODO : add be default all the attributes of the class HiddenZoneInit and ElementInit, and define which attribute is set by growthwheat.parameters or elongwheat.parameters
-HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing','leaf_pseudo_age','internode_pseudo_age','leaf_pseudostem_length', 'delta_leaf_pseudostem_length','internode_distance_to_emergence', 'delta_internode_distance_to_emergence','leaf_L', 'delta_leaf_L', 'internode_L','delta_internode_L','leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'internode_Lmax','SSINW','internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins','leaf_enclosed_mstruct','leaf_enclosed_Nstruct','internode_mstruct','internode_Nstruct','mstruct']
+HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing','leaf_pseudo_age','internode_pseudo_age','leaf_pseudostem_length', 'delta_leaf_pseudostem_length','internode_distance_to_emergence', 'delta_internode_distance_to_emergence','leaf_L', 'delta_leaf_L', 'internode_L','delta_internode_L','leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'SSSW', 'leaf_is_emerged', 'internode_Lmax','SSINW','internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins','leaf_enclosed_mstruct','leaf_enclosed_Nstruct','internode_enclosed_mstruct','internode_enclosed_Nstruct','mstruct']
 ELEMENT_OUTPUTS = ['length','is_growing', 'diameter', 'sucrose', 'amino_acids','fructan','proteins','mstruct','Nstruct']
 SAM_OUTPUTS = ['T_SAM','sum_TT', 'status', 'nb_leaves', 'GA', 'height']
 
@@ -217,7 +217,7 @@ class Simulation(object):
 
                if not prev_leaf_emerged: #: Before the emergence of the previous leaf. Exponential-like elongation.
                   ## delta leaf length
-                  delta_leaf_L = model.calculate_deltaL_preE(hiddenzone_inputs['sucrose'], hiddenzone_inputs['leaf_L'], hiddenzone_inputs['amino_acids'], hiddenzone_inputs['leaf_enclosed_mstruct'], self.delta_t, phytomer_id)
+                  delta_leaf_L = model.calculate_deltaL_preE(hiddenzone_inputs['sucrose'], hiddenzone_inputs['leaf_L'], hiddenzone_inputs['amino_acids'], hiddenzone_inputs['mstruct'], self.delta_t, phytomer_id)
                   leaf_L = hiddenzone_inputs['leaf_L'] + delta_leaf_L
 
                else: #: After the emergence of the previous leaf.
@@ -418,11 +418,13 @@ class Simulation(object):
             curr_hiddenzone_outputs['delta_internode_L'] = delta_internode_L
 
             # Only growing hiddenzones are sent
+
             ## after end of elongation (leaf and/or internode), it should :
             ##       - pass by growth wheat for remobilisation
             ##       - pass another time by elong wheat for update of curr_element_outputs['final_hidden_length']
             ## the hiddenzone will then be deleted since both growing flags are False and both delta_L are zeros.
             ## For "internode_is_growing", the test is made on the inputs so we make sure it goes at least once for remobilisation by growthwheat.
+
             if hiddenzone_inputs['internode_is_growing'] or curr_hiddenzone_outputs['leaf_is_growing'] or curr_hiddenzone_outputs['delta_internode_L'] > 0 or curr_hiddenzone_outputs['delta_leaf_L'] > 0:
                 self.outputs['hiddenzone'][hiddenzone_id] = curr_hiddenzone_outputs
             else: # End of internode elong

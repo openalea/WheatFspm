@@ -104,7 +104,8 @@ plt.close()
 
 # Comparison Ljutovac 2002
 bchmk = pd.read_csv('Ljutovac2002.csv')
-bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
+bchmk = bchmk[bchmk.metamer >= min(res.metamer) ]
+bchmk = bchmk[bchmk.metamer <= max(res.metamer)]
 
 var_list = list(bchmk.columns)
 var_list.remove('metamer')
