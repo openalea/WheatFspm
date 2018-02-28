@@ -85,34 +85,32 @@ class Simulation(object):
 
         """
         self.outputs.update({inputs_type: {} for inputs_type in self.inputs['elements'].iterkeys()})
+
         for (element_id, element_inputs) in self.inputs['elements'].iteritems():
+
             SAM_id = element_id[:2]
+            organ_label = element_id[3]
+            element_label = element_id[4]
 
-            if element_inputs['green_area'] == 0.0:
-                element_outputs = dict.fromkeys(['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs'], 0.0)
+            if element_label == 'HiddenElement' or element_inputs['height'] is None or element_inputs['green_area'] == 0.0: # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
+                Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
+                Ts = self.inputs['SAMs'][SAM_id]['T_SAM']
             else:
-                organ_label = element_id[3]
+                PARa = element_inputs['PARa']     #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
 
-                element_label = element_id[4]
-                if element_label == 'HiddenElement' or element_inputs['height'] is None: # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
-                    Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
-                    Ts = self.inputs['SAMs'][SAM_id]['T_SAM']
-                else:
-                    PARa = element_inputs['PARa']     #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
+                surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
+                                                                        element_inputs['amino_acids'],
+                                                                        element_inputs['proteins'],
+                                                                        element_inputs['Nstruct'],
+                                                                        element_inputs['green_area'])
 
-                    surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
-                                                                            element_inputs['amino_acids'],
-                                                                            element_inputs['proteins'],
-                                                                            element_inputs['Nstruct'],
-                                                                            element_inputs['green_area'])
+                H_Canopy = self.inputs['SAMs'][SAM_id]['H_Canopy']
+                Ag, An, Rd, Tr, Ts, gs = model.Model.run(surfacic_nitrogen,
+                                                                  element_inputs['width'],
+                                                                  element_inputs['height'],
+                                                                  PARa, Ta, ambient_CO2, RH, Ur, organ_label, H_Canopy)
 
-                    H_Canopy = self.inputs['SAMs'][SAM_id]['H_Canopy']
-                    Ag, An, Rd, Tr, Ts, gs = model.Model.run(surfacic_nitrogen,
-                                                                      element_inputs['width'],
-                                                                      element_inputs['height'],
-                                                                      PARa, Ta, ambient_CO2, RH, Ur, organ_label, H_Canopy)
-
-                element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs, \
-                                   'width': element_inputs['width'], 'height' : element_inputs['height'] }
+            element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs, \
+                               'width': element_inputs['width'], 'height' : element_inputs['height'] }
 
             self.outputs[element_id] = element_outputs
