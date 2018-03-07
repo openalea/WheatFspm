@@ -25,7 +25,6 @@
         $Id$
 """
 
-import pandas as pd
 from elongwheat import converter, simulation
 import tools
 

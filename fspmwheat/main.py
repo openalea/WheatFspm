@@ -411,4 +411,4 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
 
 if __name__ == '__main__':
-    main(10, run_simu=True, run_postprocessing=True, generate_graphs=True)
+    main(500, run_simu=True, run_postprocessing=True, generate_graphs=True)
