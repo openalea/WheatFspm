@@ -1,6 +1,32 @@
 from alinea.adel.dresser import blade_dimension, stem_dimension, dimension_table, AdelDressDyn
 from alinea.adel.Stand import AgronomicStand
+from alinea.adel.adel_dynamic import AdelWheatDyn
+from alinea.adel.AdelR import devCsv
+from alinea.adel.plantgen_extensions import TillerEmission, TillerRegression, \
+    AxePop, PlantGen, HaunStage
 
+
+def create_init_MTG_with_tillers(nplants=1, sowing_density=250., plant_density=250.,
+                           inter_row=0.15, nff=12, nsect=1, seed=1, leaves=None):
+    stand = AgronomicStand(sowing_density=sowing_density,
+                           plant_density=plant_density, inter_row=inter_row,
+                           noise=0.04, density_curve_data=None)
+    em = TillerEmission(
+        primary_tiller_probabilities={'T1': 1., 'T2': 0.5, 'T3': 0.5,
+                                      'T4': 0.3})
+    reg = TillerRegression(ears_per_plant=3)
+    axp = AxePop(MS_leaves_number_probabilities={str(nff): 1}, Emission=em, Regression=reg)
+    plants = axp.plant_list(nplants=nplants)
+    hs = HaunStage(mean_nff=nff)
+    pgen = PlantGen(HSfit=hs)
+    axeT, dimT, phenT = pgen.adelT(plants)
+    axeT = axeT.sort(['id_plt', 'id_cohort', 'N_phytomer'])
+    devT = devCsv(axeT, dimT, phenT)
+    adel = AdelWheatDyn(nplants=nplants, nsect=nsect, devT=devT, stand=stand,
+                     seed=seed, sample='sequence', leaves=leaves, devT_unit='cm', scene_unit='m')
+    age = hs.TT(reg.hs_debreg(nff=nff))
+    g = adel.setup_canopy(age)
+    return adel, g
 
 def create_init_MTG_FSPMWHEAT(dirpath):
     """
@@ -17,6 +43,7 @@ def create_init_MTG_FSPMWHEAT(dirpath):
     """
 
     # Organ dimensions
+    # TODO : complete with zero up to desired  phtomer number
     blades = blade_dimension(length=[ 0.082, 0.092],
                              area=[ 0.00024, 0.00028],
                              ntop=[ 2, 1])
@@ -39,4 +66,4 @@ def create_init_MTG_FSPMWHEAT(dirpath):
     adel.save(g, dir=dirpath)
     return adel, g
 
-adel, g = create_init_MTG_FSPMWHEAT(r'./adelwheat')
+#adel, g = create_init_MTG_FSPMWHEAT(r'./adelwheat')
