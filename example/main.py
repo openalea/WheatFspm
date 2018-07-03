@@ -30,6 +30,8 @@
 
 import os
 import logging
+import time
+import datetime
 
 import pandas as pd
 
@@ -118,9 +120,8 @@ def force_senescence_and_photosynthesis(t, population, senescence_roots_data_gro
 
 
 def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True):
-    
-    if run_simu:
 
+    if run_simu:
 
         print 'Prepare the simulation...'
         
@@ -180,6 +181,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         
         
         print 'Run the simulation...'
+        current_time_of_the_system = datetime.datetime.now()
         
         for t in time_grid:
             
@@ -206,8 +208,10 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
                 simulation_.initialize(population, soils)
             
         print 'Run the simulation... DONE!'
-        
-        
+
+        execution_time = datetime.datetime.now() - current_time_of_the_system
+        print  'Simulation run in ', execution_time, '\n'
+
         print 'Write the outputs to CSV files...'
         
         outputs_df_dict = {}
@@ -289,8 +293,6 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
             
         print 'Write the postprocessing to CSV files... DONE!'
 
-
-
     if generate_graphs:
         
         if not run_postprocessing:
@@ -324,5 +326,5 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         
 
 if __name__ == '__main__':
-    main(48, run_simu=True, run_postprocessing=True, generate_graphs=True)
+    main(48, run_simu=True, run_postprocessing=False, generate_graphs=False)
     
