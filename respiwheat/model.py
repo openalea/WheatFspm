@@ -24,6 +24,8 @@ from __future__ import division # use '//' to do integer division
 
 class RespirationModel(object):
 
+    SECOND_TO_HOUR_RATE_CONVERSION = 3600
+
     ### R_growth###
     YG = 0.80             # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
     YG_GRAINS = 0.71      # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
@@ -90,7 +92,7 @@ class RespirationModel(object):
         return R_grain_growth_struct, R_grain_growth_starch
 
     @classmethod
-    def R_phloem(cls, sucrose_loading, sucrose, mstruct):
+    def R_phloem(cls, sucrose_loading, mstruct):
         """
         Phloem loading respiration
 
@@ -215,7 +217,7 @@ class RespirationModel(object):
         return _R_min_upt
 
     @classmethod
-    def R_residual(cls, sucrose, mstruct, Ntot, delta_t, Ts):
+    def R_residual(cls, sucrose, mstruct, Ntot, Ts):
         """
         Residual maintenance respiration (cost from protein turn-over, cell ion gradients, futile cycles...)
 
@@ -223,11 +225,10 @@ class RespirationModel(object):
             - `sucrose` (:class:`float`) - amount of C sucrose (µmol C)
             - `mstruct` (:class:`float`) - structural dry mass of organ (g)
             - `Ntot` (:class:`float`) - total N in organ (µmol N)
-            - `delta_t` (:class:`float`) - timestep (s)
             - `Ts` (:class:`float`) - organ temperature (°C)
 
         : Returns:
-            _R_residual (µmol C respired)
+            _R_residual (µmol C respired h-1)
 
         :Returns Type:
             :class:`float`
@@ -235,8 +236,8 @@ class RespirationModel(object):
         conc_sucrose = sucrose / mstruct
         Q10 = 2
         T_ref = 20
-        R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot * Q10**((Ts - T_ref)/10) * delta_t
+        R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot * Q10**((Ts - T_ref)/10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
 
         rm = 0.004208754
-        R_maintenance = rm*mstruct * Q10**((Ts - T_ref)/10) * delta_t
+        R_maintenance = rm*mstruct * Q10**((Ts - T_ref)/10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
         return R_residual, R_maintenance
