@@ -27,7 +27,8 @@
 
 import pandas as pd
 
-    
+SECOND_TO_HOUR_RATE_CONVERSION = 3600
+
 def from_dataframe(object_, dataframe_):
     """Set attributes of *object_* from data in *dataframe_*.
 
