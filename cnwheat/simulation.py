@@ -784,6 +784,8 @@ class Simulation(object):
                         # Degradation proteins
                         hiddenzone.D_Proteins = hiddenzone.calculate_D_Proteins(hiddenzone.proteins)
 
+                    hiddenzone_Loading_Sucrose_contribution = 0
+                    hiddenzone_Loading_Amino_Acids_contribution = 0
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
 
                         if organ is None:
@@ -806,12 +808,12 @@ class Simulation(object):
                             element.Photosynthesis = element.calculate_total_Photosynthesis(element.Ag, element.green_area)
 
                             # flows
-                            if element.is_growing: #: Export of sucrose and amino acids towards the hidden zone
-                                hiddenzone_Loading_Sucrose_contribution = element.Loading_Sucrose = element.calculate_export_sucrose(element.sucrose, hiddenzone.sucrose, hiddenzone.mstruct)
-                                hiddenzone_Loading_Amino_Acids_contribution = element.Loading_Amino_Acids = element.calculate_Export_Amino_Acids(element.amino_acids, hiddenzone.amino_acids, hiddenzone.mstruct)
+                            if element.is_growing: #: Export of sucrose and amino acids towards the hidden zone. Several growing elements might export toward the HZ at the same time (leaf and internode)
+                                element.Loading_Sucrose = element.calculate_export_sucrose(element.sucrose, hiddenzone.sucrose, hiddenzone.mstruct)
+                                hiddenzone_Loading_Sucrose_contribution += element.Loading_Sucrose
+                                element.Loading_Amino_Acids = element.calculate_Export_Amino_Acids(element.amino_acids, hiddenzone.amino_acids, hiddenzone.mstruct)
+                                hiddenzone_Loading_Amino_Acids_contribution += element.Loading_Amino_Acids
                             else: #: Loading of sucrose and amino acids towards the phloem
-                                hiddenzone_Loading_Sucrose_contribution = 0
-                                hiddenzone_Loading_Amino_Acids_contribution = 0
                                 phloem_contributors.append(element)
                                 element.Loading_Sucrose = element.calculate_Loading_Sucrose(element.sucrose, axis.phloem.sucrose, axis.mstruct)
                                 element.Loading_Amino_Acids = element.calculate_Loading_Amino_Acids(element.amino_acids, axis.phloem.amino_acids, axis.mstruct)
