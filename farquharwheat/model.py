@@ -133,10 +133,10 @@ class Model(object):
         RGa = (PAR * cls.PARa_to_RGa) / 4.55                #: Global absorbed radiation by organ (J m-2 s-1). It is assumed that 1 W m-2 of PAR is equivalent to 4.55 µmol m-2 s-1 of PAR (Goudriaan and Laar, 1994)
         es_Ta = 0.611 * exp((17.4*Ta)/(239+Ta))             #: Saturated vapour pressure of the air (kPa), Ta in degree Celsius
         V = RH * es_Ta                                      #: Vapour pressure of the air (kPa)
-        fvap = 0.56 - 0.079*sqrt(10*V)                      #: Fraction of vapour pressure
-
-        tau = RGa/cls.I0                                    #: Atmospheric transmissivity (dimensionless)
-        fclear = 0.1 + 0.9*max(0, min(1, (tau-0.2)/0.5))    #: Fraction sky clearness
+        # fvap = 0.56 - 0.079*sqrt(10*V)                      #: Fraction of vapour pressure
+        #
+        # tau = RGa/cls.I0                                    #: Atmospheric transmissivity (dimensionless)
+        # fclear = 0.1 + 0.9*max(0, min(1, (tau-0.2)/0.5))    #: Fraction sky clearness
 
         Rn = RGa # NB: this only accounts for the visible radiations. General equation is Rn = RGa + epsilon*Ra + epsilon*sigma*(Ts_feuilles_voisines + cls.KELVIN_DEGREE)**4 - epsilon*sigma*(Ts + cls.KELVIN_DEGREE)**4
                  # if Ra unavailable, use Ra = sigma*(Tair + cls.KELVIN_DEGREE)**4*fvap*fclear

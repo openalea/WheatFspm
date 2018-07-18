@@ -49,9 +49,9 @@ def from_dataframe(element_inputs, SAM_inputs):
     Convert inputs/outputs from Pandas dataframe to Farquhar-Wheat format.
 
     :Parameters:
-
+        - `element_inputs` (:class:`pandas.DataFrame`) - Emerging and mature element inputs dataframe to convert, with one line by element.
         - `SAM_inputs` (:class:`pandas.DataFrame`) - Shoot Apical Meristem inputs dataframe to convert, with one line by SAM ie. one line per axis.
-        - `element_inputs` (:class:`pandas.DataFrame`) - Emergeing and mature element inputs dataframe to convert, with one line by element.
+
 
     :Returns:
         The inputs/outputs in a dictionary.
