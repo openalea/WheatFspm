@@ -8,11 +8,11 @@
 
     :copyright: Copyright 2014-2017 INRA-ECOSYS, see AUTHORS.
     :license: CeCILL-C, see LICENSE for details.
-    
-    **Acknowledgments**: The research leading these results has received funding through the 
-    Investment for the Future programme managed by the Research National Agency 
+
+    **Acknowledgments**: The research leading these results has received funding through the
+    Investment for the Future programme managed by the Research National Agency
     (BreedWheat project ANR-10-BTBR-03).
-    
+
     .. seealso:: Barillot et al. 2016.
 """
 
@@ -34,28 +34,28 @@ def from_dataframe(object_, dataframe_):
 
     :Parameters:
         - `object_` (:class:`object`) - The object to set.
-        - `dataframe_` (:class:`pandas.DataFrame`) - The dataframe used to set the attribute(s) 
-          of *object_*. 
+        - `dataframe_` (:class:`pandas.DataFrame`) - The dataframe used to set the attribute(s)
+          of *object_*.
           *dataframe_* must have only 2 rows:
-          
+
               * one row is for the header and contains the name of each attribute,
               * and one row contains the value of each attribute.
     """
     object_.__dict__.update(dataframe_.to_dict(orient='index')[dataframe_.first_valid_index()])
-    
-    
+
+
 def to_dataframe(object_):
     """Create and return a dataframe from attributes of *object_*.
 
     :Parameters:
         - `object_` (:class:`object`) - The object used to create the dataframe.
-        
+
     :Returns:
         A dataframe which contains the attributes of *object_*, with only 2 rows:
-          
+
           * one row is for the header and contains the name of each attribute,
           * and one row contains the value of each attribute.
-            
+
     :Returns Type:
         :class:`pandas.DataFrame`
     """
@@ -91,8 +91,8 @@ class AxisParameters(object):
     def __init__(self):
         self.ALPHA = 1                          #: Proportion of the structural mass containing the substrates
 
-#: The instance of class :class:`cnwheat.parameters.AxisParameters` for current process   
-AXIS_PARAMETERS = AxisParameters() 
+#: The instance of class :class:`cnwheat.parameters.AxisParameters` for current process
+AXIS_PARAMETERS = AxisParameters()
 
 
 class PhytomerParameters(object):
@@ -111,11 +111,11 @@ class HiddenZoneParameters(object):
     Internal parameters of hidden growing zones.
     """
     def __init__(self):
-        self.SIGMA = 5E-2                          #: Coefficient of surface diffusion. Used in Fick's law (g m-2 s-1).
-        self.Vmax_Regul_Sfructans = 1 #: Maximal rate of fructan synthesis in the regulation function of fructan synthesis (µmol C s-1 g-1 MS)
-        self.K_Regul_Sfructans = 0.5 #: Affinity coefficient of the regulation function of fructan synthesis (µmol g-1 MS)
-        self.n_Regul_Sfructans = 15 #: Parameter of the regulation function of fructan synthesis (dimensionless)
-        self.Vmax_Sfructans = 0.2 #: Maximal rate of fructan synthesis (µmol C s-1 g-1 MS)
+        self.SIGMA = 5E-2               #: Coefficient of surface diffusion. Used in Fick's law (g m-2 s-1).
+        self.Vmax_Regul_Sfructans = 1   #: Maximal rate of fructan synthesis in the regulation function of fructan synthesis (µmol C s-1 g-1 MS)
+        self.K_Regul_Sfructans = 0.5    #: Affinity coefficient of the regulation function of fructan synthesis (µmol g-1 MS)
+        self.n_Regul_Sfructans = 15     #: Parameter of the regulation function of fructan synthesis (dimensionless)
+        self.Vmax_Sfructans = 0.2       #: Maximal rate of fructan synthesis (µmol C s-1 g-1 MS)
         self.delta_Dproteins = 1.85e-06 #: Relative rate of proteins degradation (s-1)
 
 #: The instance of class :class:`cnwheat.parameters.HiddenZoneParameters` for current process
@@ -147,7 +147,7 @@ class PhloemParameters(object):
 
 #: The instance of class :class:`cnwheat.parameters.PhloemParameters` for current process
 PHLOEM_PARAMETERS = PhloemParameters()
-        
+
 
 class PhloemInitCompartments(object):
     """
@@ -167,15 +167,15 @@ class GrainsParameters(object):
     """
     def __init__(self):
         self.ALPHA = 1                                   #: Proportion of structural mass containing substrate
-    
+
         # Structure parameters
         self.VMAX_RGR = 1.5e-06                          #: Maximal value of the Relative Growth Rate of grain structure (s-1)
         self.K_RGR = 300                                 #: Affinity coefficient of the Relative Growth Rate of grain structure (µmol C)
-    
+
         # Starch parameters
         self.VMAX_STARCH = 0.35                          #: Maximal rate of grain filling of starch (µmol C s-1 g-1 MS)
         self.K_STARCH = 400                              #: Affinity coefficient of grain filling of starch (µmol C g-1 MS)
-    
+
         self.FILLING_INIT = 360 * 3600                   #: Time (s) at which phloem loading switch from grain structure to accumulation of starch
         self.FILLING_END = 900 * 3600                    #: Time (s) at which grains filling stops. (Bertheloot et al., 2011)
 
@@ -203,16 +203,16 @@ class RootsParameters(object):
     """
     def __init__(self):
         self.ALPHA = 1                       #: Proportion of structural mass containing substrate
-    
+
         self.VMAX_SUCROSE_UNLOADING = 0.03   #: Maximal rate of sucrose unloading from phloem to roots (µmol C sucrose s-1 g-1 MS)
         self.K_SUCROSE_UNLOADING = 1000      #: Affinity coefficient of sucrose unloading from phloem to roots (µmol C sucrose g-1 MS)
-    
+
         # Regulation function by transpiration of nitrate uptake
         self.K_TRANSPIRATION = 1             #: Affinity coefficient for the regulation function by culm transpiration (mmol H20 m-2 s-1)
-    
+
         # Regulation function by C in roots of nitrate uptake
         self.K_C = 4000                      #: Affinity coefficient for the regulation function by root C (µmol C sucrose g-1 MS)
-    
+
         # Nitrate uptake
         self.NET_INFLUX_UPTAKE_RATIO = 0.6   #: ratio (net uptake : nitrate influx)
         self.A_VMAX_HATS = 0.1333            #: Parameter for estimating the maximal rate of nitrates uptake at saturating soil N concentration;HATS (dimensionless)
@@ -221,20 +221,20 @@ class RootsParameters(object):
         self.LAMBDA_K_HATS = 0.0018          #: Parameter for estimating the affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (g m-3)
         self.A_LATS = 4.614E-09              #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (dimensionless)
         self.LAMBDA_LATS = 1.6517E-03        #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (m3 µmol-1 s-1)
-    
-    
+
+
         # Nitrate export
         self.K_NITRATE_EXPORT = 1E-6         #: Relative rate of nitrate export from roots (s-1)
-    
+
         # Amino acids
         self.VMAX_AMINO_ACIDS = 0.001        #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
         self.K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
         self.K_AMINO_ACIDS_SUCROSE = 350     #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
         self.K_AMINO_ACIDS_EXPORT = 3E-5     #: Relative rate of amino acids export from roots (s-1)
-    
+
         # Exudation
         self.C_EXUDATION = 0.20              #: Proportion of C exudated from C sucrose unloaded to roots (Keith et al., 1986)
-    
+
         # Cytokinins
         self.VMAX_S_CYTOKININS = 4.5E-04     #: Maximal rate of cytokinins synthesis (UA g-1 mstruct s-1)
         self.K_NITRATES_CYTOKININS = 200     #: Affinity coefficient of cytokinins synthesis for nitrates (µmol N nitrates g-1 mstruct)
@@ -258,10 +258,10 @@ class RootsInitCompartments(object):
         self.cytokinins = 0    #: initial value of cytokinins (AU)
         self.mstruct = 0.15    #: initial value of mstruct (g)
         self.Nstruct = 0.0045  #: initial value of Nstruct (g)
-        
+
 #: The instance of class :class:`cnwheat.parameters.RootsInitCompartments` for current process
 ROOTS_INIT_COMPARTMENTS = RootsInitCompartments()
- 
+
 
 class PhotosyntheticOrganParameters(object):
     """
@@ -271,12 +271,12 @@ class PhotosyntheticOrganParameters(object):
         # Sucrose
         self.VMAX_SUCROSE = 1                #: Maximal rate of sucrose synthesis (µmol C s-1 g-1 MS)
         self.K_SUCROSE = 0.66                #: Affinity coefficient of sucrose synthesis (µmol C g-1 MS)
-    
+
         # Starch
         self.VMAX_STARCH = 2                 #: Maximal rate of starch synthesis (µmol C s-1 g-1 MS)
         self.K_STARCH = 20                   #: Affinity coefficient of starch synthesis (µmol C g-1 MS)
         self.DELTA_DSTARCH = 0.0001          #: Relative rate of starch degradation (s-1)
-    
+
         # Fructans
         self.VMAX_SFRUCTAN_POT = 0.015       #: Potential maximal rate of fructan synthesis (µmol C s-1 g-1 MS)
         self.K_SFRUCTAN = 5000               #: Affinity coefficient of fructan synthesis (µmol C g-1 MS)
@@ -284,24 +284,24 @@ class PhotosyntheticOrganParameters(object):
         self.N_REGUL_SFRUCTAN = 3            #: Parameter of the regulation function of fructan synthesis (dimensionless)
         self.VMAX_DFRUCTAN = 0.035           #: Maximal rate of fructan degradation (µmol C s-1 g-1 MS)
         self.K_DFRUCTAN = 100                #: Affinity coefficient of fructan degradation (µmol C g-1 MS)
-    
+
         # Loading sucrose and amino acids
         self.SIGMA_SUCROSE = 1e-08           #: Conductivity of an organ-phloem pathway (g2 µmol-1 m-2 s-1) ; used to compute the sucrose loaded to the phloem
         self.SIGMA_AMINO_ACIDS = 1e-07       #: Conductivity of an organ-phloem pathway (g2 µmol-1 m-2 s-1) ; used to compute the amino acids loaded to the phloem
         self.BETA = 1                        #: Kind of volumetric mass density at power -2/3 ((g m-3)**(-2/3))
-    
+
         # Amino acids
         self.VMAX_AMINO_ACIDS = 1            #: Maximal rate of amino acid synthesis (µmol N s-1 g-1 MS)
         self.K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (µmol N g-1 MS)
         self.K_AMINO_ACIDS_TRIOSESP = 0.2    #: Affinity coefficient of amino acid synthesis from triosesP (µmol C g-1 MS)
-    
+
         # Proteins
         self.VMAX_SPROTEINS = 0.0015         #: Maximal rate of protein synthesis (µmol N s-1 g-1 MS)
         self.K_SPROTEINS = 100               #: Affinity coefficient of protein synthesis (µmol N g-1 MS)
         self.VMAX_DPROTEINS = 2.5E-6         #: Maximal rate of protein degradation (µmol g-1 mstruct s-1)
         self.K_DPROTEINS = 50                #: Affinity coefficient with cytokinins for protein degradation (UA g-1 mstruct)
         self.N_DPROTEINS = 2.1               #: A coefficient for the regulation of protein degradation by cytokines (dimensionless)
-    
+
         # cytokinins
         self.DELTA_D_CYTOKININS = 3.E-6      #: Relative rate of cytokinins degradation (s-1)
 
@@ -391,7 +391,7 @@ class PhotosyntheticOrganElementInitCompartments(object):
         self.nitrates = 0       #: initial value of nitrates (µmol N)
         self.amino_acids = 0    #: initial value of amino_acids (µmol N)
         self.proteins = 0       #: initial value of proteins (µmol N)
-        self.cytokinins = 15    #: initial value of cytokinins (AU)
+        self.cytokinins = 0.075 #: initial value of cytokinins (AU)
 
         self.is_growing = False #: initial value of is_growing (Flag indicating if the element is growing or not (:class:`bool`)
         self.Tr = 0             #: initial value of Tr (Transpiration rate (mmol m-2 s-1)
@@ -466,4 +466,3 @@ class SoilParameters(object):
 
 #: The instance of class :class:`cnwheat.parameters.SoilParameters` for current process
 SOIL_PARAMETERS = SoilParameters()
-    

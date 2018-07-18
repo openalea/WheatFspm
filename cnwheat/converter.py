@@ -9,11 +9,11 @@
 
     :copyright: Copyright 2014-2017 INRA-ECOSYS, see AUTHORS.
     :license: CeCILL-C, see LICENSE for details.
-    
-    **Acknowledgments**: The research leading these results has received funding through the 
-    Investment for the Future programme managed by the Research National Agency 
+
+    **Acknowledgments**: The research leading these results has received funding through the
+    Investment for the Future programme managed by the Research National Agency
     (BreedWheat project ANR-10-BTBR-03).
-    
+
     .. seealso:: Barillot et al. 2016.
 """
 
@@ -186,7 +186,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
 def to_dataframes(population=None, soils=None):
     """
     Convert a CN-Wheat :class:`population <model.Population>` and/or a dictionary of :class:`soils <model.Soil>` to Pandas dataframes.
-    
+
     If `population` is not None, convert `population` to Pandas dataframes.
     If `soils` is not None, convert `soils` to Pandas dataframe.
 
@@ -198,7 +198,7 @@ def to_dataframes(population=None, soils=None):
 
     :Returns:
         If `population` is not None, return :class:`dataframes <pandas.DataFrame>` describing the internal state and compartments of the population at each scale:
-            
+
             * plant scale: plant index, state parameters, state variables, intermediate variables, fluxes and integrative variables of each plant (see :mod:`PLANTS_VARIABLES`)
             * axis scale: plant index, axis id, state parameters, state variables, intermediate variables, fluxes and integrative variables of each axis (see :mod:`AXES_VARIABLES`)
             * phytomer scale: plant index, axis id, phytomer index, state parameters, state variables, intermediate variables, fluxes and integrative variables of each phytomer (see :mod:`PHYTOMERS_VARIABLES`)
@@ -210,7 +210,7 @@ def to_dataframes(population=None, soils=None):
         and/or
 
         if `soils` is not None, return a :class:`dataframe <pandas.DataFrame>` describing internal state and compartments of the soils, with one line per soil:
-            
+
             * plant index, axis id, state parameters, state variables, intermediate variables, fluxes and integrative variables of each soil (see :mod:`SOILS_RUN_VARIABLES`)
 
     :Returns Type:

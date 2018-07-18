@@ -648,7 +648,6 @@ class Simulation(object):
             formatted_initial_conditions = row_sep.join([column_sep.join(row) for row in all_rows[class_]])
             compartments_logger.debug(formatted_initial_conditions)
 
-
     def _calculate_all_derivatives(self, y, t):
         """Compute the derivative of `y` at `t`.
 
@@ -728,6 +727,7 @@ class Simulation(object):
 
                 # compute total transpiration at t_inf
                 axis.Total_Transpiration = 0.0 # mmol s-1
+                axis.Total_Transpiration = 0.0  # mmol s-1
                 total_green_area = 0.0 # m2
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
@@ -813,7 +813,7 @@ class Simulation(object):
                                 hiddenzone_Loading_Sucrose_contribution += element.Loading_Sucrose
                                 element.Loading_Amino_Acids = element.calculate_Export_Amino_Acids(element.amino_acids, hiddenzone.amino_acids, hiddenzone.mstruct)
                                 hiddenzone_Loading_Amino_Acids_contribution += element.Loading_Amino_Acids
-                            else: #: Loading of sucrose and amino acids towards the phloem
+                            else:  #: Loading of sucrose and amino acids towards the phloem
                                 phloem_contributors.append(element)
                                 element.Loading_Sucrose = element.calculate_Loading_Sucrose(element.sucrose, axis.phloem.sucrose, axis.mstruct)
                                 element.Loading_Amino_Acids = element.calculate_Loading_Amino_Acids(element.amino_acids, axis.phloem.amino_acids, axis.mstruct)
@@ -1035,7 +1035,7 @@ class Simulation(object):
                             element.Photosynthesis = element.calculate_total_Photosynthesis(element.Ag, element.green_area)
 
                             # flows
-                            if element.is_growing: #: Export of sucrose and amino acids towards the hidden zone
+                            if element.is_growing:  #: Export of sucrose and amino acids towards the hidden zone
                                 element.Loading_Sucrose = element.calculate_export_sucrose(element.sucrose, hiddenzone.sucrose, hiddenzone.mstruct)
                                 element.Loading_Amino_Acids = element.calculate_Export_Amino_Acids(element.amino_acids, hiddenzone.amino_acids, hiddenzone.mstruct)
                             else: #: Loading of sucrose and amino acids towards the phloem
