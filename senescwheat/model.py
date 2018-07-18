@@ -28,7 +28,7 @@ from __future__ import division # use '//' to do integer division
 class SenescenceModel(object):
 
     N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
-    SENESCENCE_ROOTS = 3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997). TODO: should be ontogenic
+    SENESCENCE_ROOTS = 0#3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997). TODO: should be ontogenic
     FRACTION_N_MAX = {'blade': 0.5, 'stem': 0.425} # Threshold of ([proteins]/[proteins]max) below which tissue death is triggered
     SENESCENCE_MAX_RATE = 0.2E-8 # maximal senescence m² s-1
 
