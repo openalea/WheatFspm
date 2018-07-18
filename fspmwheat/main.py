@@ -4,7 +4,7 @@
     main
     ~~~~
 
-    An example to show how to couple models CN-Wheat, Farquhar-Wheat and Senesc-Wheat using a static topology from Adel-Wheat.
+    An example to show how to couple models CN-Wheat, Farquhar-Wheat and Senesc-Wheat, Elong-Wheat, Growth-Wheay, Adel-Wheat and Caribu.
     This example uses the format MTG to exchange data between the models.
 
     You must first install :mod:`alinea.adel`, :mod:`cnwheat`, :mod:`farquharwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
@@ -30,6 +30,7 @@ import logging
 import os
 import random
 import time
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -52,7 +53,7 @@ HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 INPUTS_DIRPATH = 'inputs'
 
 # adelwheat inputs at t0
-ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat') # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
+ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat')  # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
 
 # cnwheat inputs at t0
 CNWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'cnwheat')
@@ -114,15 +115,17 @@ SAM_INDEX_COLUMNS = ['t','plant','axis']
 SOILS_INDEX_COLUMNS = ['t','plant','axis']
 
 # Define culm density (culm m-2)
-CULM_DENSITY = {1:410}
+CULM_DENSITY = {1: 410}
 
-INPUTS_OUTPUTS_PRECISION = 5 # 10
+INPUTS_OUTPUTS_PRECISION = 5  # 10
 
 LOGGING_CONFIG_FILEPATH = os.path.join('..', '..', 'logging.json')
 
 LOGGING_LEVEL = logging.INFO # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
+
 def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True):
+    OUTPUTS_DIRPATH = 'outputs'
     if run_simu:
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
 
@@ -141,7 +144,6 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
         adel_wheat.domain = g.get_vertex_property(0)['meta']['domain'] # temp (until Christian's commit)
         adel_wheat.nplants = g.get_vertex_property(0)['meta']['nplants'] # temp (until Christian's commit)
-
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -307,42 +309,84 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         all_axes_inputs_outputs.reset_index(0, inplace=True)
         all_axes_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_axes_inputs_outputs = all_axes_inputs_outputs.reindex_axis(AXES_INDEX_COLUMNS+all_axes_inputs_outputs.columns.difference(AXES_INDEX_COLUMNS).tolist(), axis=1, copy=False)
-        all_axes_inputs_outputs.to_csv(AXES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        try:
+            AXES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'axes_states.csv')
+            all_axes_inputs_outputs.to_csv(AXES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        except IOError:
+            AXES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, '__axes_states.csv')
+            all_axes_inputs_outputs.to_csv(AXES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            warnings.warn('File was opened, temporary file {} created instead'.format(AXES_STATES_FILEPATH))
 
         all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps)
         all_organs_inputs_outputs.reset_index(0, inplace=True)
         all_organs_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_organs_inputs_outputs = all_organs_inputs_outputs.reindex_axis(ORGANS_INDEX_COLUMNS+all_organs_inputs_outputs.columns.difference(ORGANS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
-        all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        try:
+            ORGANS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'organs_states.csv')
+            all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        except IOError:
+            ORGANS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, '__organs_states.csv')
+            all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            warnings.warn('File was opened, temporary file {} created instead'.format(ORGANS_STATES_FILEPATH))
 
         all_hiddenzones_inputs_outputs = pd.concat(hiddenzones_all_data_list, keys=all_simulation_steps)
         all_hiddenzones_inputs_outputs.reset_index(0, inplace=True)
         all_hiddenzones_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_hiddenzones_inputs_outputs = all_hiddenzones_inputs_outputs.reindex_axis(HIDDENZONES_INDEX_COLUMNS+all_hiddenzones_inputs_outputs.columns.difference(HIDDENZONES_INDEX_COLUMNS).tolist(), axis=1, copy=False)
-        all_hiddenzones_inputs_outputs.to_csv(HIDDENZONES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        try:
+            HIDDENZONES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hiddenzones_states.csv')
+            all_hiddenzones_inputs_outputs.to_csv(HIDDENZONES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        except IOError:
+            HIDDENZONES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, '__hiddenzones_states.csv')
+            all_hiddenzones_inputs_outputs.to_csv(HIDDENZONES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            warnings.warn('File was opened, temporary file {} created instead'.format(HIDDENZONES_STATES_FILEPATH))
 
         all_SAM_inputs_outputs = pd.concat(SAM_all_data_list, keys=all_simulation_steps)
         all_SAM_inputs_outputs.reset_index(0, inplace=True)
         all_SAM_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_SAM_inputs_outputs = all_SAM_inputs_outputs.reindex_axis(SAM_INDEX_COLUMNS+all_SAM_inputs_outputs.columns.difference(SAM_INDEX_COLUMNS).tolist(), axis=1, copy=False)
-        all_SAM_inputs_outputs.to_csv(SAM_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        try:
+            SAM_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'SAM_states.csv')
+            all_SAM_inputs_outputs.to_csv(SAM_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        except IOError:
+            SAM_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, '__SAM_states.csv')
+            all_SAM_inputs_outputs.to_csv(SAM_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            warnings.warn('File was opened, temporary file {} created instead'.format(SAM_STATES_FILEPATH))
 
         all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
-        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & # TODO: temporary ; to remove when there will be default input values for each element in the mtg
-                                                                      (all_elements_inputs_outputs.axis == 'MS')]
         all_elements_inputs_outputs.reset_index(0, inplace=True)
         all_elements_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_elements_inputs_outputs = all_elements_inputs_outputs.reindex_axis(ELEMENTS_INDEX_COLUMNS+all_elements_inputs_outputs.columns.difference(ELEMENTS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
-        all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        try:
+            ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'elements_states.csv')
+            all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        except IOError:
+            ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, '__elements_states.csv')
+            all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            warnings.warn('File was opened, temporary file {} created instead'.format(ELEMENTS_STATES_FILEPATH))
 
         all_soils_inputs_outputs = pd.concat(soils_all_data_list, keys=all_simulation_steps)
         all_soils_inputs_outputs.reset_index(0, inplace=True)
         all_soils_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_soils_inputs_outputs = all_soils_inputs_outputs.reindex_axis(SOILS_INDEX_COLUMNS+all_soils_inputs_outputs.columns.difference(SOILS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
-        all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        try:
+            SOILS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'soils_states.csv')
+            all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        except IOError:
+            SOILS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, '__soils_states.csv')
+            all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            warnings.warn('File was opened, temporary file {} created instead'.format(SOILS_STATES_FILEPATH))
 
 
     if run_postprocessing:
+        # the path of the CSV files where to save the states of the modeled system at each step
+        OUTPUTS_DIRPATH = 'outputs'
+        AXES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'axes_states.csv')
+        SAM_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'SAM_states.csv')
+        ORGANS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'organs_states.csv')
+        HIDDENZONES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hiddenzones_states.csv')
+        ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'elements_states.csv')
+        SOILS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'soils_states.csv')
 
         # cnwheat postprocessing only
 
@@ -411,4 +455,4 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
 
 if __name__ == '__main__':
-    main(500, run_simu=True, run_postprocessing=True, generate_graphs=True)
+    main(1000, run_simu=False, run_postprocessing=True, generate_graphs=True)

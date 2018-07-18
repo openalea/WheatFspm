@@ -89,6 +89,11 @@ ELEMENTS_INDEX_COLUMNS = ['t','plant','axis', 'metamer', 'organ', 'element']
 ORGANS_INDEX_COLUMNS = ['t','plant','axis', 'organ']
 SOILS_INDEX_COLUMNS = ['t','plant','axis']
 
+# Define culm density (culm m-2)
+DENSITY = 200.
+NPLANTS = 1
+CULM_DENSITY = {i: DENSITY / NPLANTS for i in range(1, NPLANTS + 1)}
+
 INPUTS_OUTPUTS_PRECISION = 5 # 10
 
 LOGGING_CONFIG_FILEPATH = os.path.join('logging.json')
@@ -96,6 +101,42 @@ LOGGING_CONFIG_FILEPATH = os.path.join('logging.json')
 LOGGING_LEVEL = logging.INFO # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 cnwheat_tools.setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL, log_model=False, log_compartments=False, log_derivatives=False)
+
+def calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False, ratio_diffus_PAR=None):
+    """
+    Compute PARa from an input dataframe having Eabs values.
+    """
+
+
+    Eabs_df_grouped = Eabs_df.groupby(['plant', 'metamer', 'organ'])
+
+    #: the name of the elements modeled by FarquharWheat
+    CARIBU_ELEMENTS_NAMES = set(['StemElement', 'LeafElement1'])
+
+    PARa_element_data_dict = {}
+    # traverse the MTG recursively from top ...
+    for mtg_plant_vid in g.components_iter(g.root):
+        mtg_plant_index = int(g.index(mtg_plant_vid))
+        for mtg_axis_vid in g.components_iter(mtg_plant_vid):
+            for mtg_metamer_vid in g.components_iter(mtg_axis_vid):
+                mtg_metamer_index = int(g.index(mtg_metamer_vid))
+                for mtg_organ_vid in g.components_iter(mtg_metamer_vid):
+                    mtg_organ_label = g.label(mtg_organ_vid)
+                    for mtg_element_vid in g.components_iter(mtg_organ_vid):
+                        mtg_element_label = g.label(mtg_element_vid)
+                        if mtg_element_label not in CARIBU_ELEMENTS_NAMES: continue
+                        element_id = (mtg_plant_index, mtg_metamer_index, mtg_organ_label)
+                        if element_id in Eabs_df_grouped.groups.keys():
+                            if PARi == 0:
+                                PARa_element_data_dict[mtg_element_vid] = 0
+                            elif multiple_sources:
+                                PARa_diffuse = Eabs_df_grouped.get_group(element_id)['Eabs_diffuse'].iloc[0] * PARi * ratio_diffus_PAR
+                                PARa_direct = Eabs_df_grouped.get_group(element_id)['Eabs_direct'].iloc[0] * PARi * (1 - ratio_diffus_PAR)
+                                PARa_element_data_dict[mtg_element_vid] = PARa_diffuse + PARa_direct
+                            else:
+                                PARa_element_data_dict[mtg_element_vid] = Eabs_df_grouped.get_group(element_id)['Eabs'].iloc[0] * PARi
+
+    return PARa_element_data_dict
 
 def main(stop_time, run_simu=True, make_graphs=True):
     if run_simu:
@@ -166,6 +207,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         cnwheat_soils_inputs_t0 = pd.read_csv(CNWHEAT_SOILS_INPUTS_FILEPATH)
         cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
                                                        cnwheat_ts * hour_to_second_conversion_factor,
+                                                       CULM_DENSITY,
                                                        cnwheat_organs_inputs_t0,
                                                        cnwheat_hiddenzones_inputs_t0,
                                                        cnwheat_elements_inputs_t0,
@@ -206,7 +248,9 @@ def main(stop_time, run_simu=True, make_graphs=True):
                     # get the meteo of the current step
                     Ta, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
                     # get PARa for current step
-                    caribu_facade_.run_from_df(Eabs_df, PARi)
+                    aggregated_PARa = calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False)
+                    caribu_facade_.update_shared_MTG(aggregated_PARa)
+                    caribu_facade_.update_shared_dataframes(aggregated_PARa)
                     # run FarquharWheat
                     farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
                     for t_cnwheat in xrange(t_farquharwheat, t_farquharwheat + senescwheat_ts, cnwheat_ts):

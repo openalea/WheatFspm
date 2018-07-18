@@ -30,7 +30,6 @@ import pandas as pd
 
 from alinea.caribu.CaribuScene import CaribuScene
 from alinea.caribu.sky_tools import GenSky, GetLight
-from alinea.caribu.label import encode_label
 
 import tools
 
