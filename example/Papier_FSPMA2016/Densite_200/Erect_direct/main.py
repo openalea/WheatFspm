@@ -88,7 +88,9 @@ ORGANS_INDEX_COLUMNS = ['t','plant','axis', 'organ']
 SOILS_INDEX_COLUMNS = ['t','plant','axis']
 
 # Define culm density (culm m-2)
-CULM_DENSITY = {1:200}
+DENSITY = 200.
+NPLANTS = 1
+CULM_DENSITY = {i: DENSITY / NPLANTS for i in range(1, NPLANTS + 1)}
 
 INPUTS_OUTPUTS_PRECISION = 5 # 10
 
@@ -103,10 +105,7 @@ def calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False, ratio_diffu
     """
 
 
-    if 'species' in g.properties():
-        Eabs_df_grouped = Eabs_df.groupby(['species', 'metamer', 'organ'])
-    else:
-        Eabs_df_grouped = Eabs_df.groupby(['metamer', 'organ'])
+    Eabs_df_grouped = Eabs_df.groupby(['plant', 'metamer', 'organ'])
 
     #: the name of the elements modeled by FarquharWheat
     CARIBU_ELEMENTS_NAMES = set(['StemElement', 'LeafElement1'])
@@ -114,6 +113,7 @@ def calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False, ratio_diffu
     PARa_element_data_dict = {}
     # traverse the MTG recursively from top ...
     for mtg_plant_vid in g.components_iter(g.root):
+        mtg_plant_index = int(g.index(mtg_plant_vid))
         for mtg_axis_vid in g.components_iter(mtg_plant_vid):
             for mtg_metamer_vid in g.components_iter(mtg_axis_vid):
                 mtg_metamer_index = int(g.index(mtg_metamer_vid))
@@ -122,10 +122,7 @@ def calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False, ratio_diffu
                     for mtg_element_vid in g.components_iter(mtg_organ_vid):
                         mtg_element_label = g.label(mtg_element_vid)
                         if mtg_element_label not in CARIBU_ELEMENTS_NAMES: continue
-                        if 'species' in g.properties():
-                            element_id = (g.property('species')[mtg_plant_vid], mtg_metamer_index, mtg_organ_label)
-                        else:
-                            element_id = (mtg_metamer_index, mtg_organ_label)
+                        element_id = (mtg_plant_index, mtg_metamer_index, mtg_organ_label)
                         if element_id in Eabs_df_grouped.groups.keys():
                             if PARi == 0:
                                 PARa_element_data_dict[mtg_element_vid] = 0
@@ -220,8 +217,8 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
 
         # define organs for which the variable 'max_proteins' is fixed
-        nplants = 1
-        forced_max_protein_elements = set([(plant + 1,'MS',metamer + 1,'blade', 'LeafElement1') for metamer in range(0, 3) for plant in range (0, nplants)])
+        NPLANTS = 1
+        forced_max_protein_elements = set([(plant + 1,'MS',metamer + 1,'blade', 'LeafElement1') for metamer in range(0, 3) for plant in range (0, NPLANTS)])
 
         # define the start and the end of the whole simulation (in hours)
         start_time = 0
@@ -279,8 +276,6 @@ def main(stop_time, run_simu=True, make_graphs=True):
         all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
         all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
-        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & ### TODO: temporary ; to remove when there will be default input values for each element in the mtg
-                                                                      (all_elements_inputs_outputs.axis == 'MS')]
         all_elements_inputs_outputs.reset_index(0, inplace=True)
         all_elements_inputs_outputs.rename_axis({'level_0': 't'}, axis=1, inplace=True)
         all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
