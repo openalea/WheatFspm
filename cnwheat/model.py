@@ -801,8 +801,8 @@ class Roots(Organ):
         if nitrates <=0 or regul_transpiration<=0:
             Export_Nitrates = 0
         else:
-            f_nitrates = (nitrates/(self.mstruct*Roots.PARAMETERS.ALPHA))*Roots.PARAMETERS.K_NITRATE_EXPORT
-            Export_Nitrates = f_nitrates* self.mstruct * regul_transpiration * parameters.SECOND_TO_HOUR_RATE_CONVERSION #: Nitrate export regulation by transpiration (µmol N)
+            f_nitrates = (nitrates / (self.mstruct * Roots.PARAMETERS.ALPHA)) * Roots.PARAMETERS.K_NITRATE_EXPORT #: µmol g-1 s-1
+            Export_Nitrates = f_nitrates * self.mstruct * regul_transpiration * parameters.SECOND_TO_HOUR_RATE_CONVERSION #: Nitrate export regulation by transpiration (µmol N)
         return Export_Nitrates
 
     def calculate_Export_Amino_Acids(self, amino_acids, regul_transpiration):
