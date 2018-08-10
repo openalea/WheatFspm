@@ -1,6 +1,7 @@
 # -*- coding: latin-1 -*-
 
-from __future__ import division # use "//" to do integer division
+from __future__ import division  # use "//" to do integer division
+import pandas as pd
 
 """
     senescwheat.converter
@@ -23,8 +24,6 @@ from __future__ import division # use "//" to do integer division
         $URL$
         $Id$
 """
-
-import pandas as pd
 
 
 #: the inputs needed by SenescWheat at roots scale
@@ -112,7 +111,7 @@ def to_dataframes(data_dict):
         current_df = pd.concat([current_ids_df, current_data_df], axis=1)
         current_df.sort_values(by=current_topology_columns, inplace=True)
         current_columns_sorted = current_topology_columns + [input_output for input_output in current_inputs_outputs_names if input_output in current_df.columns]
-        current_df = current_df.reindex_axis(current_columns_sorted, axis=1, copy=False)
+        current_df = current_df.reindex(current_columns_sorted, axis=1, copy=False)
         current_df.reset_index(drop=True, inplace=True)
         dataframes_dict[current_key] = current_df
 

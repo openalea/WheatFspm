@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
-from __future__ import division # use '//' to do integer division
+from __future__ import division  # use '//' to do integer division
 
 """
     senescwheat.model
@@ -28,9 +28,9 @@ from __future__ import division # use '//' to do integer division
 class SenescenceModel(object):
 
     N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
-    SENESCENCE_ROOTS = 0#3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997). TODO: should be ontogenic
-    FRACTION_N_MAX = {'blade': 0.5, 'stem': 0.425} # Threshold of ([proteins]/[proteins]max) below which tissue death is triggered
-    SENESCENCE_MAX_RATE = 0.2E-8 # maximal senescence m² s-1
+    SENESCENCE_ROOTS = 0  # 3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997). TODO: should be ontogenic
+    FRACTION_N_MAX = {'blade': 0.5, 'stem': 0.425}  # Threshold of ([proteins]/[proteins]max) below which tissue death is triggered
+    SENESCENCE_MAX_RATE = 0.2E-8  # maximal senescence m² s-1
 
     @classmethod
     def calculate_forced_relative_delta_green_area(cls, green_area_df, group_id, prev_green_area):
@@ -50,7 +50,6 @@ class SenescenceModel(object):
         new_green_area = green_area_df.get_group(group_id).green_area.values[0]
         relative_delta_green_area = (prev_green_area - new_green_area) / prev_green_area
         return new_green_area, relative_delta_green_area
-
 
     @classmethod
     def calculate_relative_delta_green_area(cls, organ_name, prev_green_area, proteins, max_proteins, delta_t, update_max_protein):
@@ -136,7 +135,6 @@ class SenescenceModel(object):
             :class:`float`
         """
         return mstruct * cls.SENESCENCE_ROOTS, Nstruct * cls.SENESCENCE_ROOTS
-
 
     @classmethod
     def calculate_relative_delta_mstruct_roots(cls, rate_mstruct_death, root_mstruct, delta_t):
