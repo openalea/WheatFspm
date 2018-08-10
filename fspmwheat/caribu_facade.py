@@ -1,5 +1,13 @@
 # -*- coding: latin-1 -*-
 
+import pandas as pd
+import warnings
+
+from alinea.caribu.CaribuScene import CaribuScene
+from alinea.caribu.sky_tools import GenSky, GetLight
+
+import tools
+
 """
     fspmwheat.caribu_facade
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,13 +33,6 @@
         $Id$
 """
 
-import numpy as np
-import pandas as pd
-
-from alinea.caribu.CaribuScene import CaribuScene
-from alinea.caribu.sky_tools import GenSky, GetLight
-
-import tools
 
 #: the columns which define the topology in the elements scale dataframe shared between all models
 SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
@@ -61,9 +62,9 @@ class CaribuFacade(object):
                  shared_elements_inputs_outputs_df,
                  geometrical_model):
 
-        self._shared_mtg = shared_mtg #: the MTG shared between all models
-        self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df #: the dataframe at elements scale shared between all models
-        self._geometrical_model = geometrical_model #: the model which deals with geometry
+        self._shared_mtg = shared_mtg  #: the MTG shared between all models
+        self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
+        self._geometrical_model = geometrical_model  #: the model which deals with geometry
 
     def run(self, energy=1, diffuse_model='soc', azimuts=4, zenits=5):
         """
@@ -97,26 +98,26 @@ class CaribuFacade(object):
         """
 
         # Diffuse light sources
-        sky_string = GetLight.GetLight(GenSky.GenSky()(energy, diffuse_model, azimuts, zenits)) # (Energy, soc/uoc, azimuts, zenits)
+        sky_string = GetLight.GetLight(GenSky.GenSky()(energy, diffuse_model, azimuts, zenits))  #: (Energy, soc/uoc, azimuts, zenits)
 
         sky = []
         for string in sky_string.split('\n'):
-            if len(string)!=0:
+            if len(string) != 0:
                 string_split = string.split(' ')
                 t = tuple((float(string_split[0]), tuple((float(string_split[1]), float(string_split[2]), float(string_split[3])))))
                 sky.append(t)
 
         # Optical
-        opt = {'par':{}}
+        opt = {'par': {}}
         geom = self._shared_mtg.property('geometry')
 
         for vid in geom.keys():
             if self._shared_mtg.class_name(vid) in ('LeafElement1', 'LeafElement'):
-                opt['par'][vid] = (0.10, 0.05) #: (reflectance, transmittance) of the adaxial side of the leaves
+                opt['par'][vid] = (0.10, 0.05)  #: (reflectance, transmittance) of the adaxial side of the leaves
             elif self._shared_mtg.class_name(vid) == 'StemElement':
-                opt['par'][vid] = (0.10,) #: (reflectance,) of the stems
+                opt['par'][vid] = (0.10,)  #: (reflectance,) of the stems
             else:
-                print 'Warning: unknown element type {}, vid={}'.format(self._shared_mtg.class_name(vid), vid)
+                warnings.warn('Warning: unknown element type {}, vid={}'.format(self._shared_mtg.class_name(vid), vid))
 
         c_scene = CaribuScene(scene=self._shared_mtg, light=sky, pattern=self._geometrical_model.domain, opt=opt)
 
@@ -133,7 +134,6 @@ class CaribuFacade(object):
         # update the MTG
         self._shared_mtg.property('PARa').update(aggregated_PARa)
 
-
     def update_shared_dataframes(self, aggregated_PARa):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
@@ -141,7 +141,8 @@ class CaribuFacade(object):
         ids = []
         PARa = []
         for vid in sorted(aggregated_PARa.keys()):
-            ind = int(self._shared_mtg.index(self._shared_mtg.complex_at_scale(vid, 1))), self._shared_mtg.label(self._shared_mtg.complex_at_scale(vid, 2)), int(self._shared_mtg.index(self._shared_mtg.complex_at_scale(vid, 3))), self._shared_mtg.label(self._shared_mtg.complex_at_scale(vid, 4)), self._shared_mtg.label(vid)
+            ind = int(self._shared_mtg.index(self._shared_mtg.complex_at_scale(vid, 1))), self._shared_mtg.label(self._shared_mtg.complex_at_scale(vid, 2)),\
+                  int(self._shared_mtg.index(self._shared_mtg.complex_at_scale(vid, 3))), self._shared_mtg.label(self._shared_mtg.complex_at_scale(vid, 4)), self._shared_mtg.label(vid)
             ids.append(ind)
             PARa.append(aggregated_PARa[vid])
 

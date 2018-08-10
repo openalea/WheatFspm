@@ -1,4 +1,15 @@
 # -*- coding: latin-1 -*-
+
+import os
+
+import numpy as np
+import pandas as pd
+from scipy import stats
+import matplotlib.pyplot as plt
+
+from alinea.adel.mtg import to_plantgl
+from openalea.plantgl.all import Viewer,Vector3
+
 """
     fspmwheat.tools
     ~~~~~~~~~~~~~~~
@@ -19,16 +30,6 @@
         $URL$
         $Id$
 """
-
-import os
-
-import numpy as np
-import pandas as pd
-from scipy import stats
-import matplotlib.pyplot as plt
-
-from alinea.adel.mtg import to_plantgl
-from openalea.plantgl.all import Viewer,Vector3
 
 
 def combine_dataframes_inplace(model_dataframe, shared_column_indexes, shared_dataframe_to_update):
@@ -56,31 +57,33 @@ def combine_dataframes_inplace(model_dataframe, shared_column_indexes, shared_da
     if len(shared_dataframe_to_update) == 0:
         shared_dataframe_to_update_reindexed = shared_dataframe_to_update
     else:
-        shared_dataframe_to_update.sort_values(shared_column_indexes, inplace=True) ##RB
-        shared_dataframe_to_update_reindexed = pd.DataFrame(shared_dataframe_to_update.values,
+        shared_dataframe_to_update.sort_values(shared_column_indexes, inplace=True)
+        shared_dataframe_to_update_reindexed = pd.DataFrame(shared_dataframe_to_update.values.tolist(),
                                                             index=sorted(shared_dataframe_to_update.groupby(shared_column_indexes).groups.keys()),
                                                             columns=shared_dataframe_to_update.columns)
 
-    model_dataframe.sort_values(shared_column_indexes, inplace=True) ##RB
-    model_dataframe_reindexed = pd.DataFrame(model_dataframe.values,
+    model_dataframe.sort_values(shared_column_indexes, inplace=True)
+    model_dataframe_reindexed = pd.DataFrame(model_dataframe.values.tolist(),
                                              index=sorted(model_dataframe.groupby(shared_column_indexes).groups.keys()),
                                              columns=model_dataframe.columns)
 
     # combine model and shared re-indexed dataframes
-    if model_dataframe_reindexed.empty and shared_dataframe_to_update.empty: #TODO: check with Camille
+    if model_dataframe_reindexed.empty and shared_dataframe_to_update.empty:
         new_shared_dataframe = model_dataframe_reindexed.copy()
         for new_header in shared_dataframe_to_update_reindexed.columns.difference(model_dataframe_reindexed.columns):
             new_shared_dataframe[new_header] = ""
     else:
-        new_shared_dataframe = model_dataframe_reindexed.combine_first(shared_dataframe_to_update_reindexed) # if there are booleans in shared_dataframe_to_update, then these booleans are converted to floats
+        new_shared_dataframe = model_dataframe_reindexed.combine_first(shared_dataframe_to_update_reindexed)
 
     # reset to the right types in the combined dataframe
     dtypes = model_dataframe_reindexed.dtypes.combine_first(shared_dataframe_to_update_reindexed.dtypes)
-    for column_name, data_type in dtypes.iteritems():
+    for column_name, data_type in dtypes.items():
+        if np.issubdtype(np.int64, data_type) and new_shared_dataframe[column_name].isnull().values.any():  # Used to keep bool values
+            data_type = float  # will return an error if data_type is integer
         new_shared_dataframe[column_name] = new_shared_dataframe[column_name].astype(data_type)
 
     # reorder the columns
-    new_shared_dataframe = new_shared_dataframe.reindex_axis(shared_column_indexes + sorted(new_shared_dataframe.columns.difference(shared_column_indexes)), axis=1)
+    new_shared_dataframe = new_shared_dataframe.reindex(shared_column_indexes + sorted(new_shared_dataframe.columns.difference(shared_column_indexes)), axis=1)
 
     # update the shared dataframe in-place
     shared_dataframe_to_update.drop(shared_dataframe_to_update.index, axis=0, inplace=True)
@@ -134,12 +137,12 @@ def plot_linear_regression(x_array, y_array, x_label='x', y_label='y', plot_file
 
     # Create a string, showing the form of the equation (with fitted coefficients) and r squared value.
     # Coefficients are rounded to two decimal places.
-    equation = 'y = {} x + {} (R$^2$ = {})'.format(round(aCoeff,2), round(bCoeff,2), round(rVal**2,2))
+    equation = 'y = {} x + {} (R$^2$ = {})'.format(round(aCoeff, 2), round(bCoeff, 2), round(rVal**2, 2))
 
     plt.figure()
 
     # Plot fit against original data
-    plt.plot(x_array, y_array,'.')
+    plt.plot(x_array, y_array, '.')
     plt.plot(x_samples_array, y_predict_array)
     plt.title('{} vs {}'.format(x_label, y_label))
 
@@ -160,14 +163,13 @@ def plot_linear_regression(x_array, y_array, x_label='x', y_label='y', plot_file
 
 def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
     
-
     def color_map(N):
-        if 0 <= N <= 0.5: # TODO: organe senescent (prendre prop)
+        if 0 <= N <= 0.5:  # TODO: organe senescent (prendre prop)
             color_map = [150, 100, 0]
-        elif 0.5 < N < 5: # Fvertes
-            color_map = [int(255 - N*51), int(255 - N*20), 50]
+        elif 0.5 < N < 5:  # Fvertes
+            color_map = [int(255 - N*51), int(255 - N * 20), 50]
         else:
-            color_map = [0,155,0]
+            color_map = [0, 155, 0]
         return color_map
 
     def calculate_Total_Organic_Nitrogen(amino_acids, proteins, Nstruct):
@@ -182,21 +184,21 @@ def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
         :Returns Type:
             :class:`float`
         """
-        return (amino_acids + proteins)*14E-3 + Nstruct*1E3
+        return (amino_acids + proteins) * 14E-3 + Nstruct * 1E3
 
     colors = {}
 
     groups_df = df.groupby(['plant', 'axis', 'metamer', 'organ', 'element'])
     for vid in g.components_at_scale(g.root, scale=5):
-        pid = int(g.index(g.complex_at_scale(vid, scale =1)))
-        axid = g.property('label')[g.complex_at_scale(vid, scale =2)]
-        mid = int(g.index(g.complex_at_scale(vid, scale =3)))
-        org = g.property('label')[g.complex_at_scale(vid, scale =4)]
+        pid = int(g.index(g.complex_at_scale(vid, scale=1)))
+        axid = g.property('label')[g.complex_at_scale(vid, scale=2)]
+        mid = int(g.index(g.complex_at_scale(vid, scale=3)))
+        org = g.property('label')[g.complex_at_scale(vid, scale=4)]
         elid = g.property('label')[vid]
         id_map = (pid, axid, mid, org, elid)
-        if groups_df.groups.has_key(id_map):
-            N = (g.property('proteins')[vid]*14E-3) / groups_df.get_group(id_map)['mstruct'].iloc[0]
-            #N = (calculate_Total_Organic_Nitrogen(g.property('amino_acids')[vid], g.property('proteins')[vid], g.property('Nstruct')[vid])) / g.property('mstruct')[vid]
+        if id_map in groups_df.groups.keys():
+            N = (g.property('proteins')[vid] * 14E-3) / groups_df.get_group(id_map)['mstruct'].iloc[0]
+            # N = (calculate_Total_Organic_Nitrogen(g.property('amino_acids')[vid], g.property('proteins')[vid], g.property('Nstruct')[vid])) / g.property('mstruct')[vid]
             colors[vid] = color_map(N)
         else:
             g.property('geometry')[vid] = None
@@ -204,7 +206,6 @@ def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
     # plantgl
     s = to_plantgl(g, colors=colors)[0]
     Viewer.add(s)
-    Viewer.camera.setPosition(Vector3(83.883,12.3239,93.4706))
-    Viewer.camera.lookAt(Vector3(0.,0,50))
+    Viewer.camera.setPosition(Vector3(83.883, 12.3239, 93.4706))
+    Viewer.camera.lookAt(Vector3(0., 0, 50))
     Viewer.saveSnapshot(os.path.join(SCREENSHOT_DIRPATH, 'Day_{}.png'.format(t/24+1)))
-        

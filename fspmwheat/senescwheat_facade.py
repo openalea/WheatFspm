@@ -1,5 +1,9 @@
 # -*- coding: latin-1 -*-
 
+from senescwheat import converter, simulation
+
+import tools
+
 """
     fspmwheat.senescwheat_facade
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,14 +29,8 @@
         $Id$
 """
 
-import pandas as pd
-
-from senescwheat import converter, simulation
-
-import tools
-
 #: the name of the photosynthetic organs modeled by SenescWheat
-PHOTOSYNTHETIC_ORGANS_NAMES = set(['internode', 'blade', 'sheath', 'peduncle', 'ear'])
+PHOTOSYNTHETIC_ORGANS_NAMES = {'internode', 'blade', 'sheath', 'peduncle', 'ear'}
 
 #: the columns which define the topology in the organs scale dataframe shared between all models
 SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'organ']
@@ -66,17 +64,16 @@ class SenescWheatFacade(object):
                  shared_organs_inputs_outputs_df,
                  shared_elements_inputs_outputs_df):
 
-        self._shared_mtg = shared_mtg #: the MTG shared between all models
+        self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
-        self._simulation = simulation.Simulation(delta_t=delta_t) #: the simulator to use to run the model
+        self._simulation = simulation.Simulation(delta_t=delta_t)  #: the simulator to use to run the model
 
         all_senescwheat_inputs_dict = converter.from_dataframes(model_roots_inputs_df, model_elements_inputs_df)
         self._update_shared_MTG(all_senescwheat_inputs_dict['roots'], all_senescwheat_inputs_dict['elements'])
 
-        self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df #: the dataframe at organs scale shared between all models
-        self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df #: the dataframe at elements scale shared between all models
+        self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df  #: the dataframe at organs scale shared between all models
+        self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
         self._update_shared_dataframes(model_roots_inputs_df, model_elements_inputs_df)
-
 
     def run(self, forced_max_protein_elements=None):
         """
@@ -87,7 +84,6 @@ class SenescWheatFacade(object):
         self._update_shared_MTG(self._simulation.outputs['roots'], self._simulation.outputs['elements'])
         senescwheat_roots_outputs_df, senescwheat_elements_outputs_df = converter.to_dataframes(self._simulation.outputs)
         self._update_shared_dataframes(senescwheat_roots_outputs_df, senescwheat_elements_outputs_df)
-
 
     def _initialize_model(self):
         """
@@ -139,7 +135,6 @@ class SenescWheatFacade(object):
 
         self._simulation.initialize({'roots': all_senescwheat_roots_inputs_dict, 'elements': all_senescwheat_elements_inputs_dict})
 
-
     def _update_shared_MTG(self, senescwheat_roots_data_dict, senescwheat_elements_data_dict):
         """
         Update the MTG shared between all models from the inputs or the outputs of the model.
@@ -175,9 +170,8 @@ class SenescWheatFacade(object):
                             if element_id not in senescwheat_elements_data_dict: continue
                             # update the element in the MTG
                             senescwheat_element_data_dict = senescwheat_elements_data_dict[element_id]
-                            for senescwheat_element_data_name, senescwheat_element_data_value in senescwheat_element_data_dict.iteritems():
+                            for senescwheat_element_data_name, senescwheat_element_data_value in senescwheat_element_data_dict.items():
                                 self._shared_mtg.property(senescwheat_element_data_name)[mtg_element_vid] = senescwheat_element_data_value
-
 
     def _update_shared_dataframes(self, senescwheat_roots_data_df, senescwheat_elements_data_df):
         """
@@ -192,9 +186,5 @@ class SenescWheatFacade(object):
             if senescwheat_data_df is senescwheat_roots_data_df:
                 senescwheat_data_df = senescwheat_data_df.copy()
                 senescwheat_data_df.loc[:, 'organ'] = 'roots'
-            else: ## pour le debug
-                pass
 
             tools.combine_dataframes_inplace(senescwheat_data_df, shared_inputs_outputs_indexes, shared_inputs_outputs_df)
-
-

@@ -23,7 +23,7 @@ def create_init_MTG_with_tillers(nplants=1, sowing_density=250., plant_density=2
     axeT = axeT.sort(['id_plt', 'id_cohort', 'N_phytomer'])
     devT = devCsv(axeT, dimT, phenT)
     adel = AdelWheatDyn(nplants=nplants, nsect=nsect, devT=devT, stand=stand,
-                     seed=seed, sample='sequence', leaves=leaves, devT_unit='cm', scene_unit='m')
+                     seed=seed, sample='sequence', leaves=leaves,  scene_unit='m')
     age = hs.TT(reg.hs_debreg(nff=nff))
     g = adel.setup_canopy(age)
     return adel, g
@@ -67,3 +67,5 @@ def create_init_MTG_FSPMWHEAT(dirpath):
     return adel, g
 
 #adel, g = create_init_MTG_FSPMWHEAT(r'./adelwheat')
+adel, g = create_init_MTG_with_tillers()
+adel.save(g, dir= r'./adelwheat' )
