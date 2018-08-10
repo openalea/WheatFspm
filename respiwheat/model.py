@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
-from __future__ import division # use '//' to do integer division
+from __future__ import division  # use '//' to do integer division
 
 """
     respiwheat.model
@@ -22,36 +22,37 @@ from __future__ import division # use '//' to do integer division
     .. seealso:: Barillot et al. 2016.
 """
 
+
 class RespirationModel(object):
 
     SECOND_TO_HOUR_RATE_CONVERSION = 3600
 
-    ### R_growth###
-    YG = 0.80             # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
-    YG_GRAINS = 0.71      # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
+    # R_growth#
+    YG = 0.80              # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
+    YG_GRAINS = 0.71       # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
 
-    ### R_phloem###
-    CPHLOEM = 0.006       # Units C respired per unit C substrate loaded into the phloem
+    # R_phloem#
+    CPHLOEM = 0.006        # Units C respired per unit C substrate loaded into the phloem
 
-    ### R_Namm_upt###
-    C_AMM_UPT = 0.198     # µmol of C substrate respired per µmol of N ammonium taken up
+    # R_Namm_upt#
+    C_AMM_UPT = 0.198      # µmol of C substrate respired per µmol of N ammonium taken up
 
-    ### R_Nnit_upt###
-    C_NIT_UPT = 0.397     # µmol of C substrate respired per µmol of N nitrates taken up
+    # R_Nnit_upt#
+    C_NIT_UPT = 0.397      # µmol of C substrate respired per µmol of N nitrates taken up
 
-    ### R_Nnit_red###
-    F_NIT_RED_SH_CS = 0.5 # fraction of nitrate reduced in shoot using C substrate rather than using excess ATP and reducing power obtained directly from photosynthesis
-    C_NIT_RED = 1.98      # µmol of C substrate per µmol of N nitrates reduced
+    # R_Nnit_red#
+    F_NIT_RED_SH_CS = 0.5  # fraction of nitrate reduced in shoot using C substrate rather than using excess ATP and reducing power obtained directly from photosynthesis
+    C_NIT_RED = 1.98       # µmol of C substrate per µmol of N nitrates reduced
 
-    ### R_N2fix ###
-    C_NFIX = 6            # kg substrate C respired (kg N fixed)-1 (in the range  5 to 12)
+    # R_N2fix #
+    C_NFIX = 6             # kg substrate C respired (kg N fixed)-1 (in the range  5 to 12)
 
-    ### R_min_upt ###
-    CMIN_UPT = 5000       # µmol of C substrate respired per g of minerals taken up
-    ASHE_CONTENT = 0.05   # g minerals per g of structural dry mass
+    # R_min_upt #
+    CMIN_UPT = 5000        # µmol of C substrate respired per g of minerals taken up
+    ASHE_CONTENT = 0.05    # g minerals per g of structural dry mass
 
-    ### R_residual ###
-    KM_MAX = 4.1E-6#8E-6#4.1E-6       # Maximum value of the maintenance constant when C is much greater than KM (µmol of C substrate respired per µmol N s-1)
+    # R_residual #
+    KM_MAX = 4.1E-6  # 8E-6 # 4.1E-6       # Maximum value of the maintenance constant when C is much greater than KM (µmol of C substrate respired per µmol N s-1)
     KM = 1.67E3           # The Michaelis-Menten constant affinity i.e. the C substrate concentration at half the value of KM_MAX (µmol of C substrate per g of structural mass)
 
     @classmethod
@@ -107,7 +108,7 @@ class RespirationModel(object):
         :Returns Type:
             :class:`float`
         """
-        _R_phloem = max(0, cls.CPHLOEM * sucrose_loading * mstruct) #: Do not count a respiratory cost for negative loading i.e. unloading (assumed to be passive)
+        _R_phloem = max(0, cls.CPHLOEM * sucrose_loading * mstruct)  #: Do not count a respiratory cost for negative loading i.e. unloading (assumed to be passive)
         return _R_phloem, sucrose_loading
 
     @classmethod
@@ -142,7 +143,7 @@ class RespirationModel(object):
         :Returns Type:
             :class:`float`
         """
-        if sucrose >0:
+        if sucrose > 0:
             _R_Nnit_upt = cls.C_NIT_UPT * U_Nnit
         else:
             _R_Nnit_upt = 0
@@ -169,13 +170,13 @@ class RespirationModel(object):
             :class:`float`
         """
         if not root:
-            _R_Nnit_red = cls.F_NIT_RED_SH_CS * cls.C_NIT_RED *  s_amino_acids * mstruct # Respiration in shoot tissues
+            _R_Nnit_red = cls.F_NIT_RED_SH_CS * cls.C_NIT_RED * s_amino_acids * mstruct  # Respiration in shoot tissues
         else:
-            _R_Nnit_red = cls.C_NIT_RED * s_amino_acids * mstruct                        # Respiration in root tissues
+            _R_Nnit_red = cls.C_NIT_RED * s_amino_acids * mstruct                         # Respiration in root tissues
 
-##        if sucrose < _R_Nnit_red:
-##            _R_Nnit_red = 0
-##            s_amino_acids = 0
+#        if sucrose < _R_Nnit_red:
+#            _R_Nnit_red = 0
+#            s_amino_acids = 0
         return _R_Nnit_red, s_amino_acids
 
     @classmethod
@@ -211,7 +212,7 @@ class RespirationModel(object):
             :class:`float`
         """
         # Uptake of minerals (g)
-        Umin = (cls.ASHE_CONTENT * delta_BMstruct) * 0.5 # 0.5: minerals internally recycled from senescing leaves
+        Umin = (cls.ASHE_CONTENT * delta_BMstruct) * 0.5  # 0.5: minerals internally recycled from senescing leaves
         # Respiratory cost
         _R_min_upt = cls.CMIN_UPT * Umin
         return _R_min_upt
