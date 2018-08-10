@@ -1,6 +1,13 @@
 # -*- coding: latin-1 -*-
 
-from __future__ import division # use "//" to do integer division
+from __future__ import division  # use "//" to do integer division
+import logging
+
+import numpy as np
+from scipy.integrate import odeint
+
+import model
+import tools
 
 """
     cnwheat.simulation
@@ -28,12 +35,6 @@ from __future__ import division # use "//" to do integer division
         $Id$
 """
 
-import logging
-
-import numpy as np
-from scipy.integrate import odeint
-
-import model, tools
 
 class SimulationError(Exception):
     """
@@ -41,12 +42,14 @@ class SimulationError(Exception):
     """
     pass
 
+
 class SimulationInitializationError(SimulationError):
     """
     Exception raised when a problem occurs at initialization time, in particular
     when checking the consistency of inputs `population` and `soils` (see :meth:`initialize`).
     """
     pass
+
 
 class SimulationRunError(SimulationError):
     """
@@ -138,11 +141,9 @@ class Simulation(object):
     #: the time index
     T_INDEX = ['t']
 
-
     ############################################################################
     ########### DEFINITION OF THE PARAMETERS AND COMPUTED VARIABLES ############
     ############################################################################
-
 
     ########### PLANT scale ############
 
@@ -165,7 +166,6 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at plant scale
     PLANTS_RUN_VARIABLES = PLANTS_STATE + PLANTS_INTERMEDIATE_VARIABLES + PLANTS_FLUXES + PLANTS_INTEGRATIVE_VARIABLES
 
-
     ########### AXIS scale ############
 
     #: the indexes to locate the axes in the modeled system
@@ -187,7 +187,6 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at axis scale
     AXES_RUN_VARIABLES = AXES_STATE + AXES_INTERMEDIATE_VARIABLES + AXES_FLUXES + AXES_INTEGRATIVE_VARIABLES
 
-
     ########### PHYTOMER scale ############
 
     #: the indexes to locate the phytomers in the modeled system
@@ -208,7 +207,6 @@ class Simulation(object):
     PHYTOMERS_INTEGRATIVE_VARIABLES = []
     #: all the variables computed during a run step of the simulation at phytomer scale
     PHYTOMERS_RUN_VARIABLES = PHYTOMERS_STATE + PHYTOMERS_INTERMEDIATE_VARIABLES + PHYTOMERS_FLUXES + PHYTOMERS_INTEGRATIVE_VARIABLES
-
 
     ########### ORGAN scale ############
 
@@ -233,7 +231,6 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at organ scale
     ORGANS_RUN_VARIABLES = ORGANS_STATE + ORGANS_INTERMEDIATE_VARIABLES + ORGANS_FLUXES + ORGANS_INTEGRATIVE_VARIABLES
 
-
     ########### HIDDENZONE scale ############
 
     #: the indexes to locate the hidden zones in the modeled system
@@ -254,7 +251,6 @@ class Simulation(object):
     HIDDENZONE_INTEGRATIVE_VARIABLES = []
     #: all the variables computed during a run step of the simulation at plnat scale
     HIDDENZONE_RUN_VARIABLES = HIDDENZONE_STATE + HIDDENZONE_INTERMEDIATE_VARIABLES + HIDDENZONE_FLUXES + HIDDENZONE_INTEGRATIVE_VARIABLES
-
 
     ########### ELEMENT scale ############
 
@@ -278,7 +274,6 @@ class Simulation(object):
     ELEMENTS_INTEGRATIVE_VARIABLES = ['Total_Organic_Nitrogen']
     #: all the variables computed during a run step of the simulation at element scale
     ELEMENTS_RUN_VARIABLES = ELEMENTS_STATE + ELEMENTS_INTERMEDIATE_VARIABLES + ELEMENTS_FLUXES + ELEMENTS_INTEGRATIVE_VARIABLES
-
 
     ########### SOIL scale ############
 
@@ -317,12 +312,11 @@ class Simulation(object):
                                      model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements',
                                      model.Soil: 'cnwheat.derivatives.soils'}}
 
+    def __init__(self, respiration_model, delta_t=1, culm_density={1: 410}):
 
-    def __init__(self, respiration_model, delta_t=1, culm_density={1:410}):
+        self.respiration_model = respiration_model  #: the model of respiration to use
 
-        self.respiration_model = respiration_model #: the model of respiration to use
-
-        self.population = model.Population() #: the population to simulate on
+        self.population = model.Population()  #: the population to simulate on
 
         #: The inputs of the soils.
         #:
@@ -330,18 +324,17 @@ class Simulation(object):
         #:     {(plant_index, axis_label): soil_object, ...}
         self.soils = {}
 
-        self.initial_conditions = [] #: the initial conditions of the compartments in the population and soils
-        self.initial_conditions_mapping = {} #: dictionary to map the compartments to their indexes in :attr:`initial_conditions`
+        self.initial_conditions = []  #: the initial conditions of the compartments in the population and soils
+        self.initial_conditions_mapping = {}  #: dictionary to map the compartments to their indexes in :attr:`initial_conditions`
 
-        self.progressbar = tools.ProgressBar(title='Solver progress') #: progress bar to show the progress of the solver
-        self.show_progressbar = False #: True: show the progress bar ; False: DO NOT show the progress bar
+        self.progressbar = tools.ProgressBar(title='Solver progress')  #: progress bar to show the progress of the solver
+        self.show_progressbar = False  #: True: show the progress bar ; False: DO NOT show the progress bar
 
-        self.delta_t = delta_t #: the delta t of the simulation (in seconds)
+        self.delta_t = delta_t  #: the delta t of the simulation (in seconds)
 
-        self.time_step = self.delta_t / 3600.0 #: time step of the simulation (in hours)
+        self.time_step = self.delta_t / 3600.0  #: time step of the simulation (in hours)
 
-        self.culm_density = culm_density #: culm density (culm m-2)
-
+        self.culm_density = culm_density  #: culm density (culm m-2)
 
     def initialize(self, population, soils):
         """
@@ -378,29 +371,32 @@ class Simulation(object):
         self.soils.update(soils)
 
         # check the consistency of population and soils
-        if len(self.population.plants) != 0: # population must contain at least 1 plant
+        if len(self.population.plants) != 0:  # population must contain at least 1 plant
             for plant in self.population.plants:
-                if len(plant.axes) != 0: # each plant must contain at least 1 axis
+                if len(plant.axes) != 0:  # each plant must contain at least 1 axis
                     for axis in plant.axes:
-                        if axis.roots is None: # each axis must have a "roots"
+                        if axis.roots is None:  # each axis must have a "roots"
                             message = 'No roots found in (plant={},axis={})'.format(plant.index, axis.label)
                             logger.exception(message)
                             raise SimulationInitializationError(message)
-                        if axis.phloem is None: # each axis must have a phloem
+                        if axis.phloem is None:  # each axis must have a phloem
                             message = 'No phloem found in (plant={},axis={})'.format(plant.index, axis.label)
                             logger.exception(message)
                             raise SimulationInitializationError(message)
-                        if len(axis.phytomers) != 0: # each axis must contain at least 1 phytomer
+                        if len(axis.phytomers) != 0:  # each axis must contain at least 1 phytomer
                             for phytomer in axis.phytomers:
                                 phytomer_organs = (phytomer.lamina, phytomer.internode, phytomer.sheath, phytomer.chaff, phytomer.peduncle)
-                                if phytomer_organs.count(None) != len(phytomer_organs) or phytomer.hiddenzone is not None: # each phytomer must contain at least 1 photosynthetic organ or an hidden growing zone
+                                # each phytomer must contain at least 1 photosynthetic organ or an hidden growing zone
+                                if phytomer_organs.count(None) != len(phytomer_organs) or phytomer.hiddenzone is not None:
                                     for organ in phytomer_organs:
                                         if organ is not None:
                                             organ_elements = (organ.exposed_element, organ.enclosed_element)
-                                            if organ_elements.count(None) != len(organ_elements): # each photosynthetic organ must contain at least 1 element
+                                            # each photosynthetic organ must contain at least 1 element
+                                            if organ_elements.count(None) != len(organ_elements):
                                                 for element in organ_elements:
                                                     if element is not None:
-                                                        if not organ.__class__.__name__ in element.__class__.__name__: # an element must belong to an organ of the same type (e.g. a LaminaElement must belong to a Lamina)
+                                                        # an element must belong to an organ of the same type (e.g. a LaminaElement must belong to a Lamina)
+                                                        if not organ.__class__.__name__ in element.__class__.__name__:
                                                             message = 'In (plant={},axis={},phytomer={}), a {} belongs to a {}'.format(plant.index,
                                                                                                                                        axis.label,
                                                                                                                                        phytomer.index,
@@ -426,7 +422,7 @@ class Simulation(object):
                                                                                        axis.label)
                             logger.exception(message)
                             raise SimulationInitializationError(message)
-                        if (plant.index, axis.label) not in self.soils: # each axis must be associated to a soil
+                        if (plant.index, axis.label) not in self.soils:  # each axis must be associated to a soil
                             message = 'No soil found in (plant={},axis={})'.format(plant.index,
                                                                                    axis.label)
                             logger.exception(message)
@@ -460,7 +456,7 @@ class Simulation(object):
 
         i = 0
 
-        for soil in soils.itervalues():
+        for soil in soils.values():
             i = _init_initial_conditions(soil, i)
 
         for plant in self.population.plants:
@@ -486,7 +482,6 @@ class Simulation(object):
         self.population.calculate_integrative_variables()
 
         logger.info('Initialization of the simulation DONE')
-
 
     def run(self, show_progressbar=False):
         """
@@ -570,7 +565,7 @@ class Simulation(object):
                 infodict)
 
         # check the integration ; raise an exception if the integration failed
-        if not set(infodict['mused']).issubset([1,2]):
+        if not set(infodict['mused']).issubset([1, 2]):
             message = "Integration failed. See the logs of lsoda or try to increase the value of 'mxstep'."
             logger.exception(message)
             raise SimulationRunError(message)
@@ -583,18 +578,17 @@ class Simulation(object):
 
         return infodict
 
-
     def _update_initial_conditions(self):
         """Update the compartments values in :attr:`initial_conditions` from the compartments values of :attr:`population` and :attr:`soils`.
         """
-        for model_object, compartments in self.initial_conditions_mapping.iteritems():
-            for compartment_name, compartment_index in compartments.iteritems():
+        for model_object, compartments in self.initial_conditions_mapping.items():
+            for compartment_name, compartment_index in compartments.items():
                 self.initial_conditions[compartment_index] = getattr(model_object, compartment_name)
-
 
     def _log_compartments(self, t, y, loggers_names):
         """Log the values in `y` to the loggers in `loggers_names`.
         """
+
         def update_rows(model_object, indexes, rows, i):
             """Update list `rows` appending a new row corresponding to the compartment
             values associated to object `model_object` located at indexes `indexes`.
@@ -620,7 +614,7 @@ class Simulation(object):
         i = 0
         all_rows = dict([(class_, []) for class_ in loggers_names])
 
-        for soil_id, soil in self.soils.iteritems():
+        for soil_id, soil in self.soils.items():
             i = update_rows(soil, soil_id, all_rows[model.Soil], i)
 
         for plant in self.population.plants:
@@ -643,7 +637,7 @@ class Simulation(object):
 
         row_sep = '\n'
         column_sep = ','
-        for class_, logger_name in loggers_names.iteritems():
+        for class_, logger_name in loggers_names.items():
             compartments_logger = logging.getLogger(logger_name)
             formatted_initial_conditions = row_sep.join([column_sep.join(row) for row in all_rows[class_]])
             compartments_logger.debug(formatted_initial_conditions)
@@ -726,14 +720,14 @@ class Simulation(object):
                 phloem_contributors.append(axis.roots)
 
                 # compute total transpiration at t_inf
-                axis.Total_Transpiration = 0.0 # mmol s-1
                 axis.Total_Transpiration = 0.0  # mmol s-1
-                total_green_area = 0.0 # m2
+                axis.Total_Transpiration = 0.0  # mmol s-1
+                total_green_area = 0.0  # m2
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is not None:
                             for element in (organ.exposed_element, organ.enclosed_element):
-                                if element is not None and element.green_area != 0:
+                                if element is not None and element.green_area > 0:
                                     element.Transpiration = element.calculate_Total_Transpiration(element.Tr, element.green_area)
                                     axis.Total_Transpiration += element.Transpiration
                                     total_green_area += element.green_area
@@ -741,14 +735,14 @@ class Simulation(object):
                 if total_green_area == 0.0:
                     total_surfacic_transpiration = 0.0
                 else:
-                    total_surfacic_transpiration = axis.Total_Transpiration/total_green_area #: total transpiration rate of plant per unit area (mmol m-2 s-1)
+                    total_surfacic_transpiration = axis.Total_Transpiration / total_green_area  #: total transpiration rate of plant per unit area (mmol m-2 s-1)
 
                 # Compute the regulating factor of root exports by shoot transpiration
                 axis.roots.regul_transpiration = axis.roots.calculate_regul_transpiration(total_surfacic_transpiration)
 
                 # compute the flows from/to the roots to/from photosynthetic organs
                 axis.roots.Uptake_Nitrates, axis.roots.HATS_LATS = axis.roots.calculate_Uptake_Nitrates(soil.Conc_Nitrates_Soil, axis.roots.nitrates, axis.roots.sucrose)
-                soil_contributors.append((axis.roots.Uptake_Nitrates, plant.index)) # TODO: TEMP!!!
+                soil_contributors.append((axis.roots.Uptake_Nitrates, plant.index))  #: TODO TEMP!!!
                 axis.roots.R_Nnit_upt = self.respiration_model.RespirationModel.R_Nnit_upt(axis.roots.Uptake_Nitrates, axis.roots.sucrose)
                 axis.roots.Export_Nitrates = axis.roots.calculate_Export_Nitrates(axis.roots.nitrates, axis.roots.regul_transpiration)
                 axis.roots.Export_Amino_Acids = axis.roots.calculate_Export_Amino_Acids(axis.roots.amino_acids, axis.roots.regul_transpiration)
@@ -787,12 +781,11 @@ class Simulation(object):
                     hiddenzone_Loading_Sucrose_contribution = 0
                     hiddenzone_Loading_Amino_Acids_contribution = 0
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
-
                         if organ is None:
                             continue
 
                         for element in (organ.exposed_element, organ.enclosed_element):
-                            if element is None or element.green_area == 0:
+                            if element is None or element.green_area <= 0.25E-6:
                                 continue
 
                             element.starch = y[self.initial_conditions_mapping[element]['starch']]
@@ -808,7 +801,7 @@ class Simulation(object):
                             element.Photosynthesis = element.calculate_total_Photosynthesis(element.Ag, element.green_area)
 
                             # flows
-                            if element.is_growing: #: Export of sucrose and amino acids towards the hidden zone. Several growing elements might export toward the HZ at the same time (leaf and internode)
+                            if element.is_growing:  #: Export of sucrose and amino acids towards the hidden zone. Several growing elements might export toward the HZ at the same time (leaf and internode)
                                 element.Loading_Sucrose = element.calculate_export_sucrose(element.sucrose, hiddenzone.sucrose, hiddenzone.mstruct)
                                 hiddenzone_Loading_Sucrose_contribution += element.Loading_Sucrose
                                 element.Loading_Amino_Acids = element.calculate_Export_Amino_Acids(element.amino_acids, hiddenzone.amino_acids, hiddenzone.mstruct)
@@ -821,14 +814,16 @@ class Simulation(object):
                             element.S_Starch = element.calculate_S_Starch(element.triosesP)
                             element.D_Starch = element.calculate_D_Starch(element.starch)
                             element.S_Sucrose = element.calculate_S_Sucrose(element.triosesP)
-                            element.R_phloem_loading, element.Loading_Sucrose = self.respiration_model.RespirationModel.R_phloem(element.Loading_Sucrose,element.mstruct*element.__class__.PARAMETERS.ALPHA)
+                            element.R_phloem_loading, element.Loading_Sucrose = self.respiration_model.RespirationModel.R_phloem(element.Loading_Sucrose,
+                                                                                                                                 element.mstruct * element.__class__.PARAMETERS.ALPHA)
                             element.Regul_S_Fructan = element.calculate_Regul_S_Fructan(element.Loading_Sucrose)
                             element.D_Fructan = element.calculate_D_Fructan(element.sucrose, element.fructan)
                             element.S_Fructan = element.calculate_S_Fructan(element.sucrose, element.Regul_S_Fructan)
                             element.Nitrates_import = element.calculate_Nitrates_import(axis.roots.Export_Nitrates, element.Transpiration, axis.Total_Transpiration)
                             element.Amino_Acids_import = element.calculate_Amino_Acids_import(axis.roots.Export_Amino_Acids, element.Transpiration, axis.Total_Transpiration)
                             element.S_Amino_Acids = element.calculate_S_amino_acids(element.nitrates, element.triosesP)
-                            element.R_Nnit_red, element.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(element.S_Amino_Acids, element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA)
+                            element.R_Nnit_red, element.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(element.S_Amino_Acids, element.sucrose,
+                                                                                                                           element.mstruct * element.__class__.PARAMETERS.ALPHA)
                             element.S_Proteins = element.calculate_S_proteins(element.amino_acids)
                             element.k_proteins, element.D_Proteins = element.calculate_D_Proteins(element.proteins, element.cytokinins)
                             element.cytokinins_import = element.calculate_cytokinins_import(axis.roots.Export_cytokinins, element.Transpiration, axis.Total_Transpiration)
@@ -836,13 +831,16 @@ class Simulation(object):
 
                             # compartments derivatives
                             starch_derivative = element.calculate_starch_derivative(element.S_Starch, element.D_Starch)
-                            element.R_residual,_ = self.respiration_model.RespirationModel.R_residual(element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA, element.Total_Organic_Nitrogen, element.Ts)
+                            element.R_residual, _ = self.respiration_model.RespirationModel.R_residual(element.sucrose, element.mstruct * element.__class__.PARAMETERS.ALPHA,
+                                                                                                       element.Total_Organic_Nitrogen, element.Ts)
                             element.sum_respi = element.R_phloem_loading + element.R_Nnit_red + element.R_residual
-                            sucrose_derivative = element.calculate_sucrose_derivative(element.S_Sucrose, element.D_Starch, element.Loading_Sucrose, element.S_Fructan, element.D_Fructan, element.sum_respi)
+                            sucrose_derivative = element.calculate_sucrose_derivative(element.S_Sucrose, element.D_Starch, element.Loading_Sucrose, element.S_Fructan,
+                                                                                      element.D_Fructan, element.sum_respi)
                             triosesP_derivative = element.calculate_triosesP_derivative(element.Photosynthesis, element.S_Sucrose, element.S_Starch, element.S_Amino_Acids)
                             fructan_derivative = element.calculate_fructan_derivative(element.S_Fructan, element.D_Fructan)
                             nitrates_derivative = element.calculate_nitrates_derivative(element.Nitrates_import, element.S_Amino_Acids)
-                            amino_acids_derivative = element.calculate_amino_acids_derivative(element.Amino_Acids_import, element.S_Amino_Acids, element.S_Proteins, element.D_Proteins, element.Loading_Amino_Acids)
+                            amino_acids_derivative = element.calculate_amino_acids_derivative(element.Amino_Acids_import, element.S_Amino_Acids, element.S_Proteins, element.D_Proteins,
+                                                                                              element.Loading_Amino_Acids)
                             proteins_derivative = element.calculate_proteins_derivative(element.S_Proteins, element.D_Proteins)
                             cytokinins_derivative = element.calculate_cytokinins_derivative(element.cytokinins_import, element.D_cytokinins)
 
@@ -857,8 +855,11 @@ class Simulation(object):
 
                     if phytomer.hiddenzone is not None:
                         # compute the derivatives of the hidden zone
-                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['sucrose']] = hiddenzone.calculate_sucrose_derivative(hiddenzone.Unloading_Sucrose, hiddenzone.S_Fructan, hiddenzone.D_Fructan, hiddenzone_Loading_Sucrose_contribution)
-                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['amino_acids']] = hiddenzone.calculate_amino_acids_derivative(hiddenzone.Unloading_Amino_Acids, hiddenzone.S_Proteins, hiddenzone.D_Proteins, hiddenzone_Loading_Amino_Acids_contribution)
+                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['sucrose']] = hiddenzone.calculate_sucrose_derivative(hiddenzone.Unloading_Sucrose, hiddenzone.S_Fructan,
+                                                                                                                                        hiddenzone.D_Fructan, hiddenzone_Loading_Sucrose_contribution)
+                        y_derivatives[self.initial_conditions_mapping[hiddenzone]['amino_acids']] = hiddenzone.calculate_amino_acids_derivative(hiddenzone.Unloading_Amino_Acids, hiddenzone.S_Proteins,
+                                                                                                                                                hiddenzone.D_Proteins,
+                                                                                                                                                hiddenzone_Loading_Amino_Acids_contribution)
                         y_derivatives[self.initial_conditions_mapping[hiddenzone]['fructan']] = hiddenzone.calculate_fructan_derivative(hiddenzone.S_Fructan, hiddenzone.D_Fructan)
                         y_derivatives[self.initial_conditions_mapping[hiddenzone]['proteins']] = hiddenzone.calculate_proteins_derivative(hiddenzone.S_Proteins, hiddenzone.D_Proteins)
 
@@ -876,9 +877,12 @@ class Simulation(object):
                     # flows
                     axis.grains.S_grain_structure = axis.grains.calculate_S_grain_structure(axis.grains.structure, axis.grains.RGR_Structure)
                     axis.grains.S_grain_starch = axis.grains.calculate_S_grain_starch(axis.phloem.sucrose, axis.mstruct)
-                    axis.grains.S_Proteins = axis.grains.calculate_S_proteins(axis.grains.S_grain_structure, axis.grains.S_grain_starch, axis.phloem.amino_acids, axis.phloem.sucrose, axis.grains.structural_dry_mass)
+                    axis.grains.S_Proteins = axis.grains.calculate_S_proteins(axis.grains.S_grain_structure, axis.grains.S_grain_starch, axis.phloem.amino_acids, axis.phloem.sucrose,
+                                                                              axis.grains.structural_dry_mass)
                     # compartments derivatives
-                    axis.grains.R_grain_growth_struct, axis.grains.R_grain_growth_starch = self.respiration_model.RespirationModel.R_grain_growth(axis.grains.S_grain_structure, axis.grains.S_grain_starch, axis.grains.structural_dry_mass)
+                    axis.grains.R_grain_growth_struct, axis.grains.R_grain_growth_starch = self.respiration_model.RespirationModel.R_grain_growth(axis.grains.S_grain_structure,
+                                                                                                                                                  axis.grains.S_grain_starch,
+                                                                                                                                                  axis.grains.structural_dry_mass)
                     structure_derivative = axis.grains.calculate_structure_derivative(axis.grains.S_grain_structure, axis.grains.R_grain_growth_struct)
                     starch_derivative = axis.grains.calculate_starch_derivative(axis.grains.S_grain_starch, axis.grains.structural_dry_mass, axis.grains.R_grain_growth_starch)
                     proteins_derivative = axis.grains.calculate_proteins_derivative(axis.grains.S_Proteins)
@@ -892,12 +896,14 @@ class Simulation(object):
                 axis.roots.Unloading_Sucrose = axis.roots.calculate_Unloading_Sucrose(axis.phloem.sucrose, axis.mstruct)
                 axis.roots.Unloading_Amino_Acids = axis.roots.calculate_Unloading_Amino_Acids(axis.roots.Unloading_Sucrose, axis.phloem.sucrose, axis.phloem.amino_acids)
                 axis.roots.S_Amino_Acids = axis.roots.calculate_S_amino_acids(axis.roots.nitrates, axis.roots.sucrose)
-                axis.roots.R_Nnit_red, axis.roots.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(axis.roots.S_Amino_Acids, axis.roots.sucrose, axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA, root=True)
+                axis.roots.R_Nnit_red, axis.roots.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(axis.roots.S_Amino_Acids, axis.roots.sucrose,
+                                                                                                                     axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, root=True)
                 axis.roots.C_exudation, axis.roots.N_exudation = axis.roots.calculate_exudation(axis.roots.Unloading_Sucrose, axis.roots.sucrose, axis.roots.amino_acids, axis.phloem.amino_acids)
                 axis.roots.S_cytokinins = axis.roots.calculate_S_cytokinins(axis.roots.sucrose, axis.roots.nitrates)
 
                 # compartments derivatives
-                axis.roots.R_residual,_ = self.respiration_model.RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA, axis.roots.Total_Organic_Nitrogen, soil.Tsoil)
+                axis.roots.R_residual, _ = self.respiration_model.RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, axis.roots.Total_Organic_Nitrogen,
+                                                                                              soil.Tsoil)
                 axis.roots.sum_respi = axis.roots.R_Nnit_upt + axis.roots.R_Nnit_red + axis.roots.R_residual
                 sucrose_derivative = axis.roots.calculate_sucrose_derivative(axis.roots.Unloading_Sucrose, axis.roots.S_Amino_Acids, axis.roots.C_exudation, axis.roots.sum_respi)
                 nitrates_derivative = axis.roots.calculate_nitrates_derivative(axis.roots.Uptake_Nitrates, axis.roots.Export_Nitrates, axis.roots.S_Amino_Acids)
@@ -928,7 +934,6 @@ class Simulation(object):
 
         return y_derivatives
 
-
     def _update_model(self, compartments_values):
         """Update the attributes of :attr:`population` and :attr:`soils` from the values in `compartments_values`.
         """
@@ -955,8 +960,8 @@ class Simulation(object):
                 phloem_contributors.append(axis.roots)
 
                 # compute total transpiration at t_inf
-                axis.Total_Transpiration = 0.0 # mmol s-1
-                total_green_area = 0.0 # m2
+                axis.Total_Transpiration = 0.0  # mmol s-1
+                total_green_area = 0.0  # m2
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                         if organ is not None:
@@ -969,7 +974,7 @@ class Simulation(object):
                 if total_green_area == 0.0:
                     total_surfacic_transpiration = 0.0
                 else:
-                    total_surfacic_transpiration = axis.Total_Transpiration/total_green_area #: total transpiration rate of plant per unit area (mmol m-2 s-1)
+                    total_surfacic_transpiration = axis.Total_Transpiration / total_green_area  #: total transpiration rate of plant per unit area (mmol m-2 s-1)
 
                 # Compute the regulating factor of root exports by shoot transpiration
                 axis.roots.regul_transpiration = axis.roots.calculate_regul_transpiration(total_surfacic_transpiration)
@@ -1038,7 +1043,7 @@ class Simulation(object):
                             if element.is_growing:  #: Export of sucrose and amino acids towards the hidden zone
                                 element.Loading_Sucrose = element.calculate_export_sucrose(element.sucrose, hiddenzone.sucrose, hiddenzone.mstruct)
                                 element.Loading_Amino_Acids = element.calculate_Export_Amino_Acids(element.amino_acids, hiddenzone.amino_acids, hiddenzone.mstruct)
-                            else: #: Loading of sucrose and amino acids towards the phloem
+                            else:  #: Loading of sucrose and amino acids towards the phloem
                                 phloem_contributors.append(element)
                                 element.Loading_Sucrose = element.calculate_Loading_Sucrose(element.sucrose, axis.phloem.sucrose, axis.mstruct)
                                 element.Loading_Amino_Acids = element.calculate_Loading_Amino_Acids(element.amino_acids, axis.phloem.amino_acids, axis.mstruct)
@@ -1046,20 +1051,23 @@ class Simulation(object):
                             element.S_Starch = element.calculate_S_Starch(element.triosesP)
                             element.D_Starch = element.calculate_D_Starch(element.starch)
                             element.S_Sucrose = element.calculate_S_Sucrose(element.triosesP)
-                            element.R_phloem_loading, element.Loading_Sucrose = self.respiration_model.RespirationModel.R_phloem(element.Loading_Sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA)
+                            element.R_phloem_loading, element.Loading_Sucrose = self.respiration_model.RespirationModel.R_phloem(element.Loading_Sucrose,
+                                                                                                                                 element.mstruct * element.__class__.PARAMETERS.ALPHA)
                             element.Regul_S_Fructan = element.calculate_Regul_S_Fructan(element.Loading_Sucrose)
                             element.D_Fructan = element.calculate_D_Fructan(element.sucrose, element.fructan)
                             element.S_Fructan = element.calculate_S_Fructan(element.sucrose, element.Regul_S_Fructan)
                             element.Nitrates_import = element.calculate_Nitrates_import(axis.roots.Export_Nitrates, element.Transpiration, axis.Total_Transpiration)
                             element.Amino_Acids_import = element.calculate_Amino_Acids_import(axis.roots.Export_Amino_Acids, element.Transpiration, axis.Total_Transpiration)
                             element.S_Amino_Acids = element.calculate_S_amino_acids(element.nitrates, element.triosesP)
-                            element.R_Nnit_red, element.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(element.S_Amino_Acids, element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA)
+                            element.R_Nnit_red, element.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(element.S_Amino_Acids, element.sucrose,
+                                                                                                                           element.mstruct * element.__class__.PARAMETERS.ALPHA)
                             element.S_Proteins = element.calculate_S_proteins(element.amino_acids)
                             element.k_proteins, element.D_Proteins = element.calculate_D_Proteins(element.proteins, element.cytokinins)
                             element.cytokinins_import = element.calculate_cytokinins_import(axis.roots.Export_cytokinins, element.Transpiration, axis.Total_Transpiration)
                             element.D_cytokinins = element.calculate_D_cytokinins(element.cytokinins)
 
-                            element.R_residual,_ = self.respiration_model.RespirationModel.R_residual(element.sucrose, element.mstruct*element.__class__.PARAMETERS.ALPHA, element.Total_Organic_Nitrogen, element.Ts)
+                            element.R_residual, _ = self.respiration_model.RespirationModel.R_residual(element.sucrose, element.mstruct * element.__class__.PARAMETERS.ALPHA,
+                                                                                                       element.Total_Organic_Nitrogen, element.Ts)
                             element.sum_respi = element.R_phloem_loading + element.R_Nnit_red + element.R_residual
 
                 # grains
@@ -1078,24 +1086,28 @@ class Simulation(object):
                     # flows
                     axis.grains.S_grain_structure = axis.grains.calculate_S_grain_structure(axis.grains.structure, axis.grains.RGR_Structure)
                     axis.grains.S_grain_starch = axis.grains.calculate_S_grain_starch(axis.phloem.sucrose, axis.mstruct)
-                    axis.grains.S_Proteins = axis.grains.calculate_S_proteins(axis.grains.S_grain_structure, axis.grains.S_grain_starch, axis.phloem.amino_acids, axis.phloem.sucrose, axis.grains.structural_dry_mass)
+                    axis.grains.S_Proteins = axis.grains.calculate_S_proteins(axis.grains.S_grain_structure, axis.grains.S_grain_starch, axis.phloem.amino_acids, axis.phloem.sucrose,
+                                                                              axis.grains.structural_dry_mass)
 
-                    axis.grains.R_grain_growth_struct, axis.grains.R_grain_growth_starch = self.respiration_model.RespirationModel.R_grain_growth(axis.grains.S_grain_structure, axis.grains.S_grain_starch, axis.grains.structural_dry_mass)
+                    axis.grains.R_grain_growth_struct, axis.grains.R_grain_growth_starch = self.respiration_model.RespirationModel.R_grain_growth(axis.grains.S_grain_structure,
+                                                                                                                                                  axis.grains.S_grain_starch,
+                                                                                                                                                  axis.grains.structural_dry_mass)
 
                 # roots
                 # flows
                 axis.roots.Unloading_Sucrose = axis.roots.calculate_Unloading_Sucrose(axis.phloem.sucrose, axis.mstruct)
                 axis.roots.Unloading_Amino_Acids = axis.roots.calculate_Unloading_Amino_Acids(axis.roots.Unloading_Sucrose, axis.phloem.sucrose, axis.phloem.amino_acids)
                 axis.roots.S_Amino_Acids = axis.roots.calculate_S_amino_acids(axis.roots.nitrates, axis.roots.sucrose)
-                axis.roots.R_Nnit_red, axis.roots.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(axis.roots.S_Amino_Acids, axis.roots.sucrose, axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA, root=True)
+                axis.roots.R_Nnit_red, axis.roots.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(axis.roots.S_Amino_Acids, axis.roots.sucrose,
+                                                                                                                     axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, root=True)
                 axis.roots.C_exudation, axis.roots.N_exudation = axis.roots.calculate_exudation(axis.roots.Unloading_Sucrose, axis.roots.sucrose, axis.roots.amino_acids, axis.phloem.amino_acids)
                 axis.roots.S_cytokinins = axis.roots.calculate_S_cytokinins(axis.roots.sucrose, axis.roots.nitrates)
 
-                axis.roots.R_residual,_ = self.respiration_model.RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct*model.Roots.PARAMETERS.ALPHA, axis.roots.Total_Organic_Nitrogen, soil.Tsoil)
+                axis.roots.R_residual, _ = self.respiration_model.RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, axis.roots.Total_Organic_Nitrogen,
+                                                                                              soil.Tsoil)
                 axis.roots.sum_respi = axis.roots.R_Nnit_upt + axis.roots.R_Nnit_red + axis.roots.R_residual
 
         # soil
         soil.mineralisation = soil.calculate_mineralisation()
 
         logger.debug('Updating the attributes of the population and soils DONE')
-

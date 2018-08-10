@@ -1,4 +1,8 @@
 # -*- coding: latin-1 -*-
+import numpy as np
+import pandas as pd
+
+from cnwheat import model, simulation
 
 """
     cnwheat.converter
@@ -25,11 +29,6 @@
         $URL$
         $Id$
 """
-
-import numpy as np
-import pandas as pd
-
-from cnwheat import model, simulation
 
 #: the columns of the outputs dataframe at PLANT scale
 PLANTS_VARIABLES = simulation.Simulation.PLANTS_INDEXES + simulation.Simulation.PLANTS_RUN_VARIABLES
@@ -136,7 +135,8 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                         organ_label = CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[phytomer_attribute_class]
 
                         if metamer_index in curr_metamers_indexes_for_elements:
-                            curr_elements_inputs = elements_inputs[(elements_inputs['plant'] == plant_index) & (elements_inputs['axis'] == axis_label) & (elements_inputs['metamer'] == metamer_index) & (elements_inputs['organ'] == organ_label)]
+                            curr_elements_inputs = elements_inputs[(elements_inputs['plant'] == plant_index) & (elements_inputs['axis'] == axis_label) & (elements_inputs['metamer'] == metamer_index) &
+                                                                   (elements_inputs['organ'] == organ_label)]
                             if organ_label not in curr_elements_inputs.organ.values:
                                 continue
                             # create a new organ
@@ -144,7 +144,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                             organ.initialize()
                             setattr(phytomer, phytomer_attribute_name, organ)
 
-                            for mtg_element_label, cnwheat_element_name in DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING.iteritems():
+                            for mtg_element_label, cnwheat_element_name in DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING.items():
                                 element_inputs = curr_elements_inputs[curr_elements_inputs['element'] == mtg_element_label]
                                 if len(element_inputs) == 0:
                                     continue
@@ -155,7 +155,8 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
                                 setattr(organ, cnwheat_element_name, element)
 
                     if metamer_index in curr_metamers_indexes_for_hiddenzones:
-                        hiddenzone_inputs = hiddenzones_inputs[(hiddenzones_inputs['plant'] == plant_index) & (hiddenzones_inputs['axis'] == axis_label) & (hiddenzones_inputs['metamer'] == metamer_index)]
+                        hiddenzone_inputs = hiddenzones_inputs[(hiddenzones_inputs['plant'] == plant_index) & (hiddenzones_inputs['axis'] == axis_label) &
+                                                               (hiddenzones_inputs['metamer'] == metamer_index)]
                         if len(hiddenzone_inputs) == 0:
                             continue
                         hiddenzone_inputs = hiddenzone_inputs.loc[:, simulation.Simulation.HIDDENZONE_STATE]
@@ -228,7 +229,7 @@ def to_dataframes(population=None, soils=None):
         attributes_values = []
         for attribute_name in attributes_names:
             attributes_values.append(getattr(model_object, attribute_name, np.nan))
-        inputs_df.loc[len(inputs_df),:] = indexes + attributes_values
+        inputs_df.loc[len(inputs_df), :] = indexes + attributes_values
 
     if convert_population_to_dataframes:
         # initialize the dataframes

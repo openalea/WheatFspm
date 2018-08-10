@@ -1,4 +1,19 @@
 # -*- coding: latin-1 -*-
+
+import os
+import sys
+import types
+from itertools import cycle
+import warnings
+import logging
+import logging.config
+import json
+
+import numpy as np
+import pandas as pd
+
+import matplotlib.pyplot as plt
+
 """
     cnwheat.tools
     ~~~~~~~~~~~~~
@@ -29,20 +44,6 @@
         $Id$
 """
 
-import os
-import sys
-import types
-from itertools import cycle
-import warnings
-import logging
-import logging.config
-import json
-
-import numpy as np
-import pandas as pd
-
-import matplotlib.pyplot as plt
-
 # the precision to use for quantitative comparison test
 PRECISION = 4
 # the relative tolerance associated to `PRECISION`
@@ -50,20 +51,23 @@ RELATIVE_TOLERANCE = 10**-PRECISION
 # the absolute tolerance associated to `PRECISION`
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
-OUTPUTS_INDEXES = ['t', 'plant', 'axis', 'metamer', 'organ', 'element'] #: All the possible indexes of CN-Wheat outputs
+OUTPUTS_INDEXES = ['t', 'plant', 'axis', 'metamer', 'organ', 'element']  #: All the possible indexes of CN-Wheat outputs
+
 
 class DataWarning(UserWarning):
-    '''Raised when there is no data to plot for a variable.'''
+    """Raised when there is no data to plot for a variable."""
     def __init__(self, variable, keys):
         self.message = 'No data to plot for variable {} at {}.'.format(variable, keys)
+
     def __str__(self):
         return repr(self.message)
+
 
 # show all DataWarning (not only the first one which occurred)
 warnings.simplefilter('always', DataWarning)
 
 
-def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}, plot_filepath=None, colors=[], linestyles=[], explicit_label=True):
+def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}, plot_filepath=None, colors=[], linestyles=[], explicit_label=True, kwargs={}):
     """Plot `outputs`, with x=`x_name` and y=`y_name`.
 
     The general algorithm is:
@@ -126,7 +130,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
     outputs = outputs[group_keys + [x_name, y_name]]
 
     # apply filters to outputs
-    for key, value in filters.iteritems():
+    for key, value in filters.items():
         if key in outputs:
             # convert to list if needed
             try:
@@ -143,15 +147,12 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
 
     # do not plot if there is nothing to plot
     if outputs[y_name].isnull().all():
-        keys_outputs_tuples = [(group_keys_upper[i], outputs[group_keys[i]].unique()) for i in xrange(len(group_keys))]
-        keys_outputs_strings = ['{}: {}'.format(group_key_upper, unique_outputs.tolist()) for (group_key_upper, unique_outputs) in keys_outputs_tuples]
-        warnings.warn(DataWarning(y_name, ' - '.join(keys_outputs_strings)))
         return
 
     # compute the cardinality of each group keys and create the title if needed
     subtitle_groups = []
     labels_groups = []
-    for i in xrange(len(group_keys)):
+    for i in range(len(group_keys)):
         group_key = group_keys[i]
         group_cardinality = outputs[group_key].nunique()
         if group_cardinality == 1:
@@ -159,7 +160,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
             subtitle_groups.append('{}: {}'.format(group_keys_upper[i], group_value))
         else:
             labels_groups.append(group_key)
-    if title is None: # we need to create the title
+    if title is None:  # we need to create the title
         title = y_name + '\n' + ' - '.join(subtitle_groups)
 
     # makes groups according to the scale
@@ -183,7 +184,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
                 label_group_index = group_keys_mapping[label_group]
                 line_label_list.append('{}: {}'.format(group_keys_upper[label_group_index], outputs_group_name[label_group_index]))
 
-        kwargs = {'label': ' - '.join(line_label_list)}
+        kwargs['label'] = ' - '.join(line_label_list)
 
         # apply user colors
         try:
@@ -206,7 +207,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    ax.legend(prop={'size':10}, framealpha=0.5)
+    ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
     ax.set_title(title)
     plt.tight_layout()
 
@@ -215,7 +216,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
         plt.show()
     else:
         # save the plot
-        plt.savefig(plot_filepath, dpi=200, format='PNG')
+        plt.savefig(plot_filepath, dpi=200, format='PNG', bbox_inches='tight')
         plt.close()
 
 
@@ -251,9 +252,9 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
 
-    logging.getLogger('cnwheat.model').disabled = not log_model # set to False to log messages from cnwheat.model
-    logging.getLogger('cnwheat.compartments').disabled = not log_compartments # set to False to log the compartments
-    logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives # set to False to log the derivatives
+    logging.getLogger('cnwheat.model').disabled = not log_model  # set to False to log messages from cnwheat.model
+    logging.getLogger('cnwheat.compartments').disabled = not log_compartments  # set to False to log the compartments
+    logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives  # set to False to log the derivatives
 
 
 def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):
@@ -294,6 +295,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
 
 class ProgressBarError(Exception): pass
 
+
 class ProgressBar(object):
     """
     Display a console progress bar.
@@ -302,14 +304,14 @@ class ProgressBar(object):
     def __init__(self, bar_length=20, title='', block_character='#', uncomplete_character='-'):
         if bar_length <= 0:
             raise ProgressBarError('bar_length <= 0')
-        self.bar_length = bar_length #: the number of blocks in the progress bar. MUST BE GREATER THAN ZERO !
-        self.t_max = 1 #: the maximum t that the progress bar can display. MUST BE GREATER THAN ZERO !
-        self.block_interval = 1 #: the time interval of each block. MUST BE GREATER THAN ZERO !
-        self.last_upper_t = 0 #: the last upper t displayed by the progress bar
-        self.progress_mapping = {} #: a mapping to optimize the refresh rate
-        self.title = title #: the title to write on the left side of the progress bar
-        self.block_character = block_character #: the character to represent a block
-        self.uncomplete_character = uncomplete_character #: the character to represent the uncompleted part of the progress bar
+        self.bar_length = bar_length  #: the number of blocks in the progress bar. MUST BE GREATER THAN ZERO !
+        self.t_max = 1  #: the maximum t that the progress bar can display. MUST BE GREATER THAN ZERO !
+        self.block_interval = 1  #: the time interval of each block. MUST BE GREATER THAN ZERO !
+        self.last_upper_t = 0  #: the last upper t displayed by the progress bar
+        self.progress_mapping = {}  #: a mapping to optimize the refresh rate
+        self.title = title  #: the title to write on the left side of the progress bar
+        self.block_character = block_character  #: the character to represent a block
+        self.uncomplete_character = uncomplete_character  #: the character to represent the uncompleted part of the progress bar
 
     def set_t_max(self, t_max):
         """"Set :attr:`t_max` and update other attributes accordingly.
@@ -333,9 +335,7 @@ class ProgressBar(object):
         if t_inf not in self.progress_mapping:
             progress = t / self.t_max
             block = int(round(self.bar_length * progress))
-            text = "\r{0}: [{1}] {2:>5d}% ".format(self.title,
-                                                  self.block_character * block + self.uncomplete_character * (self.bar_length - block),
-                                                  int(progress*100))
+            text = "\r{0}: [{1}] {2:>5d}% ".format(self.title, self.block_character * block + self.uncomplete_character * (self.bar_length - block), int(progress*100))
             self.progress_mapping[t_inf] = text
             sys.stdout.write(self.progress_mapping[t_inf])
             sys.stdout.flush()
