@@ -32,6 +32,9 @@ import time
 from elongwheat import simulation as elongwheat_simulation, model as elongwheat_model, converter as elongwheat_converter
 
 
+INPUTS_DIRPATH = 'inputs'
+GRAPHS_DIRPATH = 'graphs'
+
 if OPTION_SHOW_ADEL:
    from fspmwheat import elongwheat_facade
    from alinea.adel.adel_dynamic import AdelWheatDyn
@@ -43,14 +46,12 @@ if OPTION_SHOW_ADEL:
    adel_wheat.nplants = g.get_vertex_property(0)['meta']['nplants'] # temp (until Christian's commit)
 
 
-
-INPUTS_DIRPATH = 'inputs'
-GRAPHS_DIRPATH = 'graphs'
-
 # elongwheat inputs
 HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
 ELEMENT_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'elements_inputs.csv')
 SAM_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'SAM_inputs.csv')
+METEO_FILEPATH = os.path.join(INPUTS_DIRPATH, 'temperature.csv')
+
 # elongwheat outputs
 OUTPUTS_DIRPATH = 'outputs'
 HIDDENZONE_OUTPUTS_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'all_hiddenzone_outputs.csv')
@@ -84,6 +85,7 @@ else:
     inputs = elongwheat_converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, SAM_inputs_df)
     desired_t_step = 0
 
+meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
 
 ## Write first line of dfs with input values
 hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df = elongwheat_converter.to_dataframes(inputs)
@@ -109,7 +111,7 @@ OUTPUTS_PRECISION = 8
 delta_t = 3600
 
 # end
-loop_end = 1000
+loop_end = 2500
 
 # --- MAIN
 
@@ -131,8 +133,11 @@ for t_step in range(desired_t_step+1, loop_end+1, elongwheat_ts):
     ## initialize the simulation with the inputs
     simulation_.initialize(inputs)
 
+    ## Temperature
+    Tair, Tsol = meteo.loc[t_step, ['Tair', 'Tsol']]
+
     ## run the simulation
-    simulation_.run(Tair = 24, Tsol = 24)
+    simulation_.run(Tair = Tair, Tsol = Tsol)
 
     ## convert the outputs to Pandas dataframe
     hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df = elongwheat_converter.to_dataframes(simulation_.outputs)

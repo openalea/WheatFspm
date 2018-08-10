@@ -26,7 +26,10 @@ all_SAM_outputs_df = pd.DataFrame()
 # Charts
 
 x_name = 't_step'
-x_label='Time (C.d-1)'
+x_label='Time (h)'
+
+# SAM outputs for SumTT
+all_SAM_outputs_df = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, SAM_OUTPUTS_FILENAME))
 
 # 4) Hidden zones
 all_hiddenzone_outputs_df = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONE_OUTPUTS_FILENAME))
@@ -77,15 +80,16 @@ tmp = all_hiddenzone_outputs_df[all_hiddenzone_outputs_df.leaf_is_emerged == 1]
 res = tmp['t_step'].groupby(tmp.metamer).min()
 res = pd.DataFrame(res)
 res['metamer'] = res.index
-res = res.rename( columns = { 't_step': 't_step_em'} )
+res = res.merge( all_SAM_outputs_df[['t_step','sum_TT']], on = 't_step', how = 'left')
+res = res.rename( columns = { 'sum_TT': 'sum_TT_em'} )
 
 tmp = res.copy()
 tmp.metamer = res.metamer + 1
-tmp = tmp.rename( columns = { 't_step_em': 't_step_em_prec'} )
+tmp = tmp.rename( columns = { 'sum_TT_em': 'sum_TT_em_prec'} )
 res = res.merge( tmp, on = 'metamer', how = 'left')
-res['phyllochrone'] = res.t_step_em - res.t_step_em_prec
+res['phyllochrone'] = res.sum_TT_em - res.sum_TT_em_prec
 
-res = res[res.phyllochrone > 0]
+res = res[res.phyllochrone > 10]
 
 tmp = all_hiddenzone_outputs_df[['leaf_Lmax','internode_Lmax','sheath_Lmax','lamina_Lmax']].groupby(all_hiddenzone_outputs_df.metamer).min()
 tmp['metamer'] = tmp.index

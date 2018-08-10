@@ -1,2 +1,2 @@
-plant,axis,sum_TT,status,nb_leaves,GA,height
-1,MS,481.833333333,vegetative,10,False,0
+plant,axis,SAM_temperature,sum_TT,status,nb_leaves,GA,height,normalized_temperature_effect
+1,MS,20,481.833333333,vegetative,10,False,0,1.0
