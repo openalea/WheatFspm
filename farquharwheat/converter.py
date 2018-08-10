@@ -1,6 +1,7 @@
 # -*- coding: latin-1 -*-
 
-from __future__ import division # use "//" to do integer division
+from __future__ import division  # use "//" to do integer division
+import pandas as pd
 
 """
     farquharwheat.converter
@@ -24,16 +25,13 @@ from __future__ import division # use "//" to do integer division
         $Id$
 """
 
-import pandas as pd
-
-
 #: the inputs needed by FarquharWheat at element scale
 FARQUHARWHEAT_ELEMENTS_INPUTS = ['width', 'height', 'PARa', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
 #: the inputs needed by FarquharWheat at axis scale
-FARQUHARWHEAT_SAMS_INPUTS = ['T_SAM', 'H_Canopy']
+FARQUHARWHEAT_SAMS_INPUTS = ['SAM_temperature', 'height_canopy']
 
 #: the outputs computed by FarquharWheat
-FARQUHARWHEAT_ELEMENTS_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs','width', 'height']
+FARQUHARWHEAT_ELEMENTS_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs', 'width', 'height']
 
 #: the inputs and outputs of FarquharWheat.
 FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS = set(FARQUHARWHEAT_ELEMENTS_INPUTS + FARQUHARWHEAT_ELEMENTS_OUTPUTS)
@@ -64,8 +62,8 @@ def from_dataframe(element_inputs, SAM_inputs):
 
     """
     all_elements_dict = {}
-    data_columns = element_inputs.columns.difference( ELEMENT_TOPOLOGY_COLUMNS )
-    for current_id, current_group in element_inputs.groupby( ELEMENT_TOPOLOGY_COLUMNS ):
+    data_columns = element_inputs.columns.difference(ELEMENT_TOPOLOGY_COLUMNS)
+    for current_id, current_group in element_inputs.groupby(ELEMENT_TOPOLOGY_COLUMNS):
         current_series = current_group.loc[current_group.first_valid_index()]
         current_dict = current_series[data_columns].to_dict()
         all_elements_dict[current_id] = current_dict
@@ -103,7 +101,6 @@ def to_dataframe(data_dict):
     df = pd.concat([ids_df, data_df], axis=1)
     df.sort_values(by=ELEMENT_TOPOLOGY_COLUMNS, inplace=True)
     columns_sorted = ELEMENT_TOPOLOGY_COLUMNS + [column_name for column_name in FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS if column_name in df.columns]
-    df = df.reindex_axis(columns_sorted, axis=1, copy=False)
+    df = df.reindex(columns_sorted, axis=1, copy=False)
     df.reset_index(drop=True, inplace=True)
     return df
-

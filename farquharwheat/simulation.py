@@ -1,6 +1,8 @@
 # -*- coding: latin-1 -*-
 
-from __future__ import division # use "//" to do integer division
+from __future__ import division  # use "//" to do integer division
+
+import model
 
 """
     farquharwheat.simulation
@@ -23,10 +25,12 @@ from __future__ import division # use "//" to do integer division
         $Id$
 """
 
-import model
 
 class SimulationError(Exception): pass
+
+
 class SimulationInputsError(SimulationError): pass
+
 
 class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
@@ -67,7 +71,6 @@ class Simulation(object):
         self.inputs.clear()
         self.inputs.update(inputs)
 
-
     def run(self, Ta, ambient_CO2, RH, Ur):
         """
         Compute Farquhar variables for each element in :attr:`inputs` and put
@@ -84,17 +87,17 @@ class Simulation(object):
             - `Ur` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
 
         """
-        self.outputs.update({inputs_type: {} for inputs_type in self.inputs['elements'].iterkeys()})
+        self.outputs.update({inputs_type: {} for inputs_type in self.inputs['elements'].keys()})
 
-        for (element_id, element_inputs) in self.inputs['elements'].iteritems():
+        for (element_id, element_inputs) in self.inputs['elements'].items():
 
             SAM_id = element_id[:2]
             organ_label = element_id[3]
             element_label = element_id[4]
 
-            if element_label == 'HiddenElement' or element_inputs['height'] is None or element_inputs['green_area'] == 0.0: # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
+            if element_label == 'HiddenElement' or element_inputs['height'] is None or element_inputs['green_area'] == 0.0:  # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
                 Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
-                Ts = self.inputs['SAMs'][SAM_id]['T_SAM']
+                Ts = self.inputs['SAMs'][SAM_id]['SAM_temperature']
             else:
                 PARa = element_inputs['PARa']     #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
 
@@ -104,13 +107,12 @@ class Simulation(object):
                                                                         element_inputs['Nstruct'],
                                                                         element_inputs['green_area'])
 
-                H_Canopy = self.inputs['SAMs'][SAM_id]['H_Canopy']
+                height_canopy = self.inputs['SAMs'][SAM_id]['height_canopy']
                 Ag, An, Rd, Tr, Ts, gs = model.Model.run(surfacic_nitrogen,
                                                                   element_inputs['width'],
                                                                   element_inputs['height'],
-                                                                  PARa, Ta, ambient_CO2, RH, Ur, organ_label, H_Canopy)
+                                                                  PARa, Ta, ambient_CO2, RH, Ur, organ_label, height_canopy)
 
-            element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs, \
-                               'width': element_inputs['width'], 'height' : element_inputs['height'] }
+            element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs, 'width': element_inputs['width'], 'height': element_inputs['height']}
 
             self.outputs[element_id] = element_outputs
