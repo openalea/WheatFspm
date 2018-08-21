@@ -4,3 +4,5 @@ plant,axis,metamer,organ,element,width,height,PARa
 1,MS,2,blade,LeafElement1,0.004,0.0304,0
 1,MS,2,sheath,StemElement,0.003,0.0304,0
 1,MS,3,blade,LeafElement1,0.005,0.031,0
+1,MS,3,sheath,StemElement,0.005,0.031,0
+1,MS,4,blade,LeafElement1,0.005,0.031,0
