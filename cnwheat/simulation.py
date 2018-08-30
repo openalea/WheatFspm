@@ -131,7 +131,7 @@ class Simulation(object):
     MODEL_COMPARTMENTS_NAMES = {model.Plant: [],
                                 model.Axis: [],
                                 model.Phytomer: [],
-                                model.Organ: ['Nstruct', 'age_from_flowering', 'amino_acids', 'cytokinins',
+                                model.Organ: ['age_from_flowering', 'amino_acids', 'cytokinins',
                                               'nitrates', 'proteins', 'starch', 'structure', 'sucrose'],
                                 model.HiddenZone: ['amino_acids', 'fructan', 'proteins', 'sucrose'],
                                 model.PhotosyntheticOrganElement: ['amino_acids', 'cytokinins', 'fructan',
@@ -215,7 +215,7 @@ class Simulation(object):
     #: concatenation of :attr:`T_INDEX` and :attr:`ORGANS_INDEXES`
     ORGANS_T_INDEXES = T_INDEX + ORGANS_INDEXES
     #: the parameters which define the state of the modeled system at organ scale
-    ORGANS_STATE_PARAMETERS = ['mstruct']
+    ORGANS_STATE_PARAMETERS = ['mstruct', 'Nstruct']
     #: the variables which define the state of the modeled system at organ scale,
     #: formed be the concatenation of :attr:`ORGANS_STATE_PARAMETERS` and the names
     #: of the compartments associated to each organ (see :attr:`MODEL_COMPARTMENTS_NAMES`)
