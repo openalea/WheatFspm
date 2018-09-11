@@ -335,6 +335,42 @@ class Simulation(object):
         self.time_step = self.delta_t / 3600.0  #: time step of the simulation (in hours)
 
         self.culm_density = culm_density  #: culm density (culm m-2)
+        
+        # set the loggers for compartments and derivatives
+        compartments_logger = logging.getLogger('cnwheat.compartments')
+        derivatives_logger = logging.getLogger('cnwheat.derivatives')
+        if compartments_logger.isEnabledFor(logging.DEBUG) or derivatives_logger.isEnabledFor(logging.DEBUG):
+            sep = ','
+            if compartments_logger.isEnabledFor(logging.DEBUG):
+                plants_compartments_logger = logging.getLogger('cnwheat.compartments.plants')
+                plants_compartments_logger.debug(sep.join(Simulation.PLANTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Plant]))
+                axes_compartments_logger = logging.getLogger('cnwheat.compartments.axes')
+                axes_compartments_logger.debug(sep.join(Simulation.AXES_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Axis]))
+                phytomers_compartments_logger = logging.getLogger('cnwheat.compartments.phytomers')
+                phytomers_compartments_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
+                organs_compartments_logger = logging.getLogger('cnwheat.compartments.organs')
+                organs_compartments_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
+                elements_compartments_logger = logging.getLogger('cnwheat.compartments.elements')
+                elements_compartments_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
+                soils_compartments_logger = logging.getLogger('cnwheat.compartments.soils')
+                soils_compartments_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
+            if derivatives_logger.isEnabledFor(logging.DEBUG):
+                plants_derivatives_logger = logging.getLogger('cnwheat.derivatives.plants')
+                plants_derivatives_logger.debug(sep.join(Simulation.PLANTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Plant]))
+                axes_derivatives_logger = logging.getLogger('cnwheat.derivatives.axes')
+                axes_derivatives_logger.debug(sep.join(Simulation.AXES_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Axis]))
+                phytomers_derivatives_logger = logging.getLogger('cnwheat.derivatives.phytomers')
+                phytomers_derivatives_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
+                organs_derivatives_logger = logging.getLogger('cnwheat.derivatives.organs')
+                organs_derivatives_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
+                elements_derivatives_logger = logging.getLogger('cnwheat.derivatives.elements')
+                elements_derivatives_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
+                soils_derivatives_logger = logging.getLogger('cnwheat.derivatives.soils')
+                soils_derivatives_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
+        
+        logger = logging.getLogger(__name__)
+        if logger.isEnabledFor(logging.DEBUG):
+            self.t_offset = 0.0 #: the absolute time offset elapsed from the beginning of the simulation
 
     def initialize(self, population, soils):
         """
@@ -508,38 +544,6 @@ class Simulation(object):
         if self.show_progressbar:
             self.progressbar.set_t_max(self.time_step)
 
-        # set the loggers
-        compartments_logger = logging.getLogger('cnwheat.compartments')
-        derivatives_logger = logging.getLogger('cnwheat.derivatives')
-        if compartments_logger.isEnabledFor(logging.DEBUG) or derivatives_logger.isEnabledFor(logging.DEBUG):
-            sep = ','
-            if compartments_logger.isEnabledFor(logging.DEBUG):
-                plants_compartments_logger = logging.getLogger('cnwheat.compartments.plants')
-                plants_compartments_logger.debug(sep.join(Simulation.PLANTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Plant]))
-                axes_compartments_logger = logging.getLogger('cnwheat.compartments.axes')
-                axes_compartments_logger.debug(sep.join(Simulation.AXES_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Axis]))
-                phytomers_compartments_logger = logging.getLogger('cnwheat.compartments.phytomers')
-                phytomers_compartments_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
-                organs_compartments_logger = logging.getLogger('cnwheat.compartments.organs')
-                organs_compartments_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
-                elements_compartments_logger = logging.getLogger('cnwheat.compartments.elements')
-                elements_compartments_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
-                soils_compartments_logger = logging.getLogger('cnwheat.compartments.soils')
-                soils_compartments_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
-            if derivatives_logger.isEnabledFor(logging.DEBUG):
-                plants_derivatives_logger = logging.getLogger('cnwheat.derivatives.plants')
-                plants_derivatives_logger.debug(sep.join(Simulation.PLANTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Plant]))
-                axes_derivatives_logger = logging.getLogger('cnwheat.derivatives.axes')
-                axes_derivatives_logger.debug(sep.join(Simulation.AXES_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Axis]))
-                phytomers_derivatives_logger = logging.getLogger('cnwheat.derivatives.phytomers')
-                phytomers_derivatives_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
-                organs_derivatives_logger = logging.getLogger('cnwheat.derivatives.organs')
-                organs_derivatives_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
-                elements_derivatives_logger = logging.getLogger('cnwheat.derivatives.elements')
-                elements_derivatives_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
-                soils_derivatives_logger = logging.getLogger('cnwheat.derivatives.soils')
-                soils_derivatives_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
-
         self._update_initial_conditions()
 
         # Maximum number of (internally defined) steps allowed for each integration point in time grid.
@@ -575,6 +579,9 @@ class Simulation(object):
         self._update_model(soln[-1])
 
         logger.info('Run of CN-Wheat DONE')
+        
+        if logger.isEnabledFor(logging.DEBUG):
+            self.t_offset += self.time_step
 
         return infodict
 
@@ -684,12 +691,14 @@ class Simulation(object):
 
         """
         logger = logging.getLogger(__name__)
-
-        logger.debug('t = {}'.format(t))
+        
+        if logger.isEnabledFor(logging.DEBUG):
+            t_abs = t + self.t_offset
+            logger.debug('t = {}'.format(t_abs))
 
         compartments_logger = logging.getLogger('cnwheat.compartments')
-        if compartments_logger.isEnabledFor(logging.DEBUG):
-            self._log_compartments(t, y, Simulation.LOGGERS_NAMES['compartments'])
+        if logger.isEnabledFor(logging.DEBUG) and compartments_logger.isEnabledFor(logging.DEBUG):
+            self._log_compartments(t_abs, y, Simulation.LOGGERS_NAMES['compartments'])
 
         # check that the solver is not crashed
         y_isnan = np.isnan(y)
@@ -929,8 +938,8 @@ class Simulation(object):
             self.progressbar.update(t)
 
         derivatives_logger = logging.getLogger('cnwheat.derivatives')
-        if derivatives_logger.isEnabledFor(logging.DEBUG):
-            self._log_compartments(t, y_derivatives, Simulation.LOGGERS_NAMES['derivatives'])
+        if logger.isEnabledFor(logging.DEBUG) and derivatives_logger.isEnabledFor(logging.DEBUG):
+            self._log_compartments(t_abs, y_derivatives, Simulation.LOGGERS_NAMES['derivatives'])
 
         return y_derivatives
 
