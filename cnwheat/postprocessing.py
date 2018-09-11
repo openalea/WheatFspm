@@ -531,7 +531,9 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
         pp_hiddenzones_df.loc[:, 'Conc_Fructan'] = HiddenZone.calculate_conc_fructan(hiddenzones_df['fructan'], hiddenzones_df['mstruct'])
         pp_hiddenzones_df.loc[:, 'Conc_Proteins'] = HiddenZone.calculate_conc_protein(hiddenzones_df['proteins'], hiddenzones_df['mstruct'])
         pp_hiddenzones_df.loc[:, 'Conc_Sucrose'] = HiddenZone.calculate_conc_sucrose(hiddenzones_df['sucrose'], hiddenzones_df['mstruct'])
-        pp_hiddenzones_df.loc[:, 'RER'] = HiddenZone.calculate_RER(hiddenzones_df['delta_leaf_L'], hiddenzones_df['leaf_L'], delta_t)
+        if set(hiddenzones_df.columns).issuperset(['delta_leaf_L', 'leaf_L']):
+            # this is temporary: those post-processing should be done in model "elong-wheat" 
+            pp_hiddenzones_df.loc[:, 'RER'] = HiddenZone.calculate_RER(hiddenzones_df['delta_leaf_L'], hiddenzones_df['leaf_L'], delta_t)
         pp_hiddenzones_df = pp_hiddenzones_df.reindex(columns=HIDDENZONE_RUN_POSTPROCESSING_VARIABLES, copy=False)
         pp_hiddenzones_df[['plant', 'metamer']] = pp_hiddenzones_df[['plant', 'metamer']].astype(int)
         returned_dataframes.append(pp_hiddenzones_df)
