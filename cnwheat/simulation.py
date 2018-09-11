@@ -301,14 +301,14 @@ class Simulation(object):
                                       model.Axis: 'cnwheat.compartments.axes',
                                       model.Phytomer: 'cnwheat.compartments.phytomers',
                                       model.Organ: 'cnwheat.compartments.organs',
-                                      model.HiddenZone: 'growthwheat.compartments.HiddenZone',
+                                      model.HiddenZone: 'cnwheat.compartments.HiddenZone',
                                       model.PhotosyntheticOrganElement: 'cnwheat.compartments.elements',
                                       model.Soil: 'cnwheat.compartments.soils'},
                      'derivatives': {model.Plant: 'cnwheat.derivatives.plants',
                                      model.Axis: 'cnwheat.derivatives.axes',
                                      model.Phytomer: 'cnwheat.derivatives.phytomers',
                                      model.Organ: 'cnwheat.derivatives.organs',
-                                     model.HiddenZone: 'growthwheat.derivatives.HiddenZone',
+                                     model.HiddenZone: 'cnwheat.derivatives.HiddenZone',
                                      model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements',
                                      model.Soil: 'cnwheat.derivatives.soils'}}
 
@@ -535,6 +535,8 @@ class Simulation(object):
                 phytomers_derivatives_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
                 organs_derivatives_logger = logging.getLogger('cnwheat.derivatives.organs')
                 organs_derivatives_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
+                elements_derivatives_logger = logging.getLogger('cnwheat.derivatives.elements')
+                elements_derivatives_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
                 soils_derivatives_logger = logging.getLogger('cnwheat.derivatives.soils')
                 soils_derivatives_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
 
