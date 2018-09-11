@@ -636,92 +636,97 @@ def generate_graphs(axes_df=None, hiddenzones_df=None, organs_df=None, elements_
     x_label = 'Time (Hour)'
 
     # 1) Photosynthetic organs
-    graph_variables_ph_elements = {'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)',
-                                   'Transpiration': u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)',
-                                   'Conc_Starch': u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan': u'[Fructan] (µmol g$^{-1}$ mstruct)',
-                                   'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
-                                   'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
-                                   'S_Amino_Acids': u'[Rate of amino acids synthesis] (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)',
-                                   'D_Proteins': u'Rate of protein degradation (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'k_proteins': u'Relative rate of protein degradation (s$^{-1}$)',
-                                   'Loading_Sucrose': u'Loading Sucrose (µmol C sucrose h$^{-1}$)', 'Loading_Amino_Acids': u'Loading Amino acids (µmol N amino acids h$^{-1}$)',
-                                   'green_area': u'Green area (m$^{2}$)', 'R_phloem_loading': u'Respiration phloem loading (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)',
-                                   'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'mstruct': u'Structural mass (g)', 'Nstruct': u'Structural N mass (g)',
-                                   'Conc_cytokinins': u'[cytokinins] (UA g$^{-1}$ mstruct)', 'D_cytokinins':u'Cytokinin degradation (UA g$^{-1}$ mstruct)',
-                                   'cytokinins_import': u'Cytokinin import (UA)', 'Surfacic N': u'Surfacic N (g m$^{-2}$)', 'length': 'Length (m)'}
-
-    for org_ph in (['blade'], ['sheath'], ['internode'], ['peduncle', 'ear']):
-        for variable_name, variable_label in graph_variables_ph_elements.items():
-            graph_name = variable_name + '_' + '_'.join(org_ph) + '.PNG'
-            cnwheat_tools.plot_cnwheat_ouputs(elements_df,
-                                              x_name=x_name,
-                                              y_name=variable_name,
-                                              x_label=x_label,
-                                              y_label=variable_label,
-                                              filters={'organ': org_ph},
-                                              plot_filepath=os.path.join(graphs_dirpath, graph_name),
-                                              explicit_label=False)
+    if elements_df is not None:
+        graph_variables_ph_elements = {'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)',
+                                       'Transpiration': u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)',
+                                       'Conc_Starch': u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan': u'[Fructan] (µmol g$^{-1}$ mstruct)',
+                                       'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
+                                       'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
+                                       'S_Amino_Acids': u'[Rate of amino acids synthesis] (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)',
+                                       'D_Proteins': u'Rate of protein degradation (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'k_proteins': u'Relative rate of protein degradation (s$^{-1}$)',
+                                       'Loading_Sucrose': u'Loading Sucrose (µmol C sucrose h$^{-1}$)', 'Loading_Amino_Acids': u'Loading Amino acids (µmol N amino acids h$^{-1}$)',
+                                       'green_area': u'Green area (m$^{2}$)', 'R_phloem_loading': u'Respiration phloem loading (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)',
+                                       'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'mstruct': u'Structural mass (g)', 'Nstruct': u'Structural N mass (g)',
+                                       'Conc_cytokinins': u'[cytokinins] (UA g$^{-1}$ mstruct)', 'D_cytokinins':u'Cytokinin degradation (UA g$^{-1}$ mstruct)',
+                                       'cytokinins_import': u'Cytokinin import (UA)', 'Surfacic N': u'Surfacic N (g m$^{-2}$)', 'length': 'Length (m)'}
+    
+        for org_ph in (['blade'], ['sheath'], ['internode'], ['peduncle', 'ear']):
+            for variable_name, variable_label in graph_variables_ph_elements.items():
+                graph_name = variable_name + '_' + '_'.join(org_ph) + '.PNG'
+                cnwheat_tools.plot_cnwheat_ouputs(elements_df,
+                                                  x_name=x_name,
+                                                  y_name=variable_name,
+                                                  x_label=x_label,
+                                                  y_label=variable_label,
+                                                  filters={'organ': org_ph},
+                                                  plot_filepath=os.path.join(graphs_dirpath, graph_name),
+                                                  explicit_label=False)
 
     # 2) Roots, grains and phloem
-    # 'R_growth': u'Growth respiration of roots (µmol C h$^{-1}$)',
-    graph_variables_organs = {'Conc_Sucrose': u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Dry_Mass': 'Dry mass (g)', 'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)',
-                              'Conc_Amino_Acids': u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Proteins_N_Mass': u'[N Proteins] (g)', 'Uptake_Nitrates':u'Nitrates uptake (µmol h$^{-1}$)',
-                              'Unloading_Sucrose': u'Unloaded sucrose (µmol C g$^{-1}$ mstruct h$^{-1}$)', 'Unloading_Amino_Acids': u'Unloaded Amino Acids (µmol N AA g$^{-1}$ mstruct h$^{-1}$)',
-                              'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N h$^{-1}$)',
-                              'Export_Nitrates': u'Total export of nitrates (µmol N h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N h$^{-1}$)',
-                              'R_Nnit_upt': u'Respiration nitrates uptake (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)',
-                              'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
-                              'R_grain_growth_struct': u'Respiration grain structural growth (µmol C h$^{-1}$)', 'R_grain_growth_starch': u'Respiration grain starch growth (µmol C h$^{-1}$)',
-                              'mstruct': u'Structural mass (g)', 'C_exudation': u'Carbon lost by root exudation (µmol C g$^{-1}$ mstruct h$^{-1}$',
-                              'N_exudation': u'Nitrogen lost by root exudation (µmol N g$^{-1}$ mstruct h$^{-1}$', 'Conc_cytokinins': u'[cytokinins] (UA g$^{-1}$ mstruct)',
-                              'S_cytokinins': u'Rate of cytokinins synthesis (UA g$^{-1}$ mstruct)', 'Export_cytokinins': 'Export of cytokinins from roots (UA h$^{-1}$)',
-                              'HATS_LATS': u'Potential uptake (µmol h$^{-1}$)', 'regul_transpiration': 'Regulating transpiration function'}
+    if organs_df is not None:
+        # 'R_growth': u'Growth respiration of roots (µmol C h$^{-1}$)',
+        graph_variables_organs = {'Conc_Sucrose': u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Dry_Mass': 'Dry mass (g)', 'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)',
+                                  'Conc_Amino_Acids': u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Proteins_N_Mass': u'[N Proteins] (g)', 'Uptake_Nitrates':u'Nitrates uptake (µmol h$^{-1}$)',
+                                  'Unloading_Sucrose': u'Unloaded sucrose (µmol C g$^{-1}$ mstruct h$^{-1}$)', 'Unloading_Amino_Acids': u'Unloaded Amino Acids (µmol N AA g$^{-1}$ mstruct h$^{-1}$)',
+                                  'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N h$^{-1}$)',
+                                  'Export_Nitrates': u'Total export of nitrates (µmol N h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N h$^{-1}$)',
+                                  'R_Nnit_upt': u'Respiration nitrates uptake (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)',
+                                  'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
+                                  'R_grain_growth_struct': u'Respiration grain structural growth (µmol C h$^{-1}$)', 'R_grain_growth_starch': u'Respiration grain starch growth (µmol C h$^{-1}$)',
+                                  'mstruct': u'Structural mass (g)', 'C_exudation': u'Carbon lost by root exudation (µmol C g$^{-1}$ mstruct h$^{-1}$',
+                                  'N_exudation': u'Nitrogen lost by root exudation (µmol N g$^{-1}$ mstruct h$^{-1}$', 'Conc_cytokinins': u'[cytokinins] (UA g$^{-1}$ mstruct)',
+                                  'S_cytokinins': u'Rate of cytokinins synthesis (UA g$^{-1}$ mstruct)', 'Export_cytokinins': 'Export of cytokinins from roots (UA h$^{-1}$)',
+                                  'HATS_LATS': u'Potential uptake (µmol h$^{-1}$)', 'regul_transpiration': 'Regulating transpiration function'}
+    
+        for org in (['roots'], ['grains'], ['phloem']):
+            for variable_name, variable_label in graph_variables_organs.items():
+                graph_name = variable_name + '_' + '_'.join(org) + '.PNG'
+                cnwheat_tools.plot_cnwheat_ouputs(organs_df,
+                                                  x_name=x_name,
+                                                  y_name=variable_name,
+                                                  x_label=x_label,
+                                                  y_label=variable_label,
+                                                  filters={'organ': org},
+                                                  plot_filepath=os.path.join(graphs_dirpath, graph_name),
+                                                  explicit_label=False)
 
-    for org in (['roots'], ['grains'], ['phloem']):
-        for variable_name, variable_label in graph_variables_organs.items():
-            graph_name = variable_name + '_' + '_'.join(org) + '.PNG'
-            cnwheat_tools.plot_cnwheat_ouputs(organs_df,
+    # 3) Soil
+    if soils_df is not None:
+        _, (ax1) = plt.subplots(1)
+        Conc_Nitrates_soil = soils_df['Conc_Nitrates_Soil']*14E-6
+        ax1.plot(soils_df['t'], Conc_Nitrates_soil)
+        ax1.set_ylabel(u'[Nitrates] (g m$^{-3}$)')
+        ax1.set_xlabel('Time from flowering (hour)')
+        ax1.set_title = 'Conc Nitrates Soil'
+        plt.savefig(os.path.join(graphs_dirpath, 'Conc_Nitrates_Soil.PNG'), format='PNG', bbox_inches='tight')
+        plt.close()
+
+    # 4) Hidden zones
+    if hiddenzones_df is not None:
+        graph_variables_hiddenzones = {'Conc_Sucrose': u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino Acids] (µmol g$^{-1}$ mstruct)',
+                                       'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)', 'Conc_Fructan': u'[Fructan] (µmol g$^{-1}$ mstruct)', 'Unloading_Sucrose': u'Sucrose unloading (µmol C)',
+                                       'Unloading_Amino_Acids': u'Amino_acids unloading (µmol N)', 'mstruct': u'Structural mass (g)', 'Nstruct': u'Structural N mass (g)',
+                                       'leaf_L': 'Leaf length in hz (m))', 'delta_leaf_L': 'delta of leaf length (m)', 'internode_L': 'Internode length in hz (m))',
+                                       'leaf_pseudostem_length': 'leaf pseudostem length (m)'}
+    
+        for variable_name, variable_label in graph_variables_hiddenzones.items():
+            graph_name = variable_name + '_hz' + '.PNG'
+            cnwheat_tools.plot_cnwheat_ouputs(hiddenzones_df,
                                               x_name=x_name,
                                               y_name=variable_name,
                                               x_label=x_label,
                                               y_label=variable_label,
-                                              filters={'organ': org},
+                                              filters={'plant': 1, 'axis': 'MS'},
                                               plot_filepath=os.path.join(graphs_dirpath, graph_name),
                                               explicit_label=False)
 
-    # 3) Soil
-    _, (ax1) = plt.subplots(1)
-    Conc_Nitrates_soil = soils_df['Conc_Nitrates_Soil']*14E-6
-    ax1.plot(soils_df['t'], Conc_Nitrates_soil)
-    ax1.set_ylabel(u'[Nitrates] (g m$^{-3}$)')
-    ax1.set_xlabel('Time from flowering (hour)')
-    ax1.set_title = 'Conc Nitrates Soil'
-    plt.savefig(os.path.join(graphs_dirpath, 'Conc_Nitrates_Soil.PNG'), format='PNG', bbox_inches='tight')
-    plt.close()
-
-    # 4) Hidden zones
-    graph_variables_hiddenzones = {'Conc_Sucrose': u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino Acids] (µmol g$^{-1}$ mstruct)',
-                                   'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)', 'Conc_Fructan': u'[Fructan] (µmol g$^{-1}$ mstruct)', 'Unloading_Sucrose': u'Sucrose unloading (µmol C)',
-                                   'Unloading_Amino_Acids': u'Amino_acids unloading (µmol N)', 'mstruct': u'Structural mass (g)', 'Nstruct': u'Structural N mass (g)',
-                                   'leaf_L': 'Leaf length in hz (m))', 'delta_leaf_L': 'delta of leaf length (m)', 'internode_L': 'Internode length in hz (m))',
-                                   'leaf_pseudostem_length': 'leaf pseudostem length (m)'}
-
-    for variable_name, variable_label in graph_variables_hiddenzones.items():
-        graph_name = variable_name + '_hz' + '.PNG'
-        cnwheat_tools.plot_cnwheat_ouputs(hiddenzones_df,
-                                          x_name=x_name,
-                                          y_name=variable_name,
-                                          x_label=x_label,
-                                          y_label=variable_label,
-                                          filters={'plant': 1, 'axis': 'MS'},
-                                          plot_filepath=os.path.join(graphs_dirpath, graph_name),
-                                          explicit_label=False)
-
     # 4) Axes
-    _, (ax1) = plt.subplots(1)
-    axis_mstruct = axes_df['mstruct']
-    ax1.plot(axes_df['t'], axis_mstruct)
-    ax1.set_ylabel('Axis mstruct (g)')
-    ax1.set_xlabel('Time from flowering (hour)')
-    ax1.set_title = 'Axis mstruct'
-    plt.savefig(os.path.join(graphs_dirpath, 'mstruct_axis.PNG'), format='PNG', bbox_inches='tight')
-    plt.close()
+    if axes_df is not None:
+        _, (ax1) = plt.subplots(1)
+        axis_mstruct = axes_df['mstruct']
+        ax1.plot(axes_df['t'], axis_mstruct)
+        ax1.set_ylabel('Axis mstruct (g)')
+        ax1.set_xlabel('Time from flowering (hour)')
+        ax1.set_title = 'Axis mstruct'
+        plt.savefig(os.path.join(graphs_dirpath, 'mstruct_axis.PNG'), format='PNG', bbox_inches='tight')
+        plt.close()
