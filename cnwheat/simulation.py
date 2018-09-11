@@ -572,8 +572,6 @@ class Simulation(object):
 
         self._update_model(soln[-1])
 
-        self.population.calculate_integrative_variables()
-
         logger.info('Run of CN-Wheat DONE')
 
         return infodict
@@ -1109,5 +1107,8 @@ class Simulation(object):
 
         # soil
         soil.mineralisation = soil.calculate_mineralisation()
+        
+        # Re-compute integrative variables
+        self.population.calculate_integrative_variables()
 
         logger.debug('Updating the attributes of the population and soils DONE')
