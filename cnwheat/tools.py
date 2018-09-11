@@ -221,7 +221,8 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
 
 
 def setup_logging(config_filepath='logging.json', level=logging.INFO,
-                  log_model=False, log_compartments=False, log_derivatives=False):
+                  log_model=False, log_compartments=False, log_derivatives=False, 
+                  remove_old_logs=False):
     """Setup logging configuration.
 
     :Parameters:
@@ -241,6 +242,9 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
 
         - `log_derivatives` (:class:`bool`) - if `True`, log the values of the derivatives.
           `False` otherwise.
+          
+        - `remove_old_logs` (:class:`bool`) - if `True`, remove all files in the logs directory 
+           documented in `config_filepath`. 
 
     """
     if os.path.exists(config_filepath):
@@ -252,11 +256,16 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
 
-    logging.getLogger('cnwheat.model').disabled = not log_model  # set to False to log messages from cnwheat.model
+    cnwheat_model_logger = logging.getLogger('cnwheat.model')
+    cnwheat_model_logger.disabled = not log_model  # set to False to log messages from cnwheat.model
     logging.getLogger('cnwheat.compartments').disabled = not log_compartments  # set to False to log the compartments
     logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives  # set to False to log the derivatives
-
-
+    
+    if remove_old_logs:
+        logs_dir = os.path.dirname(cnwheat_model_logger.handlers[0].baseFilename)
+        for logs_file in os.listdir(logs_dir):
+            os.remove(os.path.join(logs_dir, logs_file))
+    
 def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):
     """Compare actual data to desired data. Raise an assertion if actual and desired are not equal up to :mod:`RELATIVE_TOLERANCE` or :mod:`ABSOLUTE_TOLERANCE`.
 

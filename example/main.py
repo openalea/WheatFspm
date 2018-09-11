@@ -128,7 +128,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         if log_execution:
             # setup the logging
             cnwheat_tools.setup_logging(config_filepath=LOGGING_CONFIG_FILEPATH, level=logging.DEBUG,
-                      log_model=True, log_compartments=True, log_derivatives=True)
+                      log_model=True, log_compartments=True, log_derivatives=True, remove_old_logs=True)
         
         # create the simulation
         simulation_ = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=time_step_seconds, culm_density=CULM_DENSITY)
