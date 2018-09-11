@@ -89,9 +89,6 @@ HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 # config file path for logging
 LOGGING_CONFIG_FILEPATH = 'logging.json'
 
-# logging level
-LOGGING_LEVEL = logging.INFO # can be one of: DEBUG, INFO, WARNING, ERROR or CRITICAL
-
 
 def force_senescence_and_photosynthesis(t, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped):
         '''Force the senescence and photosynthesis data of the population at `t` from input grouped dataframes'''
@@ -119,7 +116,7 @@ def force_senescence_and_photosynthesis(t, population, senescence_roots_data_gro
                             
 
 
-def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True):
+def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True, log_execution=False):
 
     if run_simu:
 
@@ -128,9 +125,10 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         time_step_hours = 4
         time_step_seconds = time_step_hours * HOUR_TO_SECOND_CONVERSION_FACTOR
         
-        # set up the logging
-        cnwheat_tools.setup_logging(config_filepath=LOGGING_CONFIG_FILEPATH, level=LOGGING_LEVEL,
-                  log_model=False, log_compartments=False, log_derivatives=False)
+        if log_execution:
+            # setup the logging
+            cnwheat_tools.setup_logging(config_filepath=LOGGING_CONFIG_FILEPATH, level=logging.DEBUG,
+                      log_model=True, log_compartments=True, log_derivatives=True)
         
         # create the simulation
         simulation_ = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=time_step_seconds, culm_density=CULM_DENSITY)
@@ -328,5 +326,5 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         
 
 if __name__ == '__main__':
-    main(48, run_simu=True, run_postprocessing=True, generate_graphs=True)
+    main(48, run_simu=True, run_postprocessing=True, generate_graphs=True, log_execution=False)
     
