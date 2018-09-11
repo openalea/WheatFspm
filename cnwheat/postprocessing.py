@@ -553,8 +553,13 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
         pp_organs_df.loc[pp_organs_df.organ == 'roots', 'R_maintenance'] = R_residual[:, 1]
         # phloem
         phloems_df = organs_df.loc[organs_df.organ == 'phloem']
-        pp_organs_df.loc[pp_organs_df.organ == 'phloem', 'Conc_Amino_Acids'] = Phloem.calculate_conc_amino_acids(phloems_df['amino_acids'], axes_df.set_index(phloems_df.index[1:])['mstruct'])
-        pp_organs_df.loc[pp_organs_df.organ == 'phloem', 'Conc_Sucrose'] = Phloem.calculate_conc_sucrose(phloems_df['sucrose'], axes_df.set_index(phloems_df.index[1:])['mstruct'])
+        if len(phloems_df) != len(axes_df):
+            # this is temporary, to make fpsm-wheat work ; but there is no reason for axes_df not having the same length as phloems_df. So: this problem should be fixed as soon as possible in fspm-wheat.   
+            pp_organs_df.loc[pp_organs_df.organ == 'phloem', 'Conc_Amino_Acids'] = Phloem.calculate_conc_amino_acids(phloems_df['amino_acids'], axes_df.set_index(phloems_df.index[1:])['mstruct'])
+            pp_organs_df.loc[pp_organs_df.organ == 'phloem', 'Conc_Sucrose'] = Phloem.calculate_conc_sucrose(phloems_df['sucrose'], axes_df.set_index(phloems_df.index[1:])['mstruct'])
+        else:
+            pp_organs_df.loc[pp_organs_df.organ == 'phloem', 'Conc_Amino_Acids'] = Phloem.calculate_conc_amino_acids(phloems_df['amino_acids'], axes_df.set_index(phloems_df.index)['mstruct'])
+            pp_organs_df.loc[pp_organs_df.organ == 'phloem', 'Conc_Sucrose'] = Phloem.calculate_conc_sucrose(phloems_df['sucrose'], axes_df.set_index(phloems_df.index)['mstruct'])
         # grains
         grains_df = organs_df.loc[organs_df.organ == 'grain']
         pp_organs_df.loc[pp_organs_df.organ == 'grain', 'Dry_Mass'] = Grains.calculate_dry_mass(grains_df['structure'], grains_df['starch'], grains_df['proteins'])
