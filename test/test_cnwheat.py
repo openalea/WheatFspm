@@ -74,6 +74,9 @@ ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
 # culm density (culm m-2)
 CULM_DENSITY = {1:410}
 
+# number of seconds in 1 hour  
+HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
+
 
 def force_senescence_and_photosynthesis(t, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped):
         '''Force the senescence and photosynthesis data of the population at `t` from input grouped dataframes'''
@@ -102,8 +105,11 @@ def force_senescence_and_photosynthesis(t, population, senescence_roots_data_gro
 
 def test_run():
 
+    time_step_hours = 1
+    time_step_seconds = time_step_hours * HOUR_TO_SECOND_CONVERSION_FACTOR
+
     # create the simulation
-    simulation_ = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=3600, culm_density=CULM_DENSITY)
+    simulation_ = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=time_step_seconds, culm_density=CULM_DENSITY)
     
     # read inputs from Pandas dataframes
     inputs_dataframes = {}
@@ -142,8 +148,7 @@ def test_run():
     # define the time grid to run the model on
     start_time = 0
     stop_time = 2
-    time_step = 1
-    time_grid = xrange(start_time, stop_time+time_step, time_step)
+    time_grid = xrange(start_time, stop_time+time_step_hours, time_step_hours)
     
     # force the senescence and photosynthesis of the population
     force_senescence_and_photosynthesis(0, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped)

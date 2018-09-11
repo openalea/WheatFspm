@@ -125,12 +125,15 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
         print 'Prepare the simulation...'
         
+        time_step_hours = 4
+        time_step_seconds = time_step_hours * HOUR_TO_SECOND_CONVERSION_FACTOR
+        
         # set up the logging
         cnwheat_tools.setup_logging(config_filepath=LOGGING_CONFIG_FILEPATH, level=LOGGING_LEVEL,
                   log_model=False, log_compartments=False, log_derivatives=False)
         
         # create the simulation
-        simulation_ = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=3600, culm_density=CULM_DENSITY)
+        simulation_ = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=time_step_seconds, culm_density=CULM_DENSITY)
         
         # read inputs from Pandas dataframes
         inputs_dataframes = {}
@@ -168,8 +171,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         
         # define the time grid to run the model on
         start_time = 0
-        time_step = 4
-        time_grid = xrange(start_time, stop_time+time_step, time_step)
+        time_grid = xrange(start_time, stop_time+time_step_hours, time_step_hours)
         
         # force the senescence and photosynthesis of the population
         force_senescence_and_photosynthesis(0, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped)
