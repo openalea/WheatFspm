@@ -513,7 +513,7 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
     # axes
     if axes_df is not None:
         pp_axes_df = pd.concat([axes_df, pd.DataFrame(columns=AXES_POSTPROCESSING_VARIABLES)])
-        pp_axes_df = pp_axes_df.reindex(AXES_RUN_POSTPROCESSING_VARIABLES, axis=1, copy=False)
+        pp_axes_df = pp_axes_df.reindex(columns=AXES_RUN_POSTPROCESSING_VARIABLES, copy=False)
         pp_axes_df['plant'] = pp_axes_df['plant'].astype(int)
         returned_dataframes.append(pp_axes_df)
 
@@ -532,7 +532,7 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
         pp_hiddenzones_df.loc[:, 'Conc_Proteins'] = HiddenZone.calculate_conc_protein(hiddenzones_df['proteins'], hiddenzones_df['mstruct'])
         pp_hiddenzones_df.loc[:, 'Conc_Sucrose'] = HiddenZone.calculate_conc_sucrose(hiddenzones_df['sucrose'], hiddenzones_df['mstruct'])
         pp_hiddenzones_df.loc[:, 'RER'] = HiddenZone.calculate_RER(hiddenzones_df['delta_leaf_L'], hiddenzones_df['leaf_L'], delta_t)
-        pp_hiddenzones_df = pp_hiddenzones_df.reindex(HIDDENZONE_RUN_POSTPROCESSING_VARIABLES, axis=1, copy=False)
+        pp_hiddenzones_df = pp_hiddenzones_df.reindex(columns=HIDDENZONE_RUN_POSTPROCESSING_VARIABLES, copy=False)
         pp_hiddenzones_df[['plant', 'metamer']] = pp_hiddenzones_df[['plant', 'metamer']].astype(int)
         returned_dataframes.append(pp_hiddenzones_df)
 
@@ -557,7 +557,7 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
         grains_df = organs_df.loc[organs_df.organ == 'grain']
         pp_organs_df.loc[pp_organs_df.organ == 'grain', 'Dry_Mass'] = Grains.calculate_dry_mass(grains_df['structure'], grains_df['starch'], grains_df['proteins'])
         pp_organs_df.loc[pp_organs_df.organ == 'grain', 'Proteins_N_Mass'] = Grains.calculate_protein_N_mass(grains_df['proteins'])
-        pp_organs_df = pp_organs_df.reindex(ORGANS_RUN_POSTPROCESSING_VARIABLES, axis=1, copy=False)
+        pp_organs_df = pp_organs_df.reindex(columns=ORGANS_RUN_POSTPROCESSING_VARIABLES, copy=False)
         pp_organs_df['plant'] = pp_organs_df['plant'].astype(int)
         returned_dataframes.append(pp_organs_df)
 
@@ -592,14 +592,14 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
             R_residual = np.array(respiwheat_model.RespirationModel.R_residual(curr_organ_elements_df['sucrose'], curr_organ_elements_df['mstruct'] * parameters_class.ALPHA,
                                                                                curr_organ_elements_df['Total_Organic_Nitrogen'], curr_organ_elements_df['Ts']))
             pp_curr_organ_elements_df.loc[:, 'R_maintenance'] = R_residual[0]
-        pp_elements_df = pp_elements_df.reindex(ELEMENTS_RUN_POSTPROCESSING_VARIABLES, axis=1, copy=False)
+        pp_elements_df = pp_elements_df.reindex(columns=ELEMENTS_RUN_POSTPROCESSING_VARIABLES, copy=False)
         pp_elements_df[['plant', 'metamer']] = pp_elements_df[['plant', 'metamer']].astype(int)
         returned_dataframes.append(pp_elements_df)
 
     # soils
     if soils_df is not None:
         pp_soils_df = pd.concat([soils_df, pd.DataFrame(columns=SOILS_POSTPROCESSING_VARIABLES)])
-        pp_soils_df = pp_soils_df.reindex(SOILS_RUN_POSTPROCESSING_VARIABLES, axis=1, copy=False)
+        pp_soils_df = pp_soils_df.reindex(columns=SOILS_RUN_POSTPROCESSING_VARIABLES, copy=False)
         pp_soils_df[['plant']] = pp_soils_df[['plant']].astype(int)
         returned_dataframes.append(pp_soils_df)
 
