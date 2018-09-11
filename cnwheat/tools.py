@@ -250,6 +250,10 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
     if os.path.exists(config_filepath):
         with open(config_filepath, 'r') as f:
             config = json.load(f)
+        if remove_old_logs:
+            logs_dir = os.path.dirname(os.path.abspath(config['handlers']['file_info']['filename']))
+            for logs_file in os.listdir(logs_dir):
+                os.remove(os.path.join(logs_dir, logs_file))
         logging.config.dictConfig(config)
     else:
         logging.basicConfig()
@@ -260,11 +264,6 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
     cnwheat_model_logger.disabled = not log_model  # set to False to log messages from cnwheat.model
     logging.getLogger('cnwheat.compartments').disabled = not log_compartments  # set to False to log the compartments
     logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives  # set to False to log the derivatives
-    
-    if remove_old_logs:
-        logs_dir = os.path.dirname(cnwheat_model_logger.handlers[0].baseFilename)
-        for logs_file in os.listdir(logs_dir):
-            os.remove(os.path.join(logs_dir, logs_file))
     
 def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):
     """Compare actual data to desired data. Raise an assertion if actual and desired are not equal up to :mod:`RELATIVE_TOLERANCE` or :mod:`ABSOLUTE_TOLERANCE`.
