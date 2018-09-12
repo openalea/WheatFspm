@@ -210,7 +210,9 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         print 'Run the simulation... DONE!'
 
         execution_time = datetime.datetime.now() - current_time_of_the_system
-        print  'Simulation run in ', execution_time, '\n'
+        print  'Simulation run in ', execution_time
+        
+        print 'Total RHS evaluations: ', simulation_.nfe_total
 
         print 'Write the outputs to CSV files...'
         

@@ -371,6 +371,8 @@ class Simulation(object):
         logger = logging.getLogger(__name__)
         if logger.isEnabledFor(logging.DEBUG):
             self.t_offset = 0.0 #: the absolute time offset elapsed from the beginning of the simulation
+        
+        self.nfe_total = 0 #: cumulative number of RHS function evaluations
 
     def initialize(self, population, soils):
         """
@@ -695,6 +697,8 @@ class Simulation(object):
         if logger.isEnabledFor(logging.DEBUG):
             t_abs = t + self.t_offset
             logger.debug('t = {}'.format(t_abs))
+        
+        self.nfe_total += 1
 
         compartments_logger = logging.getLogger('cnwheat.compartments')
         if logger.isEnabledFor(logging.DEBUG) and compartments_logger.isEnabledFor(logging.DEBUG):
