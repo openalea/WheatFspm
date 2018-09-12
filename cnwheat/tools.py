@@ -44,13 +44,6 @@ import matplotlib.pyplot as plt
         $Id$
 """
 
-# the precision to use for quantitative comparison test
-PRECISION = 4
-# the relative tolerance associated to `PRECISION`
-RELATIVE_TOLERANCE = 10**-PRECISION
-# the absolute tolerance associated to `PRECISION`
-ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
-
 OUTPUTS_INDEXES = ['t', 'plant', 'axis', 'metamer', 'organ', 'element']  #: All the possible indexes of CN-Wheat outputs
 
 
@@ -265,9 +258,21 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
     logging.getLogger('cnwheat.compartments').disabled = not log_compartments  # set to False to log the compartments
     logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives  # set to False to log the derivatives
     
-def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):
-    """Compare actual data to desired data. Raise an assertion if actual and desired are not equal up to :mod:`RELATIVE_TOLERANCE` or :mod:`ABSOLUTE_TOLERANCE`.
-
+def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None, precision=4):
+    """Compare 
+    
+            difference = actual_data_df - desired_data_df
+         
+       to
+       
+            tolerance = 10**-precision * (1 + abs(desired_data_df))
+        
+        where
+        
+            desired_data_df = pd.read_csv(os.path.join(data_dirpath, desired_data_filename))
+            
+        If difference > tolerance, then raise an AssertionError.
+    
     :Parameters:
 
         - `data_dirpath` (:class:`str`) - The path of the directory where to find the data to compare.
@@ -277,8 +282,14 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         - `desired_data_filename` (:class:`str`) - The file name of the expected data.
 
         - `actual_data_filename` (:class:`str`) - If not None, save the computed data to `actual_data_filename`, in directory `data_dirpath`. Default is None.
+        
+        - `precision` (:class:`int`) - The precision to use for the comparison. Default is `4`.
 
     """
+    
+    relative_tolerance = 10**-precision
+    absolute_tolerance = relative_tolerance
+    
     # read desired data
     desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
     desired_data_df = pd.read_csv(desired_data_filepath)
@@ -286,7 +297,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
     if actual_data_filename is not None:
         # save actual outputs to CSV file
         actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
-        actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(PRECISION))
+        actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(precision))
 
     # keep only numerical data (np.testing can compare only numerical data) 
     for column in ('axis', 'organ', 'element', 'is_growing'):
@@ -297,8 +308,8 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
     # convert the actual outputs to floats
     actual_data_df = actual_data_df.astype(np.float)
     
-    # compare actual data to desired data, using tolerance defined by :attr:`RELATIVE_TOLERANCE`, :attr:`ABSOLUTE_TOLERANCE`
-    np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
+    # compare actual data to desired data
+    np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, relative_tolerance, absolute_tolerance)
 
 
 class ProgressBarError(Exception): pass
