@@ -77,6 +77,9 @@ CULM_DENSITY = {1:410}
 # number of seconds in 1 hour  
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
+# the precision to use for quantitative comparison test
+PRECISION = 4
+
 
 def force_senescence_and_photosynthesis(t, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped):
         '''Force the senescence and photosynthesis data of the population at `t` from input grouped dataframes'''
@@ -193,7 +196,7 @@ def test_run():
         outputs_df = pd.concat(outputs_df_list, ignore_index=True)
         outputs_df = outputs_df.loc[:, state_variables_names] # compare only the values of the compartments
         print 'Compare', actual_outputs_filename, 'to', desired_outputs_filename 
-        cnwheat_tools.compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, desired_outputs_filename, actual_outputs_filename)
+        cnwheat_tools.compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, desired_outputs_filename, actual_outputs_filename, precision=PRECISION)
         print actual_outputs_filename, 'OK!' 
         
 

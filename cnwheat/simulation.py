@@ -4,7 +4,7 @@ from __future__ import division  # use "//" to do integer division
 import logging
 
 import numpy as np
-from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
 
 import model
 import tools
@@ -529,14 +529,6 @@ class Simulation(object):
 
             - `show_progressbar` (:class:`bool`) - True: show the progress bar of the solver ; False: do not show the progress bar (default).
 
-        :Returns:
-            Dictionary containing output information from the solver.
-            This is the dictionary returned by :func:`scipy.integrate.odeint` as second output.
-            See the documentation of :func:`scipy.integrate.odeint` for more information.
-
-        :Returns Type:
-            :class:`dict`
-
         """
         logger = logging.getLogger(__name__)
         logger.info('Run of CN-Wheat...')
@@ -548,44 +540,29 @@ class Simulation(object):
 
         self._update_initial_conditions()
 
-        # Maximum number of (internally defined) steps allowed for each integration point in time grid.
-        # ODEINT_MXSTEP is passed to :func:`scipy.integrate.odeint` as mxstep.
-        # If ODEINT_MXSTEP = 0 (the default), then mxstep is determined by the solver.
-        # Normally, the mxstep determined by the solver permits to solve the current model. User can try to increase this value if a more complex model is defined
-        # and if the integration failed. However, take care that the origin of an integration failure could be a discontinuity in the RHS function used
-        # by scipy.integrate.odeint, and that this discontinuity could be due to a bug in your model. To summary: if the integration failed, first check the logs.
-        ODEINT_MXSTEP = 0
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Run the solver with delta_t = %s", self.time_step)
+
+        # call :func:`scipy.integrate.solve_ivp` to integrate the system during 1 time step ;
+        # :func:`scipy.integrate.solve_ivp` computes the derivatives of each function by calling :meth:`_calculate_all_derivatives`
+        sol = solve_ivp(fun=self._calculate_all_derivatives, t_span=np.array([0.0, self.time_step]), y0=self.initial_conditions, 
+                        method='BDF', t_eval=np.array([self.time_step]), dense_output=False)
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                """Run the solver with:
-                    - delta_t = %s,
-                    - odeint mxstep = %s""",
-                self.time_step, ODEINT_MXSTEP)
-
-        # call :func:`scipy.integrate.odeint` to integrate the system during 1 time step ;
-        # :func:`scipy.integrate.odeint` computes the derivatives of each function by calling :meth:`_calculate_all_derivatives`
-        soln, infodict = odeint(self._calculate_all_derivatives, self.initial_conditions, np.array([0.0, self.time_step]), full_output=True, mxstep=ODEINT_MXSTEP)
-
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                """Run of the solver DONE: infodict = %s""",
-                infodict)
+            logger.debug("Run of the solver DONE")
 
         # check the integration ; raise an exception if the integration failed
-        if not set(infodict['mused']).issubset([1, 2]):
-            message = "Integration failed. See the logs of lsoda or try to increase the value of 'mxstep'."
+        if not sol.success:
+            message = "Integration failed: %s".format(sol.message)
             logger.exception(message)
             raise SimulationRunError(message)
-
-        self._update_model(soln[-1])
-
-        logger.info('Run of CN-Wheat DONE')
+        
+        self._update_model(sol.y[:,-1])
         
         if logger.isEnabledFor(logging.DEBUG):
             self.t_offset += self.time_step
-
-        return infodict
+            
+        logger.info('Run of CN-Wheat DONE')
 
     def _update_initial_conditions(self):
         """Update the compartments values in :attr:`initial_conditions` from the compartments values of :attr:`population` and :attr:`soils`.
@@ -651,38 +628,32 @@ class Simulation(object):
             formatted_initial_conditions = row_sep.join([column_sep.join(row) for row in all_rows[class_]])
             compartments_logger.debug(formatted_initial_conditions)
 
-    def _calculate_all_derivatives(self, y, t):
+    def _calculate_all_derivatives(self, t, y):
         """Compute the derivative of `y` at `t`.
 
         :meth:`_calculate_all_derivatives` is passed as **func** argument to
-        :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
+        :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
         :meth:`_calculate_all_derivatives` is called automatically by
-        :func:`scipy.integrate.odeint <scipy.integrate.odeint>`.
+        :func:`scipy.integrate.solve_ivp <scipy.integrate.solve_ivp>`.
 
         First call to :meth:`_calculate_all_derivatives` uses `y` = **y0** and
-        `t` = **t** [0], where **y0** and **t** are arguments passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
+        `t` = **t_span** [0], where **y0** and **t_span** are arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
 
-        Following calls to :meth:`_calculate_all_derivatives` use `t` in [min( **t** ), max( **t** ) + 1] where
-        **t** is an argument passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`. `y` is
-        computed automatically by the solver.
+        Following calls to :meth:`_calculate_all_derivatives` use `t` in [**t_span** [0], **t_span** [1]]. 
 
         :Parameters:
 
-            - `y` (:class:`list`) - The current y values. `y` is automatically set by
-              :func:`scipy.integrate.odeint`. User does not have control over `y`.
-              At first call to :meth:`_calculate_all_derivatives` by :func:`scipy.integrate.odeint`, `y` = **y0**
-              where **y0** is one of the arguments passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
-              For each following call to :meth:`_calculate_all_derivatives`, `y` is
-              computed automatically by the solver.
-
             - `t` (:class:`float`) - The current t at which we want to compute the derivatives.
-              `t` is automatically set by :func:`scipy.integrate.odeint`.
-              User does not have control over `t`.
-              At first call to :meth:`_calculate_all_derivatives` :func:`scipy.integrate.odeint`,
-              `t` = **t** [0], where **t** is one of the arguments passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
+              Values of `t` are chosen automatically by :func:`scipy.integrate.solve_ivp`.
+              At first call to :meth:`_calculate_all_derivatives` by :func:`scipy.integrate.solve_ivp`,
+              `t` = **t_span** [0], where **t_span** is one of the arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
               For each following call to :meth:`_calculate_all_derivatives`, `t` belongs
-              to the interval [min( **t** ), max( **t** ) + 1], where **t** is an
-              argument passed to :func:`odeint(func, y0, t, args=(),...) <scipy.integrate.odeint>`.
+              to the interval [**t_span** [0], **t_span** [1]].
+              
+            - `y` (:class:`list`) - The current values of y. 
+              At first call to :meth:`_calculate_all_derivatives` by :func:`scipy.integrate.solve_ivp`, `y` = **y0**
+              where **y0** is one of the arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
+              Then, values of `y` are chosen automatically by :func:`scipy.integrate.solve_ivp`.
 
         :Returns:
             The derivatives of `y` at `t`.
@@ -733,7 +704,6 @@ class Simulation(object):
                 phloem_contributors.append(axis.roots)
 
                 # compute total transpiration at t_inf
-                axis.Total_Transpiration = 0.0  # mmol s-1
                 axis.Total_Transpiration = 0.0  # mmol s-1
                 total_green_area = 0.0  # m2
                 for phytomer in axis.phytomers:

@@ -193,13 +193,13 @@ set the initial conditions which will be used by the solver.
 
 When we :meth:`run <cnwheat.simulation.Simulation.run>` the model over 1 time step, we first 
 :meth:`update the initial conditions <cnwheat.simulation.Simulation._update_initial_conditions>`. 
-Then we call the function :func:`odeint <scipy.integrate.odeint>` of the library :mod:`SciPy <scipy>` 
+Then we call the function :func:`solve_ivp <scipy.integrate.solve_ivp>` of the library :mod:`SciPy <scipy>` 
 to integrate the system of differential equations over 1 :attr:`time step <cnwheat.simulation.Simulation.time_step>`. 
-The derivatives needed by :func:`odeint <scipy.integrate.odeint>` are computed by 
+The derivatives needed by :func:`solve_ivp <scipy.integrate.solve_ivp>` are computed by 
 method :meth:`_calculate_all_derivatives <cnwheat.simulation.Simulation._calculate_all_derivatives>`. 
-If no error occurs and :func:`odeint <scipy.integrate.odeint>` manages to integrate the 
+If no error occurs and :func:`solve_ivp <scipy.integrate.solve_ivp>` manages to integrate the 
 system successfully, then we update the state of the model setting the attributes of :attr:`population` 
-and :attr:`soils` to the compartment values returned by :func:`odeint <scipy.integrate.odeint>`, and 
+and :attr:`soils` to the compartment values returned by :func:`solve_ivp <scipy.integrate.solve_ivp>`, and 
 we compute the :meth:`integrative variables of the population <cnwheat.model.Population>`.     
 
 .. figure:: ./image/run.png
@@ -273,10 +273,10 @@ with appropriate error message.
 Continuity of the model
 -----------------------
 
-To integrate the system of ordinary differential equations (ODE), the function :func:`odeint <scipy.integrate.odeint>` 
+To integrate the system of ordinary differential equations (ODE), the function :func:`solve_ivp <scipy.integrate.solve_ivp>` 
 takes as first parameters a function which computes the derivatives at t0::
 
-    dy/dt = func(y, t0, ...)
+    dy/dt = func(t, y, ...)
 
 where ``y`` is a vector.
 
@@ -285,12 +285,7 @@ This function is also called RHS (Right Hand Side) function.
 In CN-Wheat, the RHS function is defined by the method :meth:`_calculate_all_derivatives <cnwheat.simulation.Simulation._calculate_all_derivatives>`. 
    
 If the RHS function has a discontinuity, this may lead to integration failure, the raise of an exception, and a premature end of the execution. 
-A discontinuity in RHS function could be due to the use of inconsistent parameters or to bug(s) in the equations of the model. 
-
-If you get a warning of type "ODEintWarning: Excess work done on this call (perhaps wrong Dfun type)", 
-you can try to increase the value of ``ODEINT_MXSTEP`` defined in the body of the method :meth:`run <cnwheat.simulation.Simulation.run>`. 
-But you should first enable and check the logs to see if you can settle the problem ahead of the integration. 
-Sometimes, this warning is just due to a local discontinuity which does not affect the whole result of the simulation.   
+A discontinuity in RHS function could be due to the use of inconsistent parameters or to bug(s) in the equations of the model.  
    
 Execution time
 --------------
