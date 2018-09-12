@@ -123,9 +123,9 @@ class Roots:
         """Nitrate concentration.
 
         :Parameters:
-            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
+            - `nitrates` (:class:`float`) - Amount of nitrates (:math:`\mu mol` N)
         :Returns:
-            Nitrate concentration (µmol nitrates g-1 mstruct)
+            Nitrate concentration (:math:`\mu mol` nitrates g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -136,9 +136,9 @@ class Roots:
         """Amino_acid concentration.
 
         :Parameters:
-            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
+            - `amino_acids` (:class:`float`) - Amount of amino acids (:math:`\mu mol` N)
         :Returns:
-            Amino_acid concentration (µmol amino_acids g-1 mstruct)
+            Amino_acid concentration (:math:`\mu mol` amino_acids g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -149,9 +149,9 @@ class Roots:
         """Sucrose concentration.
 
         :Parameters:
-            - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
+            - `sucrose` (:class:`float`) - Amount of sucrose (:math:`\mu mol` C)
         :Returns:
-            Sucrose concentration (µmol sucrose g-1 mstruct)
+            Sucrose concentration (:math:`\mu mol` sucrose g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -180,10 +180,10 @@ class Phloem:
         """Amino_acids concentration. Related to the structural dry mass of the culm.
 
         :Parameters:
-            - `amino_acids` (:class:`float`) - Amount of amino_acids in phloem (µmol N)
+            - `amino_acids` (:class:`float`) - Amount of amino_acids in phloem (:math:`\mu mol` N)
             - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
         :Returns:
-            Amino_acids concentration (µmol amino_acids g-1 mstruct)
+            Amino_acids concentration (:math:`\mu mol` amino_acids g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -194,10 +194,10 @@ class Phloem:
         """Sucrose concentration. Related to the structural dry mass of the culm
 
         :Parameters:
-            - `sucrose` (:class:`float`) - Amount of sucrose in phloem (µmol C)
+            - `sucrose` (:class:`float`) - Amount of sucrose in phloem (:math:`\mu mol` C)
             - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
         :Returns:
-            Sucrose concentration (µmol sucrose g-1 mstruct)
+            Sucrose concentration (:math:`\mu mol` sucrose g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -213,9 +213,9 @@ class Grains:
         """Grain total dry mass.
 
         :Parameters:
-            - `structure` (:class:`float`) - Grain structural C mass (µmol C)
-            - `starch` (:class:`float`) - Grain starch content (µmol C)
-            - `proteins` (:class:`float`) - Grain protein content (µmol N)
+            - `structure` (:class:`float`) - Grain structural C mass (:math:`\mu mol` C)
+            - `starch` (:class:`float`) - Grain starch content (:math:`\mu mol` C)
+            - `proteins` (:class:`float`) - Grain protein content (:math:`\mu mol` N)
         :Returns:
             Grain total dry mass (g)
         :Returns Type:
@@ -234,7 +234,7 @@ class Grains:
         """Grain total protein mass.
 
         :Parameters:
-            - `proteins` (:class:`float`) - Grain protein content (µmol N)
+            - `proteins` (:class:`float`) - Grain protein content (:math:`\mu mol` N)
         :Returns:
             Grain total protein mass (g)
         :Returns Type:
@@ -254,9 +254,9 @@ class HiddenZone:
         """Amino acid concentration.
 
         :Parameters:
-            - `amino_acids` (:class:`float`) - N amino acids (µmol N)
+            - `amino_acids` (:class:`float`) - N amino acids (:math:`\mu mol` N)
         :Returns:
-            Amino_acid concentration (µmol amino acids g-1 mstruct)
+            Amino_acid concentration (:math:`\mu mol` amino acids g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -267,9 +267,9 @@ class HiddenZone:
         """Sucrose concentration.
 
         :Parameters:
-            - `sucrose` (:class:`float`) - C sucrose (µmol C)
+            - `sucrose` (:class:`float`) - C sucrose (:math:`\mu mol` C)
         :Returns:
-            Sucrose concentration (µmol sucrose g-1 mstruct)
+            Sucrose concentration (:math:`\mu mol` sucrose g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -280,9 +280,9 @@ class HiddenZone:
         """Fructan concentration.
 
         :Parameters:
-            - `fructan` (:class:`float`) - C fructan (µmol C)
+            - `fructan` (:class:`float`) - C fructan (:math:`\mu mol` C)
         :Returns:
-            Fructan concentration (µmol fructan g-1 mstruct, eq. glucose).
+            Fructan concentration (:math:`\mu mol` fructan g-1 mstruct, eq. glucose).
         :Returns Type:
             :class:`float`
         """
@@ -293,7 +293,7 @@ class HiddenZone:
         """Proteins concentration.
 
         :Parameters:
-            - `proteins` (:class:`float`) - N proteins (µmol N)
+            - `proteins` (:class:`float`) - N proteins (:math:`\mu mol` N)
             - `mstruct` (:class:`float`) - Structural mass (g)
         :Returns:
             Protein concentration (g proteins g-1 mstruct)
@@ -329,9 +329,9 @@ class Element:
         """Triose Phosphates concentration.
 
         :Parameters:
-            - `triosesP` (:class:`float`) - Amount of triose phosphates (µmol C)
+            - `triosesP` (:class:`float`) - Amount of triose phosphates (:math:`\mu mol` C)
         :Returns:
-            Triose phosphates concentration (µmol triosesP g-1 mstruct)
+            Triose phosphates concentration (:math:`\mu mol` triosesP g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -342,9 +342,9 @@ class Element:
         """Sucrose concentration.
 
         :Parameters:
-            - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
+            - `sucrose` (:class:`float`) - Amount of sucrose (:math:`\mu mol` C)
         :Returns:
-            Sucrose concentration (µmol sucrose g-1 mstruct)
+            Sucrose concentration (:math:`\mu mol` sucrose g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -355,9 +355,9 @@ class Element:
         """Starch concentration.
 
         :Parameters:
-            - `starch` (:class:`float`) - Amount of sucrose (µmol C)
+            - `starch` (:class:`float`) - Amount of sucrose (:math:`\mu mol` C)
         :Returns:
-            Starch concentration (µmol starch g-1 mstruct, eq. glucose).
+            Starch concentration (:math:`\mu mol` starch g-1 mstruct, eq. glucose).
         :Returns Type:
             :class:`float`
         """
@@ -368,9 +368,9 @@ class Element:
         """Fructan concentration.
 
         :Parameters:
-            - `fructan` (:class:`float`) - Amount of fructan (µmol C)
+            - `fructan` (:class:`float`) - Amount of fructan (:math:`\mu mol` C)
         :Returns:
-            Fructan concentration (µmol fructan g-1 mstruct, eq. glucose).
+            Fructan concentration (:math:`\mu mol` fructan g-1 mstruct, eq. glucose).
         :Returns Type:
             :class:`float`
         """
@@ -381,9 +381,9 @@ class Element:
         """Nitrate concentration.
 
         :Parameters:
-            - `nitrates` (:class:`float`) - Amount of nitrates (µmol N)
+            - `nitrates` (:class:`float`) - Amount of nitrates (:math:`\mu mol` N)
         :Returns:
-            Nitrate concentration (µmol nitrates g-1 mstruct)
+            Nitrate concentration (:math:`\mu mol` nitrates g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -394,9 +394,9 @@ class Element:
         """Amino_acid concentration.
 
         :Parameters:
-            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
+            - `amino_acids` (:class:`float`) - Amount of amino acids (:math:`\mu mol` N)
         :Returns:
-            Amino_acid concentration (µmol amino acids g-1 mstruct)
+            Amino_acid concentration (:math:`\mu mol` amino acids g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
@@ -407,7 +407,7 @@ class Element:
         """Protein concentration.
 
         :Parameters:
-            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
+            - `proteins` (:class:`float`) - Amount of proteins (:math:`\mu mol` N)
         :Returns:
             Protein concentration (g proteins g-1 mstruct)
         :Returns Type:
@@ -435,9 +435,9 @@ class Element:
         """Surfacic content of nitrogen
 
         : Parameters:
-            - `nitrates` (:class:`float`) - amount of nitrates (µmol N)
-            - `amino_acids` (:class:`float`) - amount of amino_acids (µmol N)
-            - `proteins` (:class:`float`) - amount of proteins (µmol N)
+            - `nitrates` (:class:`float`) - amount of nitrates (:math:`\mu mol` N)
+            - `amino_acids` (:class:`float`) - amount of amino_acids (:math:`\mu mol` N)
+            - `proteins` (:class:`float`) - amount of proteins (:math:`\mu mol` N)
             - `Nstruct` (:class:`float`) - structural N (g)
             - `green_area` (:class:`float`) - green area (m-2)
 
