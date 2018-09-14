@@ -5,6 +5,7 @@ import logging
 
 import numpy as np
 from scipy.integrate import solve_ivp
+from scipy import interpolate
 
 import model
 import tools
@@ -42,6 +43,12 @@ class SimulationError(Exception):
     """
     pass
 
+class SimulationConstructionError(SimulationError):
+    """
+    Exception raised when a problem occurs in the constructor, in particular
+    when the arguments are not consistent with each other.
+    """
+    pass
 
 class SimulationInitializationError(SimulationError):
     """
@@ -106,7 +113,7 @@ class Simulation(object):
                     - `mstruct` (:class:`float`) - structural dry mass of organ (g)
                     - `Ntot` (:class:`float`) - total N in organ (:math:`\mu mol` N)
                     - `delta_t` (:class:`float`) - timestep (s)
-                    - `Ts` (:class:`float`) - organ temperature (°C)
+                    - `Ts` (:class:`float`) - organ temperature (:math:`^{\circ}C`)
                 * Returns: _R_residual (:math:`\mu mol` C respired)
                 * Returns Type: :class:`float`
 
@@ -121,7 +128,18 @@ class Simulation(object):
         - delta_t (:class:`int`) - the delta t of the simulation (in seconds) ; default is `1`.
 
         - culm_density (:class:`dict`) - culm density (culm m-2) ; default is `{1:410}`.
-
+        
+        - interpolate_forcings (:class:`bool`) - if True: interpolate senescence and photosynthesis forcings from values of `senescence_forcings_delta_t` 
+          and `senescence_forcings_delta_t`. Default is `False` (do not interpolate the forcings).
+        
+        - senescence_forcings_delta_t (:class:`int`) - the delta t of the senescence forcings (in seconds) ; default is `None`.
+          If the user sets `interpolate_forcings` to `True`, then he/she must also set `senescence_forcings_delta_t` to an integer value greater or equal to `delta_t`.
+          For example, if `interpolate_forcings` is `True` and `delta_t==3600`, then `senescence_forcings_delta_t` must be greater or equal to `3600`, that is for example `7200`.
+        
+        - photosynthesis_forcings_delta_t (:class:`int`) - the delta t of the photosynthesis forcings (in seconds) ; default is `None`.
+          If the user sets `interpolate_forcings` to `True`, then he/she must also set `photosynthesis_forcings_delta_t` to an integer value greater or equal to `delta_t`.
+          For example, if `interpolate_forcings` is `True` and `delta_t==3600`, then `photosynthesis_forcings_delta_t` must be greater or equal to `3600`, that is for example `7200`.
+          
     """
 
     #: the name of the compartments attributes in the model, for objects of types
@@ -295,8 +313,27 @@ class Simulation(object):
     SOILS_INTEGRATIVE_VARIABLES = []
     #: all the variables computed during a run step of the simulation at soil scale
     SOILS_RUN_VARIABLES = SOILS_STATE + SOILS_INTERMEDIATE_VARIABLES + SOILS_FLUXES + SOILS_INTEGRATIVE_VARIABLES
-
-    #:
+    
+    #: a dictionary of all the variables which define the state of the modeled system, for each scale
+    ALL_STATE_PARAMETERS = {model.Plant: PLANTS_STATE_PARAMETERS,
+                            model.Axis: AXES_STATE_PARAMETERS,
+                            model.Phytomer: PHYTOMERS_STATE_PARAMETERS,
+                            model.Organ: ORGANS_STATE_PARAMETERS,
+                            model.HiddenZone: HIDDENZONE_STATE_PARAMETERS,
+                            model.PhotosyntheticOrganElement: ELEMENTS_STATE_PARAMETERS,
+                            model.Soil: SOILS_STATE_PARAMETERS}
+    
+    #: the names of the roots (scenescence) forcings
+    ROOTS_FORCINGS = ('Nstruct', 'mstruct')
+    #: the names of the elements photosynthesis forcings
+    ELEMENTS_PHOTOSYNTHESIS_FORCINGS = ('Ag', 'Tr', 'Ts')
+    #: the names of the elements scenescence forcings
+    ELEMENTS_SENESCENCE_FORCINGS = ('Nstruct', 'green_area', 'mstruct') 
+    #: the names of the elements photosynthesis and scenescence forcings
+    ELEMENTS_FORCINGS = ELEMENTS_PHOTOSYNTHESIS_FORCINGS + ELEMENTS_SENESCENCE_FORCINGS
+    
+                  
+    #: the name of the loggers for compartments and derivatives
     LOGGERS_NAMES = {'compartments': {model.Plant: 'cnwheat.compartments.plants',
                                       model.Axis: 'cnwheat.compartments.axes',
                                       model.Phytomer: 'cnwheat.compartments.phytomers',
@@ -312,8 +349,8 @@ class Simulation(object):
                                      model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements',
                                      model.Soil: 'cnwheat.derivatives.soils'}}
 
-    def __init__(self, respiration_model, delta_t=1, culm_density={1: 410}):
-
+    def __init__(self, respiration_model, delta_t=1, culm_density={1: 410}, interpolate_forcings=False, senescence_forcings_delta_t=None, photosynthesis_forcings_delta_t=None):
+        
         self.respiration_model = respiration_model  #: the model of respiration to use
 
         self.population = model.Population()  #: the population to simulate on
@@ -333,8 +370,12 @@ class Simulation(object):
         self.delta_t = delta_t  #: the delta t of the simulation (in seconds)
 
         self.time_step = self.delta_t / 3600.0  #: time step of the simulation (in hours)
+        
+        self.time_grid = np.array([0.0, self.time_step]) #: the time grid of the simulation (in hours)
 
         self.culm_density = culm_density  #: culm density (culm m-2)
+        
+        self.interpolate_forcings = interpolate_forcings #: a boolean flag which indicates if we want to interpolate or not the forcings (True: interpolate, False: do not interpolate) 
         
         # set the loggers for compartments and derivatives
         compartments_logger = logging.getLogger('cnwheat.compartments')
@@ -343,34 +384,64 @@ class Simulation(object):
             sep = ','
             if compartments_logger.isEnabledFor(logging.DEBUG):
                 plants_compartments_logger = logging.getLogger('cnwheat.compartments.plants')
-                plants_compartments_logger.debug(sep.join(Simulation.PLANTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Plant]))
+                plants_compartments_logger.debug(sep.join(Simulation.PLANTS_T_INDEXES + Simulation.PLANTS_STATE))
                 axes_compartments_logger = logging.getLogger('cnwheat.compartments.axes')
-                axes_compartments_logger.debug(sep.join(Simulation.AXES_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Axis]))
+                axes_compartments_logger.debug(sep.join(Simulation.AXES_T_INDEXES + Simulation.AXES_STATE))
                 phytomers_compartments_logger = logging.getLogger('cnwheat.compartments.phytomers')
-                phytomers_compartments_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
+                phytomers_compartments_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.PHYTOMERS_STATE))
                 organs_compartments_logger = logging.getLogger('cnwheat.compartments.organs')
-                organs_compartments_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
+                organs_compartments_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.ORGANS_STATE))
                 elements_compartments_logger = logging.getLogger('cnwheat.compartments.elements')
-                elements_compartments_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
+                elements_compartments_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.ELEMENTS_STATE))
                 soils_compartments_logger = logging.getLogger('cnwheat.compartments.soils')
-                soils_compartments_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
+                soils_compartments_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.SOILS_STATE))
             if derivatives_logger.isEnabledFor(logging.DEBUG):
                 plants_derivatives_logger = logging.getLogger('cnwheat.derivatives.plants')
-                plants_derivatives_logger.debug(sep.join(Simulation.PLANTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Plant]))
+                plants_derivatives_logger.debug(sep.join(Simulation.PLANTS_T_INDEXES + Simulation.PLANTS_STATE))
                 axes_derivatives_logger = logging.getLogger('cnwheat.derivatives.axes')
-                axes_derivatives_logger.debug(sep.join(Simulation.AXES_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Axis]))
+                axes_derivatives_logger.debug(sep.join(Simulation.AXES_T_INDEXES + Simulation.AXES_STATE))
                 phytomers_derivatives_logger = logging.getLogger('cnwheat.derivatives.phytomers')
-                phytomers_derivatives_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Phytomer]))
+                phytomers_derivatives_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.PHYTOMERS_STATE))
                 organs_derivatives_logger = logging.getLogger('cnwheat.derivatives.organs')
-                organs_derivatives_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]))
+                organs_derivatives_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.ORGANS_STATE))
                 elements_derivatives_logger = logging.getLogger('cnwheat.derivatives.elements')
-                elements_derivatives_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.PhotosyntheticOrganElement]))
+                elements_derivatives_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.ELEMENTS_STATE))
                 soils_derivatives_logger = logging.getLogger('cnwheat.derivatives.soils')
-                soils_derivatives_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.MODEL_COMPARTMENTS_NAMES[model.Soil]))
+                soils_derivatives_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.SOILS_STATE))
         
         logger = logging.getLogger(__name__)
         if logger.isEnabledFor(logging.DEBUG):
             self.t_offset = 0.0 #: the absolute time offset elapsed from the beginning of the simulation
+        
+        if interpolate_forcings:
+            if senescence_forcings_delta_t is not None and photosynthesis_forcings_delta_t is not None and\
+            senescence_forcings_delta_t >= delta_t and photosynthesis_forcings_delta_t >= delta_t:
+                self.senescence_forcings_delta_t_ratio = senescence_forcings_delta_t / delta_t #: the ratio between the delta t of the senescence forcings and the delta t of the simulation
+                self.photosynthesis_forcings_delta_t_ratio = photosynthesis_forcings_delta_t / delta_t #: the ratio between the delta t of the photosynthesis forcings and the delta t of the simulation
+            elif senescence_forcings_delta_t is None:
+                message = """The value of `interpolate_forcings` passed to the Simulation constructor is `True`, but `senescence_forcings_delta_t` is `None`. 
+Please set `senescence_forcings_delta_t` (through the Simulation constructor) to a not `None` value."""
+                logger.exception(message)
+                raise SimulationConstructionError(message)
+            elif photosynthesis_forcings_delta_t is None:
+                message = """The value of `interpolate_forcings` passed to the Simulation constructor is `True`, but `photosynthesis_forcings_delta_t` is `None`. 
+Please set `photosynthesis_forcings_delta_t` (through the Simulation constructor) to a not `None` value."""
+                logger.exception(message)
+                raise SimulationConstructionError(message)
+            elif senescence_forcings_delta_t < delta_t:
+                message = """The value of `senescence_forcings_delta_t` passed to the Simulation constructor is lesser than the one of `delta_t`. 
+Please set a `senescence_forcings_delta_t` that is at least equal to `delta_t`."""
+                logger.exception(message)
+                raise SimulationConstructionError(message)
+            elif photosynthesis_forcings_delta_t < delta_t:
+                message = """The value of `photosynthesis_forcings_delta_t` passed to the Simulation constructor is lesser than the one of `delta_t`. 
+Please set a `photosynthesis_forcings_delta_t` that is at least equal to `delta_t`."""
+                logger.exception(message)
+                raise SimulationConstructionError(message)                
+            
+            self.previous_forcings_values = {} #: previous values of the forcings
+            self.new_forcings_values = {} #: new values of the forcings
+            self.interpolation_functions = {} #: functions to interpolate the forcings
         
         self.nfe_total = 0 #: cumulative number of RHS function evaluations
 
@@ -473,7 +544,32 @@ class Simulation(object):
             message = 'No plant found in the population.'
             logger.exception(message)
             raise SimulationInitializationError(message)
-
+        
+        if self.interpolate_forcings:
+            # Save the new value of each forcing and set the state parameters to the previous forcing values.
+            self.new_forcings_values.clear()
+            for plant in self.population.plants:
+                for axis in plant.axes:
+                    if axis.roots is not None:
+                        roots_id = (plant.index, axis.label)
+                        self.new_forcings_values[roots_id] = {}
+                        for forcing_label in Simulation.ROOTS_FORCINGS:
+                            self.new_forcings_values[roots_id][forcing_label] = getattr(axis.roots, forcing_label)
+                            if roots_id in self.previous_forcings_values:
+                                setattr(axis.roots, forcing_label, self.previous_forcings_values[roots_id][forcing_label])
+                    for phytomer in axis.phytomers:
+                        for organ in (phytomer.lamina, phytomer.sheath):
+                            if organ is None:
+                                continue
+                            for element in (organ.exposed_element, organ.enclosed_element):
+                                if element is not None:
+                                    element_id = (plant.index, axis.label, phytomer.index, organ.label, element.label)
+                                    self.new_forcings_values[element_id] = {}
+                                    for forcing_label in Simulation.ELEMENTS_FORCINGS:
+                                            self.new_forcings_values[element_id][forcing_label] = getattr(element, forcing_label)
+                                            if element_id in self.previous_forcings_values:
+                                                setattr(element, forcing_label, self.previous_forcings_values[element_id][forcing_label])
+                                        
         # initialize initial conditions
         def _init_initial_conditions(model_object, i):
             class_ = model_object.__class__
@@ -532,6 +628,10 @@ class Simulation(object):
         """
         logger = logging.getLogger(__name__)
         logger.info('Run of CN-Wheat...')
+        
+        if self.interpolate_forcings:
+            # interpolate the forcings
+            self._interpolate_forcings()
 
         # set the progress-bar
         self.show_progressbar = show_progressbar
@@ -543,9 +643,8 @@ class Simulation(object):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Run the solver with delta_t = %s", self.time_step)
 
-        # call :func:`scipy.integrate.solve_ivp` to integrate the system during 1 time step ;
-        # :func:`scipy.integrate.solve_ivp` computes the derivatives of each function by calling :meth:`_calculate_all_derivatives`
-        sol = solve_ivp(fun=self._calculate_all_derivatives, t_span=np.array([0.0, self.time_step]), y0=self.initial_conditions, 
+        #: Call :func:`scipy.integrate.solve_ivp` to integrate the system over self.time_grid.
+        sol = solve_ivp(fun=self._calculate_all_derivatives, t_span=self.time_grid, y0=self.initial_conditions, 
                         method='BDF', t_eval=np.array([self.time_step]), dense_output=False)
 
         if logger.isEnabledFor(logging.DEBUG):
@@ -571,7 +670,56 @@ class Simulation(object):
         for model_object, compartments in self.initial_conditions_mapping.items():
             for compartment_name, compartment_index in compartments.items():
                 self.initial_conditions[compartment_index] = getattr(model_object, compartment_name)
-
+                
+    def _interpolate_forcings(self):
+        """Create functions to interpolate the forcings of the model to any time inside the time grid (see `self.time_grid`).
+        
+        If this is the first run of the model, then we consider that the forcings are constant.
+        The interpolation functions are stored in :attr:`interpolation_functions`, and will be used later on and as needed by the SciPy solver.
+        """
+        self.interpolation_functions.clear()
+        next_forcings_values = {}
+        for plant in self.population.plants:
+            for axis in plant.axes:
+                if axis.roots is not None:
+                    roots_id = (plant.index, axis.label)
+                    self.interpolation_functions[roots_id] = {}
+                    next_forcings_values[roots_id] = {}
+                    for forcing_label in Simulation.ROOTS_FORCINGS:
+                        if roots_id in self.previous_forcings_values and \
+                            self.previous_forcings_values[roots_id][forcing_label] != self.new_forcings_values[roots_id][forcing_label]:
+                            prev_forcing_value = self.previous_forcings_values[roots_id][forcing_label]
+                            next_forcing_value = prev_forcing_value + (self.new_forcings_values[roots_id][forcing_label] - prev_forcing_value) / self.senescence_forcings_delta_t_ratio
+                        else:
+                            next_forcing_value = self.new_forcings_values[roots_id][forcing_label]
+                            prev_forcing_value = next_forcing_value
+                        self.interpolation_functions[roots_id][forcing_label] = interpolate.interp1d(self.time_grid, [prev_forcing_value, next_forcing_value], assume_sorted=True)
+                        next_forcings_values[roots_id][forcing_label] = next_forcing_value
+                for phytomer in axis.phytomers:
+                    for organ in (phytomer.lamina, phytomer.sheath):
+                        if organ is None:
+                            continue
+                        for element in (organ.exposed_element, organ.enclosed_element):
+                            if element is not None:
+                                element_id = (plant.index, axis.label, phytomer.index, organ.label, element.label)
+                                self.interpolation_functions[element_id] = {}
+                                next_forcings_values[element_id] = {}
+                                for (forcing_labels, forcings_delta_t_ratio) in ((Simulation.ELEMENTS_PHOTOSYNTHESIS_FORCINGS, self.photosynthesis_forcings_delta_t_ratio), 
+                                                                                 (Simulation.ELEMENTS_SENESCENCE_FORCINGS, self.senescence_forcings_delta_t_ratio)):
+                                    for forcing_label in forcing_labels:
+                                        if element_id in self.previous_forcings_values and \
+                                            self.previous_forcings_values[element_id][forcing_label] != self.new_forcings_values[element_id][forcing_label]:
+                                            prev_forcing_value = self.previous_forcings_values[element_id][forcing_label]
+                                            next_forcing_value = prev_forcing_value + (self.new_forcings_values[element_id][forcing_label] - prev_forcing_value) / forcings_delta_t_ratio
+                                        else:
+                                            next_forcing_value = self.new_forcings_values[element_id][forcing_label]
+                                            prev_forcing_value = next_forcing_value
+                                        self.interpolation_functions[element_id][forcing_label] = interpolate.interp1d(self.time_grid, [prev_forcing_value, next_forcing_value], assume_sorted=True)
+                                        next_forcings_values[element_id][forcing_label] = next_forcing_value
+        
+        self.previous_forcings_values.clear()
+        self.previous_forcings_values.update(next_forcings_values)
+                                        
     def _log_compartments(self, t, y, loggers_names):
         """Log the values in `y` to the loggers in `loggers_names`.
         """
@@ -588,6 +736,12 @@ class Simulation(object):
                 class_ = model.Organ
             elif issubclass(class_, model.PhotosyntheticOrganElement):
                 class_ = model.PhotosyntheticOrganElement
+            parameters_names = Simulation.ALL_STATE_PARAMETERS[class_]
+            for parameter_name in parameters_names:
+                if hasattr(model_object, parameter_name):
+                    row.append(str(getattr(model_object, parameter_name)))
+                else:
+                    row.append('NA')
             compartments_names = Simulation.MODEL_COMPARTMENTS_NAMES[class_]
             for compartment_name in compartments_names:
                 if hasattr(model_object, compartment_name):
@@ -602,7 +756,7 @@ class Simulation(object):
         all_rows = dict([(class_, []) for class_ in loggers_names])
 
         for soil_id, soil in self.soils.items():
-            i = update_rows(soil, soil_id, all_rows[model.Soil], i)
+            i = update_rows(soil, (t,) + soil_id, all_rows[model.Soil], i)
 
         for plant in self.population.plants:
             i = update_rows(plant, [t, plant.index], all_rows[model.Plant], i)
@@ -611,7 +765,7 @@ class Simulation(object):
                 for organ in (axis.roots, axis.phloem, axis.grains):
                     if organ is None:
                         continue
-                    i = update_rows(organ, [t, plant.index, axis.label, 'NA', organ.label], all_rows[model.Organ], i)
+                    i = update_rows(organ, [t, plant.index, axis.label, organ.label], all_rows[model.Organ], i)
                 for phytomer in axis.phytomers:
                     i = update_rows(phytomer, [t, plant.index, axis.label, phytomer.index], all_rows[model.Phytomer], i)
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
@@ -672,6 +826,27 @@ class Simulation(object):
         
         self.nfe_total += 1
 
+        if self.interpolate_forcings:
+            # Update state parameters using interpolation functions
+            for plant in self.population.plants:
+                for axis in plant.axes:
+                    if axis.roots is not None:
+                        roots_id = (plant.index, axis.label)
+                        for forcing_label in Simulation.ROOTS_FORCINGS:
+                            setattr(axis.roots, forcing_label, float(self.interpolation_functions[roots_id][forcing_label](t)))
+                    for phytomer in axis.phytomers:
+                        for organ in (phytomer.lamina, phytomer.sheath):
+                            if organ is None:
+                                continue
+                            for element in (organ.exposed_element, organ.enclosed_element):
+                                if element is not None:
+                                    element_id = (plant.index, axis.label, phytomer.index, organ.label, element.label)
+                                    for forcing_label in Simulation.ELEMENTS_FORCINGS:
+                                        setattr(element, forcing_label, float(self.interpolation_functions[element_id][forcing_label](t)))
+            
+            # Compute integrative variables
+            self.population.calculate_integrative_variables()
+        
         compartments_logger = logging.getLogger('cnwheat.compartments')
         if logger.isEnabledFor(logging.DEBUG) and compartments_logger.isEnabledFor(logging.DEBUG):
             self._log_compartments(t_abs, y, Simulation.LOGGERS_NAMES['compartments'])

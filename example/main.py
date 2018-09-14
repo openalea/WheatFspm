@@ -116,13 +116,13 @@ def force_senescence_and_photosynthesis(t, population, senescence_roots_data_gro
                             
 
 
-def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True, log_execution=False):
+def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True, log_execution=False, interpolate_forcings=False):
 
     if run_simu:
 
         print 'Prepare the simulation...'
         
-        time_step_hours = 4
+        time_step_hours = 1
         time_step_seconds = time_step_hours * HOUR_TO_SECOND_CONVERSION_FACTOR
         
         if log_execution:
@@ -131,7 +131,18 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
                       log_model=True, log_compartments=True, log_derivatives=True, remove_old_logs=True)
         
         # create the simulation
-        simulation_ = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=time_step_seconds, culm_density=CULM_DENSITY)
+        if interpolate_forcings:
+            interpolate_forcings=True
+            senescence_forcings_delta_t=time_step_seconds
+            photosynthesis_forcings_delta_t=time_step_seconds
+        else:
+            interpolate_forcings=False
+            senescence_forcings_delta_t=None
+            photosynthesis_forcings_delta_t=None
+        
+        simulation_ = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=time_step_seconds, culm_density=CULM_DENSITY, 
+                                                    interpolate_forcings=interpolate_forcings, senescence_forcings_delta_t=senescence_forcings_delta_t, 
+                                                    photosynthesis_forcings_delta_t=photosynthesis_forcings_delta_t)
         
         # read inputs from Pandas dataframes
         inputs_dataframes = {}
@@ -328,5 +339,5 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         
 
 if __name__ == '__main__':
-    main(48, run_simu=True, run_postprocessing=True, generate_graphs=True, log_execution=False)
+    main(48, run_simu=True, run_postprocessing=True, generate_graphs=True, log_execution=False, interpolate_forcings=False)
     

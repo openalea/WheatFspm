@@ -1069,7 +1069,7 @@ class PhotosyntheticOrganElement(object):
         self.green_area = green_area         #: green area (m-2)
         self.Tr = Tr                         #: Transpiration rate (mmol m-2 s-1)
         self.Ag = Ag                         #: Gross assimilation (:math:`\mu mol` m-2 s-1)
-        self.Ts = Ts                         #: Organ temperature (°C)
+        self.Ts = Ts                         #: Organ temperature (:math:`^{\circ}C`)
 
         # state variables
         self.triosesP = triosesP             #: :math:`\mu mol` C
@@ -1641,7 +1641,7 @@ class Soil(object):
 
         # state parameters
         self.volume = volume                   #: volume of soil explored by roots (m3)
-        self.Tsoil = Tsoil                     #: soil temperature (°C)
+        self.Tsoil = Tsoil                     #: soil temperature (:math:`^{\circ}C`)
 
         # state variables
         self.nitrates = nitrates               #: :math:`\mu mol` N nitrates
