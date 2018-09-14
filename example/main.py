@@ -122,7 +122,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
         print 'Prepare the simulation...'
         
-        time_step_hours = 1
+        time_step_hours = 4
         time_step_seconds = time_step_hours * HOUR_TO_SECOND_CONVERSION_FACTOR
         
         if log_execution:
