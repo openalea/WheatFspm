@@ -553,7 +553,7 @@ class Simulation(object):
 
         # check the integration ; raise an exception if the integration failed
         if not sol.success:
-            message = "Integration failed: %s".format(sol.message)
+            message = "Integration failed: {}".format(sol.message)
             logger.exception(message)
             raise SimulationRunError(message)
         
