@@ -12,7 +12,6 @@
 
 ** HZ
 
-- flux seulement depuis phloème VERS HZ. Inverse impossible.
 - calculate_S_proteins * 8
 
 ** ROOTS

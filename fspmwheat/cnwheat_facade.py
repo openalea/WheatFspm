@@ -194,10 +194,10 @@ class CNWheatFacade(object):
                                 cnwheat_organ_data_dict[cnwheat_organ_data_name] = mtg_organ_properties[cnwheat_organ_data_name]
 
                                 # MG
-                                if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] is None:
-                                    print(mtg_axis_vid)
-                                    print(mtg_organ_label)
-                                    print(cnwheat_organ_data_name)
+                                # if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] is None:
+                                    # print(mtg_axis_vid)
+                                    # print(mtg_organ_label)
+                                    # print(cnwheat_organ_data_name)
 
                             cnwheat_organ.__dict__.update(cnwheat_organ_data_dict)
                             cnwheat_organ.initialize()
@@ -232,10 +232,10 @@ class CNWheatFacade(object):
                                 cnwheat_hiddenzone_data_dict[cnwheat_hiddenzone_data_name] = mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]
 
                                 # MG
-                                if math.isnan(mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]) or mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name] is None:
-                                    print(mtg_metamer_vid)
-                                    print(mtg_hiddenzone_label)
-                                    print(cnwheat_hiddenzone_data_name)
+                                # if math.isnan(mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]) or mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name] is None:
+                                #     print(mtg_metamer_vid)
+                                #     print(mtg_hiddenzone_label)
+                                #     print(cnwheat_hiddenzone_data_name)
 
                             # create a new hiddenzone
                             cnwheat_hiddenzone = cnwheat_model.HiddenZone(mtg_hiddenzone_label, **cnwheat_hiddenzone_data_dict)
