@@ -499,4 +499,4 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
 
 if __name__ == '__main__':
-    main(500, run_simu=True, run_postprocessing=False, generate_graphs=False, T_RUN_MAX = 88)
+    main(300, run_simu=True, run_postprocessing=False, generate_graphs=False, T_RUN_MAX = 60)

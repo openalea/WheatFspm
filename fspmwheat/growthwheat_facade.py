@@ -160,10 +160,10 @@ class GrowthWheatFacade(object):
                                     for growthwheat_element_input_name in simulation.ELEMENT_INPUTS:
                                         mtg_element_input = mtg_element_properties.get(growthwheat_element_input_name)
                                         if mtg_element_input is None:
-                                            if growthwheat_element_input_name == 'cytokinins':
-                                                mtg_element_input = parameters.OrganInit().__dict__['conc_cytokinins'] * mtg_element_properties.get('mstruct', parameters.OrganInit().__dict__['mstruct'])
-                                            else:
-                                                mtg_element_input = parameters.OrganInit().__dict__[growthwheat_element_input_name]
+                                            # if growthwheat_element_input_name == 'cytokinins':
+                                            #     mtg_element_input = parameters.OrganInit().__dict__['conc_cytokinins'] * mtg_element_properties.get('mstruct', parameters.OrganInit().__dict__['mstruct'])
+                                            # else:
+                                            mtg_element_input = parameters.OrganInit().__dict__[growthwheat_element_input_name]
                                         growthwheat_element_inputs_dict[growthwheat_element_input_name] = mtg_element_input
                                         if remobilisation:
                                             growthwheat_element_inputs_dict['green_area'] = mtg_element_properties.get('area')  # Needed later on for CN Wheat calculation. TODO: Should it be in elongwheat_facade instead ? (MG)

@@ -83,17 +83,17 @@ class ElongWheatFacade(object):
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
         self._update_shared_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_SAM_inputs_df)
 
-    def run(self, Tair, Tsol):
+    def run(self,Tair, Tsoil):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
         :Parameters:
 
             - `Tair` (:class:`float`) - air temperature at t (degree Celsius)
-            - `Tsol` (:class:`float`) - soil temperature at t (degree Celsius)
+            - `Tsoil` (:class:`float`) - soil temperature at t (degree Celsius)
         """
         self._initialize_model()
-        self._simulation.run(Tair, Tsol)
+        self._simulation.run(Tair, Tsoil)
         self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['elements'], self._simulation.outputs['SAM'])
         elongwheat_hiddenzones_outputs_df, elongwheat_elements_outputs_df, elongwheaSAM_temperature_outputs_df = converter.to_dataframes(self._simulation.outputs)
 
@@ -192,8 +192,8 @@ class ElongWheatFacade(object):
                             if set(mtg_element_properties).issuperset(simulation.ELEMENT_INPUTS):
                                 elongwheat_element_inputs_dict = {}
                                 for elongwheat_element_input_name in simulation.ELEMENT_INPUTS:
-                                    element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
                                     elongwheat_element_inputs_dict[elongwheat_element_input_name] = mtg_element_properties[elongwheat_element_input_name]
+                                element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
                                 all_elongwheat_elements_dict[element_id] = elongwheat_element_inputs_dict
                                 # Complete dict of lengths
                                 if mtg_organ_label == 'sheath' and not mtg_element_properties['is_growing']:
@@ -340,6 +340,8 @@ class ElongWheatFacade(object):
                         elif mtg_organ_label in ('sheath', 'internode') and 'StemElement' in new_mtg_element_labels.keys():
                             organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['StemElement']]
                             self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
+                        else:
+                            organ_visible_length = 0
 
                         if 'HiddenElement' in new_mtg_element_labels.keys():
                             organ_hidden_length = self._shared_mtg.property('length')[new_mtg_element_labels['HiddenElement']]

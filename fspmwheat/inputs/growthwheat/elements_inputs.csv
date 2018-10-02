@@ -1,3 +1,2 @@
 plant,axis,metamer,organ,element,amino_acids,mstruct,Nstruct,sucrose,fructan,proteins,green_area,is_growing
-1,MS,3,sheath,StemElement,1.31920893,0.00751686,3.76E-05,18.040464,0,16.01467023,3.69E-05,True
-1,MS,4,blade,LeafElement1,0.305089036,0.001738399,8.69E-06,4.172157754,0,3.703659206,6.30E-05,True
+1,MS,3,blade,LeafElement1,1.212992645,0.006911639,3.46E-05,16.5879336,0,14.72525559,0.000250422,True
