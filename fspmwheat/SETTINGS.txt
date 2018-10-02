@@ -1,0 +1,21 @@
+** ----------
+** GROWTH-WHEATH
+** ----------
+
+** ROOTS
+
+- calculate_roots_mstruct_growth : mstruct_C_growth * 1
+
+** ----------
+** CN-WHEATH
+** ----------
+
+** HZ
+
+- flux seulement depuis phloème VERS HZ. Inverse impossible.
+- calculate_S_proteins * 8
+
+** ROOTS
+
+- calculate_Export_Nitrates : PARAMETERS.K_NITRATE_EXPORT *5
+- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING = 0.03*5
