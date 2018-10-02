@@ -1,0 +1,9 @@
+plant,axis,metamer,leaf_is_growing,internode_is_growing,leaf_pseudo_age,internode_pseudo_age,leaf_L,delta_leaf_L,internode_L,delta_internode_L,leaf_pseudostem_length,delta_leaf_pseudostem_length,internode_distance_to_emerge,delta_internode_distance_to_emerge,SSLW,LSSW,leaf_is_emerged,LSIW,internode_is_visible,sucrose,amino_acids,fructan,proteins,leaf_enclosed_mstruct,internode_enclosed_mstruct,mstruct,leaf_enclosed_Nstruct,internode_enclosed_Nstruct
+1,MS,3,True,True,912263,432000,0.121912,0,0.00005,0,0.028731,0,0.028681,0,27.6,1.38,True,1.38,False,1.30E+02,9.482265,0,115.110915,0.039373,0.014658,0.05403,0.000197,0.000073
+1,MS,4,True,True,533988,0,0.059415473,0,0.00001,0,0.034128,0,0.028671,0,27.6,1.38,True,1.38,False,5.21E+01,3.806244,0,46.206284,0.021017,0.000671,0.021688,0.000105,0.000003
+1,MS,5,True,False,82803,0,0.004071393,0,0,0,0.034118,0,0.028671,0,27.3,1.365,False,NA,False,1.78E-01,0.012980747,0,0.157581087,0.000726,0,7.40E-05,7.40E-05,0
+1,MS,6,True,False,0,0,0.001935925,0,0,0,0.034118,0,0.028671,0,NA,NA,False,NA,False,6.86E-02,0.005015257,0,0.060883221,0.000996,0,2.86E-05,2.86E-05,0
+1,MS,7,True,False,0,0,0.00098038,0,0,0,0.034118,0,0.028671,0,NA,NA,False,NA,False,2.87E-02,0.002101938,0,0.025516686,0.000787,0,1.20E-05,1.20E-05,0
+1,MS,8,True,False,0,0,0.000886375,0,0,0,0.034118,0,0.028671,0,NA,NA,False,NA,False,2.53E-02,0.001848067,0,0.022434794,0.000654,0,1.05E-05,1.05E-05,0
+1,MS,9,True,False,0,0,0.00017404,0,0,0,0.034118,0,0.028671,0,NA,NA,False,NA,False,3.20E-03,0.000234109,0,0.002841991,0.000519,0,1.33E-06,1.33E-06,0
+1,MS,10,True,False,0,0,6.51E-05,0,0,0,0.034118,0,0.028671,0,NA,NA,False,NA,False,9.55E-04,6.98E-05,0,0.000847612,0.000472,0,3.98E-07,3.98E-07,0

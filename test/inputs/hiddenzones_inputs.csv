@@ -1,0 +1,4 @@
+plant,axis,metamer,leaf_is_growing,internode_is_growing,leaf_pseudo_age,internode_pseudo_age,leaf_L,delta_leaf_L,internode_L,delta_internode_L,leaf_pseudostem_length,delta_leaf_pseudostem_length,internode_distance_to_emerge,delta_internode_distance_to_emerge,SSLW,LSSW,leaf_is_emerged,LSIW,internode_is_visible,sucrose,amino_acids,fructan,proteins,leaf_enclosed_mstruct,leaf_enclosed_Nstruct,internode_enclosed_mstruct,internode_enclosed_Nstruct,mstruct
+1,MS,4,True,True,360000,NA,0.04727261,0.00063635,0,0.0001,0.02435,0.0011,0.02435,0.001,27.6,1.38,True,1.38,False,10,1.5,0.15,0,0.005,0.000161,0,0,0.005
+1,MS,5,True,True,0,NA,0.00101957,0.00001957,0,0,0.02335,0,0.02335,0,27.3,1.38,False,1.38,False,0.03,0.003,0.03,0,0.000013,0.00000042,0,0,0.000013
+1,MS,6,True,True,NA,NA,0.00004057,0.00000057,0,0,0.02335,0,0.02335,0,NA,NA,False,NA,False,0.001,0.0002,0,0,0.00000006,0,0,0,0.00000006
