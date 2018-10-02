@@ -34,7 +34,7 @@ all_SAM_outputs_df = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, SAM_OUTPUTS_FILEN
 # 4) Hidden zones
 all_hiddenzone_outputs_df = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONE_OUTPUTS_FILENAME))
 graph_variables_hiddenzones = {'leaf_pseudostem_length': u'Length for leaf emergence (m)','leaf_L': u'Leaf length (m)', 'delta_leaf_L':u'Delta leaf length (m)',
-                            'internode_distance_to_emergence': u'Length for internode emergence (m)','internode_L': u'Internode length (m)', 'delta_internode_L':u'Delta internode length (m)'}
+                            'internode_distance_to_emerge': u'Length for internode emergence (m)','internode_L': u'Internode length (m)', 'delta_internode_L':u'Delta internode length (m)'}
 
 for variable_name, variable_label in graph_variables_hiddenzones.iteritems():
 

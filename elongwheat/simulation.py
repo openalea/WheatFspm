@@ -37,16 +37,18 @@ HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age
                      'leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'LSSW', 'leaf_is_emerged', 'internode_Lmax', 'LSIW', 'internode_is_visible', 'sucrose', 'amino_acids', 'fructan',
                      'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct']
 ELEMENT_INPUTS = ['length', 'is_growing']
-SAM_INPUTS = ['sum_TT', 'status', 'nb_leaves', 'GA', 'height', 'cohort']
+SAM_INPUTS = ['SAM_temperature','delta_teq','teq_since_primordium', 'status', 'nb_leaves', 'GA', 'height', 'cohort','sum_TT']
 
 #: the outputs computed by ElongWheat
 # TODO : add be default all the attributes of the class HiddenZoneInit and ElementInit, and define which attribute is set by growthwheat.parameters or elongwheat.parameters
-HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age', 'internode_pseudo_age', 'leaf_pseudostem_length', 'delta_leaf_pseudostem_length', 'internode_distance_to_emerge',
+HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age','delta_leaf_pseudo_age', 'internode_pseudo_age','delta_internode_pseudo_age', 'leaf_pseudostem_length',
+                      'delta_leaf_pseudostem_length',
+                      'internode_distance_to_emerge',
                       'delta_internode_distance_to_emerge', 'leaf_L', 'delta_leaf_L', 'internode_L', 'delta_internode_L', 'leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'LSSW',
                       'leaf_is_emerged', 'internode_Lmax', 'LSIW', 'internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct',
                       'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct']
 ELEMENT_OUTPUTS = ['length', 'is_growing', 'diameter', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'mstruct', 'Nstruct']
-SAM_OUTPUTS = ['SAM_temperature', 'sum_TT', 'status', 'nb_leaves', 'GA', 'height', 'normalized_temperature_effect']
+SAM_OUTPUTS = ['SAM_temperature','delta_teq', 'teq_since_primordium', 'status', 'nb_leaves', 'GA', 'height', 'cohort','sum_TT']
 
 #: the inputs and outputs of ElongWheat.
 HIDDENZONE_INPUTS_OUTPUTS = sorted(set(HIDDENZONE_INPUTS + HIDDENZONE_OUTPUTS))
@@ -104,18 +106,18 @@ class Simulation(object):
 
             - `inputs` (:class:`dict`)
               `inputs` must be a dictionary with the same structure as :attr:`inputs`.
+
         """
         self.inputs.clear()
         self.inputs.update(inputs)
 
-    def run(self, Tair, Tsol):
+    def run(self, Tair, Tsoil):
         """
         Run the simulation.
 
         :Parameters:
-
             - `Tair` (:class:`float`) - air temperature at t (degree Celsius)
-            - `Tsol` (:class:`float`) - soil temperature at t (degree Celsius)
+            - `Tsoil` (:class:`float`) - soil temperature at t (degree Celsius)
         """
 
         # Copy the inputs into the output dict
@@ -155,21 +157,23 @@ class Simulation(object):
             SAM_height = model.calculate_cumulated_internode_length(below_internode_lengths)
             curr_SAM_outputs['height'] = SAM_height
 
-            # temperature choice
-            growth_temperature = model.calculate_growing_temperature(Tair, Tsol, SAM_height)
+            # SAM temperature
+            growth_temperature = model.calculate_growing_temperature(Tair, Tsoil, SAM_height)
             curr_SAM_outputs['SAM_temperature'] = growth_temperature
 
-            # response of physiological process to temperature normalized by the physiolocal response at a reference temperature
-            curr_SAM_outputs['normalized_temperature_effect'] = model.calculate_normalized_temperature_effect(growth_temperature)
+            # temperature-compensated time
+            curr_SAM_outputs['delta_teq'] = model.calculate_time_equivalent_Tref(growth_temperature,self.delta_t)
 
-            # update sum_TT
-            curr_SAM_outputs['sum_TT'] = model.calculate_SAM_sumTT(curr_SAM_outputs['normalized_temperature_effect'], SAM_inputs['sum_TT'], self.delta_t)
+            # cumulated thermal time
+            curr_SAM_outputs['sum_TT'] = model.calculate_cumulated_thermal_time(curr_SAM_outputs['sum_TT'], growth_temperature, self.delta_t)
 
             # update SAM status, leaf number and
-            init_leaf, curr_SAM_outputs['nb_leaves'], curr_SAM_outputs['status'] = model.calculate_SAM_status(SAM_inputs['status'], curr_SAM_outputs['sum_TT'], nb_leaves)
+            init_leaf, curr_SAM_outputs['nb_leaves'], curr_SAM_outputs['status'], curr_SAM_outputs['teq_since_primordium'] = model.calculate_SAM_primodia(SAM_inputs['status'],
+                                                                                                                                                        curr_SAM_outputs['teq_since_primordium'],
+                                                                                                                                                        curr_SAM_outputs['delta_teq'], nb_leaves)
 
             # GA production
-            curr_SAM_outputs['GA'] = model.calculate_SAM_GA(curr_SAM_outputs['status'], curr_SAM_outputs['sum_TT'])
+            curr_SAM_outputs['GA'] = model.calculate_SAM_GA(curr_SAM_outputs['status'], curr_SAM_outputs['teq_since_primordium'])
 
             # add hiddenzone
             for i in range(0, init_leaf):
@@ -287,15 +291,15 @@ class Simulation(object):
                     if not prev_leaf_emerged:  #: Before the emergence of the previous leaf. Exponential-like elongation.
                         # delta leaf length
                         delta_leaf_L = model.calculate_deltaL_preE(hiddenzone_inputs['sucrose'], hiddenzone_inputs['leaf_L'], hiddenzone_inputs['amino_acids'], hiddenzone_inputs['mstruct'],
-                                                                   curr_SAM_outputs['normalized_temperature_effect'],
-                                                                   self.delta_t, phytomer_id)
+                                                                   curr_SAM_outputs['delta_teq'], phytomer_id)
                         leaf_L = hiddenzone_inputs['leaf_L'] + delta_leaf_L
 
                     else:  #: After the emergence of the previous leaf.
                         # delta leaf length
                         leaf_pseudo_age = model.calculate_leaf_pseudo_age(hiddenzone_inputs['leaf_pseudo_age'], hiddenzone_inputs['sucrose'], hiddenzone_inputs['amino_acids'],
-                                                                          curr_SAM_outputs['normalized_temperature_effect'], self.delta_t)
+                                                                          curr_SAM_outputs['delta_teq'])
                         curr_hiddenzone_outputs['leaf_pseudo_age'] = leaf_pseudo_age
+                        curr_hiddenzone_outputs['delta_leaf_pseudo_age'] = leaf_pseudo_age - hiddenzone_inputs['leaf_pseudo_age']
                         leaf_L = model.calculate_L_postE(leaf_pseudo_age, curr_hiddenzone_outputs['leaf_Lmax'])
                         delta_leaf_L = leaf_L - hiddenzone_inputs['leaf_L']
 
@@ -409,7 +413,7 @@ class Simulation(object):
                 #: Initialisation of internode elongation
                 if (not curr_hiddenzone_outputs['internode_is_growing']) and curr_hiddenzone_outputs['internode_L'] == 0:
                     #: As for leaf primordia, we neglect CN growth due to IN length initialisation
-                    curr_hiddenzone_outputs['internode_is_growing'], curr_hiddenzone_outputs['internode_L'] = model.calculate_init_internode_elongation(curr_SAM_outputs['sum_TT'], phytomer_id)
+                    curr_hiddenzone_outputs['internode_is_growing'], curr_hiddenzone_outputs['internode_L'] = model.calculate_init_internode_elongation(curr_SAM_outputs['teq_since_primordium'])
 
                 if curr_hiddenzone_outputs['internode_is_growing']:
                     #: Found previous lamina to know if the previous leaf is ligulated.
@@ -423,14 +427,16 @@ class Simulation(object):
                     if not prev_leaf_ligulated:
                         delta_internode_L = model.calculate_delta_internode_L_preL(phytomer_id, curr_hiddenzone_outputs['sucrose'], curr_hiddenzone_outputs['internode_L'],
                                                                                    curr_hiddenzone_outputs['amino_acids'], curr_hiddenzone_outputs['mstruct'],
-                                                                                   curr_SAM_outputs['normalized_temperature_effect'], self.delta_t)
+                                                                                   curr_SAM_outputs['delta_teq'])
                         internode_L = curr_hiddenzone_outputs['internode_L'] + delta_internode_L  # TODO: Ckeck internode_L is not too large (in the case of long delta_t)
 
                     #: After ligulation of the leaf on the previous phytomer.
                     else:
                         internode_pseudo_age = model.calculate_internode_pseudo_age(curr_hiddenzone_outputs['internode_pseudo_age'], curr_hiddenzone_outputs['sucrose'],
-                                                                                    curr_hiddenzone_outputs['amino_acids'], curr_SAM_outputs['normalized_temperature_effect'], self.delta_t)
+                                                                                    curr_hiddenzone_outputs['amino_acids'], curr_SAM_outputs['delta_teq'])
+                        delta_internode_pseudo_age = internode_pseudo_age - curr_hiddenzone_outputs['internode_pseudo_age']
                         curr_hiddenzone_outputs['internode_pseudo_age'] = internode_pseudo_age
+                        curr_hiddenzone_outputs['delta_internode_pseudo_age'] = delta_internode_pseudo_age
 
                         #: Elongation only if Gibberelin production by SAM
                         if curr_SAM_outputs['GA']:

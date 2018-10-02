@@ -29,8 +29,6 @@ from math import exp
 # -------------------------------------------------------------------------------------------------------------------
 # --- SAM
 # -------------------------------------------------------------------------------------------------------------------
-
-
 def calculate_growing_temperature(Tair, Tsol, SAM_height):
     """ Return temperature to be used for growth zone
 
@@ -51,7 +49,6 @@ def calculate_growing_temperature(Tair, Tsol, SAM_height):
 
     return growth_temperature
 
-
 def modified_Arrhenius_equation(temperature):
     """ Return value of equation from Johnson and Lewin (1946) for temperature. The equation is modified to return zero below zero degree.
 
@@ -64,98 +61,93 @@ def modified_Arrhenius_equation(temperature):
         :class:`float`
     """
 
-    Temp_equation = lambda T: T * exp(-parameters.Temp_Ea_R / T) / (1 + exp(parameters.Temp_DS_R - parameters.Temp_DH_R / T))
+    Arrhenius_equation = lambda T: T * exp(-parameters.Temp_Ea_R / T) / (1 + exp(parameters.Temp_DS_R - parameters.Temp_DH_R / T))
     temperature_K = temperature + 273.15
 
     if temperature < 0:
         res = 0
     elif temperature < parameters.Temp_Ttransition:
-        res = temperature * Temp_equation(parameters.Temp_Ttransition + 273.15) / parameters.Temp_Ttransition
+        res = temperature * Arrhenius_equation(parameters.Temp_Ttransition + 273.15) / parameters.Temp_Ttransition
     else:
-        res = Temp_equation(temperature_K)
+        res = Arrhenius_equation(temperature_K)
 
     return res
 
-
-def calculate_normalized_temperature_effect(growth_temperature):
-    """ Return response of physiological process to temperature normalized by the physiolocal response at a reference temperature
-
-    :Parameters:
-        - `growth_temperature` (:class:`float`) - temperature to be used for growth zone at t (degree Celsius)
-
-    :Returns:
-        Return response of physiological process to temperature normalized by the physiolocal response at a reference temperature at t (dimensionless)
-    :Returns Type:
-        :class:`float`
-    """
-    if growth_temperature > 0:
-        pass
-    normalized_temperature_effect = modified_Arrhenius_equation(growth_temperature) / modified_Arrhenius_equation(parameters.Temp_Tref)
-    return normalized_temperature_effect
-
-
-def calculate_SAM_sumTT(normalized_temperature_effect, sum_TT, delta_t):
-    """ Sum of compensated thermal time of SAM
+def calculate_time_equivalent_Tref(temperature, time):
+    """ Return the time equivalent to a reference temperature i.e. temperature-compensated time (Parent, 2010).
 
     :Parameters:
-        - `normalized_temperature_effect` (:class:`float`) - response of physiological process to temperature normalized by the physiolocal response at a reference temperature (dimensionless)
-        - `sum_TT` (:class:`float`) - SAM cumul of compensated thermal time (degree day-1)
-        - `delta_t` (:class:`float`) - Time step of the simulation (s)
+        - `temperature` (:class:`float`) - temperature (degree Celsius)
+        - `time` (:class:`float`) - time duration (s)
+
     :Returns:
-        Updated compensated thermal time of the SAM at t (degree day-1)
+        temperature-compensated time (s)
     :Returns Type:
         :class:`float`
     """
 
-    sum_TT += (parameters.Temp_Tref * normalized_temperature_effect * delta_t) / (24 * 3600)
-    return sum_TT
+    return time * modified_Arrhenius_equation(temperature)/modified_Arrhenius_equation(parameters.Temp_Tref)
 
+def calculate_cumulated_thermal_time(sum_TT, temperature, delta_t):
+    """ Return cumulated thermal time (used for model outputs calculations only).
 
-def calculate_SAM_status(status, sum_TT, nb_leaves):
+    :Parameters:
+        - `sum_TT`(:class:`float`) - cumulated thermal time (degree-days)
+        - `temperature` (:class:`float`) - temperature (degree Celsius)
+        - `delta_t` (:class:`float`) - time duration (s)
+
+    :Returns:
+        temperature-compensated time (s)
+    :Returns Type:
+        :class:`float`
+    """
+    res = 0
+    if temperature > 0:
+        res = sum_TT + temperature * delta_t/24.0/3600
+    return res
+
+def calculate_SAM_primodia(status, teq_since_primordium, delta_teq, nb_leaves):
     """ Update SAM status, leaf number
 
     :Parameters:
         - `status` (:class:`string`) - SAM status ('vegetative', if emitting leaf primordia or 'reproductive')
-        - `sum_TT` (:class:`float`) - SAM cumul of temperature (degree day-1)
+        - `teq_since_primordium` (:class:`float`) - Time since last primordium intiation (in time equivalent to a reference temperature) (s)
+        - `delta_teq` (:class:`float`) - time increment (in time equivalent to a reference temperature) (s)
         - `nb_leaves` (:class:`float`) - Number of leaves already emited by the SAM.
     :Returns:
-        Number of leaf to be initiated (should be 0 or 1), updated leaf number on the SAM, status
+        Number of leaf to be initiated (should be 0 or 1), updated leaf number on the SAM, status, time since last primordium intiation (in time equivalent to a reference temperature)
     :Returns Type:
         :class:`float`, :class:`int`, :class:`string`
     """
 
-    if status == 'vegetative':
-        if sum_TT >= parameters.PLASTOCHRONE * (nb_leaves + 1):  # first 3/4 leaves are initiated in the seed
-            init_leaf = min(parameters.max_nb_leaves, int(sum_TT / parameters.PLASTOCHRONE) - nb_leaves)
-            if init_leaf > 1:
-                raise ValueError(
-                    'Error : {} leaf primordia have been created in one time step. Consider shorter timestep'.format(
-                        init_leaf))
-        else:
-            init_leaf = 0
+    init_leaf = 0
+    teq_since_primordium += delta_teq
 
+    while teq_since_primordium > parameters.PLASTOCHRONE and status == 'vegetative':
+        init_leaf += 1
+        teq_since_primordium -= parameters.PLASTOCHRONE
+        if init_leaf > 1:
+            raise ValueError('Error : {} leaf primordia have been created in one time step. Consider shorter timestep'.format(init_leaf))
         if (nb_leaves + init_leaf) >= parameters.max_nb_leaves:
             status = 'reproductive'
-    else:  # Reproductive SAM
-        init_leaf = 0
 
     nb_leaves += init_leaf
 
-    return init_leaf, nb_leaves, status
+    return init_leaf, nb_leaves, status, teq_since_primordium
 
 
-def calculate_SAM_GA(status, sum_TT):
+def calculate_SAM_GA(status, teq_since_primordium):
     """ Synthesis of GA by the SAM according to its stage
 
     :Parameters:
         - `status` (:class:`string`) - SAM status ('vegetative', if emitting leaf primordia or 'reproductive')
-        - `sum_TT` (:class:`float`) - SAM cumul of temperature (degree day-1)
+        - `teq_since_primordium` (:class:`float`) - Time since last primordium intiation (in time equivalent to a reference temperature) (s)
     :Returns:
         GA production
     :Returns Type:
         :class:`bool`
     """
-    is_producing_GA = status == 'reproductive' and sum_TT > (parameters.max_nb_leaves * parameters.PLASTOCHRONE) + parameters.delta_TT_GA
+    is_producing_GA = status == 'reproductive' and teq_since_primordium > parameters.delta_TT_GA
 
     return is_producing_GA
 
@@ -207,7 +199,7 @@ def calculate_leaf_pseudostem_length(ligule_heights, bottom_hiddenzone_height, p
     return leaf_pseudostem_length
 
 
-def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, normalized_temperature_effect, delta_t, leaf_rank):
+def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_teq, leaf_rank):
     """ Delta of leaf length over delta_t as a function of sucrose and amino acids, from initiation to the emergence of the previous leaf.
 
     :Parameters:
@@ -215,16 +207,17 @@ def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, normalized_temp
         - `leaf_L` (:class:`float`) - Total leaf length (m)
         - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
         - `mstruct` (:class:`float`) - Structural mass (g)
-        - `normalized_temperature_effect` (:class:`float`) - response of physiological process to temperature normalized by the physiolocal response at a reference temperature (dimensionless)
+        - `delta_teq` (:class:`float`) - Temperature-consensated time = time duration at a reference temperature (s)
     :Returns:
         delta delta_leaf_L (m)
     :Returns Type:
         :class:`float`
     """
     # RER_max = parameters.RERmax_dict[leaf_rank]
+    # delta_leaf_L = leaf_L * RER_max * delta_teq
     RER_max = parameters.RERmax
     if sucrose > 0 and amino_acids > 0:
-        delta_leaf_L = leaf_L * RER_max * normalized_temperature_effect * delta_t * ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * \
+        delta_leaf_L = leaf_L * RER_max * delta_teq * ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * \
                        (((amino_acids / mstruct) ** 3) / (parameters.Kn ** 3 + (amino_acids / mstruct) ** 3))
     else:
         delta_leaf_L = 0
@@ -232,14 +225,13 @@ def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, normalized_temp
     return delta_leaf_L
 
 
-def calculate_leaf_pseudo_age(leaf_pseudo_age, sucrose, amino_acids, normalized_temperature_effect, delta_t):
+def calculate_leaf_pseudo_age(leaf_pseudo_age, sucrose, amino_acids, delta_teq):
     """ Pseudo age of the leaf since beginning of automate elongation (s)
     :Parameters:
         - `leaf_pseudo_age` (:class:`float`) - Previous pseudo age of the leaf since beginning of automate elongation (s)
         - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
         - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
-        - `normalized_temperature_effect` (:class:`float`) - response of physiological process to temperature normalized by the physiolocal response at a reference temperature (dimensionless)
-        - `delta_t` (:class:`float`) - Time step (s)
+        - `delta_teq` (:class:`float`) - Temperature-consensated time = time duration at a reference temperature (s)
     :Returns:
         Updated leaf_pseudo_age (s)
     :Returns Type:
@@ -247,7 +239,7 @@ def calculate_leaf_pseudo_age(leaf_pseudo_age, sucrose, amino_acids, normalized_
     """
     delta_pseudo_age = 0
     if sucrose > 0 and amino_acids > 0:
-        delta_pseudo_age = normalized_temperature_effect * delta_t
+        delta_pseudo_age = delta_teq
     return leaf_pseudo_age + delta_pseudo_age
 
 
@@ -287,7 +279,7 @@ def calculate_leaf_emergence(leaf_L, leaf_pseudostem_length):
         :class:`bool`
     """
     epsilon = 1E-3  # (m)
-    return leaf_L > (leaf_pseudostem_length + epsilon)
+    return leaf_L > (leaf_pseudostem_length)# + epsilon)
 
 
 def calculate_lamina_L(leaf_L, leaf_pseudostem_length, hiddenzone_id):
@@ -485,24 +477,21 @@ def calculate_LSIW(LSSW):
     :Returns Type:
         :class:`float`
     """
-    return LSSW
+    return LSSW * parameters.ratio_LSIW_LSSW # TODO : changer mode de calcul car rapport non stable suivant numéro de phytomère
 
 
-def calculate_init_internode_elongation(sum_TT, phytomer_rank):
+def calculate_init_internode_elongation(teq_since_primordium):
     """Initialize internode elongation.
 
     :Parameters:
-        - `sum_TT` (:class:`float`) - SAM cumul of temperature (degree day-1)
-        - `phytomer_rank` (:class:`int`) - Rank of the phytomer.
+        - `teq_since_primordium` (:class:`float`) - Time since last primordium intiation (in time equivalent to a reference temperature) (s)
     :Returns:
         Specifies if the internode has started the elongation (True) or not (False), and initialize internode_L
     :Returns Type:
         :class:`bool`, :class:`float`
     """
 
-    phytomer_thermal_age = sum_TT - phytomer_rank * parameters.PLASTOCHRONE
-
-    if phytomer_thermal_age > parameters.nb_PLASTO_internode_init * parameters.PLASTOCHRONE:
+    if teq_since_primordium > parameters.nb_PLASTO_internode_init * parameters.PLASTOCHRONE:
         is_growing = True
         internode_L = parameters.internode_L_init
     else:
@@ -512,7 +501,7 @@ def calculate_init_internode_elongation(sum_TT, phytomer_rank):
     return is_growing, internode_L
 
 
-def calculate_delta_internode_L_preL(internode_rank, sucrose, internode_L, amino_acids, mstruct, normalized_temperature_effect, delta_t):
+def calculate_delta_internode_L_preL(internode_rank, sucrose, internode_L, amino_acids, mstruct, delta_teq):
     """ delta of internode length over delta_t as a function of sucrose and amino acids, from initiation to the ligulation of the previous leaf.
 
     :Parameters:
@@ -521,7 +510,7 @@ def calculate_delta_internode_L_preL(internode_rank, sucrose, internode_L, amino
         - `internode_L` (:class:`float`) - Total internode length (m)
         - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
         - `mstruct` (:class:`float`) - Structural mass of the hidden zone(g)
-        - `normalized_temperature_effect` (:class:`float`) - response of physiological process to temperature normalized by the physiolocal response at a reference temperature (dimensionless)
+        - `delta_teq` (:class:`float`) - Temperature-consensated time = time duration at a reference temperature (s)
     :Returns:
         delta delta_internode_L (m)
     :Returns Type:
@@ -530,22 +519,22 @@ def calculate_delta_internode_L_preL(internode_rank, sucrose, internode_L, amino
     RER_max = parameters.RERmax
     # RER_max = parameters.RERmax_dict[internode_rank]
     if sucrose > 0 and amino_acids > 0:
-        delta_internode_L = internode_L * RER_max * normalized_temperature_effect * delta_t * ((sucrose / mstruct) /
-                                                                                               (parameters.Kc + (sucrose / mstruct))) * (((amino_acids / mstruct) ** 3) /
-                                                                                                                                         (parameters.Kn ** 3 + (amino_acids / mstruct) ** 3))
+        delta_internode_L = internode_L * RER_max * delta_teq * ((sucrose / mstruct) /
+                                                                 (parameters.Kc + (sucrose / mstruct))) * (((amino_acids / mstruct) ** 3) /
+                                                                                                           (parameters.Kn ** 3 + (amino_acids / mstruct) ** 3))
     else:
         delta_internode_L = 0
 
     return delta_internode_L
 
 
-def calculate_internode_pseudo_age(internode_pseudo_age, sucrose, amino_acids, normalized_temperature_effect,  delta_t):
+def calculate_internode_pseudo_age(internode_pseudo_age, sucrose, amino_acids,  delta_teq):
     """ Pseudo age of the internode since beginning of automate elongation (s)
     :Parameters:
         - `internode_pseudo_age` (:class:`float`) - Pseudo age of the leaf since beginning of automate elongation (s)
         - `sucrose` (:class:`float`) - Amount of sucrose (µmol C)
         - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
-        - `normalized_temperature_effect` (:class:`float`) - response of physiological process to temperature normalized by the physiolocal response at a reference temperature (dimensionless)
+        - `delta_teq` (:class:`float`) - Temperature-consensated time = time duration at a reference temperature (s)
     :Returns:
         internode_pseudo_age (s)
     :Returns Type:
@@ -553,7 +542,7 @@ def calculate_internode_pseudo_age(internode_pseudo_age, sucrose, amino_acids, n
     """
     delta_pseudo_age = 0
     if sucrose > 0 and amino_acids > 0:
-        delta_pseudo_age = normalized_temperature_effect * delta_t
+        delta_pseudo_age = delta_teq
     return internode_pseudo_age + delta_pseudo_age
 
 
