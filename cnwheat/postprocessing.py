@@ -526,7 +526,7 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
 
     # hidden zones
     if hiddenzones_df is not None:
-        pp_hiddenzones_df = pd.concat([hiddenzones_df, pd.DataFrame(columns=HIDDENZONE_POSTPROCESSING_VARIABLES)])
+        pp_hiddenzones_df = pd.concat([hiddenzones_df, pd.DataFrame(columns=HIDDENZONE_POSTPROCESSING_VARIABLES)], sort=True)
         pp_hiddenzones_df.loc[:, 'Conc_Amino_Acids'] = HiddenZone.calculate_Conc_Amino_Acids(hiddenzones_df['amino_acids'], hiddenzones_df['mstruct'])
         pp_hiddenzones_df.loc[:, 'Conc_Fructan'] = HiddenZone.calculate_conc_fructan(hiddenzones_df['fructan'], hiddenzones_df['mstruct'])
         pp_hiddenzones_df.loc[:, 'Conc_Proteins'] = HiddenZone.calculate_conc_protein(hiddenzones_df['proteins'], hiddenzones_df['mstruct'])
@@ -540,7 +540,7 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
 
     # organs
     if organs_df is not None:
-        pp_organs_df = pd.concat([organs_df, pd.DataFrame(columns=ORGANS_POSTPROCESSING_VARIABLES)])
+        pp_organs_df = pd.concat([organs_df, pd.DataFrame(columns=ORGANS_POSTPROCESSING_VARIABLES)], sort=True)
         # roots
         roots_df = organs_df.loc[organs_df.organ == 'roots']
         pp_organs_df.loc[pp_organs_df.organ == 'roots', 'Conc_Nitrates'] = Roots.calculate_Conc_Nitrates(roots_df['nitrates'], roots_df['mstruct'])
@@ -570,7 +570,7 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
 
     # elements
     if elements_df is not None:
-        pp_elements_df = pd.concat([elements_df, pd.DataFrame(columns=ELEMENTS_POSTPROCESSING_VARIABLES)])
+        pp_elements_df = pd.concat([elements_df, pd.DataFrame(columns=ELEMENTS_POSTPROCESSING_VARIABLES)], sort=True)
         pp_elements_df.loc[:, 'Conc_TriosesP'] = Element.calculate_conc_triosesP(elements_df['triosesP'], elements_df['mstruct'])
         pp_elements_df.loc[:, 'Conc_Starch'] = Element.calculate_conc_starch(elements_df['starch'], elements_df['mstruct'])
         pp_elements_df.loc[:, 'Conc_Sucrose'] = Element.calculate_conc_sucrose(elements_df['sucrose'], elements_df['mstruct'])

@@ -87,7 +87,7 @@ def force_senescence_and_photosynthesis(t, population, senescence_roots_data_gro
             for axis in plant.axes:
                 # Root growth and senescence
                 group = senescence_roots_data_grouped.get_group((t, plant.index, axis.label))
-                senescence_data_to_use = group.loc[group.first_valid_index(), cnwheat_simulation.Simulation.ORGANS_STATE].dropna().to_dict()
+                senescence_data_to_use = group.loc[group.first_valid_index(), group.columns.intersection(cnwheat_simulation.Simulation.ORGANS_STATE)].dropna().to_dict()
                 axis.roots.__dict__.update(senescence_data_to_use)
                 for phytomer in axis.phytomers:
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
@@ -98,11 +98,11 @@ def force_senescence_and_photosynthesis(t, population, senescence_roots_data_gro
                                 continue
                             # Element senescence
                             group_senesc = senescence_elements_data_grouped.get_group((t, plant.index, axis.label, phytomer.index, organ.label, element.label))
-                            senescence_data_to_use = group_senesc.loc[group_senesc.first_valid_index(), cnwheat_simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
+                            senescence_data_to_use = group_senesc.loc[group_senesc.first_valid_index(), group_senesc.columns.intersection(cnwheat_simulation.Simulation.ELEMENTS_STATE)].dropna().to_dict()
                             element.__dict__.update(senescence_data_to_use)
                             # Element photosynthesis
                             group_photo = photosynthesis_elements_data_grouped.get_group((t, plant.index, axis.label, phytomer.index, organ.label, element.label))
-                            photosynthesis_elements_data_to_use = group_photo.loc[group_photo.first_valid_index(), cnwheat_simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
+                            photosynthesis_elements_data_to_use = group_photo.loc[group_photo.first_valid_index(), group_photo.columns.intersection(cnwheat_simulation.Simulation.ELEMENTS_STATE)].dropna().to_dict()
                             element.__dict__.update(photosynthesis_elements_data_to_use)
 
 

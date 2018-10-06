@@ -63,11 +63,11 @@ class Population(object):
             plants = []
         self.plants = plants  #: the list of plants
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the population recursively.
         """
         for plant in self.plants:
-            plant.calculate_integrative_variables()
+            plant.calculate_aggregated_variables()
 
 
 class Plant(object):
@@ -85,11 +85,11 @@ class Plant(object):
             axes = []
         self.axes = axes  #: the list of axes
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the plant recursively.
         """
         for axis in self.axes:
-            axis.calculate_integrative_variables()
+            axis.calculate_aggregated_variables()
 
 
 class Axis(object):
@@ -117,20 +117,20 @@ class Axis(object):
         # integrative variables
         self.Total_Transpiration = None  #: the total transpiration (mmol s-1)
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the axis recursively.
         """
         self.mstruct = 0
         if self.roots is not None:
-            self.roots.calculate_integrative_variables()
+            self.roots.calculate_aggregated_variables()
             self.mstruct += self.roots.mstruct
         if self.phloem is not None:
-            self.phloem.calculate_integrative_variables()
+            self.phloem.calculate_aggregated_variables()
         if self.grains is not None:
-            self.grains.calculate_integrative_variables()
+            self.grains.calculate_aggregated_variables()
             self.mstruct += self.grains.structural_dry_mass
         for phytomer in self.phytomers:
-            phytomer.calculate_integrative_variables()
+            phytomer.calculate_aggregated_variables()
             self.mstruct += phytomer.mstruct
 
 
@@ -157,13 +157,13 @@ class Phytomer(object):
         self.hiddenzone = hiddenzone  #: the hidden zone
         self.mstruct = None  #: the structural mass of the phytomer (g)
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the phytomer recursively.
         """
         self.mstruct = 0
         for organ_ in (self.chaff, self.peduncle, self.lamina, self.internode, self.sheath, self.hiddenzone):
             if organ_ is not None:
-                organ_.calculate_integrative_variables()
+                organ_.calculate_aggregated_variables()
                 self.mstruct += organ_.mstruct
 
 
@@ -182,7 +182,7 @@ class Organ(object):
         """
         pass
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the organ recursively.
         """
         pass
@@ -676,7 +676,7 @@ class Roots(Organ):
         self.HATS_LATS = None                  #: Nitrate influx (:math:`\mu mol` N)
         self.sum_respi = None                  #: Sum of respirations for roots i.e. related to N uptake, amino acids synthesis and residual (:math:`\mu mol` C)
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         self.Total_Organic_Nitrogen = self.calculate_Total_Organic_Nitrogen(self.amino_acids, self.Nstruct)
 
     # VARIABLES
@@ -980,11 +980,11 @@ class PhotosyntheticOrgan(Organ):
         self.enclosed_element = enclosed_element  #: the enclosed element
         self.mstruct = None                       #: the structural dry mass
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         self.mstruct = 0
         for element in (self.exposed_element, self.enclosed_element):
             if element is not None:
-                element.calculate_integrative_variables()
+                element.calculate_aggregated_variables()
                 self.mstruct += element.mstruct
 
 
@@ -1112,7 +1112,7 @@ class PhotosyntheticOrganElement(object):
         self.Photosynthesis = None          #: Total Photosynthesis of an element integrated over a delta t (:math:`\mu mol` C)
         self.sum_respi = None               #: Sum of respirations for the element i.e. related to C loading to phloem, amino acids synthesis and residual (:math:`\mu mol` C)
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the element.
         """
         self.Total_Organic_Nitrogen = self.calculate_Total_Organic_Nitrogen(self.amino_acids, self.proteins, self.Nstruct)

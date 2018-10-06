@@ -443,7 +443,7 @@ Please set a `photosynthesis_forcings_delta_t` that is at least equal to `delta_
             self.new_forcings_values = {} #: new values of the forcings
             self.interpolation_functions = {} #: functions to interpolate the forcings
         
-        self.nfe_total = 0 #: cumulative number of RHS function evaluations
+        self.nfev_total = 0 #: cumulative number of RHS function evaluations
 
     def initialize(self, population, soils):
         """
@@ -613,7 +613,7 @@ Please set a `photosynthesis_forcings_delta_t` that is at least equal to `delta_
                                 continue
                             i = _init_initial_conditions(element, i)
 
-        self.population.calculate_integrative_variables()
+        self.population.calculate_aggregated_variables()
 
         logger.info('Initialization of the simulation DONE')
 
@@ -647,6 +647,8 @@ Please set a `photosynthesis_forcings_delta_t` that is at least equal to `delta_
         sol = solve_ivp(fun=self._calculate_all_derivatives, t_span=self.time_grid, y0=self.initial_conditions, 
                         method='BDF', t_eval=np.array([self.time_step]), dense_output=False)
 
+        self.nfev_total += sol.nfev
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Run of the solver DONE")
 
@@ -657,7 +659,7 @@ Please set a `photosynthesis_forcings_delta_t` that is at least equal to `delta_
             raise SimulationRunError(message)
         
         # Re-compute integrative variables
-        self.population.calculate_integrative_variables()
+        self.population.calculate_aggregated_variables()
         
         if logger.isEnabledFor(logging.DEBUG):
             self.t_offset += self.time_step
@@ -823,8 +825,6 @@ Please set a `photosynthesis_forcings_delta_t` that is at least equal to `delta_
         if logger.isEnabledFor(logging.DEBUG):
             t_abs = t + self.t_offset
             logger.debug('t = {}'.format(t_abs))
-        
-        self.nfe_total += 1
 
         if self.interpolate_forcings:
             # Update state parameters using interpolation functions
@@ -845,7 +845,7 @@ Please set a `photosynthesis_forcings_delta_t` that is at least equal to `delta_
                                         setattr(element, forcing_label, float(self.interpolation_functions[element_id][forcing_label](t)))
             
             # Compute integrative variables
-            self.population.calculate_integrative_variables()
+            self.population.calculate_aggregated_variables()
         
         compartments_logger = logging.getLogger('cnwheat.compartments')
         if logger.isEnabledFor(logging.DEBUG) and compartments_logger.isEnabledFor(logging.DEBUG):
