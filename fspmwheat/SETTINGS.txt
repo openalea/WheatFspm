@@ -1,20 +1,43 @@
-** ----------
-** GROWTH-WHEATH
-** ----------
+METEO : 12°c et photopériode mi octobre
 
-** ROOTS
+** ---- ELONG-WHEATH
 
-- calculate_roots_mstruct_growth : mstruct_C_growth * 1
+** Leaves
+- calculate_deltaL_preE : Kn = 200// ^3
+- RER fixe par phytomère
 
-** ----------
-** CN-WHEATH
-** ----------
+** ---- GROWTH-WHEATH
+
+** Roots
+- calculate_roots_mstruct_growth : mstruct_C_growth * 1.55
+
+** ---- CN-WHEATH
+
+** Blades
+- calculate_D_Proteins : k_proteins = f(cyto) 
+- calculate_S_proteins : Vmax * 2 car on a trop de AA ds les blades (avant 3)
 
 ** HZ
+- calculate_S_proteins * 3 
+- calculate_D_Proteins : 2.5e-7 
 
-- calculate_S_proteins * 8
+** Roots
+- calculate_Export_Nitrates : PARAMETERS.K_NITRATE_EXPORT * 8 (avant 10)
+- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING = 0.03 * 1.5
 
-** ROOTS
+-----------------------------------------------------------------------------------
+A CORRIGER :
 
-- calculate_Export_Nitrates : PARAMETERS.K_NITRATE_EXPORT *5
-- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING = 0.03*5
+- On a bcp trop C => Tallage
+- masse N / mstruct augmente ! Réduire le Export_Nitrate
+- Triose P parfois négatifs => Trop de nitrates.
+Je ne comprends pas comment cela se produit avec le code existant.
+
+-----------------------------------------------------------------------------------
+TARGETS
+
+Après 500h simulations à 12°c :
+- 2.5% N dans shoot et 1.5% ds roots
+- Shoot/Root = 3.2
+- Shoot = *16
+(en réalité ces valeurs sont uniquement une fois début allongement des EN)
