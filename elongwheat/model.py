@@ -213,14 +213,17 @@ def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_teq, leaf
     :Returns Type:
         :class:`float`
     """
-    # RER_max = parameters.RERmax_dict[leaf_rank]
-    # delta_leaf_L = leaf_L * RER_max * delta_teq
-    RER_max = parameters.RERmax
+    RER_max = parameters.RERmax_dict[leaf_rank]
     if sucrose > 0 and amino_acids > 0:
-        delta_leaf_L = leaf_L * RER_max * delta_teq * ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * \
-                       (((amino_acids / mstruct) ** 3) / (parameters.Kn ** 3 + (amino_acids / mstruct) ** 3))
+        delta_leaf_L = leaf_L * RER_max * delta_teq
     else:
         delta_leaf_L = 0
+    # RER_max = parameters.RERmax
+    # if sucrose > 0 and amino_acids > 0:
+    #     delta_leaf_L = leaf_L * RER_max * delta_teq * ((sucrose / mstruct) / (parameters.Kc + (sucrose / mstruct))) * \
+    #                    (((amino_acids / mstruct) ** 3) / (parameters.Kn ** 3 + (amino_acids / mstruct) ** 3))
+    # else:
+    #     delta_leaf_L = 0
 
     return delta_leaf_L
 

@@ -44,12 +44,13 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # --- Leaves
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_dict = {3: 4.1E-06, 4: 4.1E-06, 5: 4.1E-06, 6: 4.1E-06, 7: 3.6E-06, 8: 3.3E-06, 9: 3.2E-06, 10: 2.9E-06, 11: 2.75E-06}
+RERmax_dict = { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 }
+#{3: 4.1E-06, 4: 4.1E-06, 5: 4.1E-06, 6: 4.1E-06, 7: 3.6E-06, 8: 3.3E-06, 9: 3.2E-06, 10: 2.9E-06, 11: 2.75E-06}
 #{5 : 0.009/3600, 6 : 0.009/3600, 7: 0.0088/3600, 8: 0.00875/3600, 9: 0.00875/3600, 10: 0.0086/3600, 11: 0.008/3600} # RB 2013
 # Ljutovac 2002 RER (s-1 at 12°C :  { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 }
-RERmax = 2.8E-06  #: s-1 at 12°C # 5.56e-06 Ljutovac 2002 # 4e-06 Anne # 2.43E-06 RB v1
-Kc = 145.6  # 350 #: affinity coefficient of RER to C (µmol g-1)
-Kn = 16.64  # 40  #: affinity coefficient of RER to C N (µmol g-1)
+RERmax = 2.8E-06 #: s-1 at 12°C # 5.56e-06 Ljutovac 2002 # 4e-06 Anne # 2.43E-06 RB v1
+Kc = 145.6 # 350 #: affinity coefficient of RER to C (µmol g-1)
+Kn = 200 #16.64  # 40  #: affinity coefficient of RER to C N (µmol g-1)
 
 # Automate elongation
 te = 300 * 3600 * 24 / 12 #: end of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
