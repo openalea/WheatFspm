@@ -338,14 +338,14 @@ class Simulation(object):
                                       model.Axis: 'cnwheat.compartments.axes',
                                       model.Phytomer: 'cnwheat.compartments.phytomers',
                                       model.Organ: 'cnwheat.compartments.organs',
-                                      model.HiddenZone: 'cnwheat.compartments.HiddenZone',
+                                      model.HiddenZone: 'cnwheat.compartments.hiddenzones',
                                       model.PhotosyntheticOrganElement: 'cnwheat.compartments.elements',
                                       model.Soil: 'cnwheat.compartments.soils'},
                      'derivatives': {model.Plant: 'cnwheat.derivatives.plants',
                                      model.Axis: 'cnwheat.derivatives.axes',
                                      model.Phytomer: 'cnwheat.derivatives.phytomers',
                                      model.Organ: 'cnwheat.derivatives.organs',
-                                     model.HiddenZone: 'cnwheat.derivatives.HiddenZone',
+                                     model.HiddenZone: 'cnwheat.derivatives.hiddenzones',
                                      model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements',
                                      model.Soil: 'cnwheat.derivatives.soils'}}
 
@@ -391,6 +391,8 @@ class Simulation(object):
                 phytomers_compartments_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.PHYTOMERS_STATE))
                 organs_compartments_logger = logging.getLogger('cnwheat.compartments.organs')
                 organs_compartments_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.ORGANS_STATE))
+                hiddenzones_compartments_logger = logging.getLogger('cnwheat.compartments.hiddenzones')
+                hiddenzones_compartments_logger.debug(sep.join(Simulation.HIDDENZONE_T_INDEXES + Simulation.HIDDENZONE_STATE))
                 elements_compartments_logger = logging.getLogger('cnwheat.compartments.elements')
                 elements_compartments_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.ELEMENTS_STATE))
                 soils_compartments_logger = logging.getLogger('cnwheat.compartments.soils')
@@ -404,6 +406,8 @@ class Simulation(object):
                 phytomers_derivatives_logger.debug(sep.join(Simulation.PHYTOMERS_T_INDEXES + Simulation.PHYTOMERS_STATE))
                 organs_derivatives_logger = logging.getLogger('cnwheat.derivatives.organs')
                 organs_derivatives_logger.debug(sep.join(Simulation.ORGANS_T_INDEXES + Simulation.ORGANS_STATE))
+                hiddenzones_derivatives_logger = logging.getLogger('cnwheat.derivatives.hiddenzones')
+                hiddenzones_derivatives_logger.debug(sep.join(Simulation.HIDDENZONE_T_INDEXES + Simulation.HIDDENZONE_STATE))
                 elements_derivatives_logger = logging.getLogger('cnwheat.derivatives.elements')
                 elements_derivatives_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.ELEMENTS_STATE))
                 soils_derivatives_logger = logging.getLogger('cnwheat.derivatives.soils')
@@ -734,7 +738,9 @@ Please set a `photosynthesis_forcings_delta_t` that is at least equal to `delta_
             """
             row = []
             class_ = model_object.__class__
-            if issubclass(class_, model.Organ):
+            if issubclass(class_, model.HiddenZone):
+                class_ = model.HiddenZone
+            elif issubclass(class_, model.Organ):
                 class_ = model.Organ
             elif issubclass(class_, model.PhotosyntheticOrganElement):
                 class_ = model.PhotosyntheticOrganElement
@@ -770,8 +776,11 @@ Please set a `photosynthesis_forcings_delta_t` that is at least equal to `delta_
                     i = update_rows(organ, [t, plant.index, axis.label, organ.label], all_rows[model.Organ], i)
                 for phytomer in axis.phytomers:
                     i = update_rows(phytomer, [t, plant.index, axis.label, phytomer.index], all_rows[model.Phytomer], i)
-                    for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
+                    for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath, phytomer.hiddenzone):
                         if organ is None:
+                            continue
+                        if organ is phytomer.hiddenzone:
+                            i = update_rows(organ, [t, plant.index, axis.label, phytomer.index], all_rows[model.HiddenZone], i)
                             continue
                         for element in (organ.exposed_element, organ.enclosed_element):
                             if element is None:

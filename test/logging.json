@@ -197,7 +197,7 @@
                 "organs_compartments_file"
             ]
         },
-        "cnwheat.compartments.HiddenZone": {
+        "cnwheat.compartments.hiddenzones": {
             "handlers": [
                 "hiddenzones_compartments_file"
             ]
@@ -235,7 +235,7 @@
                 "organs_derivatives_file"
             ]
         },
-        "cnwheat.derivatives.HiddenZone": {
+        "cnwheat.derivatives.hiddenzones": {
             "handlers": [
                 "hiddenzones_derivatives_file"
             ]

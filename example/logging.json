@@ -69,10 +69,10 @@
             "mode": "w",
             "formatter": "simple"
         },
-        "HiddenZone_compartments_file": {
+        "hiddenzones_compartments_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/HiddenZone_compartments.csv",
+            "filename": "logs/hiddenzones_compartments.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -132,10 +132,10 @@
             "mode": "w",
             "formatter": "simple"
         },
-        "HiddenZone_derivatives_file": {
+        "hiddenzones_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/HiddenZone_derivatives.csv",
+            "filename": "logs/hiddenzones_derivatives.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -197,9 +197,9 @@
                 "organs_compartments_file"
             ]
         },
-        "cnwheat.compartments.HiddenZone": {
+        "cnwheat.compartments.hiddenzones": {
             "handlers": [
-                "HiddenZone_compartments_file"
+                "hiddenzones_compartments_file"
             ]
         },        
         "cnwheat.compartments.elements": {
@@ -235,9 +235,9 @@
                 "organs_derivatives_file"
             ]
         },
-        "cnwheat.derivatives.HiddenZone": {
+        "cnwheat.derivatives.hiddenzones": {
             "handlers": [
-                "HiddenZone_derivatives_file"
+                "hiddenzones_derivatives_file"
             ]
         },        
         "cnwheat.derivatives.elements": {
