@@ -154,6 +154,13 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                 new_start_time = forced_start_time + 1
                 last_t_step =  forced_start_time
 
+                axes_previous_outputs = axes_previous_outputs[axes_previous_outputs.t <= forced_start_time]
+                organs_previous_outputs = organs_previous_outputs[organs_previous_outputs.t <= forced_start_time]
+                hiddenzones_previous_outputs = hiddenzones_previous_outputs[hiddenzones_previous_outputs.t <= forced_start_time]
+                elements_previous_outputs = elements_previous_outputs[elements_previous_outputs.t <= forced_start_time]
+                SAM_previous_outputs = SAM_previous_outputs[SAM_previous_outputs.t <= forced_start_time]
+                soils_previous_outputs = soils_previous_outputs[soils_previous_outputs.t <= forced_start_time]
+
             else :
                 last_t_step = max(hiddenzones_previous_outputs['t'])
                 new_start_time = last_t_step + 1
@@ -329,7 +336,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
                                     # run CNWheat
                                     print('t cnwheat is {}'.format(t_cnwheat))
-                                    # cnwheat_facade_.run() # TODO : Uniquement pour les talles
+                                    cnwheat_facade_.run() # TODO : Uniquement pour les talles
 
                                 # append the inputs and outputs at current step to global lists
                                 all_simulation_steps.append(t_cnwheat)
@@ -531,4 +538,4 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 
 if __name__ == '__main__':
-    main(1200, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True)
+    main(400, forced_start_time= 0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
