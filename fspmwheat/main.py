@@ -1,8 +1,5 @@
 # -*- coding: latin-1 -*-
 
-import sys
-sys.path.insert(0, "C:/Users/mngauthier/Documents/Marion_These/Modeles/fspm-wheat/trunk/fspmwheat")
-
 import datetime
 import logging
 import os
@@ -13,8 +10,6 @@ import warnings
 import numpy as np
 import pandas as pd
 
-os.chdir("C:/Users/mngauthier/Documents/Marion_These/Modeles/fspm-wheat/trunk/fspmwheat")
-
 import caribu_facade
 import cnwheat_facade
 import elongwheat_facade
@@ -23,6 +18,7 @@ import growthwheat_facade
 import senescwheat_facade
 
 from alinea.adel.adel_dynamic import AdelWheatDyn
+
 
 """
     main
@@ -66,7 +62,7 @@ ORGANS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'organs_inputs.csv')
 HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
 ELEMENTS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'elements_inputs.csv')
 SOILS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'soils_inputs.csv')
-METEO_FILEPATH = os.path.join(INPUTS_DIRPATH, 'meteo_test.csv')
+METEO_FILEPATH = os.path.join(INPUTS_DIRPATH, 'meteo_Ljutovac2002.csv')
 
 # the path of the CSV files where to save the states of the modeled system at each step
 OUTPUTS_DIRPATH = 'outputs'
@@ -118,11 +114,9 @@ LOGGING_CONFIG_FILEPATH = os.path.join('..', '..', 'logging.json')
 LOGGING_LEVEL = logging.INFO  # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 
-def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False):
+def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False):
     if run_simu:
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
-
-        current_time_of_the_system = time.time()
 
         # define the time step in hours for each simulator
         caribu_ts = 4
@@ -156,8 +150,13 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
             soils_previous_outputs = pd.read_csv(SOILS_STATES_FILEPATH)
 
             assert 't' in hiddenzones_previous_outputs.columns
-            last_t_step = max(hiddenzones_previous_outputs['t'])
-            new_start_time = last_t_step + 1
+            if forced_start_time > 0 :
+                new_start_time = forced_start_time + 1
+                last_t_step =  forced_start_time
+
+            else :
+                last_t_step = max(hiddenzones_previous_outputs['t'])
+                new_start_time = last_t_step + 1
 
             organs_inputs_t0 = organs_previous_outputs[organs_previous_outputs.t == last_t_step].drop(['t'], axis=1)
             hiddenzones_inputs_t0 = hiddenzones_previous_outputs[hiddenzones_previous_outputs.t == last_t_step].drop(['t'], axis=1)
@@ -330,7 +329,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
                                     # run CNWheat
                                     print('t cnwheat is {}'.format(t_cnwheat))
-                                    cnwheat_facade_.run()
+                                    # cnwheat_facade_.run() # TODO : Uniquement pour les talles
 
                                 # append the inputs and outputs at current step to global lists
                                 all_simulation_steps.append(t_cnwheat)
@@ -345,35 +344,35 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         print ('\n' 'Simulation run in {}'.format(str(datetime.timedelta(seconds=execution_time))))
 
         # convert list of outputs into dataframs
-        all_axes_inputs_outputs = pd.concat(axes_all_data_list, keys=all_simulation_steps)
+        all_axes_inputs_outputs = pd.concat(axes_all_data_list, keys=all_simulation_steps,sort=False)
         all_axes_inputs_outputs.reset_index(0, inplace=True)
         all_axes_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
         all_axes_inputs_outputs = all_axes_inputs_outputs.reindex(AXES_INDEX_COLUMNS+all_axes_inputs_outputs.columns.difference(AXES_INDEX_COLUMNS).tolist(), axis=1, copy=False)
 
-        all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps)
+        all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps,sort=False)
         all_organs_inputs_outputs.reset_index(0, inplace=True)
         all_organs_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
         all_organs_inputs_outputs = all_organs_inputs_outputs.reindex(ORGANS_INDEX_COLUMNS+all_organs_inputs_outputs.columns.difference(ORGANS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
 
-        all_hiddenzones_inputs_outputs = pd.concat(hiddenzones_all_data_list, keys=all_simulation_steps)
+        all_hiddenzones_inputs_outputs = pd.concat(hiddenzones_all_data_list, keys=all_simulation_steps,sort=False)
         all_hiddenzones_inputs_outputs.reset_index(0, inplace=True)
         all_hiddenzones_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
         all_hiddenzones_inputs_outputs = all_hiddenzones_inputs_outputs.reindex(HIDDENZONES_INDEX_COLUMNS+all_hiddenzones_inputs_outputs.columns.difference(HIDDENZONES_INDEX_COLUMNS).tolist(), axis=1,
                                                                                 copy=False)
 
-        all_SAM_inputs_outputs = pd.concat(SAM_all_data_list, keys=all_simulation_steps)
+        all_SAM_inputs_outputs = pd.concat(SAM_all_data_list, keys=all_simulation_steps,sort=False)
         all_SAM_inputs_outputs.reset_index(0, inplace=True)
         all_SAM_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
         all_SAM_inputs_outputs = all_SAM_inputs_outputs.reindex(SAM_INDEX_COLUMNS+all_SAM_inputs_outputs.columns.difference(SAM_INDEX_COLUMNS).tolist(), axis=1, copy=False)
 
-        all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
+        all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps,sort=False)
         all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) &  # TODO: temporary ; to remove when there will be default input values for each element in the mtg
                                                                       (all_elements_inputs_outputs.axis == 'MS')]
         all_elements_inputs_outputs.reset_index(0, inplace=True)
         all_elements_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
         all_elements_inputs_outputs = all_elements_inputs_outputs.reindex(ELEMENTS_INDEX_COLUMNS+all_elements_inputs_outputs.columns.difference(ELEMENTS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
 
-        all_soils_inputs_outputs = pd.concat(soils_all_data_list, keys=all_simulation_steps)
+        all_soils_inputs_outputs = pd.concat(soils_all_data_list, keys=all_simulation_steps,sort=False)
         all_soils_inputs_outputs.reset_index(0, inplace=True)
         all_soils_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
         all_soils_inputs_outputs = all_soils_inputs_outputs.reindex(SOILS_INDEX_COLUMNS+all_soils_inputs_outputs.columns.difference(SOILS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
@@ -391,9 +390,7 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
         save_df_to_csv(all_organs_inputs_outputs, ORGANS_STATES_FILEPATH)
         save_df_to_csv(all_hiddenzones_inputs_outputs, HIDDENZONES_STATES_FILEPATH)
         save_df_to_csv(all_SAM_inputs_outputs, SAM_STATES_FILEPATH)
-        all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
         save_df_to_csv(all_elements_inputs_outputs, ELEMENTS_STATES_FILEPATH)
-        all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
         save_df_to_csv(all_soils_inputs_outputs, SOILS_STATES_FILEPATH)
 
     if run_postprocessing:
@@ -534,4 +531,4 @@ def main(stop_time, run_simu=True, run_postprocessing=True, generate_graphs=True
 
 
 if __name__ == '__main__':
-    main(400, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True)
+    main(1200, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True)
