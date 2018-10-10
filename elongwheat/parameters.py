@@ -116,6 +116,8 @@ class HiddenZoneInit(object):
         self.internode_is_visible = False
         self.leaf_pseudo_age = 0
         self.internode_pseudo_age = 0
+        self.delta_leaf_pseudo_age = 0
+        self.delta_internode_pseudo_age = 0
 
         # Default values used for RER calculation in elong wheat
         self.sucrose = 5E-6                      #: µmol C
