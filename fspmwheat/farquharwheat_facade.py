@@ -116,7 +116,7 @@ class FarquharWheatFacade(object):
                 for farquharwheat_SAM_input_name in converter.FARQUHARWHEAT_SAMS_INPUTS:
                     farquharwheat_SAM_inputs_dict[farquharwheat_SAM_input_name] = self._shared_mtg.get_vertex_property(mtg_axis_vid)['SAM'].get(farquharwheat_SAM_input_name)
 
-                height_element_list = []
+                height_element_list = [0.]
 
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
