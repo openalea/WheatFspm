@@ -29,17 +29,27 @@ import pandas as pd
 #: the inputs needed by SenescWheat at roots scale
 SENESCWHEAT_ROOTS_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'cytokinins']
 
+#: the inputs needed by SenescWheat at SAM scale
+SENESCWHEAT_SAM_INPUTS = ['delta_teq']
+
 #: the inputs needed by SenescWheat at element scale
-SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'proteins', 'mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan', 'cytokinins', 'sucrose', 'is_growing']
+SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'senesced_length','length', 'proteins', 'mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan', 'cytokinins', 'sucrose', \
+                              'is_growing']
 
 #: the outputs computed by SenescWheat at roots scale
 SENESCWHEAT_ROOTS_OUTPUTS = ['rate_mstruct_death', 'mstruct', 'Nstruct', 'cytokinins']
 
+#: the outputs computed by SenescWheat at roots scale
+SENESCWHEAT_SAM_OUTPUTS = []
+
 #: the outputs computed by SenescWheat at elements scale
-SENESCWHEAT_ELEMENTS_OUTPUTS = ['green_area', 'mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinins']
+SENESCWHEAT_ELEMENTS_OUTPUTS = ['senesced_length','green_area', 'mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinins']
 
 #: the inputs and outputs of SenescWheat at roots scale
 SENESCWHEAT_ROOTS_INPUTS_OUTPUTS = sorted(list(set(SENESCWHEAT_ROOTS_INPUTS + SENESCWHEAT_ROOTS_OUTPUTS)))
+
+#: the inputs and outputs of SenescWheat at SAM scale
+SENESCWHEAT_SAM_INPUTS_OUTPUTS = sorted(list(set(SENESCWHEAT_SAM_INPUTS + SENESCWHEAT_SAM_OUTPUTS)))
 
 #: the inputs and outputs of SenescWheat at elements scale
 SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS = sorted(list(set(SENESCWHEAT_ELEMENTS_INPUTS + SENESCWHEAT_ELEMENTS_OUTPUTS)))
@@ -47,11 +57,14 @@ SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS = sorted(list(set(SENESCWHEAT_ELEMENTS_INPUT
 #: the columns which define the topology of a roots in the input/output dataframe
 ROOTS_TOPOLOGY_COLUMNS = ['plant', 'axis']
 
+#: the columns which define the topology of a roots in the input/output dataframe
+SAM_TOPOLOGY_COLUMNS = ['plant', 'axis']
+
 #: the columns which define the topology of an element in the input/output dataframe
 ELEMENTS_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ', 'element']
 
 
-def from_dataframes(roots_inputs, elements_inputs):
+def from_dataframes(roots_inputs, SAM_inputs, elements_inputs):
     """
     Convert inputs/outputs from Pandas dataframes to Senesc-Wheat format.
 
@@ -72,8 +85,10 @@ def from_dataframes(roots_inputs, elements_inputs):
 
     """
     all_roots_dict = {}
+    all_SAM_dict = {}
     all_elements_dict = {}
     for (all_current_dict, current_dataframe, current_topology_columns) in ((all_roots_dict, roots_inputs, ROOTS_TOPOLOGY_COLUMNS),
+                                                                            (all_SAM_dict, SAM_inputs, SAM_TOPOLOGY_COLUMNS),
                                                                             (all_elements_dict, elements_inputs, ELEMENTS_TOPOLOGY_COLUMNS)):
         current_columns = current_dataframe.columns.difference(current_topology_columns)
         for current_id, current_group in current_dataframe.groupby(current_topology_columns):
@@ -81,7 +96,7 @@ def from_dataframes(roots_inputs, elements_inputs):
             current_dict = current_series[current_columns].to_dict()
             all_current_dict[current_id] = current_dict
 
-    return {'roots': all_roots_dict, 'elements': all_elements_dict}
+    return {'roots': all_roots_dict, 'SAM': all_SAM_dict, 'elements': all_elements_dict}
 
 
 def to_dataframes(data_dict):
