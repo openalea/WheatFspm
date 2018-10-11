@@ -193,10 +193,13 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                                                                                        [i for i in senescwheat_facade.converter.SENESCWHEAT_ROOTS_INPUTS if i in
                                                                                                                         organs_inputs_t0.columns] ]
         senescwheat_elements_inputs_t0 = elements_inputs_t0[senescwheat_facade.converter.ELEMENTS_TOPOLOGY_COLUMNS + [i for i in senescwheat_facade.converter.SENESCWHEAT_ELEMENTS_INPUTS if i in
-                                                                                                                     elements_inputs_t0.columns]]
+                                                                                                                      elements_inputs_t0.columns]]
+        senescwheat_SAM_inputs_t0 = SAM_inputs_t0[senescwheat_facade.converter.SAM_TOPOLOGY_COLUMNS + [i for i in senescwheat_facade.converter.SENESCWHEAT_SAM_INPUTS if i in
+                                                                                                            SAM_inputs_t0.columns]]
         senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
                                                                    senescwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                    senescwheat_roots_inputs_t0,
+                                                                   senescwheat_SAM_inputs_t0,
                                                                    senescwheat_elements_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
                                                                    shared_elements_inputs_outputs_df)
@@ -336,7 +339,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
                                     # run CNWheat
                                     print('t cnwheat is {}'.format(t_cnwheat))
-                                    cnwheat_facade_.run() # TODO : Uniquement pour les talles
+                                    cnwheat_facade_.run()
 
                                 # append the inputs and outputs at current step to global lists
                                 all_simulation_steps.append(t_cnwheat)
@@ -386,12 +389,12 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
         # write all inputs and outputs to CSV files
         if run_from_outputs:
-            all_axes_inputs_outputs = pd.concat([axes_previous_outputs,all_axes_inputs_outputs])
-            all_organs_inputs_outputs = pd.concat([organs_previous_outputs,all_organs_inputs_outputs])
-            all_hiddenzones_inputs_outputs = pd.concat([hiddenzones_previous_outputs,all_hiddenzones_inputs_outputs])
-            all_SAM_inputs_outputs = pd.concat([SAM_previous_outputs,all_SAM_inputs_outputs])
-            all_elements_inputs_outputs = pd.concat([elements_previous_outputs,all_elements_inputs_outputs])
-            all_soils_inputs_outputs = pd.concat([soils_previous_outputs,all_soils_inputs_outputs])
+            all_axes_inputs_outputs = pd.concat([axes_previous_outputs,all_axes_inputs_outputs], sort=False)
+            all_organs_inputs_outputs = pd.concat([organs_previous_outputs,all_organs_inputs_outputs], sort=False)
+            all_hiddenzones_inputs_outputs = pd.concat([hiddenzones_previous_outputs,all_hiddenzones_inputs_outputs], sort=False)
+            all_SAM_inputs_outputs = pd.concat([SAM_previous_outputs,all_SAM_inputs_outputs], sort=False)
+            all_elements_inputs_outputs = pd.concat([elements_previous_outputs,all_elements_inputs_outputs], sort=False)
+            all_soils_inputs_outputs = pd.concat([soils_previous_outputs,all_soils_inputs_outputs], sort=False)
 
         save_df_to_csv(all_axes_inputs_outputs, AXES_STATES_FILEPATH)
         save_df_to_csv(all_organs_inputs_outputs, ORGANS_STATES_FILEPATH)
@@ -538,4 +541,4 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 
 if __name__ == '__main__':
-    main(400, forced_start_time= 0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
+    main(400, forced_start_time=290, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True)

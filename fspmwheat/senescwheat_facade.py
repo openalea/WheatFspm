@@ -33,6 +33,9 @@ import tools
 PHOTOSYNTHETIC_ORGANS_NAMES = {'internode', 'blade', 'sheath', 'peduncle', 'ear'}
 
 #: the columns which define the topology in the organs scale dataframe shared between all models
+SHARED_AXES_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
+
+#: the columns which define the topology in the organs scale dataframe shared between all models
 SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'organ']
 
 #: the columns which define the topology in the elements scale dataframe shared between all models
@@ -60,6 +63,7 @@ class SenescWheatFacade(object):
 
     def __init__(self, shared_mtg, delta_t,
                  model_roots_inputs_df,
+                 model_SAM_inputs_df,
                  model_elements_inputs_df,
                  shared_organs_inputs_outputs_df,
                  shared_elements_inputs_outputs_df):
@@ -68,7 +72,7 @@ class SenescWheatFacade(object):
 
         self._simulation = simulation.Simulation(delta_t=delta_t)  #: the simulator to use to run the model
 
-        all_senescwheat_inputs_dict = converter.from_dataframes(model_roots_inputs_df, model_elements_inputs_df)
+        all_senescwheat_inputs_dict = converter.from_dataframes(model_roots_inputs_df, model_SAM_inputs_df, model_elements_inputs_df)
         self._update_shared_MTG(all_senescwheat_inputs_dict['roots'], all_senescwheat_inputs_dict['elements'])
 
         self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df  #: the dataframe at organs scale shared between all models
@@ -90,6 +94,7 @@ class SenescWheatFacade(object):
         Initialize the inputs of the model from the MTG shared between all models.
         """
         all_senescwheat_roots_inputs_dict = {}
+        all_senescwheat_SAM_inputs_dict = {}
         all_senescwheat_elements_inputs_dict = {}
 
         # traverse the MTG recursively from top ...
@@ -106,7 +111,13 @@ class SenescWheatFacade(object):
                         for senescwheat_roots_input_name in converter.SENESCWHEAT_ROOTS_INPUTS:
                             senescwheat_roots_inputs_dict[senescwheat_roots_input_name] = mtg_roots_properties[senescwheat_roots_input_name]
                         all_senescwheat_roots_inputs_dict[roots_id] = senescwheat_roots_inputs_dict
-
+                if 'SAM' in mtg_axis_properties:
+                    mtg_SAM_properties = mtg_axis_properties['SAM']
+                    if set(mtg_SAM_properties).issuperset(converter.SENESCWHEAT_SAM_INPUTS):
+                        senescwheat_SAM_inputs_dict = {}
+                        for senescwheat_SAM_input_name in converter.SENESCWHEAT_SAM_INPUTS:
+                            senescwheat_SAM_inputs_dict[senescwheat_SAM_input_name] = mtg_SAM_properties[senescwheat_SAM_input_name]
+                        all_senescwheat_SAM_inputs_dict[roots_id] = senescwheat_SAM_inputs_dict
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
@@ -133,7 +144,7 @@ class SenescWheatFacade(object):
                                         senescwheat_element_inputs_dict[senescwheat_element_input_name] = SENESCWHEAT_ELEMENT_PROPERTIES_TEMP[senescwheat_element_input_name]
                                 all_senescwheat_elements_inputs_dict[element_id] = senescwheat_element_inputs_dict
 
-        self._simulation.initialize({'roots': all_senescwheat_roots_inputs_dict, 'elements': all_senescwheat_elements_inputs_dict})
+        self._simulation.initialize({'roots': all_senescwheat_roots_inputs_dict, 'SAM': all_senescwheat_SAM_inputs_dict, 'elements': all_senescwheat_elements_inputs_dict})
 
     def _update_shared_MTG(self, senescwheat_roots_data_dict, senescwheat_elements_data_dict):
         """
@@ -163,6 +174,7 @@ class SenescWheatFacade(object):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
+                        senesced_length_organ = 0. # Temporaire
                         if mtg_organ_label not in PHOTOSYNTHETIC_ORGANS_NAMES: continue
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
@@ -172,6 +184,11 @@ class SenescWheatFacade(object):
                             senescwheat_element_data_dict = senescwheat_elements_data_dict[element_id]
                             for senescwheat_element_data_name, senescwheat_element_data_value in senescwheat_element_data_dict.items():
                                 self._shared_mtg.property(senescwheat_element_data_name)[mtg_element_vid] = senescwheat_element_data_value
+                                # Temporaire : avant de trouver une solution pour piloter la senescence des feuilles par green_area plutot que par senesced_length
+                                if senescwheat_element_data_name == 'senesced_length':
+                                    senesced_length_organ += self._shared_mtg.property(senescwheat_element_data_name)[mtg_element_vid]
+                        self._shared_mtg.property('senesced_length')[mtg_organ_vid] = senesced_length_organ
+
 
     def _update_shared_dataframes(self, senescwheat_roots_data_df, senescwheat_elements_data_df):
         """
