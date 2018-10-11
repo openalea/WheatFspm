@@ -6,8 +6,8 @@
 
     An example to show how to run the model CN-Wheat, compute the post-processing, and generate the plots for validation.
 
-    You must first install :mod:`cnwheat` (and add it to your PYTHONPATH)
-    before running this script with the command `python`.
+    Before running this script, you must first install model CN-Wheat (see `README.md` at the root directory of the project).
+    Then, you can run this script with the command `python`.
 
     :copyright: Copyright 2014-2017 INRA-ECOSYS, see AUTHORS.
     :license: CeCILL-C, see LICENSE for details.
