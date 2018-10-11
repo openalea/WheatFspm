@@ -18,7 +18,7 @@
         "file_info": {
             "level": "INFO",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_info.log",
+            "filename": "simulation_logging/logs/actual_info.log",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -27,7 +27,7 @@
         "file_debug": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_debug.log",
+            "filename": "simulation_logging/logs/actual_debug.log",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -36,7 +36,7 @@
         "plants_compartments_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_plants_compartments.csv",
+            "filename": "simulation_logging/logs/actual_plants_compartments.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -45,7 +45,7 @@
         "axes_compartments_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_axes_compartments.csv",
+            "filename": "simulation_logging/logs/actual_axes_compartments.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -54,7 +54,7 @@
         "phytomers_compartments_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_phytomers_compartments.csv",
+            "filename": "simulation_logging/logs/actual_phytomers_compartments.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -63,7 +63,7 @@
         "organs_compartments_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_organs_compartments.csv",
+            "filename": "simulation_logging/logs/actual_organs_compartments.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -72,7 +72,7 @@
         "hiddenzones_compartments_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_hiddenzones_compartments.csv",
+            "filename": "simulation_logging/logs/actual_hiddenzones_compartments.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -81,7 +81,7 @@
         "elements_compartments_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_elements_compartments.csv",
+            "filename": "simulation_logging/logs/actual_elements_compartments.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -90,7 +90,7 @@
         "soils_compartments_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_soils_compartments.csv",
+            "filename": "simulation_logging/logs/actual_soils_compartments.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -99,7 +99,7 @@
         "plants_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_plants_derivatives.csv",
+            "filename": "simulation_logging/logs/actual_plants_derivatives.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -108,7 +108,7 @@
         "axes_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_axes_derivatives.csv",
+            "filename": "simulation_logging/logs/actual_axes_derivatives.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -117,7 +117,7 @@
         "phytomers_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_phytomers_derivatives.csv",
+            "filename": "simulation_logging/logs/actual_phytomers_derivatives.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -126,7 +126,7 @@
         "organs_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_organs_derivatives.csv",
+            "filename": "simulation_logging/logs/actual_organs_derivatives.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -135,7 +135,7 @@
         "hiddenzones_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_hiddenzones_derivatives.csv",
+            "filename": "simulation_logging/logs/actual_hiddenzones_derivatives.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -144,7 +144,7 @@
         "elements_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_elements_derivatives.csv",
+            "filename": "simulation_logging/logs/actual_elements_derivatives.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",
@@ -153,7 +153,7 @@
         "soils_derivatives_file": {
             "level": "DEBUG",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "logs/actual_soils_derivatives.csv",
+            "filename": "simulation_logging/logs/actual_soils_derivatives.csv",
             "maxBytes": 10485760,
             "backupCount": 20,
             "mode": "w",

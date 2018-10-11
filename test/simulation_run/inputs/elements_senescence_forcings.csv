@@ -1,0 +1,15 @@
+t,plant,axis,metamer,organ,element,Nstruct,green_area,mstruct
+0,1,MS,1,blade,LeafElement1,0.00054,0.000294284,0.018
+0,1,MS,1,sheath,StemElement,0.0003,0.000174251,0.01
+0,1,MS,2,blade,LeafElement1,0.0006,0.00028853,0.02
+0,1,MS,2,sheath,StemElement,0.00036,1.26E-06,0.012
+0,1,MS,3,blade,LeafElement1,0.00066,0.000229007,0.022
+0,1,MS,3,sheath,StemElement,0.00042,4.06E-06,0.014
+0,1,MS,4,blade,LeafElement1,5.26E-08,5.92E-08,1.63E-06
+1,1,MS,1,blade,LeafElement1,0.00054,0.000294284,0.018
+1,1,MS,1,sheath,StemElement,0.0003,0.000174251,0.01
+1,1,MS,2,blade,LeafElement1,0.0006,0.00028853,0.02
+1,1,MS,2,sheath,StemElement,0.00036,1.26E-06,0.012
+1,1,MS,3,blade,LeafElement1,0.00066,0.000229007,0.022
+1,1,MS,3,sheath,StemElement,0.00042,4.06E-06,0.014
+1,1,MS,4,blade,LeafElement1,2.13E-07,2.39E-07,6.61E-06

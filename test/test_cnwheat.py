@@ -3,7 +3,12 @@
     test_cnwheat
     ~~~~~~~~~~~~
 
-    Test the model CN-Wheat, the postprocessing and the graphs generation.
+    Test:
+
+        * the run of a simulation with/without interpolation of the forcings,
+        * the logging,
+        * the postprocessing,
+        * and the graphs generation.
 
     You must first install model CN-Wheat before running this script with the command `python`. See `README.md` at the
     root directory of the project.
@@ -41,111 +46,6 @@ from respiwheat import model as respiwheat_model
 from cnwheat import simulation as cnwheat_simulation, converter as cnwheat_converter, \
     tools as cnwheat_tools, postprocessing as cnwheat_postprocessing
 
-###############################################
-####### CONFIGURATION OF THE SIMULATION #######
-###############################################
-
-### INPUTS CONFIGURATION ###
-
-# Path of the directory which contains the inputs of the model
-INPUTS_DIRPATH = 'inputs'
-
-# Name of the CSV files which describe the initial state of the system
-ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv'
-HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv'
-ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv'
-SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv'
-
-# Name of the CSV files which contain the photosynthesis and senescence forcings
-ELEMENTS_PHOTOSYNTHESIS_FORCINGS_FILENAME = 'elements_photosynthesis_forcings.csv'
-ROOTS_SENESCENCE_FORCINGS_FILENAME = 'roots_senescence_forcings.csv'
-ELEMENTS_SENESCENCE_FORCINGS_FILENAME = 'elements_senescence_forcings.csv'
-
-
-### OUTPUTS CONFIGURATION ###
-
-# Path of the directory where to write the outputs of the model
-OUTPUTS_DIRPATH = 'outputs'
-
-# desired outputs filenames
-DESIRED_AXES_OUTPUTS_FILENAME = 'desired_axes_outputs.csv'
-DESIRED_ORGANS_OUTPUTS_FILENAME = 'desired_organs_outputs.csv'
-DESIRED_HIDDENZONES_OUTPUTS_FILENAME = 'desired_hiddenzones_outputs.csv'
-DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
-DESIRED_SOILS_OUTPUTS_FILENAME = 'desired_soils_outputs.csv'
-
-# actual outputs filenames
-ACTUAL_AXES_OUTPUTS_FILENAME = 'actual_axes_outputs.csv'
-ACTUAL_ORGANS_OUTPUTS_FILENAME = 'actual_organs_outputs.csv'
-ACTUAL_HIDDENZONES_OUTPUTS_FILENAME = 'actual_hiddenzones_outputs.csv'
-ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
-ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
-
-# desired compartments log filenames
-DESIRED_AXES_COMPARTMENTS_FILENAME = 'desired_axes_compartments.csv'
-DESIRED_ORGANS_COMPARTMENTS_FILENAME = 'desired_organs_compartments.csv'
-DESIRED_HIDDENZONES_COMPARTMENTS_FILENAME = 'desired_hiddenzones_compartments.csv'
-DESIRED_ELEMENTS_COMPARTMENTS_FILENAME = 'desired_elements_compartments.csv'
-DESIRED_SOILS_COMPARTMENTS_FILENAME = 'desired_soils_compartments.csv'
-
-# actual compartments log filenames
-ACTUAL_AXES_COMPARTMENTS_FILENAME = 'actual_axes_compartments.csv'
-ACTUAL_ORGANS_COMPARTMENTS_FILENAME = 'actual_organs_compartments.csv'
-ACTUAL_HIDDENZONES_COMPARTMENTS_FILENAME = 'actual_hiddenzones_compartments.csv'
-ACTUAL_ELEMENTS_COMPARTMENTS_FILENAME = 'actual_elements_compartments.csv'
-ACTUAL_SOILS_COMPARTMENTS_FILENAME = 'actual_soils_compartments.csv'
-
-# desired derivatives log filenames
-DESIRED_AXES_DERIVATIVES_FILENAME = 'desired_axes_derivatives.csv'
-DESIRED_ORGANS_DERIVATIVES_FILENAME = 'desired_organs_derivatives.csv'
-DESIRED_HIDDENZONES_DERIVATIVES_FILENAME = 'desired_hiddenzones_derivatives.csv'
-DESIRED_ELEMENTS_DERIVATIVES_FILENAME = 'desired_elements_derivatives.csv'
-DESIRED_SOILS_DERIVATIVES_FILENAME = 'desired_soils_derivatives.csv'
-
-# actual derivatives log filenames
-ACTUAL_AXES_DERIVATIVES_FILENAME = 'actual_axes_derivatives.csv'
-ACTUAL_ORGANS_DERIVATIVES_FILENAME = 'actual_organs_derivatives.csv'
-ACTUAL_HIDDENZONES_DERIVATIVES_FILENAME = 'actual_hiddenzones_derivatives.csv'
-ACTUAL_ELEMENTS_DERIVATIVES_FILENAME = 'actual_elements_derivatives.csv'
-ACTUAL_SOILS_DERIVATIVES_FILENAME = 'actual_soils_derivatives.csv'
-
-### POSTPROCESSING CONFIGURATION ###
-
-# Path of the directory where to write the postprocessing of the model
-POSTPROCESSING_DIRPATH = 'postprocessing'
-
-# desired postprocessing file names
-DESIRED_AXES_POSTPROCESSING_FILENAME = 'desired_axes_postprocessing.csv'
-DESIRED_ORGANS_POSTPROCESSING_FILENAME = 'desired_organs_postprocessing.csv'
-DESIRED_HIDDENZONES_POSTPROCESSING_FILENAME = 'desired_hiddenzones_postprocessing.csv'
-DESIRED_ELEMENTS_POSTPROCESSING_FILENAME = 'desired_elements_postprocessing.csv'
-DESIRED_SOILS_POSTPROCESSING_FILENAME = 'desired_soils_postprocessing.csv'
-
-# actual postprocessing file names
-ACTUAL_AXES_POSTPROCESSING_FILENAME = 'actual_axes_postprocessing.csv'
-ACTUAL_ORGANS_POSTPROCESSING_FILENAME = 'actual_organs_postprocessing.csv'
-ACTUAL_HIDDENZONES_POSTPROCESSING_FILENAME = 'actual_hiddenzones_postprocessing.csv'
-ACTUAL_ELEMENTS_POSTPROCESSING_FILENAME = 'actual_elements_postprocessing.csv'
-ACTUAL_SOILS_POSTPROCESSING_FILENAME = 'actual_soils_postprocessing.csv'
-
-### GRAPHS CONFIGURATION ###
-
-# Path of the directory where to save the generated graphs
-GRAPHS_DIRPATH = 'graphs'
-
-### SIMULATION PARAMETERS ###
-
-# Start time of the simulation
-START_TIME = 0
-
-# Length of the simulation (in hours)
-SIMULATION_LENGTH = 2
-
-# Time step of the simulation (in hours)
-TIME_STEP = 1
-
-# Culm density (culm m-2)
-CULM_DENSITY = {1:410}
 
 # Number of seconds in 1 hour
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
@@ -155,12 +55,6 @@ OUTPUTS_PRECISION = 6
 
 # the precision to use for quantitative comparison test
 PRECISION = 4
-
-# Config file path for logging
-LOGGING_CONFIG_FILEPATH = 'logging.json'
-
-# Path of the directory where to write the logs files
-LOGS_DIR = 'logs'
 
 
 def force_senescence_and_photosynthesis(t, population, senescence_roots_data_grouped, senescence_elements_data_grouped,
@@ -196,8 +90,39 @@ def force_senescence_and_photosynthesis(t, population, senescence_roots_data_gro
                         element.__dict__.update(photosynthesis_elements_data_to_use)
 
 
-def test_run():
-    """Test the run of the model, without interpolation."""
+def test_simulation_run():
+    """Test the run of a simulation, without interpolation of the forcings."""
+
+    TEST_DIR_PATH = 'simulation_run'
+
+    # Inputs of the test
+    INPUTS_DIRPATH = os.path.join(TEST_DIR_PATH, 'inputs')
+    ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv'
+    HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv'
+    ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv'
+    SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv'
+    ELEMENTS_PHOTOSYNTHESIS_FORCINGS_FILENAME = 'elements_photosynthesis_forcings.csv'
+    ROOTS_SENESCENCE_FORCINGS_FILENAME = 'roots_senescence_forcings.csv'
+    ELEMENTS_SENESCENCE_FORCINGS_FILENAME = 'elements_senescence_forcings.csv'
+
+    # Outputs of the test
+    OUTPUTS_DIRPATH = os.path.join(TEST_DIR_PATH, 'outputs')
+    DESIRED_AXES_OUTPUTS_FILENAME = 'desired_axes_outputs.csv'
+    DESIRED_ORGANS_OUTPUTS_FILENAME = 'desired_organs_outputs.csv'
+    DESIRED_HIDDENZONES_OUTPUTS_FILENAME = 'desired_hiddenzones_outputs.csv'
+    DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
+    DESIRED_SOILS_OUTPUTS_FILENAME = 'desired_soils_outputs.csv'
+    ACTUAL_AXES_OUTPUTS_FILENAME = 'actual_axes_outputs.csv'
+    ACTUAL_ORGANS_OUTPUTS_FILENAME = 'actual_organs_outputs.csv'
+    ACTUAL_HIDDENZONES_OUTPUTS_FILENAME = 'actual_hiddenzones_outputs.csv'
+    ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
+    ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
+
+    # Simulation parameters
+    START_TIME = 0
+    SIMULATION_LENGTH = 2
+    TIME_STEP = 1
+    CULM_DENSITY = {1: 410}
 
     time_step_seconds = TIME_STEP * HOUR_TO_SECOND_CONVERSION_FACTOR
 
@@ -292,8 +217,39 @@ def test_run():
                                                 actual_outputs_filename, precision=PRECISION)
 
 
-def test_run_interp():
-    """Test the run of the model, with ."""
+def test_simulation_run_with_interpolation():
+    """Test the run of a simulation, with interpolation of the forcings."""
+
+    TEST_DIR_PATH = 'simulation_run_with_interpolation'
+
+    # Inputs of the test
+    INPUTS_DIRPATH = os.path.join(TEST_DIR_PATH, 'inputs')
+    ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv'
+    HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv'
+    ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv'
+    SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv'
+    ELEMENTS_PHOTOSYNTHESIS_FORCINGS_FILENAME = 'elements_photosynthesis_forcings.csv'
+    ROOTS_SENESCENCE_FORCINGS_FILENAME = 'roots_senescence_forcings.csv'
+    ELEMENTS_SENESCENCE_FORCINGS_FILENAME = 'elements_senescence_forcings.csv'
+
+    # Outputs of the test
+    OUTPUTS_DIRPATH = os.path.join(TEST_DIR_PATH, 'outputs')
+    DESIRED_AXES_OUTPUTS_FILENAME = 'desired_axes_outputs.csv'
+    DESIRED_ORGANS_OUTPUTS_FILENAME = 'desired_organs_outputs.csv'
+    DESIRED_HIDDENZONES_OUTPUTS_FILENAME = 'desired_hiddenzones_outputs.csv'
+    DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
+    DESIRED_SOILS_OUTPUTS_FILENAME = 'desired_soils_outputs.csv'
+    ACTUAL_AXES_OUTPUTS_FILENAME = 'actual_axes_outputs.csv'
+    ACTUAL_ORGANS_OUTPUTS_FILENAME = 'actual_organs_outputs.csv'
+    ACTUAL_HIDDENZONES_OUTPUTS_FILENAME = 'actual_hiddenzones_outputs.csv'
+    ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
+    ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
+
+    # Simulation parameters
+    START_TIME = 0
+    SIMULATION_LENGTH = 2
+    TIME_STEP = 1
+    CULM_DENSITY = {1: 410}
 
     time_step_seconds = TIME_STEP * HOUR_TO_SECOND_CONVERSION_FACTOR
 
@@ -371,8 +327,6 @@ def test_run_interp():
 
     # compare actual to desired outputs at each scale level (an exception is raised if the test failed)
 
-    outputs_dirpath_interp = OUTPUTS_DIRPATH + '_interp'
-
     for (outputs_df_list,
          desired_outputs_filename,
          actual_outputs_filename,
@@ -390,17 +344,61 @@ def test_run_interp():
                  cnwheat_simulation.Simulation.SOILS_T_INDEXES + cnwheat_simulation.Simulation.SOILS_STATE)):
         outputs_df = pd.concat(outputs_df_list, ignore_index=True)
         outputs_df = outputs_df.loc[:, state_variables_names]  # compare only the values of the compartments
-        cnwheat_tools.compare_actual_to_desired(outputs_dirpath_interp, outputs_df, desired_outputs_filename,
+        cnwheat_tools.compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, desired_outputs_filename,
                                                 actual_outputs_filename, precision=PRECISION)
 
 
-def test_log():
-    """Test the logging of the model."""
+def test_simulation_logging():
+    """Test the logging of a simulation."""
+
+    TEST_DIR_PATH = 'simulation_logging'
+
+    # Inputs of the test
+    INPUTS_DIRPATH = os.path.join(TEST_DIR_PATH, 'inputs')
+    ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv'
+    HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv'
+    ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv'
+    SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv'
+    ELEMENTS_PHOTOSYNTHESIS_FORCINGS_FILENAME = 'elements_photosynthesis_forcings.csv'
+    ROOTS_SENESCENCE_FORCINGS_FILENAME = 'roots_senescence_forcings.csv'
+    ELEMENTS_SENESCENCE_FORCINGS_FILENAME = 'elements_senescence_forcings.csv'
+
+    # Outputs of the test
+    LOGS_DIRPATH = os.path.join(TEST_DIR_PATH, 'logs')
+    DESIRED_AXES_COMPARTMENTS_FILENAME = 'desired_axes_compartments.csv'
+    DESIRED_ORGANS_COMPARTMENTS_FILENAME = 'desired_organs_compartments.csv'
+    DESIRED_HIDDENZONES_COMPARTMENTS_FILENAME = 'desired_hiddenzones_compartments.csv'
+    DESIRED_ELEMENTS_COMPARTMENTS_FILENAME = 'desired_elements_compartments.csv'
+    DESIRED_SOILS_COMPARTMENTS_FILENAME = 'desired_soils_compartments.csv'
+    DESIRED_AXES_DERIVATIVES_FILENAME = 'desired_axes_derivatives.csv'
+    DESIRED_ORGANS_DERIVATIVES_FILENAME = 'desired_organs_derivatives.csv'
+    DESIRED_HIDDENZONES_DERIVATIVES_FILENAME = 'desired_hiddenzones_derivatives.csv'
+    DESIRED_ELEMENTS_DERIVATIVES_FILENAME = 'desired_elements_derivatives.csv'
+    DESIRED_SOILS_DERIVATIVES_FILENAME = 'desired_soils_derivatives.csv'
+    ACTUAL_AXES_COMPARTMENTS_FILENAME = 'actual_axes_compartments.csv'
+    ACTUAL_ORGANS_COMPARTMENTS_FILENAME = 'actual_organs_compartments.csv'
+    ACTUAL_HIDDENZONES_COMPARTMENTS_FILENAME = 'actual_hiddenzones_compartments.csv'
+    ACTUAL_ELEMENTS_COMPARTMENTS_FILENAME = 'actual_elements_compartments.csv'
+    ACTUAL_SOILS_COMPARTMENTS_FILENAME = 'actual_soils_compartments.csv'
+    ACTUAL_AXES_DERIVATIVES_FILENAME = 'actual_axes_derivatives.csv'
+    ACTUAL_ORGANS_DERIVATIVES_FILENAME = 'actual_organs_derivatives.csv'
+    ACTUAL_HIDDENZONES_DERIVATIVES_FILENAME = 'actual_hiddenzones_derivatives.csv'
+    ACTUAL_ELEMENTS_DERIVATIVES_FILENAME = 'actual_elements_derivatives.csv'
+    ACTUAL_SOILS_DERIVATIVES_FILENAME = 'actual_soils_derivatives.csv'
+
+    # Config file path for logging
+    LOGGING_CONFIG_FILEPATH = os.path.join(TEST_DIR_PATH, 'logging.json')
+
+    # Simulation parameters
+    START_TIME = 0
+    SIMULATION_LENGTH = 2
+    TIME_STEP = 1
+    CULM_DENSITY = {1: 410}
 
     time_step_seconds = TIME_STEP * HOUR_TO_SECOND_CONVERSION_FACTOR
 
     # Remove actual logs files
-    for logs_file in glob.glob(os.path.join(LOGS_DIR, "actual*.csv")):
+    for logs_file in glob.glob(os.path.join(LOGS_DIRPATH, "actual*.csv")):
         os.remove(logs_file)
 
     # Setup the logging (without removing the desired logs since we need them for the comparison test)
@@ -486,10 +484,10 @@ def test_log():
                 (DESIRED_ELEMENTS_COMPARTMENTS_FILENAME, ACTUAL_ELEMENTS_COMPARTMENTS_FILENAME),
                 (DESIRED_SOILS_COMPARTMENTS_FILENAME, ACTUAL_SOILS_COMPARTMENTS_FILENAME)):
         try:
-            actual_compartments_df = pd.read_csv(os.path.join('logs', actual_compartments_filename))
+            actual_compartments_df = pd.read_csv(os.path.join(LOGS_DIRPATH, actual_compartments_filename))
         except pd.errors.EmptyDataError:
             continue # This file is empty: ignore it.
-        cnwheat_tools.compare_actual_to_desired('logs', actual_compartments_df, desired_compartments_filename, precision=PRECISION)
+        cnwheat_tools.compare_actual_to_desired(LOGS_DIRPATH, actual_compartments_df, desired_compartments_filename, precision=PRECISION)
     # Derivatives logs
     for (desired_derivatives_filename,
          actual_derivatives_filename) \
@@ -499,24 +497,47 @@ def test_log():
                 (DESIRED_ELEMENTS_DERIVATIVES_FILENAME, ACTUAL_ELEMENTS_DERIVATIVES_FILENAME),
                 (DESIRED_SOILS_DERIVATIVES_FILENAME, ACTUAL_SOILS_DERIVATIVES_FILENAME)):
         try:
-            actual_derivatives_df = pd.read_csv(os.path.join('logs', actual_derivatives_filename))
+            actual_derivatives_df = pd.read_csv(os.path.join(LOGS_DIRPATH, actual_derivatives_filename))
         except pd.errors.EmptyDataError:
             continue # This file is empty: ignore it.
-        cnwheat_tools.compare_actual_to_desired('logs', actual_derivatives_df, desired_derivatives_filename,
+        cnwheat_tools.compare_actual_to_desired(LOGS_DIRPATH, actual_derivatives_df, desired_derivatives_filename,
                                                 precision=PRECISION)
 
 def test_postprocessing():
     """Test the postprocessing."""
 
+    TEST_DIR_PATH = 'postprocessing'
+
+    # Inputs of the test
+    OUTPUTS_DIRPATH = os.path.join(TEST_DIR_PATH, 'outputs')
+    AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
+    ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
+    HIDDENZONES_OUTPUTS_FILENAME = 'hiddenzones_outputs.csv'
+    ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
+    SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
+
+    # Outputs of the test
+    POSTPROCESSING_DIRPATH = os.path.join(TEST_DIR_PATH, 'postprocessing')
+    DESIRED_AXES_POSTPROCESSING_FILENAME = 'desired_axes_postprocessing.csv'
+    DESIRED_ORGANS_POSTPROCESSING_FILENAME = 'desired_organs_postprocessing.csv'
+    DESIRED_HIDDENZONES_POSTPROCESSING_FILENAME = 'desired_hiddenzones_postprocessing.csv'
+    DESIRED_ELEMENTS_POSTPROCESSING_FILENAME = 'desired_elements_postprocessing.csv'
+    DESIRED_SOILS_POSTPROCESSING_FILENAME = 'desired_soils_postprocessing.csv'
+    ACTUAL_AXES_POSTPROCESSING_FILENAME = 'actual_axes_postprocessing.csv'
+    ACTUAL_ORGANS_POSTPROCESSING_FILENAME = 'actual_organs_postprocessing.csv'
+    ACTUAL_HIDDENZONES_POSTPROCESSING_FILENAME = 'actual_hiddenzones_postprocessing.csv'
+    ACTUAL_ELEMENTS_POSTPROCESSING_FILENAME = 'actual_elements_postprocessing.csv'
+    ACTUAL_SOILS_POSTPROCESSING_FILENAME = 'actual_soils_postprocessing.csv'
+
     # Retrieve outputs dataframes
     outputs_df_dict = {}
 
-    for outputs_filename in (DESIRED_AXES_OUTPUTS_FILENAME,
-                             DESIRED_ORGANS_OUTPUTS_FILENAME,
-                             DESIRED_HIDDENZONES_OUTPUTS_FILENAME,
-                             DESIRED_ELEMENTS_OUTPUTS_FILENAME,
-                             DESIRED_SOILS_OUTPUTS_FILENAME):
-        outputs_filepath = os.path.join(POSTPROCESSING_DIRPATH, outputs_filename)
+    for outputs_filename in (AXES_OUTPUTS_FILENAME,
+                             ORGANS_OUTPUTS_FILENAME,
+                             HIDDENZONES_OUTPUTS_FILENAME,
+                             ELEMENTS_OUTPUTS_FILENAME,
+                             SOILS_OUTPUTS_FILENAME):
+        outputs_filepath = os.path.join(OUTPUTS_DIRPATH, outputs_filename)
         outputs_df = pd.read_csv(outputs_filepath)
         outputs_file_basename = outputs_filename.split('.')[0]
         outputs_df_dict[outputs_file_basename] = outputs_df
@@ -538,11 +559,11 @@ def test_postprocessing():
      postprocessing_df_dict[organs_postprocessing_file_basename],
      postprocessing_df_dict[elements_postprocessing_file_basename],
      postprocessing_df_dict[soils_postprocessing_file_basename]) \
-        = cnwheat_postprocessing.postprocessing(axes_df=outputs_df_dict[DESIRED_AXES_OUTPUTS_FILENAME.split('.')[0]],
-                                                  hiddenzones_df=outputs_df_dict[DESIRED_HIDDENZONES_OUTPUTS_FILENAME.split('.')[0]],
-                                                  organs_df=outputs_df_dict[DESIRED_ORGANS_OUTPUTS_FILENAME.split('.')[0]],
-                                                  elements_df=outputs_df_dict[DESIRED_ELEMENTS_OUTPUTS_FILENAME.split('.')[0]],
-                                                  soils_df=outputs_df_dict[DESIRED_SOILS_OUTPUTS_FILENAME.split('.')[0]],
+        = cnwheat_postprocessing.postprocessing(axes_df=outputs_df_dict[AXES_OUTPUTS_FILENAME.split('.')[0]],
+                                                  hiddenzones_df=outputs_df_dict[HIDDENZONES_OUTPUTS_FILENAME.split('.')[0]],
+                                                  organs_df=outputs_df_dict[ORGANS_OUTPUTS_FILENAME.split('.')[0]],
+                                                  elements_df=outputs_df_dict[ELEMENTS_OUTPUTS_FILENAME.split('.')[0]],
+                                                  soils_df=outputs_df_dict[SOILS_OUTPUTS_FILENAME.split('.')[0]],
                                                   delta_t=delta_t)
 
     # Write the postprocessing to CSV files
@@ -576,35 +597,46 @@ def test_postprocessing():
                                                 actual_postprocessing_filename, precision=PRECISION)
 
 
-def test_graph():
-    """Test the graph generation."""
+def test_graphs_generation():
+    """Test the graphs generation."""
+
+    TEST_DIR_PATH = 'graphs_generation'
+
+    # Inputs of the test
+    POSTPROCESSING_DIRPATH = os.path.join(TEST_DIR_PATH, 'postprocessing')
+    AXES_POSTPROCESSING_FILENAME = 'axes_postprocessing.csv'
+    ORGANS_POSTPROCESSING_FILENAME = 'organs_postprocessing.csv'
+    HIDDENZONES_POSTPROCESSING_FILENAME = 'hiddenzones_postprocessing.csv'
+    ELEMENTS_POSTPROCESSING_FILENAME = 'elements_postprocessing.csv'
+    SOILS_POSTPROCESSING_FILENAME = 'soils_postprocessing.csv'
+
+    # Outputs of the test
+    GRAPHS_DIRPATH = os.path.join(TEST_DIR_PATH, 'graphs')
 
     # Retrieve post-processing dataframes
-
     postprocessing_df_dict = {}
 
-    for postprocessing_filename in (DESIRED_ORGANS_POSTPROCESSING_FILENAME,
-                                    DESIRED_HIDDENZONES_POSTPROCESSING_FILENAME,
-                                    DESIRED_ELEMENTS_POSTPROCESSING_FILENAME,
-                                    DESIRED_SOILS_POSTPROCESSING_FILENAME):
+    for postprocessing_filename in (ORGANS_POSTPROCESSING_FILENAME,
+                                    HIDDENZONES_POSTPROCESSING_FILENAME,
+                                    ELEMENTS_POSTPROCESSING_FILENAME,
+                                    SOILS_POSTPROCESSING_FILENAME):
 
-        postprocessing_filepath = os.path.join(GRAPHS_DIRPATH, postprocessing_filename)
+        postprocessing_filepath = os.path.join(POSTPROCESSING_DIRPATH, postprocessing_filename)
         postprocessing_df = pd.read_csv(postprocessing_filepath)
         postprocessing_file_basename = postprocessing_filename.split('.')[0]
         postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
 
     # Generate graphs for validation
-
-    cnwheat_postprocessing.generate_graphs(hiddenzones_df=postprocessing_df_dict[DESIRED_HIDDENZONES_POSTPROCESSING_FILENAME.split('.')[0]],
-                                            organs_df=postprocessing_df_dict[DESIRED_ORGANS_POSTPROCESSING_FILENAME.split('.')[0]],
-                                            elements_df=postprocessing_df_dict[DESIRED_ELEMENTS_POSTPROCESSING_FILENAME.split('.')[0]],
-                                            soils_df=postprocessing_df_dict[DESIRED_SOILS_POSTPROCESSING_FILENAME.split('.')[0]],
+    cnwheat_postprocessing.generate_graphs(hiddenzones_df=postprocessing_df_dict[HIDDENZONES_POSTPROCESSING_FILENAME.split('.')[0]],
+                                            organs_df=postprocessing_df_dict[ORGANS_POSTPROCESSING_FILENAME.split('.')[0]],
+                                            elements_df=postprocessing_df_dict[ELEMENTS_POSTPROCESSING_FILENAME.split('.')[0]],
+                                            soils_df=postprocessing_df_dict[SOILS_POSTPROCESSING_FILENAME.split('.')[0]],
                                             graphs_dirpath=GRAPHS_DIRPATH)
 
 
 if __name__ == '__main__':
-    test_run()
-    test_run_interp()
-    test_log()
+    test_simulation_run()
+    test_simulation_run_with_interpolation()
+    test_simulation_logging()
     test_postprocessing()
-    test_graph()
+    test_graphs_generation()
