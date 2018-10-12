@@ -34,6 +34,8 @@ LEAF_LABELS = ['blade', 'sheath']
 EMERGED_GROWING_ORGAN_LABELS = ['StemElement', 'LeafElement1']
 ELEMENT_LABELS = ['StemElement', 'LeafElement1', 'HiddenElement']
 
+SHARED_SAM_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
+
 SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'organ']
 
 SHARED_HIDDENZONES_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer']
@@ -65,6 +67,7 @@ class GrowthWheatFacade(object):
                  model_hiddenzones_inputs_df,
                  model_elements_inputs_df,
                  model_roots_inputs_df,
+                 model_SAM_inputs_df,
                  shared_organs_inputs_outputs_df,
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df):
@@ -73,7 +76,7 @@ class GrowthWheatFacade(object):
 
         self._simulation = simulation.Simulation(delta_t=delta_t)  #: the simulator to use to run the model
 
-        all_growthwheat_inputs_dict = converter.from_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df)
+        all_growthwheat_inputs_dict = converter.from_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df, model_SAM_inputs_df)
 
         self._update_shared_MTG(all_growthwheat_inputs_dict['hiddenzone'], all_growthwheat_inputs_dict['elements'], all_growthwheat_inputs_dict['roots'])
 
@@ -100,6 +103,7 @@ class GrowthWheatFacade(object):
         all_growthwheat_hiddenzones_inputs_dict = {}
         all_growthwheat_elements_inputs_dict = {}
         all_growthwheat_roots_inputs_dict = {}
+        all_growthwheat_SAM_inputs_dict = {}
 
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
@@ -117,6 +121,15 @@ class GrowthWheatFacade(object):
                         for growthwheat_roots_input_name in simulation.ROOT_INPUTS:
                             growthwheat_roots_inputs_dict[growthwheat_roots_input_name] = mtg_roots_properties[growthwheat_roots_input_name]
                         all_growthwheat_roots_inputs_dict[roots_id] = growthwheat_roots_inputs_dict
+                if 'SAM' in mtg_axis_properties:
+                    SAM_id = (mtg_plant_index, mtg_axis_label)
+                    mtg_SAM_properties = mtg_axis_properties['SAM']
+
+                    if set(mtg_SAM_properties).issuperset(simulation.SAM_INPUTS):
+                        growthwheat_SAM_inputs_dict = {}
+                        for growthwheat_SAM_input_name in simulation.SAM_INPUTS:
+                            growthwheat_SAM_inputs_dict[growthwheat_SAM_input_name] = mtg_SAM_properties[growthwheat_SAM_input_name]
+                        all_growthwheat_SAM_inputs_dict[SAM_id] = growthwheat_SAM_inputs_dict
 
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
 
@@ -169,7 +182,8 @@ class GrowthWheatFacade(object):
                                             growthwheat_element_inputs_dict['green_area'] = mtg_element_properties.get('area')  # Needed later on for CN Wheat calculation. TODO: Should it be in elongwheat_facade instead ? (MG)
                                     all_growthwheat_elements_inputs_dict[element_id] = growthwheat_element_inputs_dict
 
-        self._simulation.initialize({'hiddenzone': all_growthwheat_hiddenzones_inputs_dict, 'elements': all_growthwheat_elements_inputs_dict, 'roots': all_growthwheat_roots_inputs_dict})
+        self._simulation.initialize({'hiddenzone': all_growthwheat_hiddenzones_inputs_dict, 'elements': all_growthwheat_elements_inputs_dict,
+                                     'roots': all_growthwheat_roots_inputs_dict, 'SAM': all_growthwheat_SAM_inputs_dict})
 
     def _update_shared_MTG(self, all_growthwheat_hiddenzones_data_dict, all_growthwheat_elements_data_dict, all_growthwheat_roots_data_dict):
         """
