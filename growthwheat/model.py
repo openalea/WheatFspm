@@ -238,6 +238,7 @@ def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_t):
         - `sucrose` (:class:`float`) - Amount of sucrose in roots (µmol C)
         - `amino_acids` (:class:`float`) - Amount of amino acids in roots (µmol N)
         - `mstruct` (:class:`float`) - Root structural mass (g)
+        - 'delta_teq'(:class:`float`) - Time compensated for the effect of temperature - Time equivalent at Tref (s)
 
     : Returns:
         mstruct_C_growth (µmol C), mstruct_growth (g), Nstruct_growth (g), Nstruct_N_growth (µmol N)

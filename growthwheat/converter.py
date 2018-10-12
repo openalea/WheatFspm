@@ -31,9 +31,10 @@ import simulation
 HIDDENZONE_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer']
 ELEMENT_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ', 'element']
 ROOT_TOPOLOGY_COLUMNS = ['plant', 'axis', 'organ']
+SAM_TOPOLOGY_COLUMNS = ['plant', 'axis']
 
 
-def from_dataframes(hiddenzone_inputs, element_inputs, root_inputs):
+def from_dataframes(hiddenzone_inputs, element_inputs, root_inputs, SAM_inputs):
     """
     Convert inputs/outputs from Pandas dataframe to Growth-Wheat format.
 
@@ -42,6 +43,7 @@ def from_dataframes(hiddenzone_inputs, element_inputs, root_inputs):
         - `hiddenzone_inputs` (:class:`pandas.DataFrame`) - Hidden zone inputs dataframe to convert, with one line by hidden zone.
         - `element_inputs` (:class:`pandas.DataFrame`) - Element inputs dataframe to convert, with one line by element.
         - `root_inputs` (:class:`pandas.DataFrame`) - Root inputs dataframe to convert, with one line by root.
+        - `SAM_inputs` (:class:`pandas.DataFrame`) - SAM inputs dataframe to convert, with one line by SAM.
 
     :Returns:
         The inputs in a dictionary.
@@ -55,9 +57,11 @@ def from_dataframes(hiddenzone_inputs, element_inputs, root_inputs):
     all_hiddenzone_dict = {}
     all_element_dict = {}
     all_root_dict = {}
+    all_SAM_dict = {}
     hiddenzone_inputs_columns = hiddenzone_inputs.columns.difference(HIDDENZONE_TOPOLOGY_COLUMNS)
     element_inputs_columns = element_inputs.columns.difference(ELEMENT_TOPOLOGY_COLUMNS)
     root_inputs_columns = root_inputs.columns.difference(ROOT_TOPOLOGY_COLUMNS)
+    SAM_inputs_columns = SAM_inputs.columns.difference(SAM_TOPOLOGY_COLUMNS)
 
     for element_inputs_id, element_inputs_group in element_inputs.groupby(ELEMENT_TOPOLOGY_COLUMNS):
         # element
@@ -78,7 +82,13 @@ def from_dataframes(hiddenzone_inputs, element_inputs, root_inputs):
         root_inputs_dict = root_inputs_series[root_inputs_columns].to_dict()
         all_root_dict[root_inputs_id] = root_inputs_dict
 
-    return {'hiddenzone': all_hiddenzone_dict, 'elements': all_element_dict, 'roots': all_root_dict}
+    for SAM_inputs_id, SAM_inputs_group in root_inputs.groupby(SAM_TOPOLOGY_COLUMNS):
+        # SAM
+        SAM_inputs_series = SAM_inputs_group.loc[SAM_inputs_group.first_valid_index()]
+        SAM_inputs_dict = SAM_inputs_series[root_inputs_columns].to_dict()
+        all_SAM_dict[SAM_inputs_id] = SAM_inputs_dict
+
+    return {'hiddenzone': all_hiddenzone_dict, 'elements': all_element_dict, 'roots': all_root_dict, 'SAM': all_SAM_dict }
 
 
 def to_dataframes(data_dict):

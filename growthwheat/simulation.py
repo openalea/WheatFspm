@@ -38,6 +38,7 @@ HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing','leaf_pseudo_age'
                      'internode_enclosed_Nstruct', 'mstruct','internode_Lmax','leaf_Lmax']
 ELEMENT_INPUTS = ['is_growing', 'mstruct', 'green_area', 'length', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'cytokinins','Nstruct']
 ROOT_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct']
+SAM_INPUTS = ['delta_teq']
 
 #: the outputs computed by GrowthWheat
 HIDDENZONE_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct','Nstruct'
@@ -113,6 +114,9 @@ class Simulation(object):
         # roots
         all_roots_inputs = self.inputs['roots']
         all_roots_outputs = self.outputs['roots']
+
+        # SAM
+        all_SAM_inputs = self.inputs['SAM']
 
         # # For tiller growth calculations
         # sucrose_consumption_mstruct_tillers = [0.]
@@ -334,10 +338,15 @@ class Simulation(object):
 
         # Roots
         for root_id, root_inputs in all_roots_inputs.items():
+
+            # Temperature-compensated time (delta_teq)
+            axe_id = root_id[:2]
+            delta_teq = all_SAM_inputs[axe_id]['delta_teq']
+
             curr_root_outputs = all_roots_outputs[root_id]
             # Growth
             mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = model.calculate_roots_mstruct_growth(root_inputs['sucrose'], root_inputs['amino_acids'],
-                                                                                                                      root_inputs['mstruct'], self.delta_t)
+                                                                                                                      root_inputs['mstruct'], delta_teq)
             # Respiration growth
             curr_root_outputs['Respi_growth'] = RespirationModel.R_growth(mstruct_C_growth)
             # Update of root outputs
