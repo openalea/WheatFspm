@@ -30,7 +30,7 @@ import pandas as pd
 SENESCWHEAT_ROOTS_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'cytokinins']
 
 #: the inputs needed by SenescWheat at SAM scale
-SENESCWHEAT_SAM_INPUTS = ['delta_teq']
+SENESCWHEAT_SAM_INPUTS = ['delta_teq','delta_teq_roots']
 
 #: the inputs needed by SenescWheat at element scale
 SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'senesced_length','length', 'proteins', 'mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan', 'cytokinins', 'sucrose', \
@@ -108,7 +108,7 @@ def to_dataframes(data_dict):
         - `data_dict` (:class:`dict`) - The inputs/outputs in Senesc-Wheat format.
 
     :Returns:
-        One dataframe for roots inputs/outputs and one dataframe for elements inputs/outputs.
+        One dataframe for roots inputs/outputs, one dataframe for SAM inputs/outputs,  one dataframe for elements inputs/outputs.
 
     :Returns Type:
         :class:`tuple` of :class:`pandas.DataFrame`
@@ -119,6 +119,7 @@ def to_dataframes(data_dict):
     """
     dataframes_dict = {}
     for (current_key, current_topology_columns, current_inputs_outputs_names) in (('roots', ROOTS_TOPOLOGY_COLUMNS, SENESCWHEAT_ROOTS_INPUTS_OUTPUTS),
+                                                                                  ('SAM', SAM_TOPOLOGY_COLUMNS, SENESCWHEAT_SAM_INPUTS_OUTPUTS),
                                                                                   ('elements', ELEMENTS_TOPOLOGY_COLUMNS, SENESCWHEAT_ELEMENTS_INPUTS_OUTPUTS)):
         current_data_dict = data_dict[current_key]
         current_ids_df = pd.DataFrame(current_data_dict.keys(), columns=current_topology_columns)
@@ -130,4 +131,4 @@ def to_dataframes(data_dict):
         current_df.reset_index(drop=True, inplace=True)
         dataframes_dict[current_key] = current_df
 
-    return dataframes_dict['roots'], dataframes_dict['elements']
+    return dataframes_dict['roots'], dataframes_dict['SAM'], dataframes_dict['elements']

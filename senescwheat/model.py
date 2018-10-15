@@ -27,11 +27,13 @@ from __future__ import division  # use '//' to do integer division
 
 class SenescenceModel(object):
 
+    CONVERSION_FACTOR_20_TO_12 = 0.45 # modified_Arrhenius_equation(12)/modified_Arrhenius_equation(20)
+
     N_MOLAR_MASS = 14             #: Molar mass of nitrogen (g mol-1)
-    SENESCENCE_ROOTS = 0  # 3.5E-7     #: Rate of root turnover at 20°C (s-1). Value coming from Johnson and Thornley (1985), see also Asseng et al. (1997). TODO: should be ontogenic
+    SENESCENCE_ROOTS = 0  # 3.5E-7 * CONVERSION_FACTOR_20_TO_12    #: Rate of root turnover at 12°C (s-1). Value at 20°C coming from Johnson and Thornley (1985), see also Asseng et al. (1997). TODO: should be ontogenic
     FRACTION_N_MAX = {'blade': 0.5, 'stem': 0.425}  # Threshold of ([proteins]/[proteins]max) below which tissue death is triggered
-    SENESCENCE_MAX_RATE = 0.2E-8  # maximal senescence m² s-1
-    SENESCENCE_LENGTH_MAX_RATE = SENESCENCE_MAX_RATE / (7.0e-3)  # maximal senescence m s-1 at 12°C (Tref)
+    SENESCENCE_MAX_RATE = 0.2E-8 * CONVERSION_FACTOR_20_TO_12  # maximal senescence m² s-1 at 12°C (Tref)
+    SENESCENCE_LENGTH_MAX_RATE = SENESCENCE_MAX_RATE / 7.0e-3 * CONVERSION_FACTOR_20_TO_12  # maximal senescence m s-1 at 12°C (Tref)
 
     @classmethod
     def calculate_forced_relative_delta_green_area(cls, green_area_df, group_id, prev_green_area):
