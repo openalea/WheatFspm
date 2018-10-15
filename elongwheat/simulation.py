@@ -48,7 +48,7 @@ HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_ag
                       'leaf_is_emerged', 'internode_Lmax', 'LSIW', 'internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct',
                       'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct']
 ELEMENT_OUTPUTS = ['length', 'is_growing', 'diameter', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'mstruct', 'Nstruct']
-SAM_OUTPUTS = ['SAM_temperature','delta_teq', 'teq_since_primordium', 'status', 'nb_leaves', 'GA', 'height', 'cohort','sum_TT']
+SAM_OUTPUTS = ['SAM_temperature','delta_teq','delta_teq_roots', 'teq_since_primordium', 'status', 'nb_leaves', 'GA', 'height', 'cohort','sum_TT']
 
 #: the inputs and outputs of ElongWheat.
 HIDDENZONE_INPUTS_OUTPUTS = sorted(set(HIDDENZONE_INPUTS + HIDDENZONE_OUTPUTS))
@@ -163,6 +163,7 @@ class Simulation(object):
 
             # temperature-compensated time
             curr_SAM_outputs['delta_teq'] = model.calculate_time_equivalent_Tref(growth_temperature,self.delta_t)
+            curr_SAM_outputs['delta_teq_roots'] = model.calculate_time_equivalent_Tref(Tsoil, self.delta_t)
 
             # cumulated thermal time
             curr_SAM_outputs['sum_TT'] = model.calculate_cumulated_thermal_time(curr_SAM_outputs['sum_TT'], growth_temperature, self.delta_t)
