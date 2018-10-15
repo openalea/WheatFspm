@@ -117,11 +117,11 @@ class CNWheatFacade(object):
                                        cnwheat_elements_data_df=model_elements_inputs_df,
                                        cnwheat_soils_data_df=model_soils_inputs_df)
 
-    def run(self):
+    def run(self, Tair=12):
         """
         Run the model and update the MTG and the dataframes shared between all models.
         """
-        self._initialize_model()
+        self._initialize_model(Tair)
         self._simulation.run()
         self._update_shared_MTG()
 
@@ -163,7 +163,7 @@ class CNWheatFacade(object):
                                                 soils_df=soils_postprocessing_df,
                                                 graphs_dirpath=graphs_dirpath)
 
-    def _initialize_model(self):
+    def _initialize_model(self, Tair=12):
         """
         Initialize the inputs of the model from the MTG shared between all models and the soils.
         """
@@ -292,6 +292,7 @@ class CNWheatFacade(object):
 
                 if is_valid_axis:
                     cnwheat_plant.axes.append(cnwheat_axis)
+                    cnwheat_plant.Tair = Tair
                     is_valid_plant = True
 
             if is_valid_plant:

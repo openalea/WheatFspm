@@ -19,7 +19,6 @@ import senescwheat_facade
 
 from alinea.adel.adel_dynamic import AdelWheatDyn
 
-
 """
     main
     ~~~~
@@ -202,6 +201,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                                    senescwheat_SAM_inputs_t0,
                                                                    senescwheat_elements_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
+                                                                   shared_SAM_inputs_outputs_df,
                                                                    shared_elements_inputs_outputs_df)
 
         # farquharwheat
@@ -242,12 +242,15 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             growthwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in growthwheat_facade.simulation.ELEMENT_INPUTS if i in elements_inputs_t0.columns]]
         growthwheat_root_inputs_t0 = organs_inputs_t0.loc[organs_inputs_t0['organ'] == 'roots'][
             growthwheat_facade.converter.ROOT_TOPOLOGY_COLUMNS + [i for i in growthwheat_facade.simulation.ROOT_INPUTS if i in organs_inputs_t0.columns]]
+        growthwheat_SAM_inputs_t0 = SAM_inputs_t0[
+            growthwheat_facade.converter.SAM_TOPOLOGY_COLUMNS + [i for i in growthwheat_facade.simulation.SAM_INPUTS if i in SAM_inputs_t0.columns]]
 
         growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
                                                                    growthwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                    growthwheat_hiddenzones_inputs_t0,
                                                                    growthwheat_elements_inputs_t0,
                                                                    growthwheat_root_inputs_t0,
+                                                                   growthwheat_SAM_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
                                                                    shared_hiddenzones_inputs_outputs_df,
                                                                    shared_elements_inputs_outputs_df)
@@ -339,7 +342,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
                                     # run CNWheat
                                     print('t cnwheat is {}'.format(t_cnwheat))
-                                    cnwheat_facade_.run()
+                                    Tair = meteo.loc[t_elongwheat, 'air_temperature']
+                                    cnwheat_facade_.run(Tair)
 
                                 # append the inputs and outputs at current step to global lists
                                 all_simulation_steps.append(t_cnwheat)
@@ -541,4 +545,4 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 
 if __name__ == '__main__':
-    main(400, forced_start_time=290, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True)
+    main(400, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
