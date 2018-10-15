@@ -25,6 +25,8 @@ from __future__ import division  # use "//" to do integer division
 C_MOLAR_MASS = 12                     #: Carbon molar mass (g mol-1)
 N_MOLAR_MASS = 14                     #: Nitrogen molar mass (g mol-1)
 
+CONVERSION_FACTOR_20_TO_12 = 0.45     #: modified_Arrhenius_equation(12)/modified_Arrhenius_equation(20)
+
 # Shoot
 ALPHA = 0.106  # 1.537e-02            #: Parameter of the relation between leaf mass and leaf length (g m^(-BETA))
 BETA = 1.28                           #: Parameter of the relation between leaf mass and leaf length (dimensionless)
@@ -44,7 +46,7 @@ FITTED_L0_IN = 1/59.0  # 5.2 #: Scaling factor of the internode in automate grow
 te_IN = 210 * 3600 * 24 / 12  #: end of internode elongation in automate growth (s at 12°c) ; fitted from Malvoisin 1984 II
 
 # Roots
-VMAX_ROOTS_GROWTH = 0.015             #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) post flo at 12°C
+VMAX_ROOTS_GROWTH = 0.015 * CONVERSION_FACTOR_20_TO_12             #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) post flo at 12°C
 K_ROOTS_GROWTH = 1250                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS) post flo
 RATIO_C_MSTRUCT_ROOTS = 0.384         #: Mean contribution of carbon to root structural dry mass (g C g-1 Mstruct)
 RATIO_N_MSTRUCT_ROOTS_ = 0.02         #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct)

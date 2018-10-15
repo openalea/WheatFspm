@@ -38,7 +38,7 @@ HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing','leaf_pseudo_age'
                      'internode_enclosed_Nstruct', 'mstruct','internode_Lmax','leaf_Lmax']
 ELEMENT_INPUTS = ['is_growing', 'mstruct', 'green_area', 'length', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'cytokinins','Nstruct']
 ROOT_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct']
-SAM_INPUTS = ['delta_teq']
+SAM_INPUTS = ['delta_teq','delta_teq_roots']
 
 #: the outputs computed by GrowthWheat
 HIDDENZONE_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct','Nstruct'
@@ -341,7 +341,7 @@ class Simulation(object):
 
             # Temperature-compensated time (delta_teq)
             axe_id = root_id[:2]
-            delta_teq = all_SAM_inputs[axe_id]['delta_teq']
+            delta_teq = all_SAM_inputs[axe_id]['delta_teq_roots']
 
             curr_root_outputs = all_roots_outputs[root_id]
             # Growth
