@@ -38,6 +38,9 @@ SHARED_AXES_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
 #: the columns which define the topology in the organs scale dataframe shared between all models
 SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'organ']
 
+#: the columns which define the topology in the axis scale dataframe shared between all models
+SHARED_SAM_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
+
 #: the columns which define the topology in the elements scale dataframe shared between all models
 SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
 
@@ -66,6 +69,7 @@ class SenescWheatFacade(object):
                  model_SAM_inputs_df,
                  model_elements_inputs_df,
                  shared_organs_inputs_outputs_df,
+                 shared_SAM_inputs_outputs_df,
                  shared_elements_inputs_outputs_df):
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
@@ -73,11 +77,12 @@ class SenescWheatFacade(object):
         self._simulation = simulation.Simulation(delta_t=delta_t)  #: the simulator to use to run the model
 
         all_senescwheat_inputs_dict = converter.from_dataframes(model_roots_inputs_df, model_SAM_inputs_df, model_elements_inputs_df)
-        self._update_shared_MTG(all_senescwheat_inputs_dict['roots'], all_senescwheat_inputs_dict['elements'])
+        self._update_shared_MTG(all_senescwheat_inputs_dict['roots'],all_senescwheat_inputs_dict['SAM'], all_senescwheat_inputs_dict['elements'])
 
         self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df  #: the dataframe at organs scale shared between all models
+        self._shared_SAM_inputs_outputs_df = shared_SAM_inputs_outputs_df  #: the dataframe at axis scale shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
-        self._update_shared_dataframes(model_roots_inputs_df, model_elements_inputs_df)
+        self._update_shared_dataframes(model_roots_inputs_df,model_SAM_inputs_df, model_elements_inputs_df)
 
     def run(self, forced_max_protein_elements=None):
         """
@@ -85,9 +90,9 @@ class SenescWheatFacade(object):
         """
         self._initialize_model()
         self._simulation.run(forced_max_protein_elements)
-        self._update_shared_MTG(self._simulation.outputs['roots'], self._simulation.outputs['elements'])
-        senescwheat_roots_outputs_df, senescwheat_elements_outputs_df = converter.to_dataframes(self._simulation.outputs)
-        self._update_shared_dataframes(senescwheat_roots_outputs_df, senescwheat_elements_outputs_df)
+        self._update_shared_MTG(self._simulation.outputs['roots'], self._simulation.outputs['SAM'], self._simulation.outputs['elements'])
+        senescwheat_roots_outputs_df, senescwheat_SAM_outputs_df, senescwheat_elements_outputs_df = converter.to_dataframes(self._simulation.outputs)
+        self._update_shared_dataframes(senescwheat_roots_outputs_df,senescwheat_SAM_outputs_df, senescwheat_elements_outputs_df)
 
     def _initialize_model(self):
         """
@@ -146,7 +151,7 @@ class SenescWheatFacade(object):
 
         self._simulation.initialize({'roots': all_senescwheat_roots_inputs_dict, 'SAM': all_senescwheat_SAM_inputs_dict, 'elements': all_senescwheat_elements_inputs_dict})
 
-    def _update_shared_MTG(self, senescwheat_roots_data_dict, senescwheat_elements_data_dict):
+    def _update_shared_MTG(self, senescwheat_roots_data_dict, senescwheat_SAM_data_dict, senescwheat_elements_data_dict):
         """
         Update the MTG shared between all models from the inputs or the outputs of the model.
         """
@@ -170,6 +175,11 @@ class SenescWheatFacade(object):
                     self._shared_mtg.property('roots')[mtg_axis_vid] = {}
                 mtg_roots_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)['roots']
                 mtg_roots_properties.update(senescwheat_roots_data_dict[roots_id])
+                # update the SAM in the MTG
+                if 'SAM' not in self._shared_mtg.get_vertex_property(mtg_axis_vid):
+                    self._shared_mtg.property('SAM')[mtg_axis_vid] = {}
+                mtg_SAM_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)['SAM']
+                mtg_SAM_properties.update(senescwheat_SAM_data_dict.get(roots_id,[]))
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
@@ -190,7 +200,7 @@ class SenescWheatFacade(object):
                         self._shared_mtg.property('senesced_length')[mtg_organ_vid] = senesced_length_organ
 
 
-    def _update_shared_dataframes(self, senescwheat_roots_data_df, senescwheat_elements_data_df):
+    def _update_shared_dataframes(self, senescwheat_roots_data_df,senescwheat_SAM_data_df, senescwheat_elements_data_df):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
         """
@@ -198,6 +208,7 @@ class SenescWheatFacade(object):
         for senescwheat_data_df, \
             shared_inputs_outputs_indexes, \
             shared_inputs_outputs_df in ((senescwheat_roots_data_df, SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES, self._shared_organs_inputs_outputs_df),
+                                         (senescwheat_SAM_data_df, SHARED_SAM_INPUTS_OUTPUTS_INDEXES, self._shared_SAM_inputs_outputs_df),
                                          (senescwheat_elements_data_df, SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES, self._shared_elements_inputs_outputs_df)):
 
             if senescwheat_data_df is senescwheat_roots_data_df:
