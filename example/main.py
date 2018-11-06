@@ -50,7 +50,7 @@ if OPTION_SHOW_ADEL:
 HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
 ELEMENT_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'elements_inputs.csv')
 SAM_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'SAM_inputs.csv')
-METEO_FILEPATH = os.path.join(INPUTS_DIRPATH, 'temperature.csv')
+METEO_FILEPATH = os.path.join(INPUTS_DIRPATH, 'meteo_test.csv')
 
 # elongwheat outputs
 OUTPUTS_DIRPATH = 'outputs'
@@ -134,7 +134,7 @@ for t_step in range(desired_t_step+1, loop_end+1, elongwheat_ts):
     simulation_.initialize(inputs)
 
     ## Temperature
-    Tair, Tsol = meteo.loc[t_step, ['Tair', 'Tsol']]
+    Tair, Tsol = meteo.loc[t_step, ['air_temperature', 'soil_temperature']]
 
     ## run the simulation
     simulation_.run(Tair = Tair, Tsol = Tsol)
