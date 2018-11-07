@@ -1,10 +1,10 @@
-# This file reports the dependancies needed to generate the output results presented in the paper FSPMA16.
+# This file reports the dependencies needed to generate the output results presented in the paper FSPMA16.
 
 1.  *CN-Wheat*  to revision #275
 
 2.  *Elong-Wheat*  to revision #22
 
-3.  *Farquhar-Wheat*  to revision #57
+3.  *Farquhar-Wheat*  to revision #53
 
 4.  *Fspm-Wheat*  to revision #20
 

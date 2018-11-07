@@ -1,0 +1,17 @@
+s2v.exe 
+Lecture du fichier parametre dans fichier :
+nji=9, nja=12, njz=20
+bz[0]=76.5995
+24.3902, 1, 24.3902, 30, 1, 30, 1
+build-scons\src\cpp\s2v\src\s2v.cpp:529 -> Fin de lecture de fichier
+=> Calcul des distributions
+==> nje rel = 1
+=> Ecriture des resultats : (c|std)err, leafarea, out.dang
+xl=24.3902, yl=30, xymaille=1
+
+STATISTIQUES GLOBALES DE CHAQUE ESPECE
+esp 1 : surfT=3150.89 - Stot=3150.89, LAI=4.30622 dist d'inclinaison :0.000613512 0.00609006 0.0029776 0.00670657 0.0181159 0.0423983 0.298613 0.524819 0.099666 
+0.09102380.0490220.06260660.1242990.09434690.07952820.08558120.05604010.06741770.07613870.1272640.0867318
+genere le fichier out.dang => entree de sailM pour calculer la BRDF
+	: xx= 0 ; Uz= 1e-009
+ferrlog stream close() called.
