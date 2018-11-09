@@ -181,7 +181,7 @@ class Simulation(object):
                 # Initialise hiddenzone
                 hiddenzone_id = SAM_id + tuple([1 + i + curr_SAM_outputs['nb_leaves'] - init_leaf])  # TODO: peut etre simplifié tant que 'calculate_SAM_status' renvoie 1 erreur si init_leaf>1
                 new_hiddenzone = parameters.HiddenZoneInit().__dict__
-                new_hiddenzone['cytokinins'] = new_hiddenzone['conc_cytokinins'] * new_hiddenzone['mstruct']
+                # new_hiddenzone['cytokinins'] = new_hiddenzone['conc_cytokinins'] * new_hiddenzone['mstruct']
                 self.outputs['hiddenzone'][hiddenzone_id] = new_hiddenzone
 
             # Ligule height
