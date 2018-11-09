@@ -61,6 +61,10 @@ def modified_Arrhenius_equation(temperature):
         :class:`float`
     """
 
+
+
+
+
     Arrhenius_equation = lambda T: T * exp(-parameters.Temp_Ea_R / T) / (1 + exp(parameters.Temp_DS_R - parameters.Temp_DH_R / T))
     temperature_K = temperature + 273.15
 
@@ -79,6 +83,7 @@ def calculate_time_equivalent_Tref(temperature, time):
     :Parameters:
         - `temperature` (:class:`float`) - temperature (degree Celsius)
         - `time` (:class:`float`) - time duration (s)
+
 
     :Returns:
         temperature-compensated time (s)
@@ -101,9 +106,9 @@ def calculate_cumulated_thermal_time(sum_TT, temperature, delta_t):
     :Returns Type:
         :class:`float`
     """
-    res = 0
+    res = sum_TT
     if temperature > 0:
-        res = sum_TT + temperature * delta_t/24.0/3600
+        res += temperature * delta_t/24.0/3600
     return res
 
 def calculate_SAM_primodia(status, teq_since_primordium, delta_teq, nb_leaves):
@@ -519,14 +524,15 @@ def calculate_delta_internode_L_preL(internode_rank, sucrose, internode_L, amino
     :Returns Type:
         :class:`float`
     """
-    RER_max = parameters.RERmax
-    # RER_max = parameters.RERmax_dict[internode_rank]
-    if sucrose > 0 and amino_acids > 0:
-        delta_internode_L = internode_L * RER_max * delta_teq * ((sucrose / mstruct) /
-                                                                 (parameters.Kc + (sucrose / mstruct))) * (((amino_acids / mstruct) ** 3) /
-                                                                                                           (parameters.Kn ** 3 + (amino_acids / mstruct) ** 3))
-    else:
-        delta_internode_L = 0
+    # RER_max = parameters.RERmax
+    RER_max = parameters.RERmax_dict[internode_rank]
+    delta_internode_L = internode_L * RER_max * delta_teq
+    # if sucrose > 0 and amino_acids > 0:
+    #     delta_internode_L = internode_L * RER_max * delta_teq * ((sucrose / mstruct) /
+    #                                                              (parameters.Kc + (sucrose / mstruct))) * (((amino_acids / mstruct) ** 3) /
+    #                                                                                                        (parameters.Kn ** 3 + (amino_acids / mstruct) ** 3))
+    # else:
+    #     delta_internode_L = 0
 
     return delta_internode_L
 
