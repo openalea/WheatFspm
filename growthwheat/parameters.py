@@ -103,4 +103,4 @@ class OrganInit:
         self.mstruct = 0              #: g
         self.Nstruct = 0              #: g
         self.cytokinins = 0  #: g
-        self.conc_cytokinins = 100.0  #: AU / g mstruct # Not used
+        self.conc_cytokinins = 120.0  #: AU / g mstruct # Not used

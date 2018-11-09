@@ -176,7 +176,7 @@ def calculate_cytokinins(delta_mstruct, cytokinins, mstruct):
     """
     # default initial value
     if mstruct == 0:
-        res = delta_mstruct * 100.0 # TODO : set to phloem concentration
+        res = delta_mstruct * 120.0 # TODO: Set according to protein concentration ?
     else:
         res = delta_mstruct *  (cytokinins / mstruct)
     return res
@@ -248,7 +248,7 @@ def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_t):
     """
     conc_sucrose = max(0, sucrose/mstruct)
 
-    mstruct_C_growth = (conc_sucrose * parameters.VMAX_ROOTS_GROWTH) / (conc_sucrose + parameters.K_ROOTS_GROWTH) * delta_t * mstruct * 1.55    #: root growth in C (µmol of C)
+    mstruct_C_growth = (conc_sucrose * parameters.VMAX_ROOTS_GROWTH) / (conc_sucrose + parameters.K_ROOTS_GROWTH) * delta_t * mstruct * 3.5    #: root growth in C (µmol of C)
     mstruct_growth = (mstruct_C_growth*1E-6 * parameters.C_MOLAR_MASS) / parameters.RATIO_C_MSTRUCT_ROOTS                                 #: root growth (g of structural dry mass)
     Nstruct_growth = mstruct_growth * parameters.RATIO_N_MSTRUCT_ROOTS_                                                                   #: root growth in N (g of structural dry mass)
     Nstruct_N_growth = min(amino_acids, (Nstruct_growth / parameters.N_MOLAR_MASS)*1E6)                                                   #: root growth in nitrogen (µmol N)
