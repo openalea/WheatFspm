@@ -19,7 +19,7 @@
 
 # --- PREAMBLE
 
-OPTION_SHOW_ADEL = False
+OPTION_SHOW_ADEL = True
 
 
 import os
@@ -29,9 +29,7 @@ import pandas as pd
 
 import time
 
-from tempwheat import simulation as tempwheat_simulation, model as tempwheat_model, converter as tempwheat_converter
 from elongwheat import simulation as elongwheat_simulation, model as elongwheat_model, converter as elongwheat_converter
-
 
 
 INPUTS_DIRPATH = 'inputs'
@@ -41,8 +39,8 @@ if OPTION_SHOW_ADEL:
    from fspmwheat import elongwheat_facade
    from alinea.adel.adel_dynamic import AdelWheatDyn
    # adelwheat inputs at t0
-   ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat') #Â the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
-   adel_wheat = AdelWheatDyn(seed=1234, convUnit=1)
+   ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat') # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
+   adel_wheat = AdelWheatDyn(seed=1234,  scene_unit='m')
    g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
    adel_wheat.domain = g.get_vertex_property(0)['meta']['domain'] # temp (until Christian's commit)
    adel_wheat.nplants = g.get_vertex_property(0)['meta']['nplants'] # temp (until Christian's commit)
@@ -94,7 +92,6 @@ hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df = elongwheat_converter
 hiddenzone_outputs_df['t_step'] = desired_t_step
 element_outputs_df['t_step'] = desired_t_step
 SAM_outputs_df['t_step'] = desired_t_step
-
 ## increment the general output dataframes
 all_hiddenzone_outputs_df = all_hiddenzone_outputs_df.append(hiddenzone_outputs_df)
 all_element_outputs_df = all_element_outputs_df.append(element_outputs_df)
@@ -104,6 +101,14 @@ all_SAM_outputs_df = all_SAM_outputs_df.append(SAM_outputs_df)
 # define the time step in hours for each elongwheat
 elongwheat_ts = 1
 
+# --- ADEL
+if OPTION_SHOW_ADEL:
+    hour_to_second_conversion_factor = 3600
+
+    elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g, elongwheat_ts * hour_to_second_conversion_factor, SAM_outputs_df, hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df,
+                                                            hiddenzone_outputs_df, element_outputs_df, adel_wheat)
+    adel_wheat.update_geometry(g)
+    adel_wheat.plot(g)
 
 # --- SETUP RUN
 
@@ -114,13 +119,12 @@ OUTPUTS_PRECISION = 8
 delta_t = 3600
 
 # end
-loop_end = 800
+loop_end = 1000
 
 # --- MAIN
 
 # Initialization simulation
 ## Create population
-tempwheat_simulation_ = tempwheat_simulation.Simulation(delta_t=delta_t)
 simulation_ = elongwheat_simulation.Simulation(delta_t=delta_t)
 
 start_time = time.time()
@@ -131,41 +135,33 @@ for t_step in range(desired_t_step+1, loop_end+1, elongwheat_ts):
 
     print(t_step)
 
-    ## -- tempwheat
-    Ta, Tsol = meteo.loc[t_step, ['air_temperature', 'soil_temperature']]  # TODO: Add soil temperature in the weather input file
-    inputs_tempwheat = tempwheat_converter.from_dataframes( SAM_inputs_df)
-    tempwheat_simulation_.initialize(inputs_tempwheat)
-    tempwheat_simulation_.run(Ta, Tsol)
-    outputs_tempwheat = tempwheat_converter.to_dataframes( tempwheat_simulation_.outputs)
-
-    ## -- elongwheat
-
     ## convert the dataframe to simulation inputs format
-    new_SAM_inputs_df = pd.merge(outputs_tempwheat, SAM_inputs_df[['plant','axis']+[i for i in SAM_inputs_df.columns if i not in outputs_tempwheat.columns]], on =['plant','axis'])
-    inputs = elongwheat_converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, new_SAM_inputs_df)
+    inputs = elongwheat_converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, SAM_inputs_df)
 
     ## initialize the simulation with the inputs
     simulation_.initialize(inputs)
 
+    ## Temperature
+    Tair, Tsol = meteo.loc[t_step, ['air_temperature', 'soil_temperature']]
+
     ## run the simulation
-    simulation_.run()
+    simulation_.run(Tair = Tair, Tsoil = Tsol)
 
     ## convert the outputs to Pandas dataframe
     hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df = elongwheat_converter.to_dataframes(simulation_.outputs)
 
-    new_SAM_outputs_df = pd.merge(SAM_outputs_df, outputs_tempwheat[['plant','axis']+[i for i in outputs_tempwheat.columns if i not in SAM_outputs_df.columns]], on =['plant','axis'])
-
     ## update MTG
     if OPTION_SHOW_ADEL:
-       elongwheat_facade_._update_shared_MTG(simulation_.outputs['hiddenzone'], simulation_.outputs['elements'], simulation_.outputs['SAM'])
+        elongwheat_facade_._update_shared_MTG(simulation_.outputs['hiddenzone'], simulation_.outputs['elements'], simulation_.outputs['SAM'])
+        adel_wheat.plot(g)
 
     ## use output as input for the next step
-    hiddenzone_inputs_df, element_inputs_df, SAM_inputs_df = hiddenzone_outputs_df, element_outputs_df, new_SAM_outputs_df
+    hiddenzone_inputs_df, element_inputs_df, SAM_inputs_df = hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df
 
     ## add column with time step
     hiddenzone_outputs_df['t_step'] = t_step
     element_outputs_df['t_step'] = t_step
-    new_SAM_outputs_df['t_step'] = t_step
+    SAM_outputs_df['t_step'] = t_step
 
     ## increment the general output dataframes
     ## increment the general output dataframes, only for current output dataframes which are not empty
@@ -173,13 +169,9 @@ for t_step in range(desired_t_step+1, loop_end+1, elongwheat_ts):
         all_hiddenzone_outputs_df = all_hiddenzone_outputs_df.append(hiddenzone_outputs_df)
     if len(element_outputs_df) != 0:
         all_element_outputs_df = all_element_outputs_df.append(element_outputs_df)
-    if len(new_SAM_outputs_df) != 0:
-        all_SAM_outputs_df = all_SAM_outputs_df.append(new_SAM_outputs_df)
+    if len(SAM_outputs_df) != 0:
+        all_SAM_outputs_df = all_SAM_outputs_df.append(SAM_outputs_df)
 
-# --- ADEL
-if OPTION_SHOW_ADEL:
-   adel_wheat.update_geometry(g)
-   adel_wheat.plot(g)
 
 # --- RESUTS
 
@@ -192,3 +184,4 @@ print("--- %s seconds ---" % (time.time() - start_time))
 
 # --- GRAPHS
 execfile("graphs.py")
+

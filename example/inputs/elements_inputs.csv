@@ -1,7 +1,7 @@
-plant,axis,metamer,organ,element,length,is_growing
-1,MS,1,blade,LeafElement1,0.082,False
-1,MS,1,sheath,StemElement,0.0285,False
-1,MS,2,blade,LeafElement1,0.092,False
-1,MS,2,sheath,HiddenElement,0.0285,False
-1,MS,2,sheath,StemElement,0.0005,False
-1,MS,3,blade,LeafElement1,0.060421565,True
+plant,axis,metamer,organ,element,length,is_growing,mstruct,Nstruct,amino_acids,proteins,fructan,sucrose,green_area,cytokinins,max_proteins,starch,nitrates,senesced_length
+1,MS,1,blade,LeafElement1,0.082,False,0.00672,0.0000336,1.827940627,26.11343752,0,16.128,0.00024,4.97E-01,0.8,0,0,0
+1,MS,1,sheath,StemElement,0.0285,False,0.00228,0.0000114,0.173149417,2.473563101,0,5.472,0.000269,4.79E-02,0.4,0,0,0
+1,MS,2,blade,LeafElement1,0.092,False,0.00784,0.0000392,2.535123615,36.21605164,0,18.816,0.00028,6.82E-01,1,0,0,0
+1,MS,2,sheath,HiddenElement,0.0285,False,0.00228,0.0000114,0.247901158,3.541445112,0,5.472,0.000248,6.61E-02,0.5,0,0,0
+1,MS,2,sheath,StemElement,0.0005,False,0.00004,0.0000002,0.004349143,0.062130616,0,0.096,0.000005,1.16E-03,0.5,0,0,0
+1,MS,3,blade,LeafElement1,0.060421565,True,0.006384,0.00003192,2.277715013,32.5387859,0,15.3216,0.000228,6.13E-01,1.2,0,0,0
