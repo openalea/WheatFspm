@@ -9,6 +9,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import caribu_facade
 import cnwheat_facade
@@ -343,7 +344,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                     # run CNWheat
                                     print('t cnwheat is {}'.format(t_cnwheat))
                                     Tair = meteo.loc[t_elongwheat, 'air_temperature']
-                                    cnwheat_facade_.run(Tair)
+                                    Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
+                                    cnwheat_facade_.run(Tair,Tsoil)
 
                                 # append the inputs and outputs at current step to global lists
                                 all_simulation_steps.append(t_cnwheat)
@@ -543,6 +545,49 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
         cnwheat_tools.plot_cnwheat_ouputs(pd.DataFrame(RER_dict), 'day', 'RER', x_label='Time (day)', y_label='RER (s-1)', plot_filepath=os.path.join(GRAPHS_DIRPATH, 'RER.PNG'), explicit_label=False)
 
+        # 4) Roots fluxes
+        # TODO : create a function in cnwheat_tools to plot several variables for same compartment
+        df = postprocessing_df_dict[organs_postprocessing_file_basename]
+        df = df[df['organ']=='roots']
+        df['R_tot_mstruct'] = (df['sum_respi']+df['Respi_growth'])/df['mstruct']#( df['R_Nnit_upt'] + df['R_Nnit_red'] + df['R_residual'] + df['R_maintenance'] ) / df['mstruct']
+        df['sucrose_consumption_mstruct'] =df['Respi_growth']*4/df['mstruct']
+        fig, ax = plt.subplots()
+        line1, = ax.plot(df['t'], df['Unloading_Sucrose'], label='Unloading_Sucrose')
+        line2, = ax.plot(df['t'], df['C_exudation'], label='C_exudation')
+        line3, = ax.plot(df['t'], df['R_tot_mstruct'], label='R_tot_mstruct')
+        line4, = ax.plot(df['t'], df['sucrose_consumption_mstruct'], label='C for growth')
+        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax.set_xlabel('Time (h)')
+        ax.set_ylabel('C in microl C per g mstruct per h')
+        ax.set_title('Fluxes of C in the roots')
+        # plt.show()
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Roots_fluxes.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+
+        # 5) Total C production vs. Root C allcoation
+        # TODO : create a function in cnwheat_tools to plot several variables for same compartment
+        df = postprocessing_df_dict[organs_postprocessing_file_basename]
+        df = df[df['organ'] == 'roots']
+        df['day'] = df['t'] // 24 + 1
+        df['Unloading_Sucrose_tot'] = df['Unloading_Sucrose'] * df['mstruct']
+        Unloading_Sucrose_tot = df.groupby(['day'])['Unloading_Sucrose_tot'].agg('sum')
+        days = df['day'].unique()
+        df2 = postprocessing_df_dict[axes_postprocessing_file_basename]
+        df2['day'] = df2['t'] // 24 + 1
+        Total_Photosynthesis = df2.groupby(['day'])['Total_Photosynthesis'].agg('sum')
+
+        share_roots = round( sum(Unloading_Sucrose_tot) / sum(Total_Photosynthesis) * 100, 0 )
+
+        fig, ax = plt.subplots()
+        line1, = ax.plot(days, Unloading_Sucrose_tot, label='C unloading to roots')
+        line2, = ax.plot(days, Total_Photosynthesis, label='C production')
+        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax.set_xlabel('Days')
+        ax.set_ylabel('C in microl C per day')
+        ax.set_title('C allocation')
+        # plt.show()
+        plt.text(1,1, 'Total Share to roots : {} %%'.format(share_roots) )
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_allocation.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+
 
 if __name__ == '__main__':
-    main(400, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
+    main(100, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)

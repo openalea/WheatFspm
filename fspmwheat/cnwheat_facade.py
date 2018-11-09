@@ -117,11 +117,11 @@ class CNWheatFacade(object):
                                        cnwheat_elements_data_df=model_elements_inputs_df,
                                        cnwheat_soils_data_df=model_soils_inputs_df)
 
-    def run(self, Tair=12):
+    def run(self, Tair=12, Tsoil = 12):
         """
         Run the model and update the MTG and the dataframes shared between all models.
         """
-        self._initialize_model(Tair)
+        self._initialize_model(Tair,Tsoil)
         self._simulation.run()
         self._update_shared_MTG()
 
@@ -163,10 +163,13 @@ class CNWheatFacade(object):
                                                 soils_df=soils_postprocessing_df,
                                                 graphs_dirpath=graphs_dirpath)
 
-    def _initialize_model(self, Tair=12):
+    def _initialize_model(self, Tair=12, Tsoil = 12):
         """
         Initialize the inputs of the model from the MTG shared between all models and the soils.
         """
+        # Update soils using weater data
+        for soil_id, soil_inputs in self.soils.iteritems():
+            self.soils[soil_id].Tsoil = Tsoil
         self.population = cnwheat_model.Population()
 
         # traverse the MTG recursively from top
