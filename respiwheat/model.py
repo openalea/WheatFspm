@@ -29,6 +29,8 @@ class RespirationModel(object):
 
     # R_growth#
     YG = 0.80              # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
+                            # range 0±75 to 0±85 ds  Cannell and Thornley, 2000.
+
     YG_GRAINS = 0.71       # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
 
     # R_phloem#
