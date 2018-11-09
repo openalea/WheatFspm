@@ -95,9 +95,15 @@ class Simulation(object):
             organ_label = element_id[3]
             element_label = element_id[4]
 
-            if element_label == 'HiddenElement' or element_inputs['height'] is None or element_inputs['green_area'] == 0.0:  # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
+            axe_label = SAM_id[1]
+            if axe_label != 'MS': # Calculation only for the main stem
+                continue
+
+            if element_inputs['height'] is None or element_inputs['green_area'] == 0.0:  # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
+                #element_label == 'HiddenElement' or
                 Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
                 Ts = self.inputs['SAMs'][SAM_id]['SAM_temperature']
+                Tr = 0.1 # Default transpiration value for small organs under ADEL's resolution (green_area == 0)
             else:
                 PARa = element_inputs['PARa']     #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
 
