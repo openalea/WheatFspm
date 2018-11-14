@@ -1,30 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="d62fe708-ce59-42b0-88b1-7febeaae5376" name="Default" comment="" />
+    <list default="true" id="3ff07ccb-a675-4a3b-8f79-96bab17d6d75" name="Default" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
-    <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FUSProjectUsageTrigger">
+    <session id="-1943861616">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.closed" value="1" />
+          <entry key="project.open.time.0" value="1" />
+          <entry key="project.opened" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.open">
+        <counts>
+          <entry key="csv" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="PLAIN_TEXT" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="Python Console" value="109" />
+          <entry key="py" value="72" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="Python" value="181" />
+        </counts>
+      </usages-collector>
+    </session>
+  </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="make_graphs_article.py" pinned="false" current-in-tab="false">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/make_graphs_article.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="75">
-              <caret line="5" column="31" lean-forward="true" selection-start-line="5" selection-start-column="31" selection-end-line="5" selection-end-column="31" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="PARa_profiles.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/PARa_profiles.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="75">
-              <caret line="23" column="36" lean-forward="true" selection-start-line="23" selection-start-column="36" selection-end-line="23" selection-end-column="36" />
+            <state relative-caret-position="650">
+              <caret line="2244" column="27" selection-start-line="2244" selection-start-column="27" selection-end-line="2244" selection-end-column="27" />
+              <folding>
+                <element signature="e#27#36#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -33,38 +58,87 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>##</find>
-      <find>direct</find>
+      <find>prot</find>
+      <find>0.145</find>
+      <find>-1</find>
+      <find>label</find>
+      <find>Ts</find>
+      <find>exud</find>
+      <find>linewidth</find>
+      <find>nitrate_up</find>
+      <find>RGR</find>
+      <find>load</find>
+      <find>growthwheat_facade</find>
+      <find>caribu_facade</find>
+      <find>dry mass</find>
+      <find>t_end</find>
+      <find>phloem_shoot_root</find>
+      <find>trios</find>
+      <find>PARa</find>
+      <find>g-1</find>
+      <find>calculate_Unloading_Sucrose</find>
+      <find>Unloading_Sucrose</find>
+      <find>ORGANS_VARIABLES</find>
+      <find>calculate_L_postE</find>
+      <find>ORGANS_FLUXES</find>
+      <find>g$</find>
+      <find>unloa</find>
+      <find>day</find>
+      <find>labelleft</find>
+      <find>labelx</find>
+      <find>(data_df_ph['plant'] == 1)</find>
+      <find>fill_b</find>
     </findStrings>
     <replaceStrings>
-      <replace>diffus</replace>
+      <replace>ax2</replace>
+      <replace>(data_df_ph['plant'] == 2)</replace>
     </replaceStrings>
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
+        <option value="$PROJECT_DIR$/../write_input_farquharwheat.py" />
+        <option value="$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
+        <option value="$PROJECT_DIR$/../../../../../../Lusignan/Modeles/l-grass/test/main.py" />
+        <option value="$PROJECT_DIR$/../../../../../../Lusignan/Modeles/l-grass/test/test_lgrass.py" />
+        <option value="$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/example/Papier_CN-WHEAT/NEMA_H3/main.py" />
+        <option value="$PROJECT_DIR$/../Densite_200/Erect_direct/main.py" />
+        <option value="$PROJECT_DIR$/../../NEMA_H3/main.py" />
+        <option value="$PROJECT_DIR$/../../../../Photosynthese/farquhar-wheat/trunk/farquharwheat/model.py" />
+        <option value="$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/cnwheat/model.py" />
+        <option value="$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/cnwheat/parameters.py" />
         <option value="$PROJECT_DIR$/make_graphs_article.py" />
-        <option value="$PROJECT_DIR$/PARa_profiles.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="7">
-    <option name="x" value="-62" />
-    <option name="y" value="365" />
-    <option name="width" value="1936" />
-    <option name="height" value="1056" />
+    <option name="x" value="-164" />
+    <option name="y" value="54" />
+    <option name="width" value="1934" />
+    <option name="height" value="793" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="Figures" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Figures" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
       <pane id="Scope" />
-      <pane id="ProjectPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -78,7 +152,70 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.make_graphs_article">
+    <configuration name="main (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="Figures" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/example/Papier_CN-WHEAT/NEMA_H3" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/example/Papier_CN-WHEAT/NEMA_H3/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main (2)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="Figures" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../../NEMA_H3" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../../NEMA_H3/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="Figures" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../../../../../../Lusignan/Modeles/l-grass/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../../../../../../Lusignan/Modeles/l-grass/test/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="make_graphs_article" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="Figures" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -96,47 +233,91 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
     </configuration>
+    <configuration name="test_lgrass" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="Figures" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../../../../../../Lusignan/Modeles/l-grass/test" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../../../../../../Lusignan/Modeles/l-grass/test/test_lgrass.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.make_graphs_article" />
+      <item itemvalue="Python.main" />
+      <item itemvalue="Python.test_lgrass" />
+      <item itemvalue="Python.main (1)" />
+      <item itemvalue="Python.main (2)" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.make_graphs_article" />
+        <item itemvalue="Python.main (2)" />
+        <item itemvalue="Python.main (1)" />
+        <item itemvalue="Python.main" />
+        <item itemvalue="Python.test_lgrass" />
       </list>
     </recent_temporary>
   </component>
   <component name="SvnConfiguration" cleanupOnStartRun="true">
-    <configuration>C:\Users\rbarillot.INRA\AppData\Roaming\Subversion</configuration>
+    <configuration>C:\Users\rbarillot\AppData\Roaming\Subversion</configuration>
+    <supportedVersion>125</supportedVersion>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="d62fe708-ce59-42b0-88b1-7febeaae5376" name="Default" comment="" />
-      <created>1524572794636</created>
+      <changelist id="3ff07ccb-a675-4a3b-8f79-96bab17d6d75" name="Default" comment="" />
+      <created>1528186646542</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1524572794636</updated>
+      <updated>1528186646542</updated>
     </task>
     <servers />
   </component>
+  <component name="TodoView">
+    <todo-panel id="selected-file">
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+    <todo-panel id="all">
+      <are-packages-shown value="true" />
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+  </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.6331169" visible="true" weight="0.24973656" />
-      <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Event Log" side_tool="true" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.32897604" />
-      <window_info anchor="bottom" id="Version Control" />
-      <window_info active="true" anchor="bottom" id="Python Console" visible="true" weight="0.32897604" />
-      <window_info id="Structure" order="1" sideWeight="0.36688313" side_tool="true" visible="true" weight="0.24973656" />
-      <window_info anchor="bottom" id="Terminal" weight="0.32897604" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.35729846" />
-      <window_info id="Favorites" side_tool="true" />
-      <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.4967462" visible="true" weight="0.24973656" />
+      <window_info id="Structure" order="1" sideWeight="0.5032538" side_tool="true" visible="true" weight="0.24973656" />
+      <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.22234273" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.21459696" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.32897604" />
+      <window_info anchor="bottom" id="Python Console" order="7" sideWeight="0.49894625" weight="0.22885032" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
+      <window_info anchor="bottom" id="Version Control" order="9" sideWeight="0.49947312" weight="0.32897604" />
+      <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.50105375" side_tool="true" weight="0.32897604" />
+      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
     </layout>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -144,42 +325,216 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="5" />
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../write_input_farquharwheat.py</url>
+          <line>48</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/example/Papier_CN-WHEAT/NEMA_H3/main.py</url>
+          <line>64</line>
+          <option name="timeStamp" value="28" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/example/Papier_CN-WHEAT/NEMA_H3/main.py</url>
+          <line>52</line>
+          <option name="timeStamp" value="29" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://C:/Python27/Lib/site-packages/adel/src/alinea/adel/adel.py</url>
+          <line>354</line>
+          <option name="timeStamp" value="30" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/make_graphs_article.py</url>
+          <line>1815</line>
+          <option name="timeStamp" value="77" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/make_graphs_article.py</url>
+          <line>1767</line>
+          <option name="timeStamp" value="78" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/make_graphs_article.py</url>
+          <line>1666</line>
+          <option name="timeStamp" value="79" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/make_graphs_article.py</url>
+          <line>1630</line>
+          <option name="timeStamp" value="81" />
+        </line-breakpoint>
+      </breakpoints>
+      <breakpoints-dialog>
+        <breakpoints-dialog />
+      </breakpoints-dialog>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/../Reconstruction_interception/plant_interception.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="413">
+          <caret line="192" selection-start-line="179" selection-start-column="4" selection-end-line="179" selection-end-column="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="175">
+          <caret line="1067" selection-start-line="1067" selection-end-line="1067" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../Densite_200/Erect_diffus/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="461">
+          <caret line="226" column="62" selection-start-line="226" selection-start-column="62" selection-end-line="226" selection-end-column="62" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../Densite_200_10_plantes/Plano_diffus/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-195">
+          <caret line="93" column="33" lean-forward="true" selection-start-line="93" selection-start-column="33" selection-end-line="93" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python27/Lib/site-packages/matplotlib/axes/_base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="225">
+          <caret line="218" selection-start-line="218" selection-end-line="218" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../libs/cnwheat/cnwheat/model.py" />
+    <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../../../Lusignan/Modeles/l-grass/test/main.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../../../Lusignan/Modeles/l-grass/test/test_lgrass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="795">
+          <caret line="59" column="38" selection-start-line="66" selection-start-column="32" selection-end-line="66" selection-end-column="50" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../../Senescence/senesc-wheat/trunk/senescwheat/model.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../Croissance_feuilles/growth-wheat/trunk/growthwheat/model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2745">
+          <caret line="183" column="89" selection-start-line="183" selection-start-column="89" selection-end-line="183" selection-end-column="89" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../../PostDoc_Breedwheat.psproj">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-45" />
+      </provider>
+    </entry>
+    <entry file="file://C:/Python27/Lib/site-packages/adel/src/alinea/adel/astk_interface.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="405">
+          <caret line="35" column="64" selection-start-line="35" selection-start-column="64" selection-end-line="35" selection-end-column="64" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python27/Lib/site-packages/adel/src/alinea/adel/adel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="499">
+          <caret line="347" column="21" lean-forward="true" selection-start-line="347" selection-start-column="21" selection-end-line="347" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/example/main.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/example/Papier_CN-WHEAT/NEMA_H3/main.py" />
+    <entry file="file://$PROJECT_DIR$/../Densite_200/Erect_direct/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1905">
+          <caret line="140" column="8" selection-start-line="140" selection-start-column="8" selection-end-line="140" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../NEMA_H3/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="600">
+          <caret line="40" column="102" selection-start-line="40" selection-start-column="102" selection-end-line="40" selection-end-column="102" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../../Croissance_feuilles/elong-wheat/trunk/elongwheat/parameters.py" />
+    <entry file="file://$PROJECT_DIR$/../../../fspmwheat/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="495">
+          <caret line="269" column="72" selection-start-line="269" selection-start-column="72" selection-end-line="269" selection-end-column="72" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../fspmwheat/farquharwheat_facade.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="389">
+          <caret line="147" column="90" selection-start-line="147" selection-start-column="90" selection-end-line="147" selection-end-column="90" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../../Respiration/respi-wheat/trunk/respiwheat/model.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../Photosynthese/farquhar-wheat/trunk/farquharwheat/simulation.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/cnwheat/postprocessing.py" />
+    <entry file="file://$PROJECT_DIR$/../../../fspmwheat/cnwheat_facade.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1283" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/cnwheat/converter.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../Croissance_feuilles/elong-wheat/trunk/elongwheat/simulation.py" />
+    <entry file="file://$PROJECT_DIR$/../write_input_farquharwheat.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="18" column="34" selection-start-line="18" selection-start-column="34" selection-end-line="18" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python27/Lib/site-packages/matplotlib/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="25695">
+          <caret line="1745" selection-start-line="1745" selection-end-line="1745" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../../../Articles/CN_Wheat/CN_Wheat_AoB/CN_Wheat evaluation/Figures/make_graphs_article.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="1293" column="35" selection-start-line="1293" selection-start-column="35" selection-end-line="1293" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/cnwheat/model.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/cnwheat/simulation.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../Distribution_CN/CN-Wheat_Python/trunk/cnwheat/parameters.py" />
+    <entry file="file://$PROJECT_DIR$/../../../../Photosynthese/farquhar-wheat/trunk/farquharwheat/model.py" />
     <entry file="file://$PROJECT_DIR$/../Reconstruction_interception/caribu_interface.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" selection-start-line="3" selection-end-line="3" selection-end-column="27" />
+        <state relative-caret-position="585">
+          <caret line="53" column="11" selection-start-line="53" selection-start-column="11" selection-end-line="53" selection-end-column="11" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../../../Croissance_feuilles/elong-wheat/trunk/elongwheat/model.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="264">
-          <caret line="524" column="36" selection-start-line="524" selection-start-column="21" selection-end-line="524" selection-end-column="36" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../../../Croissance_feuilles/elong-wheat/trunk/elongwheat/simulation.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="404">
-          <caret line="363" column="105" selection-start-line="363" selection-start-column="105" selection-end-line="363" selection-end-column="105" />
-        </state>
-      </provider>
+    <entry file="file://$PROJECT_DIR$/Table_02_10plants_Sum_C.csv">
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/make_graphs_article.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
-          <caret line="5" column="31" lean-forward="true" selection-start-line="5" selection-start-column="31" selection-end-line="5" selection-end-column="31" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/PARa_profiles.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
-          <caret line="23" column="36" lean-forward="true" selection-start-line="23" selection-start-column="36" selection-end-line="23" selection-end-column="36" />
+        <state relative-caret-position="650">
+          <caret line="2244" column="27" selection-start-line="2244" selection-start-column="27" selection-end-line="2244" selection-end-column="27" />
+          <folding>
+            <element signature="e#27#36#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

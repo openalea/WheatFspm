@@ -4,7 +4,8 @@ import openalea.plantgl.all as pgl
 from alinea.caribu.CaribuScene import CaribuScene
 from alinea.caribu.CaribuScene_nodes import WriteCan
 
-def write_par_file (path, cv, nb_layer, x_size, y_size, max_height, nb_inclination_class = 9, nb_azimut_class = 12, nb_species=1):
+
+def write_par_file(path, cv, nb_layer, x_size, y_size, max_height, nb_inclination_class=9, nb_azimut_class=12, nb_species=1):
     """
     Write par files for S2V programm
     :Parameters:
@@ -31,8 +32,8 @@ def write_par_file (path, cv, nb_layer, x_size, y_size, max_height, nb_inclinati
     par_file = open(dir_filename, 'w')
 
     par_file.write(str(nb_inclination_class) + ' ' + str(nb_azimut_class) + '\n'
-                + str(int(nb_layer)) + ' ' + (str(max_height/nb_layer) +' ')*int(nb_layer) +'\n'
-                + str(x_size) +' '+ str(1) +' '+ str(x_size) + ' ' +str(y_size) +' '+ str(1) +' '+ str(y_size) + ' ' + str(nb_species) + '\n')
+                   + str(int(nb_layer)) + ' ' + (str(max_height/nb_layer) + ' ')*int(nb_layer) + '\n'
+                   + str(x_size) + ' ' + str(1) + ' ' + str(x_size) + ' ' + str(y_size) + ' ' + str(1) + ' ' + str(y_size) + ' ' + str(nb_species) + '\n')
     par_file.close()
 
     return filename
@@ -71,14 +72,14 @@ def run(g, cv, nb_layer, path, domain, foliar=False):
 
     # Write par file
     scene = caribu_scene.plot(display=False)[0]
-    if len(scene) !=0:
+    if len(scene) != 0:
         x_size = abs(domain[0][0]) + abs(domain[1][0])
         y_size = abs(domain[0][1]) + abs(domain[1][1])
         precision = 1
         max_height = pgl.BoundingBox(scene).getZMax() * precision
-        print 'Max height of {} in mode {} = {}'.format(cv, mode, max_height)
+        print ('Max height of {} in mode {} = {}'.format(cv, mode, max_height))
 
-        par_filename = write_par_file (path, cv, nb_layer, x_size, y_size, max_height)
+        par_filename = write_par_file(path, cv, nb_layer, x_size, y_size, max_height)
 
         # Name of log file
         f_out = path + r'\outputs\{}.log'.format(cv + mode)

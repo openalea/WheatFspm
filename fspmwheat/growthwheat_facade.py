@@ -1,5 +1,8 @@
 # -*- coding: latin-1 -*-
 
+from growthwheat import converter, simulation, parameters
+import tools
+
 """
     fspmwheat.growthwheat_facade
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,16 +28,18 @@
         $Id$
 """
 
-from growthwheat import converter, simulation
-import tools
+
+LEAF_LABELS = ['blade', 'sheath']
 
 EMERGED_GROWING_ORGAN_LABELS = ['StemElement', 'LeafElement1']
+ELEMENT_LABELS = ['StemElement', 'LeafElement1', 'HiddenElement']
 
 SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'organ']
 
 SHARED_HIDDENZONES_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer']
 
 SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
+
 
 class GrowthWheatFacade(object):
     """
@@ -49,7 +54,7 @@ class GrowthWheatFacade(object):
         - `shared_mtg` (:class:`openalea.mtg.mtg.MTG`) - The MTG shared between all models.
         - `delta_t` (:class:`int`) - The delta between two runs, in seconds.
         - `model_hiddenzones_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at hiddenzones scale.
-        - `model_organs_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at organs scale.
+        - `model_elements_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at elements scale.
         - `model_roots_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at roots scale.
         - `shared_organs_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at organs scale shared between all models.
         - `shared_hiddenzones_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at hiddenzones scale shared between all models.
@@ -58,25 +63,24 @@ class GrowthWheatFacade(object):
 
     def __init__(self, shared_mtg, delta_t,
                  model_hiddenzones_inputs_df,
-                 model_organs_inputs_df,
+                 model_elements_inputs_df,
                  model_roots_inputs_df,
                  shared_organs_inputs_outputs_df,
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df):
 
-        self._shared_mtg = shared_mtg #: the MTG shared between all models
+        self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
-        self._simulation = simulation.Simulation(delta_t=delta_t) #: the simulator to use to run the model
+        self._simulation = simulation.Simulation(delta_t=delta_t)  #: the simulator to use to run the model
 
-        all_growthwheat_inputs_dict = converter.from_dataframes(model_hiddenzones_inputs_df, model_organs_inputs_df, model_roots_inputs_df)
+        all_growthwheat_inputs_dict = converter.from_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df)
 
-        self._update_shared_MTG(all_growthwheat_inputs_dict['hiddenzone'], all_growthwheat_inputs_dict['organs'], all_growthwheat_inputs_dict['roots'])
+        self._update_shared_MTG(all_growthwheat_inputs_dict['hiddenzone'], all_growthwheat_inputs_dict['elements'], all_growthwheat_inputs_dict['roots'])
 
-        self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df #: the dataframe at organs scale shared between all models
-        self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df #: the dataframe at hiddenzones scale shared between all models
-        self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df #: the dataframe at elements scale shared between all models
-        self._update_shared_dataframes(model_hiddenzones_inputs_df, model_organs_inputs_df, model_roots_inputs_df)
-
+        self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df  #: the dataframe at organs scale shared between all models
+        self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df  #: the dataframe at hiddenzones scale shared between all models
+        self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
+        self._update_shared_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df)
 
     def run(self):
         """
@@ -84,10 +88,9 @@ class GrowthWheatFacade(object):
         """
         self._initialize_model()
         self._simulation.run()
-        self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['organs'], self._simulation.outputs['roots'])
-        growthwheat_hiddenzones_outputs_df, growthwheat_organs_outputs_df, growthwheat_roots_outputs_df = converter.to_dataframes(self._simulation.outputs)
-        self._update_shared_dataframes(growthwheat_hiddenzones_outputs_df, growthwheat_organs_outputs_df, growthwheat_roots_outputs_df)
-
+        self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['elements'], self._simulation.outputs['roots'])
+        growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df = converter.to_dataframes(self._simulation.outputs)
+        self._update_shared_dataframes(growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df)
 
     def _initialize_model(self):
         """
@@ -95,7 +98,7 @@ class GrowthWheatFacade(object):
         """
 
         all_growthwheat_hiddenzones_inputs_dict = {}
-        all_growthwheat_organs_inputs_dict = {}
+        all_growthwheat_elements_inputs_dict = {}
         all_growthwheat_roots_inputs_dict = {}
 
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
@@ -118,34 +121,57 @@ class GrowthWheatFacade(object):
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
 
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
-                    for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
-                        mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_organ_vid)
-                        organ_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label)
-                        #: TODO: a changer car ici je recopie les prop de l'élement dans le dict des organes
-                        for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
-                            mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
-                            if set(mtg_element_properties).issuperset(simulation.ORGAN_INPUTS) and mtg_element_properties['label'] in EMERGED_GROWING_ORGAN_LABELS:
-                                growthwheat_organ_inputs_dict = {}
-                                for growthwheat_organ_input_name in simulation.ORGAN_INPUTS:
-                                    growthwheat_organ_inputs_dict[growthwheat_organ_input_name] = mtg_element_properties[growthwheat_organ_input_name]
-                                all_growthwheat_organs_inputs_dict[organ_id] = growthwheat_organ_inputs_dict
 
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
                     if 'hiddenzone' in mtg_metamer_properties:
                         hiddenzone_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index)
                         mtg_hiddenzone_properties = mtg_metamer_properties['hiddenzone']
 
-                        if set(mtg_hiddenzone_properties).issuperset(simulation.HIDDENZONE_INPUTS):
+                        if set(mtg_hiddenzone_properties).issuperset(simulation.HIDDENZONE_INPUTS):  # Initial values are set by elongwheat
                             growthwheat_hiddenzone_inputs_dict = {}
                             for growthwheat_hiddenzone_input_name in simulation.HIDDENZONE_INPUTS:
                                 growthwheat_hiddenzone_inputs_dict[growthwheat_hiddenzone_input_name] = mtg_hiddenzone_properties[growthwheat_hiddenzone_input_name]
                             all_growthwheat_hiddenzones_inputs_dict[hiddenzone_id] = growthwheat_hiddenzone_inputs_dict
 
-        self._simulation.initialize({'hiddenzone': all_growthwheat_hiddenzones_inputs_dict, 'organs': all_growthwheat_organs_inputs_dict, 'roots': all_growthwheat_roots_inputs_dict})
+                        # We take only the elements of growing metamers ie. the ones with hiddenzones
+                        for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
+                            mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
 
+                            for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
+                                mtg_element_label = self._shared_mtg.label(mtg_element_vid)
+                                element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
+                                mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
 
-    def _update_shared_MTG(self, all_growthwheat_hiddenzones_data_dict, all_growthwheat_organs_data_dict, all_growthwheat_roots_data_dict):
+                                if mtg_element_label in ELEMENT_LABELS and \
+                                        mtg_element_properties.get('length', 0) > 0:  # Note : ADEL puts length to positive value after updates even for HiddenElement.
+
+                                    growthwheat_element_inputs_dict = {}
+
+                                    # Exclude the HiddenElement appart from remobilisation cases
+                                    remobilisation = False
+                                    if mtg_element_label == 'HiddenElement':
+                                        if (mtg_organ_label in LEAF_LABELS and not growthwheat_hiddenzone_inputs_dict['leaf_is_growing'] and growthwheat_hiddenzone_inputs_dict['delta_leaf_L'] > 0) or\
+                                                (mtg_organ_label == 'internode' and not growthwheat_hiddenzone_inputs_dict['internode_is_growing'] and
+                                                 growthwheat_hiddenzone_inputs_dict['delta_internode_L'] > 0):
+                                            remobilisation = True
+                                        else:
+                                            continue
+
+                                    for growthwheat_element_input_name in simulation.ELEMENT_INPUTS:
+                                        mtg_element_input = mtg_element_properties.get(growthwheat_element_input_name)
+                                        if mtg_element_input is None:
+                                            if growthwheat_element_input_name == 'cytokinins':
+                                                mtg_element_input = parameters.OrganInit().__dict__['conc_cytokinins'] * mtg_element_properties.get('mstruct', parameters.OrganInit().__dict__['mstruct'])
+                                            else:
+                                                mtg_element_input = parameters.OrganInit().__dict__[growthwheat_element_input_name]
+                                        growthwheat_element_inputs_dict[growthwheat_element_input_name] = mtg_element_input
+                                        if remobilisation:
+                                            growthwheat_element_inputs_dict['green_area'] = mtg_element_properties.get('area')  # Needed later on for CN Wheat calculation. TODO: Should it be in elongwheat_facade instead ? (MG)
+                                    all_growthwheat_elements_inputs_dict[element_id] = growthwheat_element_inputs_dict
+
+        self._simulation.initialize({'hiddenzone': all_growthwheat_hiddenzones_inputs_dict, 'elements': all_growthwheat_elements_inputs_dict, 'roots': all_growthwheat_roots_inputs_dict})
+
+    def _update_shared_MTG(self, all_growthwheat_hiddenzones_data_dict, all_growthwheat_elements_data_dict, all_growthwheat_roots_data_dict):
         """
         Update the MTG shared between all models from the inputs or the outputs of the model.
         """
@@ -153,7 +179,7 @@ class GrowthWheatFacade(object):
         mtg_property_names = self._shared_mtg.property_names()
         if 'roots' not in mtg_property_names:
             self._shared_mtg.add_property('roots')
-        for growthwheat_data_name in set(simulation.HIDDENZONE_INPUTS_OUTPUTS + simulation.ORGAN_INPUTS_OUTPUTS):
+        for growthwheat_data_name in set(simulation.HIDDENZONE_INPUTS_OUTPUTS + simulation.ELEMENT_INPUTS_OUTPUTS):
             if growthwheat_data_name not in mtg_property_names:
                 self._shared_mtg.add_property(growthwheat_data_name)
 
@@ -168,37 +194,41 @@ class GrowthWheatFacade(object):
                     mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
                     if 'roots' not in mtg_axis_properties:
                         self._shared_mtg.property('roots')[mtg_axis_vid] = {}
-                    for roots_data_name, roots_data_value in growthwheat_roots_data_dict.iteritems():
+                    for roots_data_name, roots_data_value in growthwheat_roots_data_dict.items():
                         self._shared_mtg.property('roots')[mtg_axis_vid][roots_data_name] = roots_data_value
 
+                #: Metamer scale
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     hiddenzone_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index)
                     if hiddenzone_id in all_growthwheat_hiddenzones_data_dict:
                         growthwheat_hiddenzone_data_dict = all_growthwheat_hiddenzones_data_dict[hiddenzone_id]
                         mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
-                        if 'hiddenzone' not in mtg_metamer_properties:
+                        if 'hiddenzone' not in mtg_metamer_properties:  # MG : when is it used ?
                             self._shared_mtg.property('hiddenzone')[mtg_metamer_vid] = {}
-                        for hiddenzone_data_name, hiddenzone_data_value in growthwheat_hiddenzone_data_dict.iteritems():
+                        for hiddenzone_data_name, hiddenzone_data_value in growthwheat_hiddenzone_data_dict.items():
                             self._shared_mtg.property('hiddenzone')[mtg_metamer_vid][hiddenzone_data_name] = hiddenzone_data_value
 
+                    elif 'hiddenzone' in self._shared_mtg.get_vertex_property(mtg_metamer_vid):
+                        # remove the 'hiddenzone' property from this metamer
+                        del self._shared_mtg.property('hiddenzone')[mtg_metamer_vid]
+
+                    #: Organ scale
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        organ_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label)
 
-                        if organ_id in all_growthwheat_organs_data_dict:
-                            growthwheat_organ_data_dict = all_growthwheat_organs_data_dict[organ_id]
+                        #: Element scale
+                        for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
+                            mtg_element_label = self._shared_mtg.label(mtg_element_vid)
+                            element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
 
-                            for organ_data_name, organ_data_value in growthwheat_organ_data_dict.iteritems():
-                                self._shared_mtg.property(organ_data_name)[mtg_organ_vid] = organ_data_value
+                            if element_id in all_growthwheat_elements_data_dict:
+                                growthwheat_element_data_dict = all_growthwheat_elements_data_dict[element_id]
 
-                                # Write properties in element scale #: TODO: voir ce qui ce passe avec +sieurs élements
-                                for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
-                                    if self._shared_mtg.get_vertex_property(mtg_element_vid)['label'] in ('StemElement', 'LeafElement1'):
-                                        self._shared_mtg.property(organ_data_name)[mtg_element_vid] = growthwheat_organ_data_dict.get(organ_data_name)
+                                for element_data_name, element_data_value in growthwheat_element_data_dict.items():
+                                    self._shared_mtg.property(element_data_name)[mtg_element_vid] = element_data_value
 
-
-    def _update_shared_dataframes(self, growthwheat_hiddenzones_data_df, growthwheat_organs_data_df, growthwheat_roots_data_df):
+    def _update_shared_dataframes(self, growthwheat_hiddenzones_data_df, growthwheat_elements_data_df, growthwheat_roots_data_df):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
         """
@@ -206,16 +236,11 @@ class GrowthWheatFacade(object):
         for growthwheat_data_df, \
             shared_inputs_outputs_indexes, \
             shared_inputs_outputs_df in ((growthwheat_hiddenzones_data_df, SHARED_HIDDENZONES_INPUTS_OUTPUTS_INDEXES, self._shared_hiddenzones_inputs_outputs_df),
-                                         (growthwheat_organs_data_df, SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES, self._shared_elements_inputs_outputs_df),
+                                         (growthwheat_elements_data_df, SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES, self._shared_elements_inputs_outputs_df),
                                          (growthwheat_roots_data_df, SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES, self._shared_organs_inputs_outputs_df)):
 
             if growthwheat_data_df is growthwheat_roots_data_df:
                 growthwheat_data_df = growthwheat_data_df.copy()
                 growthwheat_data_df.loc[:, 'organ'] = 'roots'
-            elif growthwheat_data_df is growthwheat_organs_data_df:
-                growthwheat_data_df = growthwheat_data_df.copy()
-                growthwheat_data_df['element'] = "" # TODO: check with Camille
-                growthwheat_data_df.loc[growthwheat_data_df.organ == 'blade', 'element'] = 'LeafElement1'
-                growthwheat_data_df.loc[growthwheat_data_df.organ != 'blade', 'element'] = 'StemElement'
 
             tools.combine_dataframes_inplace(growthwheat_data_df, shared_inputs_outputs_indexes, shared_inputs_outputs_df)

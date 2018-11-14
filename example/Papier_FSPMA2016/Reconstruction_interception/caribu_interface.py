@@ -11,6 +11,7 @@ from fspmwheat import tools
 SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['species', 'plant', 'metamer', 'organ']
 PRECISION = 3
 
+
 def set_opt(g):
     """
     Set the optical properties for each vertex of the MTG
@@ -26,7 +27,7 @@ def set_opt(g):
     """
 
     # Set optical properties for PAR
-    opt = {'par':{}}
+    opt = {'par': {}}
 
     # Get geometry from MTG
     geom = g.property('geometry')
@@ -35,13 +36,14 @@ def set_opt(g):
         if g.class_name(vid) == 'HiddenElement':
             continue
         elif g.class_name(vid) in ('LeafElement1', 'LeafElement'):
-            opt['par'][vid] = (0.10, 0.05) #: (reflectance, transmittance) of the adaxial side of the leaves
+            opt['par'][vid] = (0.10, 0.05)  #: (reflectance, transmittance) of the adaxial side of the leaves
         elif g.class_name(vid) == 'StemElement':
-            opt['par'][vid] = (0.10,) #: (reflectance,) of the stems
+            opt['par'][vid] = (0.10,)  #: (reflectance,) of the stems
         else:
             print 'Warning: unknown element type {}, vid={}'.format(g.class_name(vid), vid)
 
     return opt
+
 
 def create_sky(energy, model, azimuts, zenits):
     """
@@ -66,12 +68,13 @@ def create_sky(energy, model, azimuts, zenits):
     # Convert string to list in order to be compatible with CaribuScene input format
     sky_list = []
     for string in sky_str.split('\n'):
-        if len(string)!=0:
+        if len(string) != 0:
             string_split = string.split(' ')
             t = tuple((float(string_split[0]), tuple((float(string_split[1]), float(string_split[2]), float(string_split[3])))))
             sky_list.append(t)
 
     return sky_list
+
 
 def create_sun(DOYS=[1], hours=[12], latitude=49, energy=1):
     """
@@ -99,6 +102,7 @@ def create_sun(DOYS=[1], hours=[12], latitude=49, energy=1):
 
     return suns
 
+
 def output_dataframes(caribu_aggregated, g, shared_outputs_df, shared_outputs_df_10plants, pid_10plants):
     """
     Update the shared dataframe.
@@ -122,7 +126,7 @@ def output_dataframes(caribu_aggregated, g, shared_outputs_df, shared_outputs_df
     for vid in sorted(aggregated_Eabs.keys()):
         # Index: species, metamer, organ
         ind = (g.property('species')[g.complex_at_scale(vid, 1)]), int(g.index(g.complex_at_scale(vid, 3))), g.label(g.complex_at_scale(vid, 4))
-        if Eabs.has_key(ind):
+        if ind in Eabs.keys():
             Eabs[ind].append(aggregated_Eabs[vid])
         else:
             Eabs[ind] = [aggregated_Eabs[vid]]
@@ -139,8 +143,7 @@ def output_dataframes(caribu_aggregated, g, shared_outputs_df, shared_outputs_df
     organ_std_Eabs = []
     organ_IC95_Eabs = []
 
-
-    for organ_id, Eabs_list in Eabs.iteritems():
+    for organ_id, Eabs_list in Eabs.items():
         if organ_id[1:] in ((1, 'internode'), (3, 'internode')): continue
         ids.append(organ_id)
         mean_Eabs = np.mean(Eabs_list)
@@ -153,10 +156,10 @@ def output_dataframes(caribu_aggregated, g, shared_outputs_df, shared_outputs_df
     data_df = pd.DataFrame({'Eabs': organ_mean_Eabs, 'std': organ_std_Eabs, 'IC95': organ_IC95_Eabs})
     df = pd.concat([ids_df, data_df], axis=1)
     df.sort_values(['species', 'metamer', 'organ'], inplace=True)
-    df.reset_index(inplace=True, drop = True)
+    df.reset_index(inplace=True, drop=True)
     tools.combine_dataframes_inplace(df, ['species', 'metamer', 'organ'], shared_outputs_df)
 
-    for organ_id, Eabs in Eabs_10plants.iteritems():
+    for organ_id, Eabs in Eabs_10plants.items():
         if organ_id[2:] in ((1, 'internode'), (3, 'internode')): continue
         ids_10plants.append(organ_id)
         organ_Eabs_10plants.append(Eabs)
@@ -165,10 +168,11 @@ def output_dataframes(caribu_aggregated, g, shared_outputs_df, shared_outputs_df
     data_df_10plants = pd.DataFrame({'Eabs': organ_Eabs_10plants})
     df_10plants = pd.concat([ids_df_10plants, data_df_10plants], axis=1)
     df_10plants.sort_values(['species', 'plant', 'metamer', 'organ'], inplace=True)
-    df_10plants.reset_index(inplace=True, drop= True)
+    df_10plants.reset_index(inplace=True, drop=True)
     tools.combine_dataframes_inplace(df_10plants, ['species', 'plant', 'metamer', 'organ'], shared_outputs_df_10plants)
 
     return shared_outputs_df
+
 
 def save_csv(shared_outputs_df, output_filename, cv):
     """
@@ -182,6 +186,7 @@ def save_csv(shared_outputs_df, output_filename, cv):
 
     output_dirpath = os.path.join('outputs\{}'.format(cv), output_filename)
     shared_outputs_df.to_csv(output_dirpath, na_rep='NA', index=False)
+
 
 def caribu_interface(g, domain, sim_sky, sim_sun, cv, filename, pid_10plants):
     """
@@ -230,7 +235,7 @@ def caribu_interface(g, domain, sim_sky, sim_sun, cv, filename, pid_10plants):
 
     # Run caribu
     _, aggregated_sky_all = c_scene.run(direct=True, infinite=True)
-    #c_scene.plot(aggregated_sky_all['par']['Eabs'])
+    # c_scene.plot(aggregated_sky_all['par']['Eabs'])
 
     # Set sun positions
     DOYS = sim_sun[0]
@@ -239,7 +244,7 @@ def caribu_interface(g, domain, sim_sky, sim_sun, cv, filename, pid_10plants):
 
     for DOY in range(DOYS[0], DOYS[-1]+1):
         for hour in range(0, 24):
-            if suns.has_key((DOY, hour)):
+            if (DOY, hour) in suns.keys():
                 sun_str_split = suns[(DOY, hour)].split(' ')
                 sun = [tuple((float(sun_str_split[0]), tuple((float(sun_str_split[1]), float(sun_str_split[2]), float(sun_str_split[3])))))]
 
@@ -248,7 +253,7 @@ def caribu_interface(g, domain, sim_sky, sim_sun, cv, filename, pid_10plants):
 
                 # Run caribu
                 _, aggregated_sun = c_scene.run(direct=True, infinite=True)
-                #c_scene.plot(aggregated['par']['Eabs'])
+                # c_scene.plot(aggregated['par']['Eabs'])
                 aggregated_sky = aggregated_sky_all
 
             else:
@@ -262,12 +267,11 @@ def caribu_interface(g, domain, sim_sky, sim_sun, cv, filename, pid_10plants):
             output_dataframes(aggregated_sky['par'], g, shared_outputs_df_sky, shared_outputs_df_sky_10plants, pid_10plants)
             output_dataframes(aggregated_sun['par'], g, shared_outputs_df_sun, shared_outputs_df_sun_10plants, pid_10plants)
             all_t_list.append(t)
-            t+=1
+            t += 1
             all_outputs_sky_list.append(shared_outputs_df_sky.copy())
             all_outputs_sun_list.append(shared_outputs_df_sun.copy())
             all_outputs_sky_list_10plants.append(shared_outputs_df_sky_10plants.copy())
             all_outputs_sun_list_10plants.append(shared_outputs_df_sun_10plants.copy())
-
 
     # Outputs csv
     all_outputs_sky_df = pd.concat(all_outputs_sky_list, keys=all_t_list)
@@ -281,7 +285,6 @@ def caribu_interface(g, domain, sim_sky, sim_sun, cv, filename, pid_10plants):
     all_outputs_sun_df.rename_axis({'level_0': 't'}, axis=1, inplace=True)
     output_filename_sun = 'sun' + '_' + 'DOY{}'.format(str(DOYS)) + '_' + 'H{}'.format(str(hours)) + '_' + filename + '.csv'
     save_csv(all_outputs_sun_df, output_filename_sun, cv)
-
 
     all_outputs_sky_df_10plants = pd.concat(all_outputs_sky_list_10plants, keys=all_t_list)
     all_outputs_sky_df_10plants.reset_index(0, inplace=True)
