@@ -14,7 +14,6 @@ from alinea.adel.Stand import AgronomicStand
 from alinea.adel.AdelR import R_xydb, R_srdb
 from alinea.astk.plantgl_utils import get_height
 
-
 def pickle_MTG(g, cv):
     """
     Pickle the MTG.
@@ -39,20 +38,20 @@ def pickle_MTG(g, cv):
     s = plot3d(g)
     geom = {sh.id:sh.geometry for sh in s}
     g.remove_property('geometry')
-    fgeom = dir + r'\scene{}04d.bgeom'.format(index)
-    fg = dir + r'\adel{}04d.pckl'.format(index)
+    fgeom = dir + r'\scene%04d.bgeom'%(index)
+    fg = dir + r'\adel%04d.pckl'%(index)
     s.save(fgeom, 'BGEOM')
     f = open(fg, 'w')
     pickle.dump([g, 1500], f)
     f.close()
 
-    # restore geometry
+    #restore geometry
     g.add_property('geometry')
     g.property('geometry').update(geom)
 
 
 def g_to_dataframe(g, cv):
-    d = {'species': [], 'plant': [], 'axis': [], 'metamer': [], 'organ': [], 'area': [], 'height': []}
+    d = {'species':[], 'plant':[], 'axis':[], 'metamer':[], 'organ':[], 'area':[], 'height':[]}
     for pid in g.components_iter(g.root):
         plant_index = int(g.index(pid))
         for axid in g.components_iter(pid):
@@ -62,7 +61,7 @@ def g_to_dataframe(g, cv):
                     for orgid in g.components_iter(mid):
                         organ_label = g.label(orgid)
                         for vid in g.components_iter(orgid):
-                            if vid in g.property('geometry').keys():
+                            if g.property('geometry').has_key(vid):
                                 area = g.get_vertex_property(vid)['area']
                                 d['species'].append(g.property('species')[pid])
                                 d['plant'].append(plant_index)
@@ -78,8 +77,7 @@ def g_to_dataframe(g, cv):
     df.sort_values(['plant', 'axis', 'metamer', 'organ'], inplace=True)
     df.to_csv(r'Dimensions_Hauteurs\scene_dim_{}.csv'.format(cv))
 
-
-def wheat_reconstruction(cv, nplants, density, pickle=False):
+def wheat_reconstruction(cv, path, nplants, density, pickle=False):
     """
     Reconstruction of wheat 3D mock-ups using ADEL-Wheat model.
 
@@ -109,10 +107,10 @@ def wheat_reconstruction(cv, nplants, density, pickle=False):
     dimT = dimension_table(blades, stem, ear)
 
     # leaf shape database
-    xydb_Soissons = R_xydb(r'DataJESSICA_leaf curvature and shape\02.Soissons_2005_d250_N1_laminaCur_7c.RData')
-    srdb_Soissons = R_srdb(r'DataJESSICA_leaf curvature and shape\02.Soissons_2005_d250_N1_lamina2D_7c.RData')
-    xydb_Caphorn = R_xydb(r'DataJESSICA_leaf curvature and shape\04.Caphorn_2005_d250_N1_laminaCur_7c.RData')
-    srdb_Caphorn = R_srdb(r'DataJESSICA_leaf curvature and shape\04.Caphorn_2005_d250_N1_lamina2D_7c.RData')
+    xydb_Soissons = R_xydb(path + r'\DataJESSICA_leaf curvature and shape\02.Soissons_2005_d250_N1_laminaCur_7c.RData')
+    srdb_Soissons = R_srdb(path + r'\DataJESSICA_leaf curvature and shape\02.Soissons_2005_d250_N1_lamina2D_7c.RData')
+    xydb_Caphorn = R_xydb(path + r'\DataJESSICA_leaf curvature and shape\04.Caphorn_2005_d250_N1_laminaCur_7c.RData')
+    srdb_Caphorn = R_srdb(path + r'\DataJESSICA_leaf curvature and shape\04.Caphorn_2005_d250_N1_lamina2D_7c.RData')
 
     if cv == 'Soissons':
         leaves = {'Soissons': Leaves(xydb=xydb_Soissons, srdb=srdb_Soissons)}
@@ -127,11 +125,11 @@ def wheat_reconstruction(cv, nplants, density, pickle=False):
     adel = AdelDress(dimT=dimT, leaves=leaves, stand=stand)
 
     if cv == 'Mixture':
-        species = {'Soissons': 0.5, 'Caphorn': 0.5}
+        species = {'Soissons':0.5, 'Caphorn':0.5}
     else:
-        species = {cv: 1}
+        species = {cv:1}
 
-    g = adel.canopy(nplants, species=species)
+    g = adel.canopy(nplants, species=species )
     adel.plot(g)
 
     # Pickle MTG
@@ -143,8 +141,7 @@ def wheat_reconstruction(cv, nplants, density, pickle=False):
 
     return g, domain
 
-
-def S2V_profile(nb_layer, g, cv, domain, foliar=False):
+def S2V_profile (nb_layer, path, g, cv, domain, foliar=False):
     """
     Launch S2V programm
     :Parameters:
@@ -156,9 +153,8 @@ def S2V_profile(nb_layer, g, cv, domain, foliar=False):
         - `foliar` (:class:`bool`) - Whether S2V should run with the total plant area (False) or only with leaf area (True).
     """
     import S2V
-    S2V_path = r'S2V'
+    S2V_path = path + r'\S2V'
     S2V.run(g, cv, nb_layer, S2V_path, domain, foliar)
-
 
 def run_caribu(g, domain, sim_sky, sim_sun, cv, filename, pid_10plants=None):
     """
@@ -180,7 +176,6 @@ def run_caribu(g, domain, sim_sky, sim_sun, cv, filename, pid_10plants=None):
     import caribu_interface
 
     return caribu_interface.caribu_interface(g, domain, sim_sky, sim_sun, cv, filename, pid_10plants=pid_10plants)
-
 
 def write_input_farquharwheat(outputs_sky_10plants, outputs_sun_10plants, input_farquharwheat_path):
     """
@@ -204,36 +199,38 @@ def run_script(cv):
     :Parameters:
         - `cv` (:class:`list`) - List of cultivars.
     """
+    path = r'D:\Documents\PostDoc_Grignon\Modeles\FSPM_Wheat\example\Papier_FSPMA2016\Reconstruction_interception'
     nplants = 1000
     densities = [200, 410, 600, 800]
+
     for density in densities:
         # wheat reconstruction
-        reconstruction = False
+        reconstruction = True
         if reconstruction:
-            g, domain = wheat_reconstruction(cv, nplants, density, pickle=False)
+            g, domain = wheat_reconstruction(cv, path, nplants, density, pickle=False)
         else:
             stand = AgronomicStand(sowing_density=density, plant_density=density, inter_row=0.15, noise=0.03)
             _, domain, _, _ = stand.smart_stand(nplants)
-            adel = AdelDress(stand=stand)
-            MTG_DIRPATH = os.path.join('outputs', cv)
+            adel = AdelDress(stand = stand)
+            MTG_DIRPATH = os.path.join(path, 'outputs', cv)
             g = adel.load(dir=MTG_DIRPATH)
 
         # S2V
         S2V = False
         if S2V:
             nb_layer = 20
-            S2V_profile(nb_layer, path, g, cv, domain, foliar=True)
+            S2V_profile (nb_layer, path, g, cv, domain, foliar=True)
 
         # Caribu
         filename = '1000_plants_Density_{}'.format(density)
         Caribu = True
-        # Sky
+        ## Sky
         model = 'soc'
         azimuts = 4
         zenits = 5
         sim_sky = (1, model, azimuts, zenits)
 
-        # Sun
+        ## Sun
         DOYS = [150, 199]
         hours = [5, 19]
         sim_sun = [DOYS, hours, 49, 1]
@@ -264,24 +261,22 @@ def run_script(cv):
         write_inputs = True
 
         if write_inputs:
-            caribu_outputs_path = r'outputs\{}'.format(cv)
+            caribu_outputs_path = r'D:\Documents\PostDoc_Grignon\Modeles\FSPM_Wheat\example\Papier_FSPMA2016\Reconstruction_interception\outputs\{}'.format(cv)
             cv_mapping = {'Caphorn': 'Erect_', 'Soissons': 'Plano_', 'Mixture': 'Asso_'}
-            outputs_sky_10plants, outputs_sun_10plants = os.path.join(caribu_outputs_path, 'soc_a4z5_1000_plants_Density_{}_10plants.csv'.format(str(density))),\
-                                                         os.path.join(caribu_outputs_path, 'sun_DOY[150, 199]_H[5, 19]_1000_plants_Density_{}_10plants.csv'.format(str(density)))
-            path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-            input_farquharwheat_path = os.path.join(path, r'Densite_{}'.format(density), cv_mapping[cv])
+            outputs_sky_10plants, outputs_sun_10plants = os.path.join(caribu_outputs_path, 'soc_a4z5_1000_plants_Density_{}_10plants.csv'.format(str(density))), os.path.join(caribu_outputs_path, 'sun_DOY[150, 199]_H[5, 19]_1000_plants_Density_{}_10plants.csv'.format(str(density)))
+            input_farquharwheat_path = os.path.join(r'D:\Documents\PostDoc_Grignon\Modeles\FSPM_Wheat\example\Papier_FSPMA2016\Densite_{}'.format(density), cv_mapping[cv])
             write_input_farquharwheat(outputs_sky_10plants, outputs_sun_10plants, input_farquharwheat_path)
 
 
 if __name__ == '__main__':
     cultivars = ['Caphorn', 'Soissons', 'Mixture']
 
-    for cv in cultivars:
-        run_script(cv)
+    # for cv in cultivars:
+       # run_script(cv)
 
-    # A ne pas utiliser avec S2V !!!!
-    # num_processes = mp.cpu_count()-1
-    # p = mp.Pool(num_processes)
-    # mp_solutions = p.map(run_script, cultivars)
-    # p.close()
-    # p.join()
+### A ne pas utiliser avec S2V !!!!
+    num_processes = mp.cpu_count()-1
+    p = mp.Pool(num_processes)
+    mp_solutions = p.map(run_script, cultivars)
+    p.close()
+    p.join()
