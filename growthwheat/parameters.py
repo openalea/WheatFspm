@@ -30,10 +30,11 @@ CONVERSION_FACTOR_20_TO_12 = 0.45     #: modified_Arrhenius_equation(12)/modifie
 # Shoot
 ALPHA = 0.106  # 1.537e-02            #: Parameter of the relation between leaf mass and leaf length (g m^(-BETA))
 BETA = 1.28                           #: Parameter of the relation between leaf mass and leaf length (dimensionless)
-RATIO_SUCROSE_MSTRUCT = 0.384         #: Mass of C (under carbohydrate form, g) in 1 g of mstruct (Penning de Vries, Witlage and Kremer, 1978)
+RATIO_SUCROSE_MSTRUCT = 0.444         #: Mass of C (under carbohydrate form, g) in 1 g of mstruct : 0.384 from (Penning de Vries, Witlage and Kremer, 1978), 0.444 for cellulose (about 45% C in
+# senescent leaves)
 RATIO_AMINO_ACIDS_MSTRUCT = 0.005     #: Mass of N (under amino acid/protein form, g) in 1 g of mstruct (Penning de Vries, Witlage and Kremer, 1978)
-AMINO_ACIDS_C_RATIO = 3.67            #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly) # Sources ?? Calculs AS = 4.15
-AMINO_ACIDS_N_RATIO = 1.17            #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly) # Sources ?? Calculs AS = 1.25
+AMINO_ACIDS_C_RATIO = 4.15            #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly) from (Penning de Vries, Witlage and Kremer, 1978)
+AMINO_ACIDS_N_RATIO = 1.25            #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly) from (Penning de Vries, Witlage and Kremer, 1978)
 RATIO_MSTRUCT_DM = 0.8                #: Ratio mstruct/dry matter (dimensionless)
 RATIO_ENCLOSED_LEAF_INTERNODE = 5     #: We use ratio sheath:lamina of the specific structural dry masses (from data of J. Bertheloot, 2004)
 
@@ -48,8 +49,8 @@ te_IN = 210 * 3600 * 24 / 12  #: end of internode elongation in automate growth 
 # Roots
 VMAX_ROOTS_GROWTH = 0.015 * CONVERSION_FACTOR_20_TO_12             #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) post flo at 12°C
 K_ROOTS_GROWTH = 1250                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS) post flo
-RATIO_C_MSTRUCT_ROOTS = 0.384         #: Mean contribution of carbon to root structural dry mass (g C g-1 Mstruct)
-RATIO_N_MSTRUCT_ROOTS_ = 0.02         #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct)
+RATIO_C_MSTRUCT_ROOTS = 0.444         #: Mean contribution of carbon to root structural dry mass (g C g-1 Mstruct) : same as shoot
+RATIO_N_MSTRUCT_ROOTS_ = 0.005#0.02         #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct) : same as shoot
 
 
 class HiddenZoneInit:
