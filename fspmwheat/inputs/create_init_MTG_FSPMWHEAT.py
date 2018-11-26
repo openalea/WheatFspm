@@ -45,7 +45,7 @@ def create_init_MTG_FSPMWHEAT(dirpath):
     # Organ dimensions
     # TODO : complete with zero up to desired  phtomer number
     blades = blade_dimension(length=[ 0.082, 0.092],
-                             area=[ 0.00024, 0.00028],
+                             width = [0.0030,0.0033], #area=[ 0.00024, 0.00028],
                              ntop=[ 2, 1])
 
     stem = stem_dimension(ntop=[2, 1],
@@ -66,6 +66,6 @@ def create_init_MTG_FSPMWHEAT(dirpath):
     adel.save(g, dir=dirpath)
     return adel, g
 
-#adel, g = create_init_MTG_FSPMWHEAT(r'./adelwheat')
-adel, g = create_init_MTG_with_tillers(nff = 14)
-adel.save(g, dir= r'./adelwheat' )
+adel, g = create_init_MTG_FSPMWHEAT(r'./adelwheat')
+# adel, g = create_init_MTG_with_tillers(nff = 14)
+# adel.save(g, dir= r'./adelwheat' )
