@@ -129,8 +129,6 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         # read adelwheat inputs at t0
         adel_wheat = AdelWheatDyn(seed=1234, scene_unit='m')
         g = adel_wheat.load(dir=INPUTS_DIRPATH)
-        adel_wheat.domain = g.get_vertex_property(0)['meta']['domain']  # temp (until Christian's commit)
-        adel_wheat.nplants = g.get_vertex_property(0)['meta']['nplants']  # temp (until Christian's commit)
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -323,7 +321,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                         print('t elongwheat is {}'.format(t_elongwheat))
 
                         # run ElongWheat
-                        Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]  # TODO: Add soil temperature in the weather input file
+                        Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
 
                         elongwheat_facade_.run(Tair, Tsoil)
 
@@ -462,6 +460,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
     if generate_graphs:
 
         # Retrieve last computed post-processing dataframes
+        df_SAM = pd.read_csv(SAM_STATES_FILEPATH)
         axes_postprocessing_file_basename = os.path.basename(AXES_POSTPROCESSING_FILEPATH).split('.')[0]
         organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
         hiddenzones_postprocessing_file_basename = os.path.basename(HIDDENZONES_POSTPROCESSING_FILEPATH).split('.')[0]
@@ -545,49 +544,124 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
         cnwheat_tools.plot_cnwheat_ouputs(pd.DataFrame(RER_dict), 'day', 'RER', x_label='Time (day)', y_label='RER (s-1)', plot_filepath=os.path.join(GRAPHS_DIRPATH, 'RER.PNG'), explicit_label=False)
 
-        # 4) Roots fluxes
-        # TODO : create a function in cnwheat_tools to plot several variables for same compartment
-        df = postprocessing_df_dict[organs_postprocessing_file_basename]
-        df = df[df['organ']=='roots']
-        df['R_tot_mstruct'] = (df['sum_respi']+df['Respi_growth'])/df['mstruct']#( df['R_Nnit_upt'] + df['R_Nnit_red'] + df['R_residual'] + df['R_maintenance'] ) / df['mstruct']
-        df['sucrose_consumption_mstruct'] =df['Respi_growth']*4/df['mstruct']
-        fig, ax = plt.subplots()
-        line1, = ax.plot(df['t'], df['Unloading_Sucrose'], label='Unloading_Sucrose')
-        line2, = ax.plot(df['t'], df['C_exudation'], label='C_exudation')
-        line3, = ax.plot(df['t'], df['R_tot_mstruct'], label='R_tot_mstruct')
-        line4, = ax.plot(df['t'], df['sucrose_consumption_mstruct'], label='C for growth')
-        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
-        ax.set_xlabel('Time (h)')
-        ax.set_ylabel('C in microl C per g mstruct per h')
-        ax.set_title('Fluxes of C in the roots')
-        # plt.show()
-        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Roots_fluxes.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+        # 4) Total C production vs. Root C allcoation
+        df_org= postprocessing_df_dict[organs_postprocessing_file_basename]
+        df_roots= df_org[df_org['organ'] == 'roots']
+        df_roots['day'] = df_roots['t'] // 24 + 1
+        df_roots['Unloading_Sucrose_tot'] = df_roots['Unloading_Sucrose'] * df_roots['mstruct']
+        Unloading_Sucrose_tot = df_roots.groupby(['day'])['Unloading_Sucrose_tot'].agg('sum')
+        days = df_roots['day'].unique()
 
-        # 5) Total C production vs. Root C allcoation
-        # TODO : create a function in cnwheat_tools to plot several variables for same compartment
-        df = postprocessing_df_dict[organs_postprocessing_file_basename]
-        df = df[df['organ'] == 'roots']
-        df['day'] = df['t'] // 24 + 1
-        df['Unloading_Sucrose_tot'] = df['Unloading_Sucrose'] * df['mstruct']
-        Unloading_Sucrose_tot = df.groupby(['day'])['Unloading_Sucrose_tot'].agg('sum')
-        days = df['day'].unique()
-        df2 = postprocessing_df_dict[axes_postprocessing_file_basename]
-        df2['day'] = df2['t'] // 24 + 1
-        Total_Photosynthesis = df2.groupby(['day'])['Total_Photosynthesis'].agg('sum')
+        df_axe = postprocessing_df_dict[axes_postprocessing_file_basename]
+        df_axe['day'] = df_axe['t'] // 24 + 1
+        Total_Photosynthesis = df_axe.groupby(['day'])['Total_Photosynthesis'].agg('sum')
 
-        share_roots = round( sum(Unloading_Sucrose_tot) / sum(Total_Photosynthesis) * 100, 0 )
+        df_elt = postprocessing_df_dict[elements_postprocessing_file_basename]
+        df_elt['day'] = df_elt['t'] // 24 + 1
+        Shoot_respiration = df_elt.groupby(['day'])['sum_respi'].agg('sum')
+        Net_Photosynthesis = Total_Photosynthesis - Shoot_respiration
+
+        share_net_roots_live = Unloading_Sucrose_tot / Net_Photosynthesis * 100
 
         fig, ax = plt.subplots()
-        line1, = ax.plot(days, Unloading_Sucrose_tot, label='C unloading to roots')
-        line2, = ax.plot(days, Total_Photosynthesis, label='C production')
-        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        line1 = ax.plot(days, Net_Photosynthesis, label=u'Net_Photosynthesis')
+        line2 = ax.plot(days, Unloading_Sucrose_tot, label=u'C unloading to roots')
+
+        ax2 = ax.twinx()
+        line3 = ax2.plot(days, share_net_roots_live, label = u'Net C Shoot production sent to roots', color = 'red')
+
+        lines = line1 + line2 + line3
+        labs = [l.get_label() for l in lines]
+        ax.legend(lines, labs, loc='center left',prop={'size': 10}, framealpha=0.5,bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+
         ax.set_xlabel('Days')
-        ax.set_ylabel('C in microl C per day')
-        ax.set_title('C allocation')
-        # plt.show()
-        plt.text(1,1, 'Total Share to roots : {} %%'.format(share_roots) )
+        ax2.set_ylim([0,200])
+        ax.set_ylabel(u'C (µmol C.day$^{-1}$ )')
+        ax2.set_ylabel(u'Ratio (%)' )
+        ax.set_title('C allocation to roots')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_allocation.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
+        # 5) Fluxes # TODO : faire le graphe cumulé en ajoutant consumption growth shoot
+
+        df_roots['R_tot'] = (df_roots['sum_respi'] + df_roots['Respi_growth'])
+        df_roots['R_tot_mstruct'] = (df_roots['R_tot'])/df_roots['mstruct']#( df['R_Nnit_upt'] + df['R_Nnit_red'] + df['R_residual'] + df['R_maintenance'] ) / df['mstruct']
+        df_roots['sucrose_consumption_permstruct'] =df_roots['sucrose_consumption_mstruct']/df_roots['mstruct']
+        df_roots['C_used_tot'] = df_roots['sucrose_consumption_permstruct'] + df_roots['R_tot_mstruct']+ df_roots['C_exudation']
+        fig, ax = plt.subplots()
+        line1, = ax.plot(df_roots['t'], df_roots['Unloading_Sucrose'], label=u'C unloading to roots')
+        line2, = ax.plot(df_roots['t'], df_roots['C_exudation'], label=u'C lost by exudation')
+        line3, = ax.plot(df_roots['t'], df_roots['R_tot_mstruct'], label='Respiration')
+        line4, = ax.plot(df_roots['t'], df_roots['sucrose_consumption_permstruct'], label='C for growth')
+        line5, = ax.plot(df_roots['t'], df_roots['C_used_tot'], label='C consumed by the roots')
+
+        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax.set_xlabel('Time (h)')
+        ax.set_ylabel(u'C (µmol C.g$^{-1}$ mstruct.h$^{-1}$ )')
+        ax.set_title('Fluxes of C in the roots')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Fluxes.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+
+        # 5bis) Cumulated fluxes # TODO : faire le graphe cumulé en ajoutant consumption growth shoot
+
+        R_tot_cum = np.cumsum(df_roots['R_tot'])
+        sucrose_consumption_mstruct_cum = np.cumsum( df_roots['sucrose_consumption_mstruct'] )
+        C_exudation_cum = np.cumsum( df_roots['C_exudation'] * df_roots['mstruct'])
+        Total_Photosynthesis_cum = np.cumsum(df_axe['Total_Photosynthesis'])
+        Shoot_respiration = df_elt.groupby(['t'])['sum_respi'].agg('sum')
+        Net_Photosynthesis_cum = np.cumsum( df_axe['Total_Photosynthesis'] - Shoot_respiration[1:].reset_index()['sum_respi'] )
+        Unloading_Sucrose_tot_cum = np.cumsum(df_roots['Unloading_Sucrose_tot'])
+
+        fig, ax = plt.subplots()
+        line1, = ax.plot(df_roots['t'], Unloading_Sucrose_tot_cum, label=u'C unloading to roots')
+        line2, = ax.plot(df_roots['t'], C_exudation_cum, label=u'C lost by exudation')
+        line3, = ax.plot(df_roots['t'], R_tot_cum, label='Respiration')
+        line4, = ax.plot(df_roots['t'], sucrose_consumption_mstruct_cum, label='C for growth')
+        line5, = ax.plot(df_axe['t'], Total_Photosynthesis_cum, label=u'Gross Photosynthesis')
+        line5, = ax.plot(df_axe['t'], Net_Photosynthesis_cum, label=u'Net Photosynthesis')
+
+        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax.set_xlabel('Time (h)')
+        ax.set_ylabel(u'C (µmol C.day$^{-1}$ )')
+        ax.set_title('Cumulated fluxes of C')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Fluxes_cumulated.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+
+        # 6) RUE
+        df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * 3600/2.02 * 10**-6
+        PARa = df_elt.groupby(['day'])['PARa_MJ'].agg('sum')
+        PARa_cum = np.cumsum(PARa)
+        days = df_elt['day'].unique()
+
+        sum_dry_mass_shoot = df_axe.groupby(['day'])['sum_dry_mass_shoot'].agg('max')
+        sum_dry_mass = df_axe.groupby(['day'])['sum_dry_mass'].agg('max')
+
+        RUE_shoot = np.polyfit(PARa_cum, sum_dry_mass_shoot,1)[0]
+        RUE_plant = np.polyfit(PARa_cum, sum_dry_mass, 1)[0]
+
+        fig, ax = plt.subplots()
+        ax.plot(PARa_cum, sum_dry_mass_shoot, label = 'Shoot dry mass (g)')
+        ax.plot(PARa_cum, sum_dry_mass, label='Plant dry mass (g)')
+        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax.set_xlabel('Cumulative absorbed PAR (MJ)')
+        ax.set_ylabel('Dry mass (g)')
+        ax.set_title('RUE')
+        plt.text(max(PARa_cum)*0.02,max(sum_dry_mass)*0.95, 'RUE shoot : {0:.2f} , RUE plant : {1:.2f}'.format(round(RUE_shoot,2),round(RUE_plant, 2) ) )
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'RUE.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+
+        fig, ax = plt.subplots()
+        ax.plot(days, sum_dry_mass_shoot, label = 'Shoot dry mass (g)')
+        ax.plot(days, sum_dry_mass, label='Plant dry mass (g)')
+        ax.plot(days, PARa_cum, label = 'Cumulative absorbed PAR (MJ)')
+        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax.set_xlabel('Days')
+        ax.set_title('RUE investigations')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'RUE2.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+
+        # 6) Sum thermal time
+        fig, ax = plt.subplots()
+        ax.plot(df_SAM['t'], df_SAM['sum_TT'])
+        ax.set_xlabel('Hours')
+        ax.set_ylabel('Thermal Time')
+        ax.set_title('Thermal Time')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SumTT.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
 if __name__ == '__main__':
-    main(100, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
+    main(500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
