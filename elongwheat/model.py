@@ -93,13 +93,13 @@ def calculate_time_equivalent_Tref(temperature, time):
 
     return time * modified_Arrhenius_equation(temperature)/modified_Arrhenius_equation(parameters.Temp_Tref)
 
-def calculate_cumulated_thermal_time(sum_TT, temperature, delta_t):
+def calculate_cumulated_thermal_time(sum_TT, temperature, delta_teq):
     """ Return cumulated thermal time (used for model outputs calculations only).
 
     :Parameters:
         - `sum_TT`(:class:`float`) - cumulated thermal time (degree-days)
         - `temperature` (:class:`float`) - temperature (degree Celsius)
-        - `delta_t` (:class:`float`) - time duration (s)
+        - `delta_teq` (:class:`float`) - time duration equivalent at Tref(s)
 
     :Returns:
         temperature-compensated time (s)
@@ -108,7 +108,7 @@ def calculate_cumulated_thermal_time(sum_TT, temperature, delta_t):
     """
     res = sum_TT
     if temperature > 0:
-        res += temperature * delta_t/24.0/3600
+        res += delta_teq * parameters.Temp_Tref/24.0/3600
     return res
 
 def calculate_SAM_primodia(status, teq_since_primordium, delta_teq, nb_leaves):
@@ -332,7 +332,10 @@ def calculate_SL_ratio(phytomer_rank):
     :Returns Type:
         :class:`float`
     """
-    return -0.0021 * phytomer_rank ** 3 + 0.037 * phytomer_rank ** 2 - 0.1527 * phytomer_rank + 0.4962
+    # res = -0.0021 * phytomer_rank ** 3 + 0.037 * phytomer_rank ** 2 - 0.1527 * phytomer_rank + 0.4962
+    SL_ratio_Ljutovac = {3 : 0.304, 4 : 0.333 , 5: 0.358, 6: 0.464, 7: 0.552, 8: 0.618, 9: 0.56, 10: 0.604, 11: 0.784}
+    res = SL_ratio_Ljutovac[phytomer_rank]
+    return res
 
 
 def calculate_lamina_Lmax(leaf_Lmax, sheath_lamina_ratio):
@@ -365,7 +368,7 @@ def calculate_sheath_Lmax(leaf_Lmax, lamina_Lmax):
     return leaf_Lmax - lamina_Lmax
 
 
-def calculate_leaf_Wmax(lamina_Lmax, fructan, mstruct):
+def calculate_leaf_Wmax(lamina_Lmax, fructan, mstruct,leaf_rank):
     """ Maximal leaf width.
     0.0575 et 0.12 issu graph Dornbush
 
@@ -378,7 +381,8 @@ def calculate_leaf_Wmax(lamina_Lmax, fructan, mstruct):
     :Returns Type:
         :class:`float`
     """
-    return (0.0575 * lamina_Lmax - 0.00012) * (parameters.EC_wmax * 2 * parameters.Ksslw / (parameters.Ksslw + (fructan / mstruct)) + (1 - parameters.EC_wmax))  # TODO: a remplacer
+    (0.0575 * lamina_Lmax - 0.00012) * (parameters.EC_wmax * 2 * parameters.Ksslw / (parameters.Ksslw + (fructan / mstruct)) + (1 - parameters.EC_wmax))  # TODO: a remplacer
+    return parameters.leaf_Wmax_dict[leaf_rank]
 
 
 def calculate_SSLW(fructan, mstruct):
@@ -488,18 +492,18 @@ def calculate_LSIW(LSSW):
     return LSSW * parameters.ratio_LSIW_LSSW # TODO : changer mode de calcul car rapport non stable suivant numéro de phytomère
 
 
-def calculate_init_internode_elongation(teq_since_primordium):
+def calculate_init_internode_elongation(hiddenzone_age):
     """Initialize internode elongation.
 
     :Parameters:
-        - `teq_since_primordium` (:class:`float`) - Time since last primordium intiation (in time equivalent to a reference temperature) (s)
+        - `hiddenzone_age` (:class:`float`) - Time since primordium intiation (in time equivalent to a reference temperature) (s)
     :Returns:
         Specifies if the internode has started the elongation (True) or not (False), and initialize internode_L
     :Returns Type:
         :class:`bool`, :class:`float`
     """
 
-    if teq_since_primordium > parameters.nb_PLASTO_internode_init * parameters.PLASTOCHRONE:
+    if hiddenzone_age > parameters.nb_PLASTO_internode_init * parameters.PLASTOCHRONE:
         is_growing = True
         internode_L = parameters.internode_L_init
     else:
@@ -525,7 +529,7 @@ def calculate_delta_internode_L_preL(internode_rank, sucrose, internode_L, amino
         :class:`float`
     """
     # RER_max = parameters.RERmax
-    RER_max = parameters.RERmax_dict[internode_rank]
+    RER_max = parameters.RERmax_dict_IN[internode_rank]
     delta_internode_L = internode_L * RER_max * delta_teq
     # if sucrose > 0 and amino_acids > 0:
     #     delta_internode_L = internode_L * RER_max * delta_teq * ((sucrose / mstruct) /

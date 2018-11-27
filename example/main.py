@@ -20,7 +20,12 @@
 # --- PREAMBLE
 
 OPTION_SHOW_ADEL = True
+run_from_outputs = False
+delta_t = 3600
+loop_end = 800
 
+# setup outup precision
+OUTPUTS_PRECISION = 8
 
 import os
 
@@ -64,7 +69,6 @@ all_element_outputs_df = pd.DataFrame()
 all_SAM_outputs_df = pd.DataFrame()
 
 # read elongwheat inputs from a given timestep
-run_from_outputs = False
 
 if run_from_outputs:
     hiddenzones_inputs_desired_t = pd.read_csv(HIDDENZONE_OUTPUTS_FILEPATH)
@@ -72,11 +76,15 @@ if run_from_outputs:
     SAM_inputs_desired_t = pd.read_csv(SAM_OUTPUTS_FILEPATH)
 
     assert 't_step' in hiddenzones_inputs_desired_t.columns
-    desired_t_step = 487 #max(hiddenzones_inputs_desired_t['t_step'])
+    desired_t_step = max(hiddenzones_inputs_desired_t['t_step'])
     hiddenzone_inputs_df = hiddenzones_inputs_desired_t[hiddenzones_inputs_desired_t.t_step == desired_t_step].drop( ['t_step'], axis = 1)
     element_inputs_df = element_inputs_desired_t[element_inputs_desired_t.t_step == desired_t_step].drop( ['t_step'], axis = 1)
     SAM_inputs_df = SAM_inputs_desired_t[SAM_inputs_desired_t.t_step == desired_t_step].drop( ['t_step'], axis = 1)
     inputs = elongwheat_converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, SAM_inputs_df)
+
+    all_hiddenzone_outputs_df = all_hiddenzone_outputs_df.append(hiddenzones_inputs_desired_t)
+    all_element_outputs_df = all_element_outputs_df.append(element_inputs_desired_t)
+    all_SAM_outputs_df = all_SAM_outputs_df.append(SAM_inputs_desired_t)
 
 else:
     hiddenzone_inputs_df = pd.read_csv(HIDDENZONE_INPUTS_FILEPATH)
@@ -93,9 +101,10 @@ hiddenzone_outputs_df['t_step'] = desired_t_step
 element_outputs_df['t_step'] = desired_t_step
 SAM_outputs_df['t_step'] = desired_t_step
 ## increment the general output dataframes
-all_hiddenzone_outputs_df = all_hiddenzone_outputs_df.append(hiddenzone_outputs_df)
-all_element_outputs_df = all_element_outputs_df.append(element_outputs_df)
-all_SAM_outputs_df = all_SAM_outputs_df.append(SAM_outputs_df)
+if not run_from_outputs:
+    all_hiddenzone_outputs_df = all_hiddenzone_outputs_df.append(hiddenzone_outputs_df)
+    all_element_outputs_df = all_element_outputs_df.append(element_outputs_df)
+    all_SAM_outputs_df = all_SAM_outputs_df.append(SAM_outputs_df)
 
 
 # define the time step in hours for each elongwheat
@@ -112,14 +121,7 @@ if OPTION_SHOW_ADEL:
 
 # --- SETUP RUN
 
-# setup outup precision
-OUTPUTS_PRECISION = 8
 
-# delta_t
-delta_t = 3600
-
-# end
-loop_end = 1000
 
 # --- MAIN
 

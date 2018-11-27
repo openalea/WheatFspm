@@ -29,7 +29,7 @@ from __future__ import division  # use "//" to do integer division
 # -------------------------------------------------------------------------------------------------------------------
 PLASTOCHRONE = 76.1/12*24*3600    #: Leaf plastochron (s at 12°C) calculated from Ljutovac 2002 with priodia of 5.10-5 m (76 dd) ; Malvoisin 35dd associated with init 3.10-5m
 max_nb_leaves = 11   #: Max number of leaves per axis
-delta_TT_GA = PLASTOCHRONE * 6.5  #: Thermal time between floral transition of SAM and Gibberelin production expressed as a function of plastochron (s at 12°C)
+delta_TT_GA = PLASTOCHRONE * 4  #: Thermal time between floral transition of SAM and Gibberelin production expressed as a function of plastochron (s at 12°C)
 
 sowing_depth = 0.05  #: Sowing depth (m) used to define plant emergence
 
@@ -44,7 +44,7 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # --- Leaves
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_dict = { 3 : 0.00000279 ,4 : 0.00000279 ,5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 }
+RERmax_dict = { 3 : 0.00000279 ,4 : 0.00000279 ,5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000154 , 9 : 0.0000015 , 10 : 0.00000146 , 11 : 0.00000146 }#: s-1 at 12°C fit
 #{3: 4.1E-06, 4: 4.1E-06, 5: 4.1E-06, 6: 4.1E-06, 7: 3.6E-06, 8: 3.3E-06, 9: 3.2E-06, 10: 2.9E-06, 11: 2.75E-06}
 #{5 : 0.009/3600, 6 : 0.009/3600, 7: 0.0088/3600, 8: 0.00875/3600, 9: 0.00875/3600, 10: 0.0086/3600, 11: 0.008/3600} # RB 2013
 # Ljutovac 2002 RER (s-1 at 12°C :  { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 }
@@ -63,6 +63,7 @@ OFFSET_LEAF = FITTED_L0 - L0       #: Offset used for the final fitting of the b
 SCALING_FACTOR_LEAF = 1/FITTED_L0  #: Scaling factor of the leaf in automate growth (dimensionless)
 
 # Leaf maximal width
+leaf_Wmax_dict = { 3 : 0.0040 ,4 : 0.0045 ,5 : 0.0056 , 6 : 0.0075 , 7 : 0.010 , 8 : 0.012 , 9 : 0.013 , 10 : 0.014 , 11 : 0.018 }#: m (Ljutovac 2002)
 EC_wmax = 0.3  #: variation de + ou - 15% de maximal leaf width (SU)
 Ksslw = 4160   #: Affinite SSLW aux fructanes (µmol C g-1)
 min_SSLW = 22  #: g m-2
@@ -73,6 +74,11 @@ ratio_LSSW_SSLW = 0.003  #: ratio lineic structural mass sheath / specific struc
 # -------------------------------------------------------------------------------------------------------------------
 # --- Internodes
 # -------------------------------------------------------------------------------------------------------------------
+# Exponential elongation
+RERmax_dict_IN = { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.9E-06 , 8 : 2.3E-06 , 9 : 2.45E-06 , 10 :2.35E-06 , 11 : 2.2E-06 }#: s-1 at 12°C FIT
+#{ 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.48E-06 , 8 : 2.48E-06 , 9 : 2.48E-06 , 10 : 1.9E-06 , 11 : 1.6E-06 }#: s-1 at 12°C
+# estimate from Ljutovac 2002 over the period until leaf ligulation i.e. wider than in the model.
+# Because i) not enought data if we consider only up to previous leaf ligulation, ii) same exponential like period
 
 SCALING_FACTOR_INT = 59  # 5.2 #: Scaling factor of the internode in automate growth (dimensionless), Malvoisin 1984 II
 
@@ -118,6 +124,7 @@ class HiddenZoneInit(object):
         self.internode_pseudo_age = 0
         self.delta_leaf_pseudo_age = 0
         self.delta_internode_pseudo_age = 0
+        self.hiddenzone_age = 0
 
         # Default values used for RER calculation in elong wheat
         self.sucrose = 5E-6                      #: µmol C

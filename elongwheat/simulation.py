@@ -34,7 +34,7 @@ import parameters
 
 #: the inputs needed by ElongWheat
 HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age', 'internode_pseudo_age', 'leaf_pseudostem_length', 'internode_distance_to_emerge', 'leaf_L', 'internode_L',
-                     'leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'LSSW', 'leaf_is_emerged', 'internode_Lmax', 'LSIW', 'internode_is_visible', 'sucrose', 'amino_acids', 'fructan',
+                     'hiddenzone_age','leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'LSSW', 'leaf_is_emerged', 'internode_Lmax', 'LSIW', 'internode_is_visible', 'sucrose', 'amino_acids', 'fructan',
                      'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct']
 ELEMENT_INPUTS = ['length', 'is_growing']
 SAM_INPUTS = ['SAM_temperature','delta_teq','teq_since_primordium', 'status', 'nb_leaves', 'GA', 'height', 'cohort','sum_TT']
@@ -42,7 +42,7 @@ SAM_INPUTS = ['SAM_temperature','delta_teq','teq_since_primordium', 'status', 'n
 #: the outputs computed by ElongWheat
 # TODO : add be default all the attributes of the class HiddenZoneInit and ElementInit, and define which attribute is set by growthwheat.parameters or elongwheat.parameters
 HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age','delta_leaf_pseudo_age', 'internode_pseudo_age','delta_internode_pseudo_age', 'leaf_pseudostem_length',
-                      'delta_leaf_pseudostem_length',
+                      'hiddenzone_age','delta_leaf_pseudostem_length',
                       'internode_distance_to_emerge',
                       'delta_internode_distance_to_emerge', 'leaf_L', 'delta_leaf_L', 'internode_L', 'delta_internode_L', 'leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'LSSW',
                       'leaf_is_emerged', 'internode_Lmax', 'LSIW', 'internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct',
@@ -166,7 +166,7 @@ class Simulation(object):
             curr_SAM_outputs['delta_teq_roots'] = model.calculate_time_equivalent_Tref(Tsoil, self.delta_t)
 
             # cumulated thermal time
-            curr_SAM_outputs['sum_TT'] = model.calculate_cumulated_thermal_time(curr_SAM_outputs['sum_TT'], growth_temperature, self.delta_t)
+            curr_SAM_outputs['sum_TT'] = model.calculate_cumulated_thermal_time(curr_SAM_outputs['sum_TT'], growth_temperature, curr_SAM_outputs['delta_teq'] )
 
             # update SAM status, leaf number and
             init_leaf, curr_SAM_outputs['nb_leaves'], curr_SAM_outputs['status'], curr_SAM_outputs['teq_since_primordium'] = model.calculate_SAM_primodia(SAM_inputs['status'],
@@ -251,6 +251,8 @@ class Simulation(object):
                 curr_hiddenzone_outputs = all_hiddenzone_outputs[hiddenzone_id]
                 curr_SAM_outputs = all_SAM_outputs[SAM_id]
 
+                curr_hiddenzone_outputs['hiddenzone_age'] += curr_SAM_outputs['delta_teq']
+
                 # Found previous hidden zone
                 prev_hiddenzone_id = tuple(list(SAM_id) + [phytomer_id - 1])
                 if prev_hiddenzone_id in all_hiddenzone_inputs:
@@ -332,7 +334,7 @@ class Simulation(object):
                                     next_hiddenzone_outputs['lamina_Lmax'] = model.calculate_lamina_Lmax(next_hiddenzone_outputs['leaf_Lmax'], sheath_lamina_ratio)  #: Final lamina length
                                     next_hiddenzone_outputs['sheath_Lmax'] = model.calculate_sheath_Lmax(next_hiddenzone_outputs['leaf_Lmax'], next_hiddenzone_outputs['lamina_Lmax'])  #: Final sheath length
                                     next_hiddenzone_outputs['leaf_Wmax'] = model.calculate_leaf_Wmax(next_hiddenzone_outputs['lamina_Lmax'], next_hiddenzone_inputs['fructan'],
-                                                                                                     next_hiddenzone_inputs['mstruct'])                              #: Maximal leaf width
+                                                                                                     next_hiddenzone_inputs['mstruct'], phytomer_id)                              #: Maximal leaf width
                                     next_hiddenzone_outputs['SSLW'] = model.calculate_SSLW(next_hiddenzone_inputs['fructan'], next_hiddenzone_inputs['mstruct'])     #: Structural Specific Lamina Weight
                                     next_hiddenzone_outputs['LSSW'] = model.calculate_LSSW(next_hiddenzone_outputs['SSLW'])                                          #: Structural Lineic Sheath Weight
                                     next_hiddenzone_outputs['leaf_pseudo_age'] = 0                                                                                   #: Pseudo age of the leaf since beginning of automate growth (s)
@@ -414,7 +416,7 @@ class Simulation(object):
                 #: Initialisation of internode elongation
                 if (not curr_hiddenzone_outputs['internode_is_growing']) and curr_hiddenzone_outputs['internode_L'] == 0:
                     #: As for leaf primordia, we neglect CN growth due to IN length initialisation
-                    curr_hiddenzone_outputs['internode_is_growing'], curr_hiddenzone_outputs['internode_L'] = model.calculate_init_internode_elongation(curr_SAM_outputs['teq_since_primordium'])
+                    curr_hiddenzone_outputs['internode_is_growing'], curr_hiddenzone_outputs['internode_L'] = model.calculate_init_internode_elongation(curr_hiddenzone_outputs['hiddenzone_age'])
 
                 if curr_hiddenzone_outputs['internode_is_growing']:
                     #: Found previous lamina to know if the previous leaf is ligulated.
