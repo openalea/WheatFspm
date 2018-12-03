@@ -119,7 +119,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
 
         # define the time step in hours for each simulator
-        caribu_ts = 4
+        caribu_ts = 2
         senescwheat_ts = 2
         farquharwheat_ts = 2
         elongwheat_ts = 1
@@ -301,7 +301,9 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
             # run Caribu
             PARi = meteo.loc[t_caribu, ['PARi']].iloc[0]
-            caribu_facade_.run(energy=PARi)
+            DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
+            hour = meteo.loc[t_caribu, ['hour']].iloc[0]
+            caribu_facade_.run(energy=PARi, DOY=1, hourTU=12, latitude = 48.85, sun_sky_option = 'mix')
             print('t caribu is {}'.format(t_caribu))
 
             for t_senescwheat in range(t_caribu, t_caribu + caribu_ts, senescwheat_ts):
@@ -568,7 +570,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         line2 = ax.plot(days, Unloading_Sucrose_tot, label=u'C unloading to roots')
 
         ax2 = ax.twinx()
-        line3 = ax2.plot(days, share_net_roots_live, label = u'Net C Shoot production sent to roots', color = 'red')
+        line3 = ax2.plot(days, share_net_roots_live, label = u'Net C Shoot production sent to roots (%)', color = 'red')
 
         lines = line1 + line2 + line3
         labs = [l.get_label() for l in lines]
@@ -581,7 +583,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         ax.set_title('C allocation to roots')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_allocation.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
-        # 5) Fluxes # TODO : faire le graphe cumulé en ajoutant consumption growth shoot
+        # 5) Fluxes
 
         df_roots['R_tot'] = (df_roots['sum_respi'] + df_roots['Respi_growth'])
         df_roots['R_tot_mstruct'] = (df_roots['R_tot'])/df_roots['mstruct']#( df['R_Nnit_upt'] + df['R_Nnit_red'] + df['R_residual'] + df['R_maintenance'] ) / df['mstruct']
@@ -601,26 +603,27 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Fluxes.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
         # 5bis) Cumulated fluxes # TODO : faire le graphe cumulé en ajoutant consumption growth shoot
+        df_hz = postprocessing_df_dict[hiddenzones_postprocessing_file_basename]
 
         R_tot_cum = np.cumsum(df_roots['R_tot'])
         sucrose_consumption_mstruct_cum = np.cumsum( df_roots['sucrose_consumption_mstruct'] )
         C_exudation_cum = np.cumsum( df_roots['C_exudation'] * df_roots['mstruct'])
         Total_Photosynthesis_cum = np.cumsum(df_axe['Total_Photosynthesis'])
-        Shoot_respiration = df_elt.groupby(['t'])['sum_respi'].agg('sum')
-        Net_Photosynthesis_cum = np.cumsum( df_axe['Total_Photosynthesis'] - Shoot_respiration[1:].reset_index()['sum_respi'] )
+        Shoot_respiration = df_elt.groupby(['t'])['sum_respi'].agg('sum') +  df_hz.groupby(['t'])['Respi_growth'].agg('sum')
+        Net_Photosynthesis_cum = np.cumsum( df_axe['Total_Photosynthesis'] - Shoot_respiration[1:].reset_index()[0] )
         Unloading_Sucrose_tot_cum = np.cumsum(df_roots['Unloading_Sucrose_tot'])
 
         fig, ax = plt.subplots()
         line1, = ax.plot(df_roots['t'], Unloading_Sucrose_tot_cum, label=u'C unloading to roots')
         line2, = ax.plot(df_roots['t'], C_exudation_cum, label=u'C lost by exudation')
-        line3, = ax.plot(df_roots['t'], R_tot_cum, label='Respiration')
-        line4, = ax.plot(df_roots['t'], sucrose_consumption_mstruct_cum, label='C for growth')
+        line3, = ax.plot(df_roots['t'], R_tot_cum, label='Total Roots Respiration')
+        line4, = ax.plot(df_roots['t'], sucrose_consumption_mstruct_cum, label='C for roots structural growth')
         line5, = ax.plot(df_axe['t'], Total_Photosynthesis_cum, label=u'Gross Photosynthesis')
-        line5, = ax.plot(df_axe['t'], Net_Photosynthesis_cum, label=u'Net Photosynthesis')
+        line5, = ax.plot(df_axe['t'], Net_Photosynthesis_cum, label=u'Photosynthesis - Total shoot respiration')
 
         ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
         ax.set_xlabel('Time (h)')
-        ax.set_ylabel(u'C (µmol C.day$^{-1}$ )')
+        ax.set_ylabel(u'C (µmol C)')
         ax.set_title('Cumulated fluxes of C')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Fluxes_cumulated.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
@@ -664,4 +667,4 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SumTT.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
 if __name__ == '__main__':
-    main(500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
+    main(100, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)

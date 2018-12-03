@@ -4,7 +4,7 @@ import pandas as pd
 import warnings
 
 from alinea.caribu.CaribuScene import CaribuScene
-from alinea.caribu.sky_tools import GenSky, GetLight
+from alinea.caribu.sky_tools import GenSky, GetLight, Gensun, GetLightsSun, spitters_horaire
 
 import tools
 
@@ -66,7 +66,7 @@ class CaribuFacade(object):
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
         self._geometrical_model = geometrical_model  #: the model which deals with geometry
 
-    def run(self, energy=1, diffuse_model='soc', azimuts=4, zenits=5):
+    def run(self, sun_sky_option = ['mix','sun','sky'][0], energy=1, DOY=1, hourTU=12, latitude = 48.85, diffuse_model='soc', azimuts=4, zenits=5):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
@@ -77,16 +77,30 @@ class CaribuFacade(object):
         - `zenits` (:class:`int`) - The number of zenital positions.
 
         """
-        c_scene = self._initialize_model(energy, diffuse_model, azimuts, zenits)
-        _, aggregated = c_scene.run(direct=True, infinite=True)
+        c_scene_sky, c_scene_sun = self._initialize_model(energy, diffuse_model, azimuts, zenits, DOY, hourTU, latitude)
+        _, aggregated_sky = c_scene_sky.run(direct=True, infinite=True)
+        _, aggregated_sun = c_scene_sun.run(direct=True, infinite=True)
 
-        PARa = aggregated['par']['Eabs']
+        PARa_sky = aggregated_sky['par']['Eabs']
+        PARa_sun = aggregated_sun['par']['Eabs']
+        if sun_sky_option == 'sky':
+            PARa = PARa_sky
+        elif sun_sky_option == 'sun':
+            PARa = PARa_sun
+        elif sun_sky_option == 'mix':
+            Rg = energy / 2.02 # global radiation in W.m-2
+            RdRs = spitters_horaire.RdRsH(Rg=Rg, DOY=DOY, heureTU=hourTU, latitude=latitude) # Diffuse fraction of the global irradiance
+            PARa = {}
+            for k,v in PARa_sky.iteritems():
+                PARa[k] = RdRs * v + (1-RdRs) * PARa_sun[k]
+        else :
+            raise ValueError, "Unknown sun_sky_option : can be either 'mix', 'sun' or 'sky'."
 
         # Eabs is the relative surfacic absorbed energy per organ
         self.update_shared_MTG(PARa)
         self.update_shared_dataframes(PARa)
 
-    def _initialize_model(self, energy, diffuse_model, azimuts, zenits):
+    def _initialize_model(self, energy, diffuse_model, azimuts, zenits, DOY, hourTU, latitude):
         """
         Initialize the inputs of the model from the MTG shared
 
@@ -97,9 +111,11 @@ class CaribuFacade(object):
         - `zenits` (:class:`int`) - The number of zenital positions.
         """
 
-        # Diffuse light sources
+        #: Diffuse light sources
+        # Get the energy and positions of the source for each sector as a string
         sky_string = GetLight.GetLight(GenSky.GenSky()(energy, diffuse_model, azimuts, zenits))  #: (Energy, soc/uoc, azimuts, zenits)
 
+        # Convert string to list in order to be compatible with CaribuScene input format
         sky = []
         for string in sky_string.split('\n'):
             if len(string) != 0:
@@ -107,7 +123,14 @@ class CaribuFacade(object):
                 t = tuple((float(string_split[0]), tuple((float(string_split[1]), float(string_split[2]), float(string_split[3])))))
                 sky.append(t)
 
-        # Optical
+        #: Direct light sources (sun positions)
+        sun = Gensun.Gensun()(energy, DOY, hourTU, latitude )
+        sun = GetLightsSun.GetLightsSun(sun)
+        sun_str_split = sun.split(' ')
+        sun = [tuple((float(sun_str_split[0]), tuple((float(sun_str_split[1]), float(sun_str_split[2]), float(sun_str_split[3])))))]
+
+
+        #: Optical
         opt = {'par': {}}
         geom = self._shared_mtg.property('geometry')
 
@@ -119,9 +142,10 @@ class CaribuFacade(object):
             else:
                 warnings.warn('Warning: unknown element type {}, vid={}'.format(self._shared_mtg.class_name(vid), vid))
 
-        c_scene = CaribuScene(scene=self._shared_mtg, light=sky, pattern=self._geometrical_model.domain, opt=opt)
+        c_scene_sky = CaribuScene(scene=self._shared_mtg, light=sky, pattern=self._geometrical_model.domain, opt=opt)
+        c_scene_sun = CaribuScene(scene=self._shared_mtg, light=sun, pattern=self._geometrical_model.domain, opt=opt, scene_unit='cm')
 
-        return c_scene
+        return c_scene_sky, c_scene_sun
 
     def update_shared_MTG(self, aggregated_PARa):
         """
