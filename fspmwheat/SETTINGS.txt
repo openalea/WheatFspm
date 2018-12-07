@@ -1,4 +1,4 @@
-METEO : Obs
+ts caribu = 2
 
 ** ---- FARQUHAR-WHEATH
 
@@ -12,49 +12,53 @@ Default Tr value = 0.1
 
 ** ---- GROWTH-WHEATH
 
+- RATIO_SUCROSE_MSTRUCT = 0.444 au lieu de 0.384
+- RATIO_N_MSTRUCT_ROOTS_ = 0.005 au lieu de 0.02
+- AMINO_ACIDS_C_RATIO = 4.15 au lieu de 3.67 
+- AMINO_ACIDS_N_RATIO = 1.25 au lieu de 1.17
+
 ** Roots
-- calculate_roots_mstruct_growth : mstruct_C_growth * 3.5
+- calculate_roots_mstruct_growth : mstruct_C_growth * 1.8
 
 ** ---- CN-WHEATH
 
+** effet de la température sur les synthèses et dégrations, minéralisation, absorption racinaire et exudation
+
 ** Blades
 - calculate_D_Proteins : k_proteins = f(cyto) 
-- PhotosyntheticOrgan.PARAMETERS.DELTA_D_CYTOKININS *  ((1-0.1)/20*max(0,Ts) + 0.1)
 - conc_cyto init = 120 / diminution inti F1 à 3
-
+- calculate_S_Sucrose : Vmax * 4
+- calculate_S_amino_acids : Vmax * 4
+- calculate_S_Starch: Vmax * 4
 
 ** HZ
-- calculate_S_proteins * 3 
+- calculate_S_proteins * 5 
 - calculate_D_Proteins : 2.5e-7 
+- calculate_S_Fructans * 1.5
 
 ** Roots
-- calculate_Export_Nitrates : PARAMETERS.K_NITRATE_EXPORT * 1
-- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING = 0.03 * 1.8
-- calculate_S_cytokinins : S_cytokinins * 0.5
+- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING
+- calculate_S_cytokinins : S_cytokinins *1
 - calculate_Uptake_Nitrates : net_nitrate_uptake 
-- calculate_exudation : C_EXUDATION * 1.75 
+- calculate_exudation : C_EXUDATION * 3.8
 
 ** ---- SENESC-WHEATH
 - SENESCENCE_ROOTS = 0 
 #- sénescence forcée pour F1 à partir sum_TT > 20, avec SENESCENCE_LENGTH_MAX_RATE = 0.2E-8 * 0.45 / 3.5e-3 (trop rapide)
 
+** ---- RESPI-WHEATH
+- R_growth: YG = 0.75
+
 -----------------------------------------------------------------------------------
 A CORRIGER :
 
 - On a bcp trop C => Tallage
-- faire une sortie de la sumTT. Pour cela il faut virer le SAM et mettre les propriétés sur Axe
 
 -----------------------------------------------------------------------------------
 TARGETS
 
 Après 1050h simulations = 250 DD :
-- 2.5% N dans shoot et 1.5% ds roots
-- Shoot/Root = 3.2
-- Shoot = *16
-(en réalité ces valeurs sont uniquement une fois début allongement des EN)
 - sénescence F1 environ 50%
 
------------------------------------------------------------------------------------
-TODO :
-- regarder sur un pas de temps long avec/sans température
+
 
