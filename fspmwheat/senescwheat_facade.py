@@ -1,5 +1,7 @@
 # -*- coding: latin-1 -*-
 
+import numpy as np
+
 from senescwheat import converter, simulation
 
 import tools
@@ -102,11 +104,13 @@ class SenescWheatFacade(object):
         all_senescwheat_SAM_inputs_dict = {}
         all_senescwheat_elements_inputs_dict = {}
 
-        # traverse the MTG recursively from top ...
+        # traverse the MTG recursively from the top ...
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                if mtg_axis_label != 'MS':
+                    continue
                 roots_id = (mtg_plant_index, mtg_axis_label)
                 mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
                 if 'roots' in mtg_axis_properties:
@@ -128,10 +132,12 @@ class SenescWheatFacade(object):
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
                         if mtg_organ_label not in PHOTOSYNTHETIC_ORGANS_NAMES: continue
+                        if np.nan_to_num( self._shared_mtg.property('length').get(mtg_organ_vid,0)) == 0: continue
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
                             element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
+                            if np.nan_to_num(self._shared_mtg.property('length').get(mtg_element_vid, 0)) == 0: continue
                             if set(mtg_element_properties).issuperset(converter.SENESCWHEAT_ELEMENTS_INPUTS):
                                 senescwheat_element_inputs_dict = {}
                                 for senescwheat_element_input_name in converter.SENESCWHEAT_ELEMENTS_INPUTS:
@@ -168,6 +174,8 @@ class SenescWheatFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                if mtg_axis_label != 'MS':
+                    continue
                 roots_id = (mtg_plant_index, mtg_axis_label)
                 if roots_id not in senescwheat_roots_data_dict: continue
                 # update the roots in the MTG
@@ -183,6 +191,8 @@ class SenescWheatFacade(object):
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
+                        if mtg_organ_vid == 30:
+                            pass
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
                         senesced_length_organ = 0. # Temporaire
                         if mtg_organ_label not in PHOTOSYNTHETIC_ORGANS_NAMES: continue
@@ -196,7 +206,7 @@ class SenescWheatFacade(object):
                                 self._shared_mtg.property(senescwheat_element_data_name)[mtg_element_vid] = senescwheat_element_data_value
                                 # Temporaire : avant de trouver une solution pour piloter la senescence des feuilles par green_area plutot que par senesced_length
                                 if senescwheat_element_data_name == 'senesced_length':
-                                    senesced_length_organ += self._shared_mtg.property(senescwheat_element_data_name)[mtg_element_vid]
+                                    senesced_length_organ += np.nan_to_num( self._shared_mtg.property(senescwheat_element_data_name).get(mtg_element_vid,0.) )
                         self._shared_mtg.property('senesced_length')[mtg_organ_vid] = senesced_length_organ
 
 
