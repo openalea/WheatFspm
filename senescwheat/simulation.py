@@ -30,7 +30,7 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
 
-    MIN_GREEN_AREA = 0.5E-4  #: Minimal green area of an element (m2). Below this area, set green_area to 0.0.
+    MIN_GREEN_AREA = 0.5E-8  #: Minimal green area of an element (m2). Below this area, set green_area to 0.0.
 
     def __init__(self, delta_t=1):
 
@@ -116,6 +116,7 @@ class Simulation(object):
             if element_inputs_dict['green_area'] < Simulation.MIN_GREEN_AREA and not element_inputs_dict['is_growing']:
                 element_outputs_dict = element_inputs_dict.copy()
                 element_outputs_dict['green_area'] = 0.0
+                element_outputs_dict['senesced_length'] =  element_inputs_dict['length']
             else:
                 update_max_protein = forced_max_protein_elements is None or not element_inputs_id in forced_max_protein_elements
                 # new_green_area, relative_delta_green_area, max_proteins = model.SenescenceModel.calculate_relative_delta_green_area(element_inputs_id[3], element_inputs_dict['green_area'],
@@ -128,6 +129,24 @@ class Simulation(object):
                                                                                                                                                 element_inputs_dict['proteins'] / element_inputs_dict['mstruct'],
                                                                                                                                                 element_inputs_dict['max_proteins'], delta_teq,
                                                                                                                                                 update_max_protein)
+                # # Hack : senesence starts when sum_TT>100 for F1
+                # sum_TT = all_SAM_inputs[axe_id]['sum_TT']
+                # if element_inputs_id[:3] == (1, 'MS', 1) and sum_TT > 190 and relative_delta_senesced_length == 0:
+                #     new_senesced_length, relative_delta_senesced_length, max_proteins = model.SenescenceModel.calculate_relative_delta_senesced_length(element_inputs_id[3],
+                #                                                                                                                                        element_inputs_dict['senesced_length'],
+                #                                                                                                                                        element_inputs_dict['length'],
+                #                                                                                                                                        0,
+                #                                                                                                                                        element_inputs_dict['max_proteins'], delta_teq,
+                #                                                                                                                                        update_max_protein)
+                # sum_TT = all_SAM_inputs[axe_id]['sum_TT']
+                # if element_inputs_id[:3] == (1, 'MS', 2) and sum_TT > 290 and relative_delta_senesced_length == 0:
+                #     new_senesced_length, relative_delta_senesced_length, max_proteins = model.SenescenceModel.calculate_relative_delta_senesced_length(element_inputs_id[3],
+                #                                                                                                                                        element_inputs_dict['senesced_length'],
+                #                                                                                                                                        element_inputs_dict['length'],
+                #                                                                                                                                        0,
+                #                                                                                                                                        element_inputs_dict['max_proteins'], delta_teq,
+                #                                                                                                                                        update_max_protein)
+
                 # Temporaire :
                 relative_delta_green_area = relative_delta_senesced_length
 

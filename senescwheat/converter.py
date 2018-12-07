@@ -30,7 +30,7 @@ import pandas as pd
 SENESCWHEAT_ROOTS_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'cytokinins']
 
 #: the inputs needed by SenescWheat at SAM scale
-SENESCWHEAT_SAM_INPUTS = ['delta_teq','delta_teq_roots']
+SENESCWHEAT_SAM_INPUTS = ['delta_teq','delta_teq_roots','sum_TT']
 
 #: the inputs needed by SenescWheat at element scale
 SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'senesced_length','length', 'proteins', 'mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan', 'cytokinins', 'sucrose', \
