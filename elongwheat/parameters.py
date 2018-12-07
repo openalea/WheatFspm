@@ -29,7 +29,7 @@ from __future__ import division  # use "//" to do integer division
 # -------------------------------------------------------------------------------------------------------------------
 PLASTOCHRONE = 76.1/12*24*3600    #: Leaf plastochron (s at 12°C) calculated from Ljutovac 2002 with priodia of 5.10-5 m (76 dd) ; Malvoisin 35dd associated with init 3.10-5m
 max_nb_leaves = 11   #: Max number of leaves per axis
-delta_TT_GA = PLASTOCHRONE * 4  #: Thermal time between floral transition of SAM and Gibberelin production expressed as a function of plastochron (s at 12°C)
+delta_TT_GA = PLASTOCHRONE * 4  #: Thermal time between floral transition of SAM and Gibberelin production expressed as a function of plastochron (s at 12°C) ; Malvoisin's data give 7 plastochrons
 
 sowing_depth = 0.05  #: Sowing depth (m) used to define plant emergence
 
@@ -83,7 +83,7 @@ RERmax_dict_IN = { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 :
 SCALING_FACTOR_INT = 59  # 5.2 #: Scaling factor of the internode in automate growth (dimensionless), Malvoisin 1984 II
 
 # Initiation of internode elongation
-nb_PLASTO_internode_init = 5  #: Delay between leaf initiation and internode initiation expressed as a number of plastochron. From Malvoisin 1984b, associated with priodia of 1.10-4 m
+nb_PLASTO_internode_init = 5  #: Delay between leaf initiation and internode initiation expressed as a number of plastochron. From Malvoisin 1984b, associated with priodia of 5.10-4 m
 internode_L_init = 5E-5       #: Initial internode length (m)
 
 # Automate elongation
@@ -146,3 +146,5 @@ class ElementInit(object):
     """
     def __init__(self):
         self.is_growing = True
+        self.length = 0               #: m
+        self.age = 0                  #: Thermal Time

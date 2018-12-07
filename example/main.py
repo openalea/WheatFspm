@@ -22,7 +22,8 @@
 OPTION_SHOW_ADEL = True
 run_from_outputs = False
 delta_t = 3600
-loop_end = 800
+loop_end = 900
+desired_t_step = 0
 
 # setup outup precision
 OUTPUTS_PRECISION = 8
@@ -42,13 +43,13 @@ GRAPHS_DIRPATH = 'graphs'
 
 if OPTION_SHOW_ADEL:
    from fspmwheat import elongwheat_facade
+   from alinea.adel.echap_leaf import echap_leaves
    from alinea.adel.adel_dynamic import AdelWheatDyn
    # adelwheat inputs at t0
    ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat') # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
-   adel_wheat = AdelWheatDyn(seed=1234,  scene_unit='m')
+   adel_wheat = AdelWheatDyn(seed=1234,  scene_unit='m',leaves=echap_leaves(xy_model='Soissons_byleafclass'))
+   adel_wheat.pars = adel_wheat.read_pars(dir=ADELWHEAT_INPUTS_DIRPATH)
    g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
-   adel_wheat.domain = g.get_vertex_property(0)['meta']['domain'] # temp (until Christian's commit)
-   adel_wheat.nplants = g.get_vertex_property(0)['meta']['nplants'] # temp (until Christian's commit)
 
 
 # elongwheat inputs
@@ -76,7 +77,8 @@ if run_from_outputs:
     SAM_inputs_desired_t = pd.read_csv(SAM_OUTPUTS_FILEPATH)
 
     assert 't_step' in hiddenzones_inputs_desired_t.columns
-    desired_t_step = max(hiddenzones_inputs_desired_t['t_step'])
+    if np.isnan(desired_t_step) or desired_t_step == 0:
+        desired_t_step = max(hiddenzones_inputs_desired_t['t_step'])
     hiddenzone_inputs_df = hiddenzones_inputs_desired_t[hiddenzones_inputs_desired_t.t_step == desired_t_step].drop( ['t_step'], axis = 1)
     element_inputs_df = element_inputs_desired_t[element_inputs_desired_t.t_step == desired_t_step].drop( ['t_step'], axis = 1)
     SAM_inputs_df = SAM_inputs_desired_t[SAM_inputs_desired_t.t_step == desired_t_step].drop( ['t_step'], axis = 1)
