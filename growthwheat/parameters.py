@@ -53,43 +53,6 @@ RATIO_C_MSTRUCT_ROOTS = 0.444         #: Mean contribution of carbon to root str
 RATIO_N_MSTRUCT_ROOTS_ = 0.005#0.02         #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct) : same as shoot
 
 
-class HiddenZoneInit:
-    """
-    Initial values for hidden zones
-    """
-    def __init__(self):
-
-        # MG : I think none of these parameters is usefull since new hiddenzones are only set by elongwheat which already defines all these values
-        self.leaf_is_growing = True
-        self.internode_is_growing = False
-        self.internode_is_mature = False
-        self.leaf_dist_to_emerge = 4E-08
-        self.delta_leaf_dist_to_emerge = 0
-        self.internode_dist_to_emerge = 0
-        self.delta_internode_dist_to_emerge = 0
-        self.leaf_L = 4E-08
-        self.delta_leaf_L = 0
-        self.internode_L = 0
-        self.delta_internode_L = 0
-        self.leaf_Lmax = None  # no calculation before emergence Ln-1
-        self.lamina_Lmax = None  # no calculation before emergence Ln-1
-        self.sheath_Lmax = None  # no calculation before emergence Ln-1
-        self.leaf_Wmax = None  # no calculation before emergence Ln-1
-        self.SSLW = None  # no calculation before emergence Ln-1
-        self.SSSW = None  # no calculation before emergence Ln-1
-        self.leaf_is_emerged = False
-        self.leaf_enclosed_mstruct = 2.65E-08
-        self.internode_enclosed_mstruct = 0
-        self.mstruct = self.leaf_enclosed_mstruct + self.internode_enclosed_mstruct
-        self.leaf_enclosed_Nstruct = self.leaf_enclosed_mstruct * 0.0322  # parameter value in growth wheat
-        self.internode_enclosed_Nstruct = self.internode_enclosed_mstruct * 0.0322  # parameter value in growth wheat
-        self.sucrose = 1E-3
-        self.amino_acids = 1E-3
-        self.fructan = 0
-        self.proteins = 0
-        self.cytokinins = 0  #: AU
-
-
 class OrganInit:
     """
     Initial values for organs
@@ -103,5 +66,5 @@ class OrganInit:
         self.proteins = 0             #: µmol N
         self.mstruct = 0              #: g
         self.Nstruct = 0              #: g
-        self.cytokinins = 0  #: g
+        self.cytokinins = 0           #: g
         self.conc_cytokinins = 120.0  #: AU / g mstruct # Not used

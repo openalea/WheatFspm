@@ -294,13 +294,16 @@ class Simulation(object):
 
                     # Add to hidden part of the sheath
                     hidden_sheath_id = hiddenzone_id + tuple(['sheath', 'HiddenElement'])
+                    if hidden_sheath_id not in self.outputs['elements'].keys():
+                        new_sheath_outputs = parameters.OrganInit().__dict__
+                        self.outputs['elements'][hidden_sheath_id] = new_sheath_outputs
                     curr_hidden_sheath_outputs = self.outputs['elements'][hidden_sheath_id]
-                    curr_hidden_sheath_outputs['mstruct'] += curr_hiddenzone_outputs['leaf_enclosed_mstruct']
-                    curr_hidden_sheath_outputs['Nstruct'] += curr_hiddenzone_outputs['leaf_enclosed_Nstruct']
-                    curr_hidden_sheath_outputs['sucrose'] += curr_hiddenzone_outputs['sucrose'] * share
-                    curr_hidden_sheath_outputs['amino_acids'] += curr_hiddenzone_outputs['amino_acids'] * share
-                    curr_hidden_sheath_outputs['fructan'] += curr_hiddenzone_outputs['fructan'] * share
-                    curr_hidden_sheath_outputs['proteins'] += curr_hiddenzone_outputs['proteins'] * share
+                    curr_hidden_sheath_outputs['mstruct'] = curr_hiddenzone_outputs['leaf_enclosed_mstruct']
+                    curr_hidden_sheath_outputs['Nstruct'] = curr_hiddenzone_outputs['leaf_enclosed_Nstruct']
+                    curr_hidden_sheath_outputs['sucrose'] = curr_hiddenzone_outputs['sucrose'] * share
+                    curr_hidden_sheath_outputs['amino_acids'] = curr_hiddenzone_outputs['amino_acids'] * share
+                    curr_hidden_sheath_outputs['fructan'] = curr_hiddenzone_outputs['fructan'] * share
+                    curr_hidden_sheath_outputs['proteins'] = curr_hiddenzone_outputs['proteins'] * share
                     self.outputs['elements'][hidden_sheath_id] = curr_hidden_sheath_outputs
 
                     # Remove in hiddenzone
@@ -323,7 +326,7 @@ class Simulation(object):
                     if hidden_internode_id not in self.outputs['elements'].keys():
                         new_internode_outputs = parameters.OrganInit().__dict__
                         self.outputs['elements'][hidden_internode_id] = new_internode_outputs
-                    curr_hidden_internode_outputs = self.outputs['elements'][hidden_internode_id]  # TODO: Initialise internode element outputs when starting its elongation
+                    curr_hidden_internode_outputs = self.outputs['elements'][hidden_internode_id]
                     curr_hidden_internode_outputs['mstruct'] += curr_hiddenzone_outputs['internode_enclosed_mstruct']
                     curr_hidden_internode_outputs['Nstruct'] += curr_hiddenzone_outputs['internode_enclosed_Nstruct']
                     curr_hidden_internode_outputs['sucrose'] += curr_hiddenzone_outputs['sucrose']
@@ -334,7 +337,8 @@ class Simulation(object):
                     self.outputs['elements'][hidden_internode_id] = curr_hidden_internode_outputs
 
                 #: Delete Hiddenzone after remobilisation so it is not sent to CN Wheat
-                if not hiddenzone_inputs['leaf_is_growing'] and not hiddenzone_inputs['internode_is_growing']:
+                if not hiddenzone_inputs['leaf_is_growing'] and not hiddenzone_inputs['internode_is_growing'] \
+                    and hiddenzone_inputs['delta_leaf_L'] == 0 and hiddenzone_inputs['delta_internode_L'] == 0 :
                     del self.outputs['hiddenzone'][hiddenzone_id]
 
         # Roots
