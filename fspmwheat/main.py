@@ -18,7 +18,9 @@ import farquharwheat_facade
 import growthwheat_facade
 import senescwheat_facade
 
+from alinea.adel.echap_leaf import echap_leaves
 from alinea.adel.adel_dynamic import AdelWheatDyn
+
 
 """
     main
@@ -53,8 +55,7 @@ HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
 INPUTS_DIRPATH = 'inputs'
 
-# adelwheat inputs at t0
-ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat')  # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
+# the directory  must contain files 'adel_pars.RData', 'adel0000.pckl' and 'scene0000.bgeom' for ADELWHEAT
 
 # inputs
 SAM_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'SAM_inputs.csv')
@@ -127,7 +128,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         cnwheat_ts = 1
 
         # read adelwheat inputs at t0
-        adel_wheat = AdelWheatDyn(seed=1234, scene_unit='m')
+        adel_wheat = AdelWheatDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
+        adel_wheat.pars = adel_wheat.read_pars(dir=INPUTS_DIRPATH)
         g = adel_wheat.load(dir=INPUTS_DIRPATH)
 
         # create empty dataframes to shared data between the models
@@ -303,7 +305,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             PARi = meteo.loc[t_caribu, ['PARi']].iloc[0]
             DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
             hour = meteo.loc[t_caribu, ['hour']].iloc[0]
-            caribu_facade_.run(energy=PARi, DOY=1, hourTU=12, latitude = 48.85, sun_sky_option = 'mix')
+            caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude = 48.85, sun_sky_option = 'mix')
             print('t caribu is {}'.format(t_caribu))
 
             for t_senescwheat in range(t_caribu, t_caribu + caribu_ts, senescwheat_ts):
@@ -667,4 +669,4 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SumTT.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
 if __name__ == '__main__':
-    main(100, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
+    main(500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True)

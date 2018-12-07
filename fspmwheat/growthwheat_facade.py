@@ -109,6 +109,8 @@ class GrowthWheatFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                if mtg_axis_label != 'MS':
+                    continue
 
                 # Roots
                 mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)

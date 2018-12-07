@@ -180,6 +180,8 @@ class CNWheatFacade(object):
             is_valid_plant = False
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                if mtg_axis_label != 'MS':
+                    continue
                 # create a new axis
                 cnwheat_axis = cnwheat_model.Axis(mtg_axis_label)
                 is_valid_axis = True
@@ -263,13 +265,14 @@ class CNWheatFacade(object):
                         has_valid_element = False
 
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
-
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
                             if mtg_element_label not in cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING \
-                               or (self._shared_mtg.get_vertex_property(mtg_element_vid)['length'] == 0)  \
-                               or ((mtg_element_label == 'HiddenElement') and (self._shared_mtg.get_vertex_property(mtg_organ_vid).get('is_growing', True))):
-                                continue
+                                    or (self._shared_mtg.get_vertex_property(mtg_element_vid)['length'] == 0) \
+                                    or  (self._shared_mtg.get_vertex_property(mtg_element_vid).get('mstruct',0) == 0) \
+                                    or ((mtg_element_label == 'HiddenElement') and (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True))) \
+                                    or  (self._shared_mtg.get_vertex_property(mtg_element_vid).get('green_area',0)  <= 0.25E-6 ) :
+                                continue ## TODO: Check that we are not taking out some relevant cases with the condition on mstruct == 0
 
                             has_valid_element = True
                             cnwheat_element_data_dict = {}
@@ -277,7 +280,10 @@ class CNWheatFacade(object):
                                 mtg_element_data_value = mtg_element_properties.get(cnwheat_element_data_name)
                                 # In case the value is None, or the proprety is not even defined, we take default value from InitCompartment
                                 if mtg_element_data_value is None or np.isnan(mtg_element_data_value):
-                                    mtg_element_data_value = cnwheat_parameters.PhotosyntheticOrganElementInitCompartments().__dict__[cnwheat_element_data_name]
+                                    if cnwheat_element_data_name == 'Ts':
+                                        mtg_element_data_value = Tair
+                                    else :
+                                        mtg_element_data_value = cnwheat_parameters.PhotosyntheticOrganElementInitCompartments().__dict__[cnwheat_element_data_name]
                                 cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_data_value
                             cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
                             setattr(cnwheat_organ, cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)

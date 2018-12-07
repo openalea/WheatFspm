@@ -111,6 +111,8 @@ class FarquharWheatFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                if mtg_axis_label != 'MS':
+                    continue
                 SAM_id = (mtg_plant_index, mtg_axis_label)
                 farquharwheat_SAM_inputs_dict = {}
                 for farquharwheat_SAM_input_name in converter.FARQUHARWHEAT_SAMS_INPUTS:
@@ -122,15 +124,18 @@ class FarquharWheatFacade(object):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        mtg_organ_length = self._shared_mtg.get_vertex_property(mtg_organ_vid).get('length', 0)
+                        mtg_organ_length = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_organ_vid).get('length', 0))
                         if mtg_organ_label not in FARQUHARWHEAT_ORGANS_NAMES or mtg_organ_length <= 0: continue
 
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
-                            mtg_element_length = self._shared_mtg.get_vertex_property(mtg_element_vid).get('length', 0)
+                            mtg_element_length = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_element_vid).get('length', 0))
 
                             if mtg_element_label not in FARQUHARWHEAT_ELEMENTS_INPUTS or mtg_element_length <= 0: continue  # to excluse topElement, baseElement and elements with null length
+                            if mtg_element_label == 'HiddenElement' and (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True) or np.isnan(
+                                    self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True)) ) : continue
+
                             element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
 
                             farquharwheat_element_inputs_dict = {}

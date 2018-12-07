@@ -1,4 +1,5 @@
 # -*- coding: latin-1 -*-
+import numpy as np
 
 from elongwheat import converter, simulation
 import tools
@@ -115,6 +116,8 @@ class ElongWheatFacade(object):
             # Axis scale
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                if mtg_axis_label != 'MS':
+                    continue
                 mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
 
                 # SAM
@@ -182,6 +185,8 @@ class ElongWheatFacade(object):
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
                         mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_organ_vid)
+                        if np.nan_to_num( self._shared_mtg.property('length').get(mtg_organ_vid,0)) == 0:
+                            continue
                         if mtg_organ_label == 'blade':
                             elongwheat_hiddenzone_data_from_mtg_organs_data['lamina_Lmax'] = mtg_organ_properties['shape_mature_length']
                             elongwheat_hiddenzone_data_from_mtg_organs_data['leaf_Wmax'] = mtg_organ_properties['shape_max_width']
@@ -189,6 +194,10 @@ class ElongWheatFacade(object):
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
+                            if np.nan_to_num(self._shared_mtg.property('length').get(mtg_element_vid, 0)) == 0:
+                                continue
+                            if np.isnan( mtg_element_properties.get('age',0) ) :
+                                mtg_element_properties['age'] = 0.
                             if set(mtg_element_properties).issuperset(simulation.ELEMENT_INPUTS):
                                 elongwheat_element_inputs_dict = {}
                                 for elongwheat_element_input_name in simulation.ELEMENT_INPUTS:
@@ -238,7 +247,11 @@ class ElongWheatFacade(object):
                 if (mtg_plant_index, mtg_axis_label) not in axis_to_metamers_mapping: continue
                 new_metamer_ids = set(axis_to_metamers_mapping[(mtg_plant_index, mtg_axis_label)]).difference(mtg_metamer_ids)
                 for _ in new_metamer_ids:
-                    self.geometrical_model.add_metamer(self._shared_mtg, mtg_plant_index, mtg_axis_label) # MG : Ici sont ajoutés les metamers meme cachés, uniquement avec des top et base elements. POURQUOI ?
+                    self.geometrical_model.add_metamer(self._shared_mtg, mtg_plant_index, mtg_axis_label) # Add new metamer with only top and base element
+                # default value to age property in order to run  update_geometry()
+                for mtg_organ_vid in self._shared_mtg.components_at_scale(mtg_axis_vid,4):
+                    if self._shared_mtg.property('label')[mtg_organ_vid] == 'blade':
+                        self._shared_mtg.property('age')[mtg_organ_vid] = self._shared_mtg.property('age').get(mtg_organ_vid,0)
 
         self.geometrical_model.update_geometry(self._shared_mtg)  # Add HiddenElement and Stem/Leaf Element
 
@@ -281,6 +294,8 @@ class ElongWheatFacade(object):
                     # Organ scale
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
+                        if mtg_organ_vid == 43:
+                            pass
 
                         if mtg_organ_label not in ('blade', 'sheath', 'internode'): continue
 
@@ -309,7 +324,7 @@ class ElongWheatFacade(object):
                             if element_id in all_elongwheat_elements_data_dict:
                                 elongwheat_element_data_dict = all_elongwheat_elements_data_dict[element_id]
                                 # Element just created by elongwheat but not yet in MTG
-                                if element_label not in mtg_element_labels.keys():  # MG : This case doen't seem to be usefull
+                                if element_label not in mtg_element_labels.keys():  # MG : This case does not seem to be usefull
                                     if element_label in ('StemElement', 'LeafElement1'):
                                         self._shared_mtg.property('visible_length')[mtg_organ_vid] = elongwheat_element_data_dict['length']
                                     self._shared_mtg.property('length')[mtg_organ_vid] = elongwheat_element_data_dict['length']  # TODO: see if the following is necessary because not very correct
@@ -337,6 +352,7 @@ class ElongWheatFacade(object):
                         if mtg_organ_label == 'blade' and 'LeafElement1' in new_mtg_element_labels.keys():
                             organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['LeafElement1']]
                             self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
+                            self._shared_mtg.property('age')[mtg_organ_vid] = self._shared_mtg.property('age').get(new_mtg_element_labels['LeafElement1'], 0)
                         elif mtg_organ_label in ('sheath', 'internode') and 'StemElement' in new_mtg_element_labels.keys():
                             organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['StemElement']]
                             self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
@@ -350,6 +366,7 @@ class ElongWheatFacade(object):
 
                         total_organ_length = organ_visible_length + organ_hidden_length
                         self._shared_mtg.property('length')[mtg_organ_vid] = total_organ_length
+
 
     def _update_shared_dataframes(self, elongwheat_hiddenzones_data_df, elongwheat_elements_data_df, elongwheaSAM_temperature_data_df):
         """
