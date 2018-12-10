@@ -111,7 +111,7 @@ def calculate_cumulated_thermal_time(sum_TT, temperature, delta_teq):
         res += delta_teq * parameters.Temp_Tref/24.0/3600
     return res
 
-def calculate_SAM_primodia(status, teq_since_primordium, delta_teq, nb_leaves):
+def calculate_SAM_primodia(status, teq_since_primordium, delta_teq, nb_leaves, cohort_id):
     """ Update SAM status, leaf number
 
     :Parameters:
@@ -119,6 +119,7 @@ def calculate_SAM_primodia(status, teq_since_primordium, delta_teq, nb_leaves):
         - `teq_since_primordium` (:class:`float`) - Time since last primordium intiation (in time equivalent to a reference temperature) (s)
         - `delta_teq` (:class:`float`) - time increment (in time equivalent to a reference temperature) (s)
         - `nb_leaves` (:class:`float`) - Number of leaves already emited by the SAM.
+        - `cohort_id` (:class:`int`) - Corresponding leaf on the Main Stem for the first leaf of a tiller
     :Returns:
         Number of leaf to be initiated (should be 0 or 1), updated leaf number on the SAM, status, time since last primordium intiation (in time equivalent to a reference temperature)
     :Returns Type:
@@ -133,7 +134,7 @@ def calculate_SAM_primodia(status, teq_since_primordium, delta_teq, nb_leaves):
         teq_since_primordium -= parameters.PLASTOCHRONE
         if init_leaf > 1:
             raise ValueError('Error : {} leaf primordia have been created in one time step. Consider shorter timestep'.format(init_leaf))
-        if (nb_leaves + init_leaf) >= parameters.max_nb_leaves:
+        if (nb_leaves + init_leaf) >= (parameters.max_nb_leaves - cohort_id + 1):
             status = 'reproductive'
 
     nb_leaves += init_leaf
@@ -201,7 +202,7 @@ def calculate_leaf_pseudostem_length(ligule_heights, bottom_hiddenzone_height, p
     top_ligule_height = max(ligule_heights[ligule_heights['phytomer'] < phytomer_id]['ligule height'])  # highest previous ligule
     leaf_pseudostem_length = top_ligule_height - bottom_hiddenzone_height
 
-    return leaf_pseudostem_length
+    return max( leaf_pseudostem_length, 0)
 
 
 def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_teq, leaf_rank):
@@ -447,18 +448,24 @@ def calculate_cumulated_internode_length(internode_lengths):
     return sum(internode_lengths)
 
 
-def calculate_internode_distance_to_emerge(leaf_pseudostem_length, curr_internode_L):
+def calculate_internode_distance_to_emerge(ligule_heights, bottom_hiddenzone_height, phytomer_id, curr_internode_L):
     """ Distance for the internode to be visible given by the pseudostem length.
 
     :Parameters:
-        - `leaf_pseudostem_length` (:class:`float`) - Pseudostem length of the leaf on the same phyomer (m)
+        - `ligule_heights` (:class:`dict`) - height of all ligules of a given axis (m)
+        - `bottom_hiddenzone_height` (:class:`float`) - height of the bottom of the hidden zone given by the cumulated lengths of below internodes (m)
+        - `phytomer_id` (:class:`int`) - Id of the SAM (plant_id, axis_id)
         - `curr_internode_L` (:class:`float`) - Internode length of the current phyomer (m).
      :Returns:
         Distance for the internode to be visible (m)
     :Returns Type:
         :class:`float`
     """
-    internode_distance_to_emerge = leaf_pseudostem_length - curr_internode_L
+
+    top_ligule_height = max(ligule_heights[ligule_heights['phytomer'] < phytomer_id]['ligule height'])  # highest previous ligule
+    leaf_pseudostem_length = top_ligule_height - bottom_hiddenzone_height
+
+    internode_distance_to_emerge = leaf_pseudostem_length + curr_internode_L
 
     return max(0, internode_distance_to_emerge)
 

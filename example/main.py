@@ -20,10 +20,10 @@
 # --- PREAMBLE
 
 OPTION_SHOW_ADEL = True
-run_from_outputs = False
+run_from_outputs = True
 delta_t = 3600
-loop_end = 900
-desired_t_step = 0
+loop_end = 500
+desired_t_step = 490
 
 # setup outup precision
 OUTPUTS_PRECISION = 8
@@ -157,6 +157,7 @@ for t_step in range(desired_t_step+1, loop_end+1, elongwheat_ts):
     ## update MTG
     if OPTION_SHOW_ADEL:
         elongwheat_facade_._update_shared_MTG(simulation_.outputs['hiddenzone'], simulation_.outputs['elements'], simulation_.outputs['SAM'])
+        adel_wheat.update_geometry(g)
         adel_wheat.plot(g)
 
     ## use output as input for the next step

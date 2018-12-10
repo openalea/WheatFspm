@@ -147,8 +147,8 @@ class Simulation(object):
         for SAM_id, SAM_inputs in sorted(all_SAM_inputs.items()):
 
             axe_label = SAM_id[1]
-            if axe_label != 'MS':
-                continue
+            # if axe_label != 'MS':
+            #     continue
             curr_SAM_outputs = all_SAM_outputs[SAM_id]
             nb_leaves = curr_SAM_outputs['nb_leaves']
 
@@ -170,8 +170,9 @@ class Simulation(object):
 
             # update SAM status, leaf number and
             init_leaf, curr_SAM_outputs['nb_leaves'], curr_SAM_outputs['status'], curr_SAM_outputs['teq_since_primordium'] = model.calculate_SAM_primodia(SAM_inputs['status'],
-                                                                                                                                                        curr_SAM_outputs['teq_since_primordium'],
-                                                                                                                                                        curr_SAM_outputs['delta_teq'], nb_leaves)
+                                                                                                                                                          curr_SAM_outputs['teq_since_primordium'],
+                                                                                                                                                          curr_SAM_outputs['delta_teq'], nb_leaves,
+                                                                                                                                                          curr_SAM_outputs['cohort'])
 
             # GA production
             curr_SAM_outputs['GA'] = model.calculate_SAM_GA(curr_SAM_outputs['status'], curr_SAM_outputs['teq_since_primordium'])
@@ -184,6 +185,12 @@ class Simulation(object):
                 # new_hiddenzone['cytokinins'] = new_hiddenzone['conc_cytokinins'] * new_hiddenzone['mstruct']
                 self.outputs['hiddenzone'][hiddenzone_id] = new_hiddenzone
 
+                # Add Hiddenzone on tillers TEMPORARY
+                # for tiller_id in all_SAM_outputs.keys():
+                #     if tiller_id[1] != 'MS':
+                #         MS_to_tiller_hiddenzone_id = tiller_id + tuple([hiddenzone_id[2] - all_SAM_outputs[tiller_id]['cohort'] + 1])
+                #         self.outputs['hiddenzone'][MS_to_tiller_hiddenzone_id] = new_hiddenzone
+
             # Ligule height
             all_ligule_height_df = model.calculate_ligule_height(all_sheath_internode_lengths[SAM_id], all_element_inputs, SAM_id, all_ligule_height_df)
 
@@ -193,7 +200,7 @@ class Simulation(object):
         for element_id, element_inputs in sorted(all_element_inputs.items()):
             # Update element age, only used to adapt the element geometry (MTG)
             curr_age = all_element_inputs[element_id]['age']
-            SAM_id = element_id[:2]
+            SAM_id = element_id[:2] #tuple( [element_id[0], 'MS'])
             curr_SAM_outputs = all_SAM_outputs[SAM_id]
             self.outputs['elements'][element_id]['age'] = model.calculate_cumulated_thermal_time(curr_age, curr_SAM_outputs['SAM_temperature'], curr_SAM_outputs['delta_teq'] )
 
@@ -242,15 +249,15 @@ class Simulation(object):
                         if tiller_to_MS_emerged_internode_id in all_element_outputs.keys():
                             self.outputs['elements'][tiller_emerged_internode_id] = all_element_outputs[tiller_to_MS_emerged_internode_id]
                         else:
-                            warnings.warn('No emerged internode found on main stem for tiller {}.'.format(tiller_to_MS_enclosed_sheath_id))
+                            warnings.warn('No emerged internode found on main stem for tiller {}.'.format(tiller_to_MS_emerged_internode_id))
 
                         # Enclosed internode
-                        tiller_to_MS_enclosed_internode_id = tiller_to_MS_phytomer_id + tuple(['internode', 'StemElement'])
-                        tiller_enclosed_internode_id = hiddenzone_id + tuple(['internode', 'StemElement'])
+                        tiller_to_MS_enclosed_internode_id = tiller_to_MS_phytomer_id + tuple(['internode', 'HiddenElement'])
+                        tiller_enclosed_internode_id = hiddenzone_id + tuple(['internode', 'HiddenElement'])
                         if tiller_to_MS_enclosed_internode_id in all_element_outputs.keys():
                             self.outputs['elements'][tiller_enclosed_internode_id] = all_element_outputs[tiller_to_MS_enclosed_internode_id]
                         else:
-                            warnings.warn('No enclosed internode found on main stem for tiller {}.'.format(tiller_to_MS_enclosed_sheath_id))
+                            warnings.warn('No enclosed internode found on main stem for tiller {}.'.format(tiller_to_MS_enclosed_internode_id))
                 else:
                     warnings.warn('No main stem found for tiller {}.'.format(tiller_to_MS_phytomer_id))
 
@@ -285,7 +292,7 @@ class Simulation(object):
 
                 # Calculate the internode pseudostem length
                 curr_internode_L = hiddenzone_inputs['internode_L']
-                internode_distance_to_emerge = model.calculate_internode_distance_to_emerge(leaf_pseudostem_length, curr_internode_L)
+                internode_distance_to_emerge = model.calculate_internode_distance_to_emerge(all_ligule_height_df[all_ligule_height_df['SAM_id'] == SAM_id], bottom_hiddenzone_height, phytomer_id, curr_internode_L)
                 curr_hiddenzone_outputs['internode_distance_to_emerge'] = internode_distance_to_emerge
                 curr_hiddenzone_outputs['delta_internode_distance_to_emerge'] = internode_distance_to_emerge - hiddenzone_inputs['internode_distance_to_emerge']  # Variable used in growthwheat
 
