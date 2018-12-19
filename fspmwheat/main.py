@@ -120,7 +120,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
 
         # define the time step in hours for each simulator
-        caribu_ts = 2
+        caribu_ts = 4
         senescwheat_ts = 2
         farquharwheat_ts = 2
         elongwheat_ts = 1
@@ -322,11 +322,10 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                     farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
 
                     for t_elongwheat in range(t_farquharwheat, t_farquharwheat + farquharwheat_ts, elongwheat_ts):
-                        print('t elongwheat is {}'.format(t_elongwheat))
 
                         # run ElongWheat
+                        print('t elongwheat is {}'.format(t_elongwheat))
                         Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
-
                         elongwheat_facade_.run(Tair, Tsoil)
 
                         # Update geometry
@@ -384,8 +383,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         all_SAM_inputs_outputs = all_SAM_inputs_outputs.reindex(SAM_INDEX_COLUMNS+all_SAM_inputs_outputs.columns.difference(SAM_INDEX_COLUMNS).tolist(), axis=1, copy=False)
 
         all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps,sort=False)
-        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) &  # TODO: temporary ; to remove when there will be default input values for each element in the mtg
-                                                                      (all_elements_inputs_outputs.axis == 'MS')]
+        # all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) &  # TODO: temporary ; to remove when there will be default input values for each element in the mtg
+        #                                                               (all_elements_inputs_outputs.axis == 'MS')]
         all_elements_inputs_outputs.reset_index(0, inplace=True)
         all_elements_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
         all_elements_inputs_outputs = all_elements_inputs_outputs.reindex(ELEMENTS_INDEX_COLUMNS+all_elements_inputs_outputs.columns.difference(ELEMENTS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
@@ -480,10 +479,12 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
 
         # Generate graphs
+        df_hz = postprocessing_df_dict[hiddenzones_postprocessing_file_basename]
+        df_elt = postprocessing_df_dict[elements_postprocessing_file_basename]
         cnwheat_facade.CNWheatFacade.graphs(axes_postprocessing_df=postprocessing_df_dict[axes_postprocessing_file_basename],
-                                            hiddenzones_postprocessing_df=postprocessing_df_dict[hiddenzones_postprocessing_file_basename],
+                                            hiddenzones_postprocessing_df=df_hz[df_hz['axis']=='MS'], #postprocessing_df_dict[hiddenzones_postprocessing_file_basename],
                                             organs_postprocessing_df=postprocessing_df_dict[organs_postprocessing_file_basename],
-                                            elements_postprocessing_df=postprocessing_df_dict[elements_postprocessing_file_basename],
+                                            elements_postprocessing_df=df_elt[df_elt['axis']=='MS'], #postprocessing_df_dict[elements_postprocessing_file_basename],
                                             soils_postprocessing_df=postprocessing_df_dict[soils_postprocessing_file_basename],
                                             graphs_dirpath=GRAPHS_DIRPATH)
 
@@ -491,7 +492,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         from cnwheat import tools as cnwheat_tools
         # 1) Phyllochron
         meteo_df = pd.read_csv(METEO_FILEPATH)
-        grouped_df = postprocessing_df_dict[hiddenzones_postprocessing_file_basename].groupby(['plant', 'metamer'])[['t', 'leaf_is_emerged']]
+        df_hz = postprocessing_df_dict[hiddenzones_postprocessing_file_basename]
+        grouped_df = df_hz[df_hz['axis'] == 'MS'].groupby(['plant', 'metamer'])[['t', 'leaf_is_emerged']]
         leaf_emergence = {}
         for group_name, data in grouped_df:
             plant, metamer = group_name[0], group_name[1]
@@ -549,7 +551,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         cnwheat_tools.plot_cnwheat_ouputs(pd.DataFrame(RER_dict), 'day', 'RER', x_label='Time (day)', y_label='RER (s-1)', plot_filepath=os.path.join(GRAPHS_DIRPATH, 'RER.PNG'), explicit_label=False)
 
         # 4) Total C production vs. Root C allcoation
-        df_org= postprocessing_df_dict[organs_postprocessing_file_basename]
+        df_org = postprocessing_df_dict[organs_postprocessing_file_basename]
         df_roots= df_org[df_org['organ'] == 'roots']
         df_roots['day'] = df_roots['t'] // 24 + 1
         df_roots['Unloading_Sucrose_tot'] = df_roots['Unloading_Sucrose'] * df_roots['mstruct']
@@ -558,11 +560,12 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
         df_axe = postprocessing_df_dict[axes_postprocessing_file_basename]
         df_axe['day'] = df_axe['t'] // 24 + 1
-        Total_Photosynthesis = df_axe.groupby(['day'])['Total_Photosynthesis'].agg('sum')
+        Total_Photosynthesis = df_axe.groupby(['day'])['Tillers_Photosynthesis'].agg('sum')
 
         df_elt = postprocessing_df_dict[elements_postprocessing_file_basename]
         df_elt['day'] = df_elt['t'] // 24 + 1
-        Shoot_respiration = df_elt.groupby(['day'])['sum_respi'].agg('sum')
+        df_elt['sum_respi_tillers'] = df_elt['sum_respi'] * df_elt['nb_replications']
+        Shoot_respiration = df_elt.groupby(['day'])['sum_respi_tillers'].agg('sum')
         Net_Photosynthesis = Total_Photosynthesis - Shoot_respiration
 
         share_net_roots_live = Unloading_Sucrose_tot / Net_Photosynthesis * 100
@@ -610,9 +613,11 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         R_tot_cum = np.cumsum(df_roots['R_tot'])
         sucrose_consumption_mstruct_cum = np.cumsum( df_roots['sucrose_consumption_mstruct'] )
         C_exudation_cum = np.cumsum( df_roots['C_exudation'] * df_roots['mstruct'])
-        Total_Photosynthesis_cum = np.cumsum(df_axe['Total_Photosynthesis'])
-        Shoot_respiration = df_elt.groupby(['t'])['sum_respi'].agg('sum') +  df_hz.groupby(['t'])['Respi_growth'].agg('sum')
-        Net_Photosynthesis_cum = np.cumsum( df_axe['Total_Photosynthesis'] - Shoot_respiration[1:].reset_index()[0] )
+        Total_Photosynthesis_cum = np.cumsum(df_axe['Tillers_Photosynthesis']) # total phothosynthesis of all tillers
+        Total_Photosynthesis_An_cum = np.cumsum(df_axe['Tillers_Photosynthesis_An'])  # total net phothosynthesis of all tillers (An)
+        df_hz['Respi_growth_tillers'] = df_hz['Respi_growth'] * df_hz['nb_replications']
+        Shoot_respiration = df_elt.groupby(['t'])['sum_respi_tillers'].agg('sum') +  df_hz.groupby(['t'])['Respi_growth_tillers'].agg('sum')
+        Net_Photosynthesis_cum = np.cumsum( df_axe['Tillers_Photosynthesis'] - Shoot_respiration[1:].reset_index()[0] )
         Unloading_Sucrose_tot_cum = np.cumsum(df_roots['Unloading_Sucrose_tot'])
 
         fig, ax = plt.subplots()
@@ -621,7 +626,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         line3, = ax.plot(df_roots['t'], R_tot_cum, label='Total Roots Respiration')
         line4, = ax.plot(df_roots['t'], sucrose_consumption_mstruct_cum, label='C for roots structural growth')
         line5, = ax.plot(df_axe['t'], Total_Photosynthesis_cum, label=u'Gross Photosynthesis')
-        line5, = ax.plot(df_axe['t'], Net_Photosynthesis_cum, label=u'Photosynthesis - Total shoot respiration')
+        line6, = ax.plot(df_axe['t'], Net_Photosynthesis_cum, label=u'Photosynthesis - Total shoot respiration')
+        line7, = ax.plot(df_axe['t'], Total_Photosynthesis_An_cum, label=u'Net Photosynthesis (An)')
 
         ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
         ax.set_xlabel('Time (h)')
@@ -629,8 +635,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         ax.set_title('Cumulated fluxes of C')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Fluxes_cumulated.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
-        # 6) RUE
-        df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * 3600/2.02 * 10**-6
+        # 6) RUE # TODO
+        df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * 3600/2.02 * 10**-6 # Il faut les calculcs green_area des talles
         PARa = df_elt.groupby(['day'])['PARa_MJ'].agg('sum')
         PARa_cum = np.cumsum(PARa)
         days = df_elt['day'].unique()
@@ -645,7 +651,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         ax.plot(PARa_cum, sum_dry_mass_shoot, label = 'Shoot dry mass (g)')
         ax.plot(PARa_cum, sum_dry_mass, label='Plant dry mass (g)')
         ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
-        ax.set_xlabel('Cumulative absorbed PAR (MJ)')
+        ax.set_xlabel('Cumulative absorbed PAR (MJ) \ FAUX si talles!')
         ax.set_ylabel('Dry mass (g)')
         ax.set_title('RUE')
         plt.text(max(PARa_cum)*0.02,max(sum_dry_mass)*0.95, 'RUE shoot : {0:.2f} , RUE plant : {1:.2f}'.format(round(RUE_shoot,2),round(RUE_plant, 2) ) )
@@ -654,13 +660,14 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         fig, ax = plt.subplots()
         ax.plot(days, sum_dry_mass_shoot, label = 'Shoot dry mass (g)')
         ax.plot(days, sum_dry_mass, label='Plant dry mass (g)')
-        ax.plot(days, PARa_cum, label = 'Cumulative absorbed PAR (MJ)')
+        ax.plot(days, PARa_cum, label = 'Cumulative absorbed PAR (MJ) \ FAUX si talles!')
         ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
         ax.set_xlabel('Days')
         ax.set_title('RUE investigations')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'RUE2.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
         # 6) Sum thermal time
+        df_SAM = df_SAM[df_SAM['axis'] == 'MS']
         fig, ax = plt.subplots()
         ax.plot(df_SAM['t'], df_SAM['sum_TT'])
         ax.set_xlabel('Hours')
@@ -669,4 +676,4 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SumTT.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
 if __name__ == '__main__':
-    main(500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True)
+    main(500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)

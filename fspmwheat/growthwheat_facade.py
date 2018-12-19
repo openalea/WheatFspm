@@ -204,6 +204,8 @@ class GrowthWheatFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                if mtg_axis_label != 'MS':
+                    continue
                 roots_id = (mtg_plant_index, mtg_axis_label, 'roots')
                 if roots_id in all_growthwheat_roots_data_dict:
                     growthwheat_roots_data_dict = all_growthwheat_roots_data_dict[roots_id]

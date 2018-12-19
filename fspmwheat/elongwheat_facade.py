@@ -116,8 +116,8 @@ class ElongWheatFacade(object):
             # Axis scale
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
-                if mtg_axis_label != 'MS':
-                    continue
+                # if mtg_axis_label != 'MS':
+                #     continue
                 mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
 
                 # SAM
@@ -294,8 +294,6 @@ class ElongWheatFacade(object):
                     # Organ scale
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        if mtg_organ_vid == 43:
-                            pass
 
                         if mtg_organ_label not in ('blade', 'sheath', 'internode'): continue
 

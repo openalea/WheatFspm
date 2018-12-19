@@ -1,4 +1,4 @@
-ts caribu = 2
+ts caribu = 4
 
 ** ---- FARQUHAR-WHEATH
 
@@ -18,7 +18,7 @@ Default Tr value = 0.1
 - AMINO_ACIDS_N_RATIO = 1.25 au lieu de 1.17
 
 ** Roots
-- calculate_roots_mstruct_growth : mstruct_C_growth * 1.8
+- calculate_roots_mstruct_growth : Vmax * 5.5 ; K = 1500 au lieu de 1250
 
 ** ---- CN-WHEATH
 
@@ -37,7 +37,7 @@ Default Tr value = 0.1
 - calculate_S_Fructans * 1.5
 
 ** Roots
-- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING
+- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING * 1.2
 - calculate_S_cytokinins : S_cytokinins *1
 - calculate_Uptake_Nitrates : net_nitrate_uptake 
 - calculate_exudation : C_EXUDATION * 3.8
