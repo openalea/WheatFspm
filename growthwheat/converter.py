@@ -85,7 +85,7 @@ def from_dataframes(hiddenzone_inputs, element_inputs, root_inputs, SAM_inputs):
     for SAM_inputs_id, SAM_inputs_group in root_inputs.groupby(SAM_TOPOLOGY_COLUMNS):
         # SAM
         SAM_inputs_series = SAM_inputs_group.loc[SAM_inputs_group.first_valid_index()]
-        SAM_inputs_dict = SAM_inputs_series[root_inputs_columns].to_dict()
+        SAM_inputs_dict = SAM_inputs_series[SAM_inputs_columns].to_dict()
         all_SAM_dict[SAM_inputs_id] = SAM_inputs_dict
 
     return {'hiddenzone': all_hiddenzone_dict, 'elements': all_element_dict, 'roots': all_root_dict, 'SAM': all_SAM_dict }

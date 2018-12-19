@@ -38,6 +38,7 @@ INPUTS_DIRPATH = 'inputs'
 HIDDENZONE_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
 ELEMENT_INPUTS_FILENAME = 'elements_inputs.csv'
 ROOT_INPUTS_FILENAME = 'roots_inputs.csv'
+SAM_INPUTS_FILENAME = 'SAM_inputs.csv'
 
 OUTPUTS_DIRPATH = 'outputs'
 DESIRED_HIDDENZONE_OUTPUTS_FILENAME = 'desired_hiddenzones_outputs.csv'
@@ -76,11 +77,12 @@ def test_run():
     hiddenzones_inputs_t0 = pd.read_csv(os.path.join(INPUTS_DIRPATH, HIDDENZONE_INPUTS_FILENAME))
     element_inputs_t0 = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENT_INPUTS_FILENAME))
     root_inputs_t0 = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOT_INPUTS_FILENAME))
+    SAM_inputs_t0 = pd.read_csv(os.path.join(INPUTS_DIRPATH, SAM_INPUTS_FILENAME))
 
     # Create population
     simulation_ = simulation.Simulation(delta_t=3600)
     # convert the dataframe to simulation inputs format
-    all_inputs_dict = converter.from_dataframes(hiddenzones_inputs_t0, element_inputs_t0, root_inputs_t0)
+    all_inputs_dict = converter.from_dataframes(hiddenzones_inputs_t0, element_inputs_t0, root_inputs_t0, SAM_inputs_t0)
     hz_inputs_reconverted_df = all_inputs_dict['hiddenzone']
     element_inputs_reconverted_df = all_inputs_dict['elements']
     roots_inputs_reconverted_df = all_inputs_dict['roots']

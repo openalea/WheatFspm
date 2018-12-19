@@ -40,6 +40,7 @@ INPUTS_DIRPATH = 'inputs'
 HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
 ELEMENT_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'elements_inputs.csv')
 ROOT_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'roots_inputs.csv')
+SAM_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'SAM_inputs.csv')
 
 # growthwheat outputs
 OUTPUTS_DIRPATH = 'outputs'
@@ -51,6 +52,7 @@ ROOT_OUTPUTS_FILENAME = 'roots_outputs.csv'
 hiddenzones_inputs_t0 = pd.read_csv(HIDDENZONE_INPUTS_FILEPATH)
 element_inputs_t0 = pd.read_csv(ELEMENT_INPUTS_FILEPATH)
 root_inputs_t0 = pd.read_csv(ROOT_INPUTS_FILEPATH)
+SAM_inputs_t0 = pd.read_csv(SAM_INPUTS_FILEPATH)
 
 OUTPUTS_PRECISION = 6
 
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     # Create population
     simulation_ = simulation.Simulation(delta_t=3600)
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframes(hiddenzones_inputs_t0, element_inputs_t0, root_inputs_t0)
+    inputs = converter.from_dataframes(hiddenzones_inputs_t0, element_inputs_t0, root_inputs_t0,SAM_inputs_t0)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
     # run the simulation

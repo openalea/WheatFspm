@@ -119,12 +119,6 @@ class Simulation(object):
         # SAM
         all_SAM_inputs = self.inputs['SAM']
 
-        # # For tiller growth calculations
-        # sucrose_consumption_mstruct_tillers = [0.]
-        # respi_growth_tillers = [0.]
-        # AA_consumption_mstruct_tillers = [0.]
-        # Photosynthesis_tillers = [0.]
-
         # hidden zones and elements
         for hiddenzone_id, hiddenzone_inputs in sorted(all_hiddenzone_inputs.items()):
 
@@ -134,25 +128,6 @@ class Simulation(object):
             #: Tillers (we copy corresponding elements of MS)
             if axe_label != 'MS':
                 pass
-                # cohort_id = int(axe_label[1:]) + 3
-                #
-                # tiller_to_MS_phytomer_id = tuple([hiddenzone_id[0], 'MS', cohort_id + hiddenzone_id[2] - 1])
-                # if tiller_to_MS_phytomer_id in all_hiddenzone_outputs.keys():
-                #     self.outputs['hiddenzone'][hiddenzone_id] = all_hiddenzone_outputs[tiller_to_MS_phytomer_id]
-                #     sucrose_consumption_mstruct_tillers.append(all_hiddenzone_outputs[tiller_to_MS_phytomer_id]['sucrose_consumption_mstruct'])
-                #     respi_growth_tillers.append(all_hiddenzone_outputs[tiller_to_MS_phytomer_id]['Respi_growth'])
-                #     AA_consumption_mstruct_tillers.append(all_hiddenzone_outputs[tiller_to_MS_phytomer_id]['AA_consumption_mstruct'])
-                # else:
-                #     warnings.warn('No main stem found for tiller {}.'.format(tiller_to_MS_phytomer_id))
-                #
-                # tiller_to_MS_vis_element_ids = [ tuple([tiller_to_MS_phytomer_id, 'blade', 'LeafElement1']),
-                #                                  tuple([tiller_to_MS_phytomer_id, 'sheath', 'StemElement']),
-                #                                  tuple([tiller_to_MS_phytomer_id, 'internode', 'StemElement']) ]
-                # for tiller_to_MS_vis_element_id in tiller_to_MS_vis_element_ids:
-                #     if tiller_to_MS_vis_element_id in all_hiddenzone_outputs.keys():
-                #         Photosynthesis_tillers.append( all_elements_outputs[tiller_to_MS_vis_element_id]['Ag'] * all_elements_outputs[tiller_to_MS_vis_element_id]['green_area'] * 3600 )
-                #     else:
-                #         warnings.warn('No main stem found for tiller {}.'.format(tiller_to_MS_vis_element_id))
 
             #: Main stem
             else :
