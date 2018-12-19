@@ -39,7 +39,7 @@ SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'senesced_length','length', 'protei
 #: the outputs computed by SenescWheat at roots scale
 SENESCWHEAT_ROOTS_OUTPUTS = ['rate_mstruct_death', 'mstruct', 'Nstruct', 'cytokinins']
 
-#: the outputs computed by SenescWheat at roots scale
+#: the outputs computed by SenescWheat at SAM scale
 SENESCWHEAT_SAM_OUTPUTS = []
 
 #: the outputs computed by SenescWheat at elements scale

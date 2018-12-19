@@ -146,7 +146,7 @@ class Simulation(object):
                 #                                                                                                                                        0,
                 #                                                                                                                                        element_inputs_dict['max_proteins'], delta_teq,
                 #                                                                                                                                        update_max_protein)
-
+                #
                 # Temporaire :
                 relative_delta_green_area = relative_delta_senesced_length
 
