@@ -30,9 +30,11 @@ x_label='Time (h)'
 
 # SAM outputs for SumTT
 all_SAM_outputs_df = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, SAM_OUTPUTS_FILENAME))
+all_SAM_outputs_df = all_SAM_outputs_df[all_SAM_outputs_df['axis'] == 'MS']
 
 # 4) Hidden zones
 all_hiddenzone_outputs_df = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONE_OUTPUTS_FILENAME))
+all_hiddenzone_outputs_df = all_hiddenzone_outputs_df[all_hiddenzone_outputs_df['axis'] == 'MS']
 graph_variables_hiddenzones = {'leaf_pseudostem_length': u'Length for leaf emergence (m)','leaf_L': u'Leaf length (m)', 'delta_leaf_L':u'Delta leaf length (m)',
                             'internode_distance_to_emerge': u'Length for internode emergence (m)','internode_L': u'Internode length (m)', 'delta_internode_L':u'Delta internode length (m)'}
 
@@ -50,6 +52,7 @@ for variable_name, variable_label in graph_variables_hiddenzones.iteritems():
 
 # 5) elements
 all_element_outputs_df = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENT_OUTPUTS_FILENAME))
+all_element_outputs_df = all_element_outputs_df[all_element_outputs_df['axis'] == 'MS']
 graph_variables_elements = {'length': u'Length (m)' }
 
 for organ_label in list(all_element_outputs_df['organ'].unique()):
@@ -116,7 +119,9 @@ var_list.remove('metamer')
 for var in list(var_list):
     plt.figure()
     plt.xlim((int(min(res.metamer)-1),int(max(res.metamer)+1)))
-    plt.ylim( ymin= 0 , ymax = np.nanmax( [res[var]*100*1.05,bchmk[var]*1.05]) )
+    titi = res[var]*100*1.05
+    titi.append(bchmk[var]*1.05)
+    plt.ylim( ymin= 0 , ymax = np.nanmax( titi ) )
     ax = plt.subplot(111)
 
 ##    width = 0.35

@@ -29,7 +29,7 @@ from __future__ import division  # use "//" to do integer division
 # -------------------------------------------------------------------------------------------------------------------
 PLASTOCHRONE = 76.1/12*24*3600    #: Leaf plastochron (s at 12°C) calculated from Ljutovac 2002 with priodia of 5.10-5 m (76 dd) ; Malvoisin 35dd associated with init 3.10-5m
 max_nb_leaves = 11   #: Max number of leaves per axis
-delta_TT_GA = PLASTOCHRONE * 4  #: Thermal time between floral transition of SAM and Gibberelin production expressed as a function of plastochron (s at 12°C) ; Malvoisin's data give 7 plastochrons
+delta_TT_GA = PLASTOCHRONE * 5  #: Thermal time between floral transition of SAM and Gibberelin production expressed as a function of plastochron (s at 12°C) ; Malvoisin's data give 7 plastochrons
 
 sowing_depth = 0.05  #: Sowing depth (m) used to define plant emergence
 
@@ -44,10 +44,13 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # --- Leaves
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_dict = { 3 : 0.00000279 ,4 : 0.00000279 ,5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000154 , 9 : 0.0000015 , 10 : 0.00000146 , 11 : 0.00000146 }#: s-1 at 12°C fit
-#{3: 4.1E-06, 4: 4.1E-06, 5: 4.1E-06, 6: 4.1E-06, 7: 3.6E-06, 8: 3.3E-06, 9: 3.2E-06, 10: 2.9E-06, 11: 2.75E-06}
-#{5 : 0.009/3600, 6 : 0.009/3600, 7: 0.0088/3600, 8: 0.00875/3600, 9: 0.00875/3600, 10: 0.0086/3600, 11: 0.008/3600} # RB 2013
-# Ljutovac 2002 RER (s-1 at 12°C :  { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 }
+RERmax_dict =  { 5 : 0.000003 , 6 : 0.00000175 , 7 : 0.00000164 , 8 : 0.00000154 , 9 : 0.00000152 , 10 : 0.00000135 , 11 : 0.0000013 } # s-1 at 12°C fit dec 18
+# { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # Ljutovac 2002 RER (s-1 at 12°C
+# {3: 4.1E-06, 4: 4.1E-06, 5: 6E-06, 6: 4.1E-06, 7: 3.6E-06, 8: 3.2E-06, 9: 3.08E-06, 10: 2.9E-06, 11: 2.75E-06}  # MG2
+# {3 : 0.00000279 ,4 : 0.00000279 ,5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000154 , 9 : 0.0000015 , 10 : 0.00000146 , 11 : 0.00000146 }#: s-1 at 12°C fit nov 18
+# {3: 4.1E-06, 4: 4.1E-06, 5: 4.1E-06, 6: 4.1E-06, 7: 3.6E-06, 8: 3.3E-06, 9: 3.2E-06, 10: 2.9E-06, 11: 2.75E-06}
+# {5 : 0.009/3600, 6 : 0.009/3600, 7: 0.0088/3600, 8: 0.00875/3600, 9: 0.00875/3600, 10: 0.0086/3600, 11: 0.008/3600} # RB 2013
+
 RERmax = 2.8E-06 #: s-1 at 12°C # 5.56e-06 Ljutovac 2002 # 4e-06 Anne # 2.43E-06 RB v1
 Kc = 300 # 145.6 # 350 #: affinity coefficient of RER to C (µmol g-1)
 Kn = 300 #200 #16.64  # 40  #: affinity coefficient of RER to C N (µmol g-1)
@@ -70,12 +73,16 @@ min_SSLW = 22  #: g m-2
 max_SSLW = 50  #: g m-2
 ratio_LSSW_SSLW = 0.003  #: ratio lineic structural mass sheath / specific strucutal mass lamina of the specific structural dry masses (from data of J. Bertheloot, 2004) (m)
 #TODO : adapter ce paramètre pour les feuilles adultes car change drastiquement
+leaf_SSLW_dict = {1: 15,2: 23,3: 25,4: 24,5: 21,6: 18,7: 16,8: 17,9: 21,10: 26,11: 33} # Manip NEMA 05/06 traitments N+ (from data of J. Bertheloot, 2004)
+leaf_LSSW_dict = {1: 0.06,2: 0.08,3: 0.09,4: 0.14,5: 0.15,6: 0.19,7: 0.22,8: 0.39,9: 0.45,10: 0.47,11: 0.58} # Manip NEMA 05/06 Soissons N+ (from data of J. Bertheloot, 2004)
+
 
 # -------------------------------------------------------------------------------------------------------------------
 # --- Internodes
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_dict_IN = { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.9E-06 , 8 : 2.3E-06 , 9 : 2.45E-06 , 10 :2.35E-06 , 11 : 2.2E-06 }#: s-1 at 12°C FIT
+RERmax_dict_IN = { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 3.1E-06 , 8 : 1.9E-06 , 9 : 2E-06 , 10 :2.05E-06 , 11 :1.92E-06  }#: s-1 at 12°C FIT dec 18
+# { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.9E-06 , 8 : 2.3E-06 , 9 : 2.45E-06 , 10 :2.35E-06 , 11 : 2.2E-06 }#: s-1 at 12°C FIT nov 18
 #{ 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.48E-06 , 8 : 2.48E-06 , 9 : 2.48E-06 , 10 : 1.9E-06 , 11 : 1.6E-06 }#: s-1 at 12°C
 # estimate from Ljutovac 2002 over the period until leaf ligulation i.e. wider than in the model.
 # Because i) not enought data if we consider only up to previous leaf ligulation, ii) same exponential like period
@@ -94,6 +101,8 @@ L0_INT = (1 + (te_IN / (te_IN - tm_IN))) * (min(1.0, float(-tb_IN) / float(te_IN
 OFFSET_INT = 1 / SCALING_FACTOR_INT - L0_INT
 
 ratio_LSIW_LSSW = 2.5 #: ratio lineic structural internode mass / lineic structural sheath mass  of the specific structural dry masses (from data of J. Bertheloot, 2004)
+internode_LSIW_dict = {1:2.8, 2:2.8, 3:2.8, 4:2.8, 5:2.8, 6:2.8, 7:2.8, 8: 2.8, 9: 2.3,10: 1.7,11: 1.6,12: 1.4,13: 0.7} #: Manip Marion GAuthier 2017/18 en accord avec Manip Romain Barillot 2014
+
 
 class HiddenZoneInit(object):
     """

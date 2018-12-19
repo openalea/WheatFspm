@@ -353,8 +353,9 @@ class Simulation(object):
                                     next_hiddenzone_outputs['sheath_Lmax'] = model.calculate_sheath_Lmax(next_hiddenzone_outputs['leaf_Lmax'], next_hiddenzone_outputs['lamina_Lmax'])  #: Final sheath length
                                     next_hiddenzone_outputs['leaf_Wmax'] = model.calculate_leaf_Wmax(next_hiddenzone_outputs['lamina_Lmax'], next_hiddenzone_inputs['fructan'],
                                                                                                      next_hiddenzone_inputs['mstruct'], phytomer_id)                              #: Maximal leaf width
-                                    next_hiddenzone_outputs['SSLW'] = model.calculate_SSLW(next_hiddenzone_inputs['fructan'], next_hiddenzone_inputs['mstruct'])     #: Structural Specific Lamina Weight
-                                    next_hiddenzone_outputs['LSSW'] = model.calculate_LSSW(next_hiddenzone_outputs['SSLW'])                                          #: Structural Lineic Sheath Weight
+                                    next_hiddenzone_outputs['SSLW'] = model.calculate_SSLW(next_hiddenzone_inputs['fructan'], next_hiddenzone_inputs['mstruct'],phytomer_id)     #: Structural Specific Lamina
+                                    # Weight
+                                    next_hiddenzone_outputs['LSSW'] = model.calculate_LSSW(next_hiddenzone_outputs['SSLW'],phytomer_id)                                          #: Structural Lineic Sheath Weight
                                     next_hiddenzone_outputs['leaf_pseudo_age'] = 0                                                                                   #: Pseudo age of the leaf since beginning of automate growth (s)
                                     self.outputs['hiddenzone'][next_hiddenzone_id] = next_hiddenzone_outputs
                                 else:
@@ -390,7 +391,8 @@ class Simulation(object):
                                     next_hiddenzone_outputs = all_hiddenzone_outputs[next_hiddenzone_id]
                                     if curr_SAM_outputs['GA']:
                                         next_hiddenzone_outputs['internode_Lmax'] = model.calculate_internode_Lmax(next_hiddenzone_outputs['internode_L'])  #: Final internode length
-                                    next_hiddenzone_outputs['LSIW'] = model.calculate_LSIW(next_hiddenzone_outputs['LSSW'])                                 #: Structural Specific Internode Weight
+                                    next_hiddenzone_outputs['LSIW'] = model.calculate_LSIW(next_hiddenzone_outputs['LSSW'], phytomer_id)                                 #: Structural Specific Internode
+                                    # Weight
                                     next_hiddenzone_outputs['internode_pseudo_age'] = 0                                            #: Pseudo age of the internode since beginning of automate growth (s)
                                     self.outputs['hiddenzone'][next_hiddenzone_id] = next_hiddenzone_outputs
 
@@ -461,6 +463,14 @@ class Simulation(object):
                                                                                    curr_hiddenzone_outputs['amino_acids'], curr_hiddenzone_outputs['mstruct'],
                                                                                    curr_SAM_outputs['delta_teq'])
                         internode_L = curr_hiddenzone_outputs['internode_L'] + delta_internode_L  # TODO: Ckeck internode_L is not too large (in the case of long delta_t)
+
+                        curr_hiddenzone_outputs['internode_L'] = internode_L
+                        curr_hiddenzone_outputs['delta_internode_L'] = delta_internode_L
+                        # Hidden internode
+                        if hidden_internode_id not in self.outputs['elements'].keys():
+                            new_internode = parameters.ElementInit().__dict__
+                            self.outputs['elements'][hidden_internode_id] = new_internode
+                        self.outputs['elements'][hidden_internode_id]['length'] = internode_L
 
                     #: After ligulation of the leaf on the previous phytomer.
                     else:

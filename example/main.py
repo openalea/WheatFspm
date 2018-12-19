@@ -20,10 +20,10 @@
 # --- PREAMBLE
 
 OPTION_SHOW_ADEL = True
-run_from_outputs = True
+run_from_outputs = False
 delta_t = 3600
-loop_end = 500
-desired_t_step = 490
+loop_end = 900
+desired_t_step = 0
 
 # setup outup precision
 OUTPUTS_PRECISION = 8

@@ -386,7 +386,7 @@ def calculate_leaf_Wmax(lamina_Lmax, fructan, mstruct,leaf_rank):
     return parameters.leaf_Wmax_dict[leaf_rank]
 
 
-def calculate_SSLW(fructan, mstruct):
+def calculate_SSLW(fructan, mstruct, leaf_rank):
     """ Structural Specific Lamina Weight.
 
     :Parameters:
@@ -399,10 +399,10 @@ def calculate_SSLW(fructan, mstruct):
     """
     conc_fructan = fructan / mstruct
 
-    return parameters.min_SSLW + (parameters.max_SSLW - parameters.min_SSLW) * conc_fructan / (conc_fructan + parameters.Ksslw)
+    return parameters.leaf_SSLW_dict[leaf_rank] #parameters.min_SSLW + (parameters.max_SSLW - parameters.min_SSLW) * conc_fructan / (conc_fructan + parameters.Ksslw)
 
 
-def calculate_LSSW(SSLW):
+def calculate_LSSW(SSLW,leaf_rank):
     """ Lineic Structural Sheath Weight.
 
     :Parameters:
@@ -412,7 +412,7 @@ def calculate_LSSW(SSLW):
     :Returns Type:
         :class:`float`
     """
-    return SSLW * parameters.ratio_LSSW_SSLW
+    return parameters.leaf_LSSW_dict[leaf_rank] #SSLW * parameters.ratio_LSSW_SSLW
 
 
 def calculate_emerged_sheath_L(leaf_L, leaf_pseudostem_length, lamina_L):
@@ -486,7 +486,7 @@ def calculate_internode_Lmax(internode_L_lig):
     return internode_Lmax
 
 
-def calculate_LSIW(LSSW):
+def calculate_LSIW(LSSW, leaf_rank):
     """ Lineic Structural Internode Weight.
 
     :Parameters:
@@ -496,7 +496,7 @@ def calculate_LSIW(LSSW):
     :Returns Type:
         :class:`float`
     """
-    return LSSW * parameters.ratio_LSIW_LSSW # TODO : changer mode de calcul car rapport non stable suivant numéro de phytomère
+    return parameters.internode_LSIW_dict[leaf_rank]#LSSW * parameters.ratio_LSIW_LSSW # TODO : changer mode de calcul car rapport non stable suivant numéro de phytomère
 
 
 def calculate_init_internode_elongation(hiddenzone_age):

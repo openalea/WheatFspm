@@ -1,2 +1,2 @@
-plant,axis,SAM_temperature,sum_TT,status,nb_leaves,GA,height,normalized_temperature_effect
-1,MS,20,481.833333333,vegetative,10,False,0,1.0
+plant,axis,SAM_temperature,delta_teq,delta_teq_roots,teq_since_primordium,status,nb_leaves,GA,height,cohort,sum_TT
+1,MS,20,7993.37387546,7993.37387546,7993.37387546,vegetative,10,False,6e-05,1,1.11019081604
