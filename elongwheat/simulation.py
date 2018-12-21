@@ -352,10 +352,10 @@ class Simulation(object):
                                     next_hiddenzone_outputs['lamina_Lmax'] = model.calculate_lamina_Lmax(next_hiddenzone_outputs['leaf_Lmax'], sheath_lamina_ratio)  #: Final lamina length
                                     next_hiddenzone_outputs['sheath_Lmax'] = model.calculate_sheath_Lmax(next_hiddenzone_outputs['leaf_Lmax'], next_hiddenzone_outputs['lamina_Lmax'])  #: Final sheath length
                                     next_hiddenzone_outputs['leaf_Wmax'] = model.calculate_leaf_Wmax(next_hiddenzone_outputs['lamina_Lmax'], next_hiddenzone_inputs['fructan'],
-                                                                                                     next_hiddenzone_inputs['mstruct'], phytomer_id)                              #: Maximal leaf width
-                                    next_hiddenzone_outputs['SSLW'] = model.calculate_SSLW(next_hiddenzone_inputs['fructan'], next_hiddenzone_inputs['mstruct'],phytomer_id)     #: Structural Specific Lamina
+                                                                                                     next_hiddenzone_inputs['mstruct'], next_hiddenzone_id[2])                              #: Maximal leaf width
+                                    next_hiddenzone_outputs['SSLW'] = model.calculate_SSLW(next_hiddenzone_inputs['fructan'], next_hiddenzone_inputs['mstruct'],next_hiddenzone_id[2])     #: Structural Specific Lamina
                                     # Weight
-                                    next_hiddenzone_outputs['LSSW'] = model.calculate_LSSW(next_hiddenzone_outputs['SSLW'],phytomer_id)                                          #: Structural Lineic Sheath Weight
+                                    next_hiddenzone_outputs['LSSW'] = model.calculate_LSSW(next_hiddenzone_outputs['SSLW'],next_hiddenzone_id[2])                                          #: Structural Lineic Sheath Weight
                                     next_hiddenzone_outputs['leaf_pseudo_age'] = 0                                                                                   #: Pseudo age of the leaf since beginning of automate growth (s)
                                     self.outputs['hiddenzone'][next_hiddenzone_id] = next_hiddenzone_outputs
                                 else:
