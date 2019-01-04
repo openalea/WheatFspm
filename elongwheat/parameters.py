@@ -74,7 +74,7 @@ max_SSLW = 50  #: g m-2
 ratio_LSSW_SSLW = 0.003  #: ratio lineic structural mass sheath / specific strucutal mass lamina of the specific structural dry masses (from data of J. Bertheloot, 2004) (m)
 #TODO : adapter ce paramètre pour les feuilles adultes car change drastiquement
 leaf_SSLW_dict = {1: 15,2: 23,3: 25,4: 24,5: 21,6: 18,7: 16,8: 17,9: 21,10: 26,11: 33} # Manip NEMA 05/06 traitments N+ (from data of J. Bertheloot, 2004)
-leaf_LSSW_dict = {1: 0.06,2: 0.08,3: 0.09,4: 0.14,5: 0.15,6: 0.19,7: 0.22,8: 0.39,9: 0.45,10: 0.47,11: 0.58} # Manip NEMA 05/06 Soissons N+ (from data of J. Bertheloot, 2004)
+leaf_LSSW_dict = {1: 0.08,2: 0.09,3: 0.11,4: 0.18,5: 0.17,6: 0.21,7: 0.24,8: 0.52,9: 0.5,10: 0.55,11: 0.65}  # Manip NEMA 05/06 Soissons N+ (from data of J. Bertheloot, 2004)
 
 
 # -------------------------------------------------------------------------------------------------------------------
