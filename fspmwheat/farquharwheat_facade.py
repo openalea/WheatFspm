@@ -95,7 +95,7 @@ class FarquharWheatFacade(object):
         """
         self._initialize_model()
         self._simulation.run(Ta, ambient_CO2, RH, Ur)
-        self._update_shared_MTG(self._simulation.outputs)
+        self._update_shared_MTG( {'elements': self._simulation.outputs, 'SAMs': ''})
         farquharwheat_elements_outputs_df = converter.to_dataframe(self._simulation.outputs)
         self._update_shared_dataframes(farquharwheat_elements_outputs_df)
 
@@ -130,9 +130,11 @@ class FarquharWheatFacade(object):
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
-                            mtg_element_length = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_element_vid).get('length', 0))
+                            mtg_element_length = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_element_vid).get('length', 0.))
+                            mtg_element_green_area = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_element_vid).get('green_area', 0.))
 
-                            if mtg_element_label not in FARQUHARWHEAT_ELEMENTS_INPUTS or mtg_element_length <= 0: continue  # to excluse topElement, baseElement and elements with null length
+                            if mtg_element_label not in FARQUHARWHEAT_ELEMENTS_INPUTS or mtg_element_length <= 0 or mtg_element_green_area == 0 : continue  # to excluse topElement,
+                            # baseElement and elements with null length
                             if mtg_element_label == 'HiddenElement' and (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True) or np.isnan(
                                     self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True)) ) : continue
 
@@ -156,7 +158,7 @@ class FarquharWheatFacade(object):
                                         mtg_element_input = None
                                     height_element_list.append(mtg_element_input)
                                 #: Width is actually diameter for Sheath and Internodes
-                                if mtg_element_label == 'StemElement' and farquharwheat_element_input_name == 'width':
+                                if mtg_organ_label in ['sheath','internode','pedoncule','ear'] and farquharwheat_element_input_name == 'width':
                                     mtg_element_input = mtg_element_properties.get('diameter', 0.0)
 
                                 farquharwheat_element_inputs_dict[farquharwheat_element_input_name] = mtg_element_input
@@ -193,11 +195,14 @@ class FarquharWheatFacade(object):
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
                             element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
-                            if element_id not in farquharwheat_data_dict: continue
+                            if element_id not in farquharwheat_data_dict['elements']: continue
                             # update the element in the MTG
-                            farquharwheat_element_data_dict = farquharwheat_data_dict[element_id]
+                            farquharwheat_element_data_dict = farquharwheat_data_dict['elements'][element_id]
                             for farquharwheat_element_data_name, farquharwheat_element_data_value in farquharwheat_element_data_dict.items():
-                                self._shared_mtg.property(farquharwheat_element_data_name)[mtg_element_vid] = farquharwheat_element_data_value
+                                if mtg_organ_label in ['sheath','internode','pedoncule','ear'] and farquharwheat_element_data_name == 'width':
+                                    self._shared_mtg.property('diameter')[mtg_element_vid] = farquharwheat_element_data_value
+                                else :
+                                    self._shared_mtg.property(farquharwheat_element_data_name)[mtg_element_vid] = farquharwheat_element_data_value
 
     def _update_shared_dataframes(self, farquharwheat_elements_data_df):
         """
