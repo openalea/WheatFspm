@@ -165,7 +165,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         hour_to_second_conversion_factor = 3600
 
         # read adelwheat inputs at t0
-        adel_wheat = AdelWheatDyn(seed=1234, scene_unit='m') # Le MTG initial devrait etre en 'm' et non 'cm' !!
+        adel_wheat = AdelWheatDyn(seed=1234, scene_unit='m')
         g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
 
         adel_wheat.plot(g)
@@ -252,7 +252,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
                                                        shared_elements_inputs_outputs_df,
                                                        shared_soils_inputs_outputs_df)
 
-        # adel_wheat.update_geometry(g) # NE FONCTIONNE PAS ! Surment du aux différences d'unites entre MTG et input files.
+        # adel_wheat.update_geometry(g) # NE FONCTIONNE PAS car MTG non compatible (pas de top et base element)
         adel_wheat.plot(g)
 
         # define organs for which the variable 'max_proteins' is fixed
@@ -278,7 +278,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
             # run ElongWheat
             print('t elongwheat is {}'.format(t_elongwheat))
-            Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
+            Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']]
             elongwheat_facade_.run(Tair, Tsoil, opt_static=True)
 
             for t_senescwheat in xrange(t_elongwheat, t_elongwheat + elongwheat_ts, senescwheat_ts):
