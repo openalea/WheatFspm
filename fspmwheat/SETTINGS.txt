@@ -18,7 +18,7 @@ Default Tr value = 0.1
 - AMINO_ACIDS_N_RATIO = 1.25 au lieu de 1.17
 
 ** Roots
-- calculate_roots_mstruct_growth : Vmax * 5.5 ; K = 1500 au lieu de 1250
+- calculate_roots_mstruct_growth : Vmax * 7 ; K = 1500 au lieu de 1250
 
 ** ---- CN-WHEATH
 
@@ -30,6 +30,7 @@ Default Tr value = 0.1
 - calculate_S_Sucrose : Vmax * 4
 - calculate_S_amino_acids : Vmax * 4
 - calculate_S_Starch: Vmax * 4
+- calculate_D_Starch: DELTA_DSTARCH * 4
 
 ** HZ
 - calculate_S_proteins * 5 
@@ -37,10 +38,17 @@ Default Tr value = 0.1
 - calculate_S_Fructans * 1.5
 
 ** Roots
-- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING * 1.2
+- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING * 3
 - calculate_S_cytokinins : S_cytokinins *1
+- calculate_S_amino_acids : VMAX_AMINO_ACIDS * 5 \\* 2
 - calculate_Uptake_Nitrates : net_nitrate_uptake 
 - calculate_exudation : C_EXUDATION * 3.8
+
+Regul_transpiration par total_transpiration (et non total_surfacic_transpiration) || 0.0152 = green_area tot à l'init postflo
+- calculate_regul_transpiration : K_TRANSPIRATION* 1 * 0.0152 / et Vmax = 0.0152
+- calculate_Export_Nitrates : K_NITRATE_EXPORT * 5
+- calculate_Export_Amino_Acids : K_AMINO_ACIDS_EXPORT * 5
+- calculate_Export_cytokinins : K_CYTOKININS_EXPORT * 5
 
 ** ---- SENESC-WHEATH
 - SENESCENCE_ROOTS = 0 

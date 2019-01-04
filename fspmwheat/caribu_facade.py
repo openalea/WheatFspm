@@ -78,11 +78,16 @@ class CaribuFacade(object):
 
         """
         c_scene_sky, c_scene_sun = self._initialize_model(energy, diffuse_model, azimuts, zenits, DOY, hourTU, latitude)
-        _, aggregated_sky = c_scene_sky.run(direct=True, infinite=True) # diffuse
-        _, aggregated_sun = c_scene_sun.run(direct=True, infinite=True) # direct
 
+        # Diffuse light
+        _, aggregated_sky = c_scene_sky.run(direct=True, infinite=True) # diffuse
         PARa_sky = aggregated_sky['par']['Eabs']
-        PARa_sun = aggregated_sun['par']['Eabs']
+
+        # Direct light
+        if sun_sky_option != 'sky':
+            _, aggregated_sun = c_scene_sun.run(direct=True, infinite=True) # direct
+            PARa_sun = aggregated_sun['par']['Eabs']
+
         if sun_sky_option == 'sky':
             PARa = PARa_sky
         elif sun_sky_option == 'sun':

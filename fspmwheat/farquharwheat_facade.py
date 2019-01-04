@@ -124,8 +124,8 @@ class FarquharWheatFacade(object):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        mtg_organ_length = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_organ_vid).get('length', 0))
-                        if mtg_organ_label not in FARQUHARWHEAT_ORGANS_NAMES or mtg_organ_length <= 0: continue
+                        # mtg_organ_length = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_organ_vid).get('length', 0))
+                        if mtg_organ_label not in FARQUHARWHEAT_ORGANS_NAMES : continue #or mtg_organ_length <= 0
 
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)

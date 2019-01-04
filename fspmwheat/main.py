@@ -676,4 +676,4 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SumTT.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
 if __name__ == '__main__':
-    main(500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
+    main(600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False)
