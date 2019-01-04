@@ -37,8 +37,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from alinea.adel.astk_interface import AdelWheat
-from fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat_facade, growthwheat_facade, caribu_facade
+from alinea.adel.adel_dynamic import AdelWheatDyn
+from fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat_facade, growthwheat_facade, caribu_facade, elongwheat_facade
 from cnwheat import tools as cnwheat_tools
 
 random.seed(1234)
@@ -63,12 +63,20 @@ CNWHEAT_SOILS_INPUTS_FILEPATH = os.path.join(CNWHEAT_INPUTS_DIRPATH, 'soils_inpu
 # farquharwheat inputs at t0
 FARQUHARWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'farquharwheat')
 FARQUHARWHEAT_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'inputs.csv')
+FARQUHARWHEAT_SAM_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 METEO_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'meteo_Clermont_rebuild.csv')
 CARIBU_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'inputs_eabs.csv')
+
+# elongwheat inputs at t0
+ELONGWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'elongwheat')
+ELONGWHEAT_HZ_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
+ELONGWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'elements_inputs.csv')
+ELONGWHEAT_SAM_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 
 # senescwheat inputs at t0
 SENESCWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'senescwheat')
 SENESCWHEAT_ROOTS_INPUTS_FILEPATH = os.path.join(SENESCWHEAT_INPUTS_DIRPATH, 'roots_inputs.csv')
+SENESCWHEAT_SAM_INPUTS_FILEPATH = os.path.join(SENESCWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(SENESCWHEAT_INPUTS_DIRPATH, 'elements_inputs.csv')
 
 # growthwheat inputs at t0
@@ -76,6 +84,7 @@ GROWTHWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'growthwheat')
 GROWTHWHEAT_HIDDENZONE_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
 GROWTHWHEAT_ORGANS_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'organs_inputs.csv')
 GROWTHWHEAT_ROOTS_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'roots_inputs.csv')
+GROWTHWHEAT_SAM_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 
 # the path of the CSV files where to save the states of the modeled system at each step
 OUTPUTS_DIRPATH = 'outputs'
@@ -138,10 +147,11 @@ def calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False, ratio_diffu
 
     return PARa_element_data_dict
 
+
 def main(stop_time, run_simu=True, make_graphs=True):
     if run_simu:
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
-        Eabs_df = pd.read_csv(CARIBU_FILEPATH)
+        # Eabs_df = pd.read_csv(CARIBU_FILEPATH)
 
         current_time_of_the_system = time.time()
 
@@ -149,16 +159,20 @@ def main(stop_time, run_simu=True, make_graphs=True):
         senescwheat_ts = 2
         growthwheat_ts = 2
         farquharwheat_ts = 2
+        elongwheat_ts = 2
         cnwheat_ts = 1
 
         hour_to_second_conversion_factor = 3600
 
         # read adelwheat inputs at t0
-        adel_wheat = AdelWheat(seed=1234, convUnit=1)
+        adel_wheat = AdelWheatDyn(seed=1234, scene_unit='m') # Le MTG initial devrait etre en 'm' et non 'cm' !!
         g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
+
+        adel_wheat.plot(g)
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
+        shared_SAM_inputs_outputs_df = pd.DataFrame()
         shared_organs_inputs_outputs_df = pd.DataFrame()
         shared_hiddenzones_inputs_outputs_df = pd.DataFrame()
         shared_elements_inputs_outputs_df = pd.DataFrame()
@@ -173,33 +187,53 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         # senescwheat
         senescwheat_roots_inputs_t0 = pd.read_csv(SENESCWHEAT_ROOTS_INPUTS_FILEPATH)
+        senescwheat_SAM_inputs_t0 = pd.read_csv(SENESCWHEAT_SAM_INPUTS_FILEPATH)
         senescwheat_elements_inputs_t0 = pd.read_csv(SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH)
         senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
                                                                    senescwheat_ts * hour_to_second_conversion_factor,
                                                                    senescwheat_roots_inputs_t0,
+                                                                   senescwheat_SAM_inputs_t0,
                                                                    senescwheat_elements_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
+                                                                   shared_SAM_inputs_outputs_df,
                                                                    shared_elements_inputs_outputs_df)
         # growthwheat
         growthwheat_hiddenzones_inputs_t0 = pd.read_csv(GROWTHWHEAT_HIDDENZONE_INPUTS_FILEPATH)
         growthwheat_organ_inputs_t0 = pd.read_csv(GROWTHWHEAT_ORGANS_INPUTS_FILEPATH)
         growthwheat_root_inputs_t0 = pd.read_csv(GROWTHWHEAT_ROOTS_INPUTS_FILEPATH)
+        growthwheat_SAM_inputs_t0 = pd.read_csv(GROWTHWHEAT_SAM_INPUTS_FILEPATH)
         growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
                                                                    growthwheat_ts * hour_to_second_conversion_factor,
                                                                    growthwheat_hiddenzones_inputs_t0,
                                                                    growthwheat_organ_inputs_t0,
                                                                    growthwheat_root_inputs_t0,
+                                                                   growthwheat_SAM_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
                                                                    shared_hiddenzones_inputs_outputs_df,
                                                                    shared_elements_inputs_outputs_df)
 
         # farquharwheat
         farquharwheat_elements_inputs_t0 = pd.read_csv(FARQUHARWHEAT_INPUTS_FILEPATH)
+        farquharwheat_SAM_inputs_t0 = pd.read_csv(FARQUHARWHEAT_SAM_INPUTS_FILEPATH)
         farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
                                                                          farquharwheat_elements_inputs_t0,
+                                                                         farquharwheat_SAM_inputs_t0,
                                                                          shared_elements_inputs_outputs_df)
 
+        # elongwheat # Only for temperature related computations
+        elongwheat_hiddenzones_inputs_t0 = pd.read_csv(ELONGWHEAT_HZ_INPUTS_FILEPATH)
+        elongwheat_elements_inputs_t0 =pd.read_csv(ELONGWHEAT_ELEMENTS_INPUTS_FILEPATH)
+        elongwheat_SAM_inputs_t0 =  pd.read_csv(ELONGWHEAT_SAM_INPUTS_FILEPATH)
 
+        elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
+                                                                elongwheat_ts * hour_to_second_conversion_factor,
+                                                                elongwheat_SAM_inputs_t0,
+                                                                elongwheat_hiddenzones_inputs_t0,
+                                                                elongwheat_elements_inputs_t0,
+                                                                shared_SAM_inputs_outputs_df,
+                                                                shared_hiddenzones_inputs_outputs_df,
+                                                                shared_elements_inputs_outputs_df,
+                                                                adel_wheat, opt_static = True)
         # cnwheat
         cnwheat_organs_inputs_t0 = pd.read_csv(CNWHEAT_ORGANS_INPUTS_FILEPATH)
         cnwheat_hiddenzones_inputs_t0 = pd.read_csv(CNWHEAT_HIDDENZONE_INPUTS_FILEPATH)
@@ -218,6 +252,8 @@ def main(stop_time, run_simu=True, make_graphs=True):
                                                        shared_elements_inputs_outputs_df,
                                                        shared_soils_inputs_outputs_df)
 
+        # adel_wheat.update_geometry(g) # NE FONCTIONNE PAS ! Surment du aux différences d'unites entre MTG et input files.
+        adel_wheat.plot(g)
 
         # define organs for which the variable 'max_proteins' is fixed
         forced_max_protein_elements = set(((1,'MS',9,'blade', 'LeafElement1'), (1,'MS',10,'blade', 'LeafElement1'), (1,'MS',11,'blade', 'LeafElement1'),
@@ -238,30 +274,48 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # run the simulators
         current_time_of_the_system = time.time()
 
-        for t_senescwheat in xrange(start_time, stop_time, senescwheat_ts):
-            # run SenescWheat
-            senescwheat_facade_.run(forced_max_protein_elements)
-            for t_growthwheat in xrange(t_senescwheat, t_senescwheat + senescwheat_ts, growthwheat_ts):
-                # run GrowthWheat
-                growthwheat_facade_.run()
-                for t_farquharwheat in xrange(t_growthwheat, t_growthwheat + growthwheat_ts, farquharwheat_ts):
-                    # get the meteo of the current step
-                    Ta, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
-                    # get PARa for current step
-                    aggregated_PARa = calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False)
-                    caribu_facade_.update_shared_MTG(aggregated_PARa)
-                    caribu_facade_.update_shared_dataframes(aggregated_PARa)
-                    # run FarquharWheat
-                    farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
-                    for t_cnwheat in xrange(t_farquharwheat, t_farquharwheat + senescwheat_ts, cnwheat_ts):
-                            # run CNWheat
-                            cnwheat_facade_.run()
-                            # append the inputs and outputs at current step to global lists
-                            all_simulation_steps.append(t_cnwheat)
-                            axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                            organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                            elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                            soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+        for t_elongwheat in xrange(start_time, stop_time, elongwheat_ts): # Only to compute temperature related variable
+
+            # run ElongWheat
+            print('t elongwheat is {}'.format(t_elongwheat))
+            Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
+            elongwheat_facade_.run(Tair, Tsoil, opt_static=True)
+
+            for t_senescwheat in xrange(t_elongwheat, t_elongwheat + elongwheat_ts, senescwheat_ts):
+
+                # run SenescWheat
+                print('t senescwheat is {}'.format(t_senescwheat))
+                senescwheat_facade_.run(forced_max_protein_elements)
+
+                for t_growthwheat in xrange(t_senescwheat, t_senescwheat + senescwheat_ts, growthwheat_ts):
+                    # run GrowthWheat
+                    print('t growthwheat is {}'.format(t_growthwheat))
+                    growthwheat_facade_.run()
+
+                    for t_farquharwheat in xrange(t_growthwheat, t_growthwheat + growthwheat_ts, farquharwheat_ts):
+                        # get the meteo of the current step
+                        Tair, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
+                        # get PARa for current step
+                        # aggregated_PARa = calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False)
+                        print('t caribu is {}'.format(t_farquharwheat))
+                        caribu_facade_.run(energy=PARi,sun_sky_option='sky')
+                        # caribu_facade_.update_shared_MTG(aggregated_PARa)
+                        # caribu_facade_.update_shared_dataframes(aggregated_PARa)
+                        # run FarquharWheat
+                        print('t farquhar is {}'.format(t_farquharwheat))
+                        farquharwheat_facade_.run(Tair, ambient_CO2, RH, Ur)
+
+                        for t_cnwheat in xrange(t_farquharwheat, t_farquharwheat + senescwheat_ts, cnwheat_ts):
+                                Tair, Tsoil = meteo.loc[t_cnwheat, ['air_temperature', 'air_temperature']]
+                                # run CNWheat
+                                print('t cnwheat is {}'.format(t_cnwheat))
+                                cnwheat_facade_.run(Tair=Tair, Tsoil=Tsoil)
+                                # append the inputs and outputs at current step to global lists
+                                all_simulation_steps.append(t_cnwheat)
+                                axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
+                                organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
+                                elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                                soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
 
         execution_time = int(time.time() - current_time_of_the_system)
         print '\n', 'Simulation run in ', str(datetime.timedelta(seconds=execution_time))
