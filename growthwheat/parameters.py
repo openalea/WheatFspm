@@ -47,7 +47,7 @@ FITTED_L0_IN = 1/59.0  # 5.2 #: Scaling factor of the internode in automate grow
 te_IN = 210 * 3600 * 24 / 12  #: end of internode elongation in automate growth (s at 12°c) ; fitted from Malvoisin 1984 II
 
 # Roots
-VMAX_ROOTS_GROWTH = 0.015 * CONVERSION_FACTOR_20_TO_12 * 5.5           #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) post flo at 12°C
+VMAX_ROOTS_GROWTH = 0.015 * CONVERSION_FACTOR_20_TO_12 * 7           #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) post flo at 12°C
 K_ROOTS_GROWTH = 1500                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS) post flo
 RATIO_C_MSTRUCT_ROOTS = 0.444         #: Mean contribution of carbon to root structural dry mass (g C g-1 Mstruct) : same as shoot
 RATIO_N_MSTRUCT_ROOTS_ = 0.005#0.02         #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct) : same as shoot
