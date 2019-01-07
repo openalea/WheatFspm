@@ -18,7 +18,7 @@ Default Tr value = 0.1
 - AMINO_ACIDS_N_RATIO = 1.25 au lieu de 1.17
 
 ** Roots
-- calculate_roots_mstruct_growth : Vmax * 7 ; K = 1500 au lieu de 1250
+- calculate_roots_mstruct_growth : Vmax * 8 ; K = 500 au lieu de 1250
 
 ** ---- CN-WHEATH
 
@@ -38,24 +38,22 @@ Default Tr value = 0.1
 - calculate_S_Fructans * 1.5
 
 ** Roots
-- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING * 3
-- calculate_S_cytokinins : S_cytokinins *1
-- calculate_S_amino_acids : VMAX_AMINO_ACIDS * 5 \\* 2
+- calculate_Unloading_Sucrose : VMAX_SUCROSE_UNLOADING * 1
+- calculate_S_cytokinins : VMAX_S_CYTOKININS *3
+- calculate_S_amino_acids : VMAX_AMINO_ACIDS * 2 
 - calculate_Uptake_Nitrates : net_nitrate_uptake 
-- calculate_exudation : C_EXUDATION * 3.8
+- calculate_exudation : C_EXUDATION * 1
 
-Regul_transpiration par total_transpiration (et non total_surfacic_transpiration) || 0.0152 = green_area tot à l'init postflo
-- calculate_regul_transpiration : K_TRANSPIRATION* 1 * 0.0152 / et Vmax = 0.0152
-- calculate_Export_Nitrates : K_NITRATE_EXPORT * 5
-- calculate_Export_Amino_Acids : K_AMINO_ACIDS_EXPORT * 5
-- calculate_Export_cytokinins : K_CYTOKININS_EXPORT * 5
+- calculate_Export_Nitrates : K_NITRATE_EXPORT * 4
+- calculate_Export_Amino_Acids : K_AMINO_ACIDS_EXPORT * 4
+- calculate_Export_cytokinins : K_CYTOKININS_EXPORT * 4
 
 ** ---- SENESC-WHEATH
 - SENESCENCE_ROOTS = 0 
 #- sénescence forcée pour F1 à partir sum_TT > 20, avec SENESCENCE_LENGTH_MAX_RATE = 0.2E-8 * 0.45 / 3.5e-3 (trop rapide)
 
 ** ---- RESPI-WHEATH
-- R_growth: YG = 0.75
+- R_growth: YG = 0.8 // 0.75
 
 -----------------------------------------------------------------------------------
 A CORRIGER :

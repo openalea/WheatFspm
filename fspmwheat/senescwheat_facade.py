@@ -132,7 +132,7 @@ class SenescWheatFacade(object):
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
                         if mtg_organ_label not in PHOTOSYNTHETIC_ORGANS_NAMES: continue
-                        if np.nan_to_num( self._shared_mtg.property('length').get(mtg_organ_vid,0)) == 0: continue
+                        # if np.nan_to_num( self._shared_mtg.property('length').get(mtg_organ_vid,0)) == 0: continue
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
