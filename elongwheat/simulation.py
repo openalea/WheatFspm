@@ -298,7 +298,13 @@ class Simulation(object):
 
                 # In case leaf is already mature but internode is growing, we update sheath visible and hidden lengths.
                 if not curr_hiddenzone_outputs['leaf_is_growing'] and curr_hiddenzone_outputs['leaf_is_emerged']:
-                    total_sheath_L = self.inputs['elements'][hidden_sheath_id]['length'] + self.inputs['elements'][visible_sheath_id]['length']
+                    if hidden_sheath_id in self.inputs['elements'].keys():
+                        sheath_hidden_length = self.inputs['elements'][hidden_sheath_id]['length']
+                    else :
+                        sheath_hidden_length = 0.
+                        new_sheath = parameters.ElementInit().__dict__
+                        self.outputs['elements'][hidden_sheath_id] = new_sheath
+                    total_sheath_L =  sheath_hidden_length + self.inputs['elements'][visible_sheath_id]['length']
                     updated_sheath_hidden_length = min(total_sheath_L, leaf_pseudostem_length)
                     updated_sheath_visible_length = total_sheath_L - updated_sheath_hidden_length
                     self.outputs['elements'][hidden_sheath_id]['length'] = updated_sheath_hidden_length

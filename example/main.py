@@ -22,7 +22,7 @@
 OPTION_SHOW_ADEL = True
 run_from_outputs = False
 delta_t = 3600
-loop_end = 900
+loop_end = 1000
 desired_t_step = 0
 
 # setup outup precision
@@ -132,6 +132,7 @@ if OPTION_SHOW_ADEL:
 simulation_ = elongwheat_simulation.Simulation(delta_t=delta_t)
 
 start_time = time.time()
+
 
 
 # Loop for several runs
