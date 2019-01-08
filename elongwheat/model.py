@@ -29,6 +29,8 @@ from math import exp
 # -------------------------------------------------------------------------------------------------------------------
 # --- SAM
 # -------------------------------------------------------------------------------------------------------------------
+
+
 def calculate_growing_temperature(Tair, Tsol, SAM_height):
     """ Return temperature to be used for growth zone
 
@@ -49,6 +51,7 @@ def calculate_growing_temperature(Tair, Tsol, SAM_height):
 
     return growth_temperature
 
+
 def modified_Arrhenius_equation(temperature):
     """ Return value of equation from Johnson and Lewin (1946) for temperature. The equation is modified to return zero below zero degree.
 
@@ -61,10 +64,6 @@ def modified_Arrhenius_equation(temperature):
         :class:`float`
     """
 
-
-
-
-
     Arrhenius_equation = lambda T: T * exp(-parameters.Temp_Ea_R / T) / (1 + exp(parameters.Temp_DS_R - parameters.Temp_DH_R / T))
     temperature_K = temperature + 273.15
 
@@ -76,6 +75,7 @@ def modified_Arrhenius_equation(temperature):
         res = Arrhenius_equation(temperature_K)
 
     return res
+
 
 def calculate_time_equivalent_Tref(temperature, time):
     """ Return the time equivalent to a reference temperature i.e. temperature-compensated time (Parent, 2010).
@@ -93,6 +93,7 @@ def calculate_time_equivalent_Tref(temperature, time):
 
     return time * modified_Arrhenius_equation(temperature)/modified_Arrhenius_equation(parameters.Temp_Tref)
 
+
 def calculate_cumulated_thermal_time(sum_TT, temperature, delta_teq):
     """ Return cumulated thermal time (used for model outputs calculations only).
 
@@ -108,8 +109,9 @@ def calculate_cumulated_thermal_time(sum_TT, temperature, delta_teq):
     """
     res = sum_TT
     if temperature > 0:
-        res += delta_teq * parameters.Temp_Tref/24.0/3600
+        res += delta_teq * parameters.Temp_Tref/24.0/3600  # TODO: replace raw values by parameters
     return res
+
 
 def calculate_SAM_primodia(status, teq_since_primordium, delta_teq, nb_leaves, cohort_id):
     """ Update SAM status, leaf number
@@ -202,7 +204,7 @@ def calculate_leaf_pseudostem_length(ligule_heights, bottom_hiddenzone_height, p
     top_ligule_height = max(ligule_heights[ligule_heights['phytomer'] < phytomer_id]['ligule height'])  # highest previous ligule
     leaf_pseudostem_length = top_ligule_height - bottom_hiddenzone_height
 
-    return max( leaf_pseudostem_length, 0)
+    return max(leaf_pseudostem_length, 0)
 
 
 def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_teq, leaf_rank):
@@ -288,7 +290,7 @@ def calculate_leaf_emergence(leaf_L, leaf_pseudostem_length):
         :class:`bool`
     """
     epsilon = 1E-3  # (m)
-    return leaf_L > (leaf_pseudostem_length)# + epsilon)
+    return leaf_L > leaf_pseudostem_length  # + epsilon)
 
 
 def calculate_lamina_L(leaf_L, leaf_pseudostem_length, hiddenzone_id):
@@ -334,7 +336,7 @@ def calculate_SL_ratio(phytomer_rank):
         :class:`float`
     """
     # res = -0.0021 * phytomer_rank ** 3 + 0.037 * phytomer_rank ** 2 - 0.1527 * phytomer_rank + 0.4962
-    SL_ratio_Ljutovac = {3 : 0.304, 4 : 0.333 , 5: 0.358, 6: 0.464, 7: 0.552, 8: 0.618, 9: 0.56, 10: 0.604, 11: 0.784}
+    SL_ratio_Ljutovac = {3: 0.304, 4: 0.333, 5: 0.358, 6: 0.464, 7: 0.552, 8: 0.618, 9: 0.56, 10: 0.604, 11: 0.784}
     res = SL_ratio_Ljutovac[phytomer_rank]
     return res
 
@@ -369,7 +371,7 @@ def calculate_sheath_Lmax(leaf_Lmax, lamina_Lmax):
     return leaf_Lmax - lamina_Lmax
 
 
-def calculate_leaf_Wmax(lamina_Lmax, fructan, mstruct,leaf_rank):
+def calculate_leaf_Wmax(lamina_Lmax, fructan, mstruct, leaf_rank):
     """ Maximal leaf width.
     0.0575 et 0.12 issu graph Dornbush
 
@@ -399,10 +401,10 @@ def calculate_SSLW(fructan, mstruct, leaf_rank):
     """
     conc_fructan = fructan / mstruct
 
-    return parameters.leaf_SSLW_dict[leaf_rank] #parameters.min_SSLW + (parameters.max_SSLW - parameters.min_SSLW) * conc_fructan / (conc_fructan + parameters.Ksslw)
+    return parameters.leaf_SSLW_dict[leaf_rank]  # parameters.min_SSLW + (parameters.max_SSLW - parameters.min_SSLW) * conc_fructan / (conc_fructan + parameters.Ksslw)
 
 
-def calculate_LSSW(SSLW,leaf_rank):
+def calculate_LSSW(SSLW, leaf_rank):
     """ Lineic Structural Sheath Weight.
 
     :Parameters:
@@ -412,7 +414,7 @@ def calculate_LSSW(SSLW,leaf_rank):
     :Returns Type:
         :class:`float`
     """
-    return parameters.leaf_LSSW_dict[leaf_rank] #SSLW * parameters.ratio_LSSW_SSLW
+    return parameters.leaf_LSSW_dict[leaf_rank]  # SSLW * parameters.ratio_LSSW_SSLW
 
 
 def calculate_emerged_sheath_L(leaf_L, leaf_pseudostem_length, lamina_L):
@@ -496,7 +498,7 @@ def calculate_LSIW(LSSW, leaf_rank):
     :Returns Type:
         :class:`float`
     """
-    return parameters.internode_LSIW_dict[leaf_rank]#LSSW * parameters.ratio_LSIW_LSSW # TODO : changer mode de calcul car rapport non stable suivant numéro de phytomère
+    return parameters.internode_LSIW_dict[leaf_rank]  # LSSW * parameters.ratio_LSIW_LSSW # TODO : changer mode de calcul car rapport non stable suivant numéro de phytomère
 
 
 def calculate_init_internode_elongation(hiddenzone_age):

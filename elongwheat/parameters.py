@@ -44,21 +44,21 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # --- Leaves
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_dict =  { 5 : 0.000003 , 6 : 0.00000175 , 7 : 0.00000164 , 8 : 0.00000154 , 9 : 0.00000152 , 10 : 0.00000135 , 11 : 0.0000013 } # s-1 at 12°C fit dec 18
+RERmax_dict = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000152, 10: 0.00000135, 11: 0.0000013}  # s-1 at 12°C fit dec 18
 # { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # Ljutovac 2002 RER (s-1 at 12°C
 # {3: 4.1E-06, 4: 4.1E-06, 5: 6E-06, 6: 4.1E-06, 7: 3.6E-06, 8: 3.2E-06, 9: 3.08E-06, 10: 2.9E-06, 11: 2.75E-06}  # MG2
 # {3 : 0.00000279 ,4 : 0.00000279 ,5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000154 , 9 : 0.0000015 , 10 : 0.00000146 , 11 : 0.00000146 }#: s-1 at 12°C fit nov 18
 # {3: 4.1E-06, 4: 4.1E-06, 5: 4.1E-06, 6: 4.1E-06, 7: 3.6E-06, 8: 3.3E-06, 9: 3.2E-06, 10: 2.9E-06, 11: 2.75E-06}
 # {5 : 0.009/3600, 6 : 0.009/3600, 7: 0.0088/3600, 8: 0.00875/3600, 9: 0.00875/3600, 10: 0.0086/3600, 11: 0.008/3600} # RB 2013
 
-RERmax = 2.8E-06 #: s-1 at 12°C # 5.56e-06 Ljutovac 2002 # 4e-06 Anne # 2.43E-06 RB v1
-Kc = 300 # 145.6 # 350 #: affinity coefficient of RER to C (µmol g-1)
-Kn = 300 #200 #16.64  # 40  #: affinity coefficient of RER to C N (µmol g-1)
+RERmax = 2.8E-06  #: s-1 at 12°C # 5.56e-06 Ljutovac 2002 # 4e-06 Anne # 2.43E-06 RB v1
+Kc = 300  # 145.6 # 350 #: affinity coefficient of RER to C (µmol g-1)
+Kn = 300  # 200 #16.64  # 40  #: affinity coefficient of RER to C N (µmol g-1)
 
 # Automate elongation
-te = 300 * 3600 * 24 / 12 #: end of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
-tm = 190 * 3600 * 24 / 12 #: time at which leaf elongation rate is maximal in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
-tb = -25 * 3600 * 24 / 12 #: beginning of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
+te = 300 * 3600 * 24 / 12  #: end of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
+tm = 190 * 3600 * 24 / 12  #: time at which leaf elongation rate is maximal in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
+tb = -25 * 3600 * 24 / 12  #: beginning of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
 # NB : Previous fit on adapted data from Fournier 2005 in phyllochronic time te = 271, tm=176, tb=-25
 L0 = abs((1 + (te / (te - tm))) * (min(1.0, float(-tb) / float(te - tb))**((te - tb) / (te - tm))))  #: Leaf length at t=0 in automate growth (beta function) (m)
 FITTED_L0 = 0.01557936             #: Fitted value of leaf length at t=0 after rescaling the beta function with L0 (m); Fournier 2005 sur courbe corrigee
@@ -72,18 +72,18 @@ Ksslw = 4160   #: Affinite SSLW aux fructanes (µmol C g-1)
 min_SSLW = 22  #: g m-2
 max_SSLW = 50  #: g m-2
 ratio_LSSW_SSLW = 0.003  #: ratio lineic structural mass sheath / specific strucutal mass lamina of the specific structural dry masses (from data of J. Bertheloot, 2004) (m)
-#TODO : adapter ce paramètre pour les feuilles adultes car change drastiquement
-leaf_SSLW_dict = {1: 15,2: 23,3: 25,4: 24,5: 21,6: 18,7: 16,8: 17,9: 21,10: 26,11: 33} # Manip NEMA 05/06 traitments N+ (from data of J. Bertheloot, 2004)
-leaf_LSSW_dict = {1: 0.08,2: 0.09,3: 0.11,4: 0.18,5: 0.17,6: 0.21,7: 0.24,8: 0.52,9: 0.5,10: 0.55,11: 0.65}  # Manip NEMA 05/06 Soissons N+ (from data of J. Bertheloot, 2004)
+# TODO : adapter ce paramètre pour les feuilles adultes car change drastiquement
+leaf_SSLW_dict = {1: 15, 2: 23, 3: 25, 4: 24, 5: 21, 6: 18, 7: 16, 8: 17, 9: 21, 10: 26, 11: 33}  # Manip NEMA 05/06 traitments N+ (from data of J. Bertheloot, 2004)
+leaf_LSSW_dict = {1: 0.08, 2: 0.09, 3: 0.11, 4: 0.18, 5: 0.17, 6: 0.21, 7: 0.24, 8: 0.52, 9: 0.5, 10: 0.55, 11: 0.65}  # Manip NEMA 05/06 Soissons N+ (from data of J. Bertheloot, 2004)
 
 
 # -------------------------------------------------------------------------------------------------------------------
 # --- Internodes
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_dict_IN = { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 3.1E-06 , 8 : 1.9E-06 , 9 : 2E-06 , 10 :2.05E-06 , 11 :1.92E-06  }#: s-1 at 12°C FIT dec 18
+RERmax_dict_IN = {3: 2.48E-06, 4: 2.48E-06, 5: 2.48E-06, 6: 2.48E-06, 7: 3.1E-06, 8: 1.9E-06, 9: 2E-06, 10: 2.05E-06, 11: 1.92E-06}  #: s-1 at 12°C FIT dec 18
 # { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.9E-06 , 8 : 2.3E-06 , 9 : 2.45E-06 , 10 :2.35E-06 , 11 : 2.2E-06 }#: s-1 at 12°C FIT nov 18
-#{ 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.48E-06 , 8 : 2.48E-06 , 9 : 2.48E-06 , 10 : 1.9E-06 , 11 : 1.6E-06 }#: s-1 at 12°C
+# { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.48E-06 , 8 : 2.48E-06 , 9 : 2.48E-06 , 10 : 1.9E-06 , 11 : 1.6E-06 }#: s-1 at 12°C
 # estimate from Ljutovac 2002 over the period until leaf ligulation i.e. wider than in the model.
 # Because i) not enought data if we consider only up to previous leaf ligulation, ii) same exponential like period
 
@@ -94,14 +94,14 @@ nb_PLASTO_internode_init = 5  #: Delay between leaf initiation and internode ini
 internode_L_init = 5E-5       #: Initial internode length (m)
 
 # Automate elongation
-te_IN = 210 * 3600 * 24 /12 #: end of internode elongation in automate growth; Malvoisin 1984 II
-tm_IN = 156 * 3600 * 24 /12  #: time at which internode elongation rate is maximal in automate growth (s); Malvoisin 1984 II
-tb_IN = -70 * 3600 * 24 /12  #: beginning of internode elongation in automate growth (s); Malvoisin 1984 II
+te_IN = 210 * 3600 * 24 / 12  #: end of internode elongation in automate growth; Malvoisin 1984 II
+tm_IN = 156 * 3600 * 24 / 12  #: time at which internode elongation rate is maximal in automate growth (s); Malvoisin 1984 II
+tb_IN = -70 * 3600 * 24 / 12  #: beginning of internode elongation in automate growth (s); Malvoisin 1984 II
 L0_INT = (1 + (te_IN / (te_IN - tm_IN))) * (min(1.0, float(-tb_IN) / float(te_IN - tb_IN))**((te_IN - tb_IN) / (te_IN - tm_IN)))  #: Internode length at t=0 in automate growth (beta function) (m)
 OFFSET_INT = 1 / SCALING_FACTOR_INT - L0_INT
 
-ratio_LSIW_LSSW = 2.5 #: ratio lineic structural internode mass / lineic structural sheath mass  of the specific structural dry masses (from data of J. Bertheloot, 2004)
-internode_LSIW_dict = {1:2.8, 2:2.8, 3:2.8, 4:2.8, 5:2.8, 6:2.8, 7:2.8, 8: 2.8, 9: 2.3,10: 1.7,11: 1.6,12: 1.4,13: 0.7} #: Manip Marion GAuthier 2017/18 en accord avec Manip Romain Barillot 2014
+ratio_LSIW_LSSW = 2.5  #: ratio lineic structural internode mass / lineic structural sheath mass  of the specific structural dry masses (from data of J. Bertheloot, 2004)
+internode_LSIW_dict = {1: 2.8, 2: 2.8, 3: 2.8, 4: 2.8, 5: 2.8, 6: 2.8, 7: 2.8, 8: 2.8, 9: 2.3, 10: 1.7, 11: 1.6, 12: 1.4, 13: 0.7}  #: Manip Marion GAuthier 2017/18 en accord avec Manip Romain Barillot 2014
 
 
 class HiddenZoneInit(object):

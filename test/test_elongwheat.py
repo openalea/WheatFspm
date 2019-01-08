@@ -1,4 +1,12 @@
 # -*- coding: latin-1 -*-
+
+import os
+
+import numpy as np
+import pandas as pd
+
+from elongwheat import simulation, converter
+
 """
     test_elongwheat
     ~~~~~~~~~~~~~~~~
@@ -27,13 +35,6 @@
         $Id$
 """
 
-import os
-
-import numpy as np
-import pandas as pd
-
-from elongwheat import simulation, converter
-
 INPUTS_DIRPATH = 'inputs'
 HIDDENZONE_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
 ELEMENT_INPUTS_FILENAME = 'elements_inputs.csv'
@@ -51,6 +52,7 @@ PRECISION = 6
 RELATIVE_TOLERANCE = 10**-PRECISION
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
+
 def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):
     # read desired data
     desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
@@ -61,7 +63,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'element', 'leaf_is_growing', 'internode_is_growing','leaf_is_emerged', 'internode_is_visible', 'is_growing','status','GA'):
+    for column in ('axis', 'organ', 'element', 'leaf_is_growing', 'internode_is_growing', 'leaf_is_emerged', 'internode_is_visible', 'is_growing', 'status', 'GA'):
         if column in desired_data_df.columns:
             assert desired_data_df[column].equals(actual_data_df[column])
             del desired_data_df[column]
@@ -83,15 +85,15 @@ def test_run():
     inputs = converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, SAM_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
-##    # convert the inputs to Pandas dataframe
-##    hiddenzone_inputs_reconverted_df, organ_inputs_reconverted_df = converter.to_dataframes(simulation_.inputs)
-##    # compare inputs
-##    compare_actual_to_desired('inputs', hiddenzone_inputs_reconverted_df, HIDDENZONE_INPUTS_FILENAME)
-##    compare_actual_to_desired('inputs', organ_inputs_reconverted_df, ORGAN_INPUTS_FILENAME)
+#    # convert the inputs to Pandas dataframe
+#    hiddenzone_inputs_reconverted_df, organ_inputs_reconverted_df = converter.to_dataframes(simulation_.inputs)
+#    # compare inputs
+#    compare_actual_to_desired('inputs', hiddenzone_inputs_reconverted_df, HIDDENZONE_INPUTS_FILENAME)
+#    compare_actual_to_desired('inputs', organ_inputs_reconverted_df, ORGAN_INPUTS_FILENAME)
     # run the simulation
     simulation_.run(Tair=25, Tsoil=20)
     # convert the outputs to Pandas dataframe
-    hiddenzone_outputs_df, element_outputs_df , SAM_outputs_df = converter.to_dataframes(simulation_.outputs)
+    hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df = converter.to_dataframes(simulation_.outputs)
     # compare outputs
     compare_actual_to_desired('outputs', hiddenzone_outputs_df, DESIRED_HIDDENZONE_OUTPUTS_FILENAME, ACTUAL_HIDDENZONE_OUTPUTS_FILENAME)
     compare_actual_to_desired('outputs', element_outputs_df, DESIRED_ELEMENT_OUTPUTS_FILENAME, ACTUAL_ELEMENT_OUTPUTS_FILENAME)
