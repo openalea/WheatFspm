@@ -48,9 +48,9 @@ te_IN = 210 * 3600 * 24 / 12  #: end of internode elongation in automate growth 
 
 # Roots
 VMAX_ROOTS_GROWTH = 0.015 * CONVERSION_FACTOR_20_TO_12 * 8           #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) post flo at 12°C
-K_ROOTS_GROWTH = 500 #1500                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS) post flo
+K_ROOTS_GROWTH = 500  # 1500                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS) post flo
 RATIO_C_MSTRUCT_ROOTS = 0.444         #: Mean contribution of carbon to root structural dry mass (g C g-1 Mstruct) : same as shoot
-RATIO_N_MSTRUCT_ROOTS_ = 0.005#0.02         #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct) : same as shoot
+RATIO_N_MSTRUCT_ROOTS_ = 0.005  # 0.02         #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct) : same as shoot
 
 
 class OrganInit:

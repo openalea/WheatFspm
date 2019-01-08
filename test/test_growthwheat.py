@@ -1,4 +1,13 @@
 # -*- coding: latin-1 -*-
+
+
+import os
+
+import numpy as np
+import pandas as pd
+
+from growthwheat import simulation, converter
+
 """
     test_growthwheat
     ~~~~~~~~~~~~~~~~
@@ -27,13 +36,6 @@
         $Id$
 """
 
-import os
-
-import numpy as np
-import pandas as pd
-
-from growthwheat import model, simulation, converter
-
 INPUTS_DIRPATH = 'inputs'
 HIDDENZONE_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
 ELEMENT_INPUTS_FILENAME = 'elements_inputs.csv'
@@ -52,6 +54,7 @@ PRECISION = 6
 RELATIVE_TOLERANCE = 10**-PRECISION
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
+
 def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):
     # read desired data
     desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
@@ -62,7 +65,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
 
     # keep only numerical data
-    for column in ('axis', 'organ', 'element', 'leaf_is_emerged', 'internode_is_visible','is_growing'):
+    for column in ('axis', 'organ', 'element', 'leaf_is_emerged', 'internode_is_visible', 'is_growing'):
         if column in desired_data_df.columns:
             assert desired_data_df[column].equals(actual_data_df[column])
             del desired_data_df[column]
@@ -83,13 +86,6 @@ def test_run():
     simulation_ = simulation.Simulation(delta_t=3600)
     # convert the dataframe to simulation inputs format
     all_inputs_dict = converter.from_dataframes(hiddenzones_inputs_t0, element_inputs_t0, root_inputs_t0, SAM_inputs_t0)
-    hz_inputs_reconverted_df = all_inputs_dict['hiddenzone']
-    element_inputs_reconverted_df = all_inputs_dict['elements']
-    roots_inputs_reconverted_df = all_inputs_dict['roots']
-    # compare inputs
-##    compare_actual_to_desired('inputs', hz_inputs_reconverted_df, HIDDENZONE_INPUTS_FILENAME)
-##    compare_actual_to_desired('inputs', organ_inputs_reconverted_df, ELEMENT_INPUTS_FILENAME)
-##    compare_actual_to_desired('inputs', roots_inputs_reconverted_df, ROOT_INPUTS_FILENAME)
     # initialize the simulation with the inputs
     simulation_.initialize(all_inputs_dict)
     # run the simulation
@@ -100,6 +96,7 @@ def test_run():
     compare_actual_to_desired('outputs', hiddenzone_outputs_df, DESIRED_HIDDENZONE_OUTPUTS_FILENAME, ACTUAL_HIDDENZONE_OUTPUTS_FILENAME)
     compare_actual_to_desired('outputs', element_outputs_df, DESIRED_ELEMENT_OUTPUTS_FILENAME, ACTUAL_ELEMENT_OUTPUTS_FILENAME)
     compare_actual_to_desired('outputs', root_outputs_df, DESIRED_ROOT_OUTPUTS_FILENAME, ACTUAL_ROOT_OUTPUTS_FILENAME)
+
 
 if __name__ == '__main__':
     test_run()

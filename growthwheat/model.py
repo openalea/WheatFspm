@@ -41,6 +41,7 @@ def calculate_delta_leaf_enclosed_mstruct(leaf_L, delta_leaf_L):
     """
     return parameters.ALPHA * parameters.BETA * leaf_L**(parameters.BETA-1) * delta_leaf_L * parameters.RATIO_MSTRUCT_DM
 
+
 def calculate_delta_leaf_enclosed_mstruct_postE(delta_leaf_pseudo_age, leaf_pseudo_age,leaf_pseudostem_L, enclosed_mstruct, LSSW):
     """ mstruct of the enclosed leaf from the emergence of the leaf to the end of elongation.
     Final mstruct of the enclosed leaf matches sheath mstruct calculation when it is mature.
@@ -68,6 +69,7 @@ def calculate_delta_leaf_enclosed_mstruct_postE(delta_leaf_pseudo_age, leaf_pseu
 
     return delta_enclosed_mstruct
 
+
 def calculate_delta_internode_enclosed_mstruct(internode_L, delta_internode_L):
     """ Relation between length and mstruct for the internode segment located in the hidden zone.
     Same relationship than for enclosed leaf corrected by RATIO_ENCLOSED_LEAF_INTERNODE.
@@ -85,6 +87,7 @@ def calculate_delta_internode_enclosed_mstruct(internode_L, delta_internode_L):
     # TODO: internode mstruct should increase to meet internode_L * LINW at the end of its elongation(like leaf). However, since an internode might never emerge, its mstruct should increase from the end of its exponential-like phase.
 
     return parameters.RATIO_ENCLOSED_LEAF_INTERNODE * parameters.ALPHA * parameters.BETA * internode_L**(parameters.BETA-1) * delta_internode_L * parameters.RATIO_MSTRUCT_DM
+
 
 def calculate_delta_internode_enclosed_mstruct_postL(delta_internode_pseudo_age, internode_pseudo_age, internode_L, internode_pseudostem_L, internode_Lmax, LSIW, enclosed_mstruct):
     """ mstruct of the enclosed internode from the ligulation of the leaf to the end of elongation.
@@ -105,7 +108,7 @@ def calculate_delta_internode_enclosed_mstruct_postL(delta_internode_pseudo_age,
     if np.isnan(internode_Lmax):
         # enclosed_mstruct0 = parameters.RATIO_ENCLOSED_LEAF_INTERNODE * parameters.ALPHA * parameters.RATIO_MSTRUCT_DM * internode_L ** parameters.BETA
         enclosed_mstruct_max = internode_L * LSIW
-    else :
+    else:
         # enclosed_mstruct0 = parameters.RATIO_ENCLOSED_LEAF_INTERNODE * parameters.ALPHA * parameters.RATIO_MSTRUCT_DM * (internode_Lmax * parameters.FITTED_L0_IN) ** parameters.BETA
         enclosed_mstruct_max = min(internode_pseudostem_L, internode_Lmax) * LSIW
 
@@ -115,6 +118,7 @@ def calculate_delta_internode_enclosed_mstruct_postL(delta_internode_pseudo_age,
         delta_enclosed_mstruct = 0
 
     return delta_enclosed_mstruct
+
 
 def calculate_delta_emerged_tissue_mstruct(SW, previous_mstruct, metric):
     """ delta mstruct of emerged tissue (lamina, sheath and internode). Calculated from tissue area.
@@ -161,8 +165,9 @@ def calculate_export(delta_mstruct, metabolite, hiddenzone_mstruct):
     """
     return delta_mstruct * max(0, (metabolite / hiddenzone_mstruct))
 
+
 def calculate_cytokinins(delta_mstruct, cytokinins, mstruct):
-    """Quantity of cytokins in the newly visible mstruct.
+    """Quantity of cytokinins in the newly visible mstruct.
 
     :Parameters:
         - `delta_mstruct` (:class:`float`) - Delta of structural dry mass of the emerged part of the leaf (g)
@@ -176,10 +181,11 @@ def calculate_cytokinins(delta_mstruct, cytokinins, mstruct):
     """
     # default initial value
     if mstruct == 0:
-        res = delta_mstruct * 120.0 # TODO: Set according to protein concentration ?
+        export_cytokinins = delta_mstruct * 120.0  # TODO: Set according to protein concentration ?
     else:
-        res = delta_mstruct *  (cytokinins / mstruct)
-    return res
+        export_cytokinins = delta_mstruct * (cytokinins / mstruct)
+    return export_cytokinins
+
 
 def calculate_s_Nstruct_amino_acids(delta_hiddenzone_Nstruct, delta_lamina_Nstruct, delta_sheath_Nstruct):
     """Consumption of amino acids for the calculated mstruct growth (µmol N consumed by mstruct growth)
@@ -215,20 +221,20 @@ def calculate_s_mstruct_sucrose(delta_hiddenzone_mstruct, delta_lamina_mstruct, 
     s_mstruct_sucrose_C = s_mstruct_C - s_mstruct_amino_acids_C                        #: µmol of coming from sucrose
 
     return s_mstruct_sucrose_C
-"""
-    s_Nstruct_amino_acids = (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) / parameters.N_MOLAR_MASS * 1E6 / parameters.AMINO_ACIDS_N_RATIO   #: µmol of AA
-    s_Nstruct_amino_acids = (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) / 14 * 1E6 / 1.17   #: µmol of AA
-    s_Nstruct_amino_acids = (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) * 6.105e4
-    
-    s_mstruct_amino_acids_C = (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) * 6.105e4 * parameters.AMINO_ACIDS_C_RATIO   #: µmol of C coming from AA
-    s_mstruct_amino_acids_C = (delta_hiddenzone_mstruct + delta_lamina_mstruct + delta_sheath_mstruct) * parameters.RATIO_AMINO_ACIDS_MSTRUCT * 2.2405e5   #: µmol of C coming from AA
-    s_mstruct_amino_acids_C = (delta_hiddenzone_mstruct + delta_lamina_mstruct + delta_sheath_mstruct) * 1.12e3   #: µmol of C coming from AA
-    
-    s_mstruct_C = (delta_hiddenzone_mstruct + delta_lamina_mstruct + delta_sheath_mstruct) * 3.2e4  #: Total C used for mstruct growth (µmol C)
-    
-    s_mstruct_sucrose_C = (delta_hiddenzone_mstruct + delta_lamina_mstruct + delta_sheath_mstruct) * (3.2e4  -  1.12e3)                        #: µmol of coming from sucrose
-    s_mstruct_sucrose_C = delta_mstruct * 30880.0
-"""
+
+    # s_Nstruct_amino_acids = (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) / parameters.N_MOLAR_MASS * 1E6 / parameters.AMINO_ACIDS_N_RATIO   #: µmol of AA
+    # s_Nstruct_amino_acids = (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) / 14 * 1E6 / 1.17   #: µmol of AA
+    # s_Nstruct_amino_acids = (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) * 6.105e4
+    #
+    # s_mstruct_amino_acids_C = (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) * 6.105e4 * parameters.AMINO_ACIDS_C_RATIO   #: µmol of C coming from AA
+    # s_mstruct_amino_acids_C = (delta_hiddenzone_mstruct + delta_lamina_mstruct + delta_sheath_mstruct) * parameters.RATIO_AMINO_ACIDS_MSTRUCT * 2.2405e5   #: µmol of C coming from AA
+    # s_mstruct_amino_acids_C = (delta_hiddenzone_mstruct + delta_lamina_mstruct + delta_sheath_mstruct) * 1.12e3   #: µmol of C coming from AA
+    #
+    # s_mstruct_C = (delta_hiddenzone_mstruct + delta_lamina_mstruct + delta_sheath_mstruct) * 3.2e4  #: Total C used for mstruct growth (µmol C)
+    #
+    # s_mstruct_sucrose_C = (delta_hiddenzone_mstruct + delta_lamina_mstruct + delta_sheath_mstruct) * (3.2e4  -  1.12e3)                        #: µmol of coming from sucrose
+    # s_mstruct_sucrose_C = delta_mstruct * 30880.0
+
 
 # Roots
 def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_t):
@@ -251,6 +257,6 @@ def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_t):
     mstruct_C_growth = (conc_sucrose * parameters.VMAX_ROOTS_GROWTH) / (conc_sucrose + parameters.K_ROOTS_GROWTH) * delta_t * mstruct     #: root growth in C (µmol of C)
     mstruct_growth = (mstruct_C_growth*1E-6 * parameters.C_MOLAR_MASS) / parameters.RATIO_C_MSTRUCT_ROOTS                                 #: root growth (g of structural dry mass)
     Nstruct_growth = mstruct_growth * parameters.RATIO_N_MSTRUCT_ROOTS_                                                                   #: root growth in N (g of structural dry mass)
-    Nstruct_N_growth = min(amino_acids, (Nstruct_growth / parameters.N_MOLAR_MASS)*1E6)                                                   #: root growth in nitrogen (µmol N)
+    Nstruct_N_growth = min(amino_acids, (Nstruct_growth / parameters.N_MOLAR_MASS) * 1E6)                                                 #: root growth in nitrogen (µmol N)
 
     return mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth

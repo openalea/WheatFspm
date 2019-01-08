@@ -88,7 +88,7 @@ def from_dataframes(hiddenzone_inputs, element_inputs, root_inputs, SAM_inputs):
         SAM_inputs_dict = SAM_inputs_series[SAM_inputs_columns].to_dict()
         all_SAM_dict[SAM_inputs_id] = SAM_inputs_dict
 
-    return {'hiddenzone': all_hiddenzone_dict, 'elements': all_element_dict, 'roots': all_root_dict, 'SAM': all_SAM_dict }
+    return {'hiddenzone': all_hiddenzone_dict, 'elements': all_element_dict, 'roots': all_root_dict, 'SAM': all_SAM_dict}
 
 
 def to_dataframes(data_dict):

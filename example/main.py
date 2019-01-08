@@ -1,4 +1,10 @@
 # -*- coding: latin-1 -*-
+import os
+
+import pandas as pd
+
+from growthwheat import simulation, converter
+
 """
     main
     ~~~~
@@ -27,13 +33,6 @@
         $Id$
 """
 
-import os
-
-import numpy as np
-import pandas as pd
-
-from growthwheat import simulation, model, converter
-
 INPUTS_DIRPATH = 'inputs'
 
 # growthwheat inputs at t0
@@ -61,7 +60,7 @@ if __name__ == '__main__':
     # Create population
     simulation_ = simulation.Simulation(delta_t=3600)
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframes(hiddenzones_inputs_t0, element_inputs_t0, root_inputs_t0,SAM_inputs_t0)
+    inputs = converter.from_dataframes(hiddenzones_inputs_t0, element_inputs_t0, root_inputs_t0, SAM_inputs_t0)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
     # run the simulation
