@@ -1,6 +1,11 @@
 # -*- coding: latin-1 -*-
 
-'''
+
+import pandas as pd
+
+from farquharwheat import simulation, converter
+
+"""
     main
     ~~~~
 
@@ -16,22 +21,16 @@
     :license: TODO, see LICENSE for details.
 
     .. seealso:: Barillot et al. 2015.
-'''
+"""
 
-'''
+"""
     Information about this versioned file:
         $LastChangedBy$
         $LastChangedDate$
         $LastChangedRevision$
         $URL$
         $Id$
-'''
-
-import os
-
-import pandas as pd
-
-from farquharwheat import model, simulation, converter
+"""
 
 INPUTS_ELEMENT_FILENAME = 'elements_inputs.csv'
 INPUTS_SAM_FILENAME = 'SAMs_inputs.csv'
@@ -45,7 +44,7 @@ if __name__ == '__main__':
     simulation_ = simulation.Simulation()
     # read inputs from Pandas dataframe
     elements_inputs_df = pd.read_csv(INPUTS_ELEMENT_FILENAME)
-    SAMs_inputs_df = pd.read_csv( INPUTS_SAM_FILENAME )
+    SAMs_inputs_df = pd.read_csv(INPUTS_SAM_FILENAME)
     # convert the dataframe to simulation inputs format
     inputs = converter.from_dataframe(elements_inputs_df, SAMs_inputs_df)
     # initialize the simulation with the inputs
@@ -56,4 +55,3 @@ if __name__ == '__main__':
     outputs_df = converter.to_dataframe(simulation_.outputs)
     # write the dataframe to CSV
     outputs_df.to_csv(OUTPUTS_FILENAME, index=False, na_rep='NA', float_format='%.{}f'.format(OUTPUTS_PRECISION))
-

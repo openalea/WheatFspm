@@ -93,31 +93,30 @@ class Simulation(object):
 
             SAM_id = element_id[:2]
             organ_label = element_id[3]
-            element_label = element_id[4]
 
             axe_label = SAM_id[1]
-            if axe_label != 'MS': # Calculation only for the main stem
+            if axe_label != 'MS':  # Calculation only for the main stem
                 continue
 
             if element_inputs['height'] is None:  # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
-                #element_label == 'HiddenElement' or
+                # element_label == 'HiddenElement' or
                 Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
                 Ts = self.inputs['SAMs'][SAM_id]['SAM_temperature']
-                Tr = 0.1 # Default transpiration value for small organs under ADEL's resolution (green_area == 0)
+                Tr = 0.1  # Default transpiration value for small organs under ADEL's resolution (green_area == 0)
             else:
                 PARa = element_inputs['PARa']     #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
 
                 surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
-                                                                        element_inputs['amino_acids'],
-                                                                        element_inputs['proteins'],
-                                                                        element_inputs['Nstruct'],
-                                                                        element_inputs['green_area'])
+                                                                            element_inputs['amino_acids'],
+                                                                            element_inputs['proteins'],
+                                                                            element_inputs['Nstruct'],
+                                                                            element_inputs['green_area'])
 
                 height_canopy = self.inputs['SAMs'][SAM_id]['height_canopy']
                 Ag, An, Rd, Tr, Ts, gs = model.Model.run(surfacic_nitrogen,
-                                                                  element_inputs['width'],
-                                                                  element_inputs['height'],
-                                                                  PARa, Ta, ambient_CO2, RH, Ur, organ_label, height_canopy)
+                                                         element_inputs['width'],
+                                                         element_inputs['height'],
+                                                         PARa, Ta, ambient_CO2, RH, Ur, organ_label, height_canopy)
 
             element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs, 'width': element_inputs['width'], 'height': element_inputs['height']}
 

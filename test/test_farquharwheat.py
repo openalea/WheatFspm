@@ -1,4 +1,12 @@
 # -*- coding: latin-1 -*-
+
+import os
+
+import numpy as np
+import pandas as pd
+
+from farquharwheat import simulation, converter
+
 """
     test_farquhar_wheat
     ~~~~~~~~~~~~~~~~~~~
@@ -22,13 +30,6 @@
         $URL$
         $Id$
 """
-
-import os
-
-import numpy as np
-import pandas as pd
-
-from farquharwheat import simulation, converter
 
 INPUTS_ELEMENT_FILENAME = 'elements_inputs.csv'
 INPUTS_SAM_FILENAME = 'SAMs_inputs.csv'
@@ -66,7 +67,7 @@ def test_run():
     simulation_ = simulation.Simulation()
     # read inputs from Pandas dataframe
     elements_inputs_df = pd.read_csv(INPUTS_ELEMENT_FILENAME)
-    SAMs_inputs_df = pd.read_csv( INPUTS_SAM_FILENAME )
+    SAMs_inputs_df = pd.read_csv(INPUTS_SAM_FILENAME)
     # convert the dataframe to simulation inputs format
     inputs = converter.from_dataframe(elements_inputs_df, SAMs_inputs_df)
     # initialize the simulation with the inputs

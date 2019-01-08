@@ -2,7 +2,6 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import division  # use '//' to do integer division
-import warnings
 from math import sqrt, log,  exp
 
 """
