@@ -28,8 +28,7 @@ class RespirationModel(object):
     SECOND_TO_HOUR_RATE_CONVERSION = 3600
 
     # R_growth#
-    YG = 0.75  #0.8             # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
-                            # range 0±75 to 0±85 in Cannell and Thornley, 2000.
+    YG = 0.8               # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth),  range 0.75 to 0.85 in Cannell and Thornley, 2000.
 
     YG_GRAINS = 0.71       # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
 
@@ -174,7 +173,7 @@ class RespirationModel(object):
         if not root:
             _R_Nnit_red = cls.F_NIT_RED_SH_CS * cls.C_NIT_RED * s_amino_acids * mstruct  # Respiration in shoot tissues
         else:
-            _R_Nnit_red = cls.C_NIT_RED * s_amino_acids * mstruct                         # Respiration in root tissues
+            _R_Nnit_red = cls.C_NIT_RED * s_amino_acids * mstruct                        # Respiration in root tissues
 
 #        if sucrose < _R_Nnit_red:
 #            _R_Nnit_red = 0
