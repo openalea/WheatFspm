@@ -149,6 +149,7 @@ class Simulation(object):
                 #
                 # Temporaire :
                 relative_delta_green_area = relative_delta_senesced_length
+                new_green_area = element_inputs_dict['green_area']*(1 - relative_delta_green_area)
 
                 new_mstruct, new_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element_inputs_dict['mstruct'], element_inputs_dict['Nstruct'])
 
@@ -158,7 +159,7 @@ class Simulation(object):
                 remob_proteins = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['proteins'], relative_delta_green_area)
                 loss_cytokinins = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['cytokinins'], relative_delta_green_area)
 
-                element_outputs_dict = {'green_area': element_inputs_dict['green_area'],#new_green_area,
+                element_outputs_dict = {'green_area': new_green_area,
                                         'senesced_length' : new_senesced_length,
                                         'mstruct': new_mstruct,
                                         'Nstruct': new_Nstruct,

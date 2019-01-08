@@ -1,6 +1,12 @@
 # -*- coding: latin-1 -*-
 
-'''
+import os
+
+import pandas as pd
+
+from senescwheat import simulation, converter
+
+"""
     main
     ~~~~
 
@@ -16,22 +22,16 @@
     :license: TODO, see LICENSE for details.
 
     .. seealso:: Barillot et al. 2016.
-'''
+"""
 
-'''
+"""
     Information about this versioned file:
         $LastChangedBy$
         $LastChangedDate$
         $LastChangedRevision$
         $URL$
         $Id$
-'''
-
-import os
-
-import pandas as pd
-
-from senescwheat import model, simulation, converter
+"""
 
 # inputs paths
 INPUTS_DIRPATH = 'inputs'
@@ -69,4 +69,3 @@ if __name__ == '__main__':
     # write the dataframes to CSV
     roots_outputs_df.to_csv(os.path.join(OUTPUTS_DIRPATH, ROOTS_OUTPUTS_FILENAME), index=False, na_rep='NA')
     elements_outputs_df.to_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME), index=False, na_rep='NA') 
-    

@@ -1,4 +1,12 @@
 # -*- coding: latin-1 -*-
+
+import os
+
+import numpy as np
+import pandas as pd
+
+from senescwheat import simulation, converter
+
 """
     test_senescwheat
     ~~~~~~~~~~~~~~~
@@ -22,13 +30,6 @@
         $URL$
         $Id$
 """
-
-import os
-
-import numpy as np
-import pandas as pd
-
-from senescwheat import model, simulation, converter
 
 INPUTS_DIRPATH = 'inputs'
 ROOTS_INPUTS_FILENAME = 'roots_inputs.csv'
@@ -77,12 +78,6 @@ def test_run():
     inputs = converter.from_dataframes(roots_inputs_df, SAM_inputs_df, elements_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
-    # convert the inputs to Pandas dataframe
-    roots_inputs_reconverted_df, SAM_inputs_reconverted_df, elements_inputs_reconverted_df = converter.to_dataframes(simulation_.inputs)
-    # compare inputs
-    # compare_actual_to_desired('inputs', roots_inputs_reconverted_df, ROOTS_INPUTS_FILENAME)
-    # compare_actual_to_desired('inputs', SAM_inputs_reconverted_df, SAM_INPUTS_FILENAME)
-    # compare_actual_to_desired('inputs', elements_inputs_reconverted_df, ELEMENTS_INPUTS_FILENAME)
     # run the simulation
     simulation_.run()
     # convert the outputs to Pandas dataframe
