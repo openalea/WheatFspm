@@ -177,15 +177,15 @@ class GrainsParameters(object):
         self.ALPHA = 1                                   #: Proportion of structural mass containing substrate
 
         # Structure parameters
-        self.VMAX_RGR = 1.5e-06                          #: Maximal value of the Relative Growth Rate of grain structure (s-1)
+        self.VMAX_RGR = 1.5e-06                          #: Maximal value of the Relative Growth Rate of grain structure (s-1) #TODO : Add temperature effect (delta_teq ?)
         self.K_RGR = 300                                 #: Affinity coefficient of the Relative Growth Rate of grain structure (:math:`\mu` mol C)
 
         # Starch parameters
-        self.VMAX_STARCH = 0.35                          #: Maximal rate of grain filling of starch (:math:`\mu` mol C s-1 g-1 MS)
+        self.VMAX_STARCH = 0.35                          #: Maximal rate of grain filling of starch (:math:`\mu` mol C s-1 g-1 MS) #TODO : Add temperature effect (delta_teq ?)
         self.K_STARCH = 400                              #: Affinity coefficient of grain filling of starch (:math:`\mu` mol C g-1 MS)
 
-        self.FILLING_INIT = 360 * 3600                   #: Time (s) at which phloem loading switch from grain structure to accumulation of starch
-        self.FILLING_END = 900 * 3600                    #: Time (s) at which grains filling stops. (Bertheloot et al., 2011)
+        self.FILLING_INIT = 360 * 3600                   #: Time (s) at which phloem loading switch from grain structure to accumulation of starch # TODO : use thermal time
+        self.FILLING_END = 900 * 3600                    #: Time (s) at which grains filling stops. (Bertheloot et al., 2011) # TODO : use thermal time
 
 
 #: The instance of class :class:`cnwheat.parameters.GrainsParameters` for current process
@@ -214,7 +214,7 @@ class RootsParameters(object):
     def __init__(self):
         self.ALPHA = 1                       #: Proportion of structural mass containing substrate
 
-        self.VMAX_SUCROSE_UNLOADING = 0.03   #: Maximal rate of sucrose unloading from phloem to roots (:math:`\mu` mol C sucrose s-1 g-1 MS)
+        self.VMAX_SUCROSE_UNLOADING = 0.03 * 1  #: Maximal rate of sucrose unloading from phloem to roots (:math:`\mu` mol C sucrose s-1 g-1 MS)
         self.K_SUCROSE_UNLOADING = 1000      #: Affinity coefficient of sucrose unloading from phloem to roots (:math:`\mu` mol C sucrose g-1 MS)
 
         # Regulation function by transpiration of nitrate uptake
@@ -225,6 +225,7 @@ class RootsParameters(object):
 
         # Nitrate uptake
         self.NET_INFLUX_UPTAKE_RATIO = 0.6   #: ratio (net uptake : nitrate influx)
+        # TODO : temperature effect on Vmax ?
         self.A_VMAX_HATS = 0.1333            #: Parameter for estimating the maximal rate of nitrates uptake at saturating soil N concentration;HATS (:math:`\mu` mol g-1 s-1)
         self.LAMBDA_VMAX_HATS = 0.0025       #: Parameter for estimating the maximal rate of nitrates uptake at saturating soil N concentration;HATS (g :math:`\mu` mol-1)
         self.A_K_HATS = 211812               #: Parameter for estimating the affinity coefficient of nitrates uptake at saturating soil N concentration;HATS (:math:`\mu` mol m-3)
@@ -233,24 +234,24 @@ class RootsParameters(object):
         self.LAMBDA_LATS = 1.6517E-03        #: Parameter for estimating the rate of nitrates uptake at low soil N concentration; LATS (g :math:`\mu` mol-1)
 
         # Nitrate export
-        self.K_NITRATE_EXPORT = 1E-6         #: Relative rate of nitrate export from roots (s-1)
+        self.K_NITRATE_EXPORT = 1E-6 * 4        #: Relative rate of nitrate export from roots (s-1)
 
         # Amino acids
-        self.VMAX_AMINO_ACIDS = 0.001        #: Maximal rate of amino acid synthesis (:math:`\mu` mol N s-1 g-1 MS)
-        self.K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (:math:`\mu` mol N g-1 MS)
-        self.K_AMINO_ACIDS_SUCROSE = 350     #: Affinity coefficient of amino acid synthesis from triosesP (:math:`\mu` mol C g-1 MS)
-        self.K_AMINO_ACIDS_EXPORT = 3E-5     #: Relative rate of amino acids export from roots (s-1)
+        self.VMAX_AMINO_ACIDS = 0.001 * 2        #: Maximal rate of amino acid synthesis (:math:`\mu` mol N s-1 g-1 MS)
+        self.K_AMINO_ACIDS_NITRATES = 3       #: Affinity coefficient of amino acid synthesis from nitrates (:math:`\mu` mol N g-1 MS)
+        self.K_AMINO_ACIDS_SUCROSE = 350     #: Affinity coefficient of amino acid synthesis from sucrose (:math:`\mu` mol C g-1 MS)
+        self.K_AMINO_ACIDS_EXPORT = 3E-5 *4    #: Relative rate of amino acids export from roots (s-1)
 
         # Exudation
-        self.C_EXUDATION = 0.20              #: Proportion of C exudated from C sucrose unloaded to roots (Keith et al., 1986)
+        self.C_EXUDATION = 0.20 #*3.8              #: Proportion of C exudated from C sucrose unloaded to roots (Keith et al., 1986)
 
         # Cytokinins
-        self.VMAX_S_CYTOKININS = 4.5E-04     #: Maximal rate of cytokinins synthesis (UA g-1 mstruct s-1)
+        self.VMAX_S_CYTOKININS = 4.5E-04 *3    #: Maximal rate of cytokinins synthesis (UA g-1 mstruct s-1)
         self.K_NITRATES_CYTOKININS = 200     #: Affinity coefficient of cytokinins synthesis for nitrates (:math:`\mu` mol N nitrates g-1 mstruct)
         self.K_SUCROSE_CYTOKININS = 1250     #: Affinity coefficient of cytokinins synthesis for sucrose (:math:`\mu` mol C sucrose g-1 mstruct)
         self.N_SUC_CYTOKININS = 10           #: A parameter for cytokinins synthesis (dimensionless)
         self.N_NIT_CYTOKININS = 0.7          #: A parameter for cytokinins synthesis (dimensionless)
-        self.K_CYTOKININS_EXPORT = 2E-4      #: Relative rate of cytokinins export from roots (s-1)
+        self.K_CYTOKININS_EXPORT = 2E-4 * 4    #: Relative rate of cytokinins export from roots (s-1)
 
 
 #: The instance of class :class:`cnwheat.parameters.RootsParameters` for current process
@@ -280,13 +281,13 @@ class PhotosyntheticOrganParameters(object):
     """
     def __init__(self):
         # Sucrose
-        self.VMAX_SUCROSE = 1                #: Maximal rate of sucrose synthesis (:math:`\mu` mol C s-1 g-1 MS)
+        self.VMAX_SUCROSE = 1*4                #: Maximal rate of sucrose synthesis (:math:`\mu` mol C s-1 g-1 MS)
         self.K_SUCROSE = 0.66                #: Affinity coefficient of sucrose synthesis (:math:`\mu` mol C g-1 MS)
 
         # Starch
-        self.VMAX_STARCH = 2                 #: Maximal rate of starch synthesis (:math:`\mu` mol C s-1 g-1 MS)
+        self.VMAX_STARCH = 2 *4                 #: Maximal rate of starch synthesis (:math:`\mu` mol C s-1 g-1 MS)
         self.K_STARCH = 20                   #: Affinity coefficient of starch synthesis (:math:`\mu` mol C g-1 MS)
-        self.DELTA_DSTARCH = 0.0001          #: Relative rate of starch degradation (s-1)
+        self.DELTA_DSTARCH = 0.0001  *4        #: Relative rate of starch degradation (s-1)
 
         # Fructans
         self.VMAX_SFRUCTAN_POT = 0.015       #: Potential maximal rate of fructan synthesis (:math:`\mu` mol C s-1 g-1 MS)
@@ -302,7 +303,7 @@ class PhotosyntheticOrganParameters(object):
         self.BETA = 1                        #: Kind of volumetric mass density at power -2/3 ((g m-3)**(-2/3))
 
         # Amino acids
-        self.VMAX_AMINO_ACIDS = 1            #: Maximal rate of amino acid synthesis (:math:`\mu` mol N s-1 g-1 MS)
+        self.VMAX_AMINO_ACIDS = 1 *4            #: Maximal rate of amino acid synthesis (:math:`\mu` mol N s-1 g-1 MS)
         self.K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (:math:`\mu` mol N g-1 MS)
         self.K_AMINO_ACIDS_TRIOSESP = 0.2    #: Affinity coefficient of amino acid synthesis from triosesP (:math:`\mu` mol C g-1 MS)
 
@@ -413,8 +414,8 @@ class PhotosyntheticOrganElementInitCompartments(object):
 
         self.is_growing = False  #: initial value of is_growing (Flag indicating if the element is growing or not (:class:`bool`)
         self.Tr = 0              #: initial value of Tr (Transpiration rate (mmol m-2 s-1)
+        self.Ts = 12             #: initial value of Ts (Organ temperature)
         self.Ag = 0              #: initial value of Ag (Gross assimilation (:math:`\mu` mol m-2 s-1)
-        self.Ts = 15             #: initial value of Ts (Organ temperature (degree Celsius)
 
 
 #: The instance of class :class:`cnwheat.parameters.PhotosyntheticOrganElementInitCompartments` for current process

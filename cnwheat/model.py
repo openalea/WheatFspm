@@ -40,14 +40,18 @@ class EcophysiologicalConstants:
     NB_C_TRIOSEP = 3                        #: Number of C in 1 mol of trioseP
     NB_C_HEXOSES = 6                        #: Number of C in 1 mol of hexoses (glucose, fructose)
     NB_C_SUCROSE = 12                       #: Number of C in 1 mol of sucrose
-    HEXOSE_MOLAR_MASS_C_RATIO = 0.4         #: Contribution of C in hexose mass
-    RATIO_C_mstruct = 0.384                 #: Mean contribution of carbon to structural dry mass (g C g-1 mstruct)
+    HEXOSE_MOLAR_MASS_C_RATIO = 0.42        #: Contribution of C in hexose mass
+    TRIOSESP_MOLAR_MASS_C_RATIO = 0.21      #: Contribution of C in triosesP mass
+    RATIO_C_mstruct = 0.44                 #: Mean contribution of carbon to structural dry mass (g C g-1 mstruct)
 
-    AMINO_ACIDS_C_RATIO = 3.67              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    AMINO_ACIDS_N_RATIO = 1.17              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.145  #: Mean contribution of N in amino acids mass
+    AMINO_ACIDS_C_RATIO = 4.15              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_N_RATIO = 1.25              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    PROTEINS_MOLAR_MASS_N_RATIO = 0.151     #: Mean contribution of N in protein mass (Penning De Vries 1989)
+    AMINO_ACIDS_MOLAR_MASS_N_RATIO = 0.135  #: Mean contribution of N in amino acids mass of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    NITRATES_MOLAR_MASS_N_RATIO = 0.23      #: Contribution of N in amino acids mass
     N_MOLAR_MASS = 14                       #: Molar mass of nitrogen (g mol-1)
-
+    AMINO_ACIDS_MOLAR_MASS_C_RATIO = 0.38   #: (Penning De Vries 1989)
+    PROTEINS_MOLAR_MASS_C_RATIO = 0.38      #: As for AA
 
 class Population(object):
     """
@@ -63,11 +67,11 @@ class Population(object):
             plants = []
         self.plants = plants  #: the list of plants
 
-    def calculate_aggregated_variables(self):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the population recursively.
         """
         for plant in self.plants:
-            plant.calculate_aggregated_variables()
+            plant.calculate_integrative_variables()
 
 
 class Plant(object):
@@ -84,13 +88,54 @@ class Plant(object):
         if axes is None:
             axes = []
         self.axes = axes  #: the list of axes
+        self.cohorts = [] #: list of cohort values - Hack to treat tillering cases : TEMPORARY
 
-    def calculate_aggregated_variables(self):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the plant recursively.
         """
         for axis in self.axes:
-            axis.calculate_aggregated_variables()
+            axis.calculate_integrative_variables()
 
+    def calculate_temperature_effect_on_conductivity(self, Tair):
+        """Effect of the temperature on phloeme translocation conductivity (Farrar 1988)
+        Should multiply the rate at 20°C
+
+        :Parameters:
+            - `Tair` (:class:`float`) - Air temperature (°C)
+        :Returns:
+            Correction to apply to conductivity coefficients.
+        :Returns Type:
+            :class:`float`
+        """
+        Q10 = 1.3
+        Tref = 20
+        # 1/(-1.208*10**-5*T**3 + 1.432*10**-3*T**2 - 0.07318*T + 2.07) # (Bancal 2002)
+
+        return Q10**((Tair-Tref)/10)
+
+    def calculate_temperature_effect_on_Vmax(self, Tair):
+        """Effect of the temperature on maximal enzyme activity
+        Should multiply the rate at 20°C
+
+        :Parameters:
+            - `Tair` (:class:`float`) - Air temperature (°C)
+        :Returns:
+            Correction to apply to enzyme activity
+        :Returns Type:
+            :class:`float`
+        """
+        Tref = 20 + 273.15
+        Tk = Tair + 273.15
+        R = 8.3144  #: Physical parameter: Gas constant (J mol-1 K-1)
+        deltaHa = 55#89.7  #: Enthalpie of activation of parameter pname (kJ mol-1)
+        deltaS = 0.48#0.486  #: entropy term of parameter pname (kJ mol-1 K-1)
+        deltaHd = 154 #149.3 #: Enthalpie of deactivation of parameter pname (kJ mol-1)
+
+        f_activation = np.exp((deltaHa * (Tk - Tref)) / (R * 1E-3 * Tref * Tk))  #: Energy of activation (normalized to unity)
+
+        f_deactivation = (1 + np.exp((Tref * deltaS - deltaHd) / (Tref * R * 1E-3))) / (1 + np.exp((Tk * deltaS - deltaHd) / (Tk * R * 1E-3)))  #: Energy of deactivation (normalized to unity)
+
+        return f_activation * f_deactivation
 
 class Axis(object):
     """
@@ -117,21 +162,21 @@ class Axis(object):
         # integrative variables
         self.Total_Transpiration = None  #: the total transpiration (mmol s-1)
 
-    def calculate_aggregated_variables(self):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the axis recursively.
         """
         self.mstruct = 0
         if self.roots is not None:
-            self.roots.calculate_aggregated_variables()
+            self.roots.calculate_integrative_variables()
             self.mstruct += self.roots.mstruct
         if self.phloem is not None:
-            self.phloem.calculate_aggregated_variables()
+            self.phloem.calculate_integrative_variables()
         if self.grains is not None:
-            self.grains.calculate_aggregated_variables()
+            self.grains.calculate_integrative_variables()
             self.mstruct += self.grains.structural_dry_mass
         for phytomer in self.phytomers:
-            phytomer.calculate_aggregated_variables()
-            self.mstruct += phytomer.mstruct
+            phytomer.calculate_integrative_variables()
+            self.mstruct += phytomer.mstruct * phytomer.nb_replications
 
 
 class Phytomer(object):
@@ -147,7 +192,7 @@ class Phytomer(object):
 
     PARAMETERS = parameters.PHYTOMER_PARAMETERS  #: the internal parameters of the phytomers
 
-    def __init__(self, index=None, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None, hiddenzone=None):
+    def __init__(self, index=None, chaff=None, peduncle=None, lamina=None, internode=None, sheath=None, hiddenzone=None, cohorts=[]):
         self.index = index  #: the index of the phytomer
         self.chaff = chaff  #: the chaff
         self.peduncle = peduncle  #: the peduncle
@@ -156,15 +201,21 @@ class Phytomer(object):
         self.sheath = sheath  #: the sheath
         self.hiddenzone = hiddenzone  #: the hidden zone
         self.mstruct = None  #: the structural mass of the phytomer (g)
+        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
 
-    def calculate_aggregated_variables(self):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the phytomer recursively.
         """
         self.mstruct = 0
         for organ_ in (self.chaff, self.peduncle, self.lamina, self.internode, self.sheath, self.hiddenzone):
             if organ_ is not None:
-                organ_.calculate_aggregated_variables()
+                organ_.calculate_integrative_variables()
                 self.mstruct += organ_.mstruct
+
+    @property
+    def nb_replications(self):
+        return sum(v <= self.index for v in self.cohorts) + 1
+
 
 
 class Organ(object):
@@ -182,7 +233,7 @@ class Organ(object):
         """
         pass
 
-    def calculate_aggregated_variables(self):
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the organ recursively.
         """
         pass
@@ -196,10 +247,13 @@ class HiddenZone(Organ):
     PARAMETERS = parameters.HIDDEN_ZONE_PARAMETERS                #: the internal parameters of the hidden zone
     INIT_COMPARTMENTS = parameters.HIDDEN_ZONE_INIT_COMPARTMENTS  #: the initial values of compartments and state parameters
 
-    def __init__(self, label='hiddenzone', mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
-                 sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan, amino_acids=INIT_COMPARTMENTS.amino_acids, proteins=INIT_COMPARTMENTS.proteins):
+    def __init__(self, label='hiddenzone',  mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
+                 sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan, amino_acids=INIT_COMPARTMENTS.amino_acids, proteins=INIT_COMPARTMENTS.proteins,cohorts=[], index = None):
 
         super(HiddenZone, self).__init__(label)
+
+        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
+        self.index = index #: the index of the phytomer TEMPORARY
 
         # state parameters
         self.mstruct = mstruct                      #: g
@@ -221,9 +275,13 @@ class HiddenZone(Organ):
         self.D_Fructan = None                       #: fructan degradation (:math:`\mu mol` C g-1 mstruct)
         self.D_Proteins = None                      #: protein degradation (:math:`\mu mol` N g-1 mstruct)
 
+    @property
+    def nb_replications(self):
+        return sum(v <= self.index for v in self.cohorts) + 1
+
     # FLUXES
 
-    def calculate_Unloading_Sucrose(self, sucrose, sucrose_phloem, mstruct_axis):
+    def calculate_Unloading_Sucrose(self, sucrose, sucrose_phloem, mstruct_axis, T_effect_conductivity):
         """Rate of sucrose Unloading from phloem to the hidden zone (:math:`\mu mol` C sucrose unloaded g-1 mstruct h-1).
         Transport-resistance equation
 
@@ -231,15 +289,16 @@ class HiddenZone(Organ):
             - `sucrose` (:class:`float`) - Sucrose amount in the hidden zone (:math:`\mu mol` C)
             - `sucrose_phloem` (:class:`float`) - Sucrose amount in phloem (:math:`\mu mol` C)
             - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
+            - `T_effect_conductivity` (:class:`float`) - Effect of the temperature on the conductivity rate at 20°C (AU)
         :Returns:
             Rate of Sucrose Unloading (:math:`\mu mol` C h-1)
         :Returns Type:
             :class:`float`
         """
-        conductance = parameters.HIDDEN_ZONE_PARAMETERS.SIGMA * parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.BETA * self.mstruct**(2/3)  # TODO: choix valeurs param / flux phloem-hgz
+        conductance = parameters.HIDDEN_ZONE_PARAMETERS.SIGMA * parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.BETA * self.mstruct**(2/3) * T_effect_conductivity  # TODO: choix valeurs param / flux phloem-hgz
         return ((sucrose_phloem / mstruct_axis) - (sucrose / self.mstruct)) * conductance * parameters.SECOND_TO_HOUR_RATE_CONVERSION
 
-    def calculate_Unloading_Amino_Acids(self, amino_acids, amino_acids_phloem, mstruct_axis):
+    def calculate_Unloading_Amino_Acids(self, amino_acids, amino_acids_phloem, mstruct_axis, T_effect_conductivity): # TODO : ON ne va pas chercher les paramètres au bon endroit
         """Rate of amino acids Unloading from phloem to the hidden zone (:math:`\mu mol` N amino acids unloaded g-1 mstruct h-1).
         Transport-resistance equation
 
@@ -247,15 +306,21 @@ class HiddenZone(Organ):
             - `amino_acids` (:class:`float`) - Amino_acids amount in the hidden zone (:math:`\mu mol` N)
             - `amino_acids_phloem` (:class:`float`) - Amino_acids amount in phloem (:math:`\mu mol` N)
             - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
+            - `T_effect_conductivity` (:class:`float`) - Effect of the temperature on the conductivity rate at 20°C (AU)
         :Returns:
             Rate of Amino_acids Unloading (:math:`\mu mol` N h-1)
         :Returns Type:
             :class:`float`
         """
-        conductance = parameters.HIDDEN_ZONE_PARAMETERS.SIGMA * parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.BETA * self.mstruct**(2/3)
-        return ((amino_acids_phloem / mstruct_axis) - (amino_acids / self.mstruct)) * conductance * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        conductance = parameters.HIDDEN_ZONE_PARAMETERS.SIGMA * parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.BETA * self.mstruct**(2/3) * T_effect_conductivity
 
-    def calculate_S_proteins(self, amino_acids):
+        flux =  ((amino_acids_phloem / mstruct_axis) - (amino_acids / self.mstruct)) * conductance * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        # res = 0
+        # if flux > 0:
+        res = flux
+        return res
+
+    def calculate_S_proteins(self, amino_acids, T_effect_Vmax): # TODO : ON ne va pas chercher les paramètres au bon endroit
         """Rate of protein synthesis (:math:`\mu mol` N proteins h-1 g-1 MS).
         Michaelis-Menten function of amino acids.
 
@@ -266,10 +331,11 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        return 2*(parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.VMAX_SPROTEINS * max(0, (amino_acids / self.mstruct))) / (parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.K_SPROTEINS +
-                                                                                                                     max(0, (amino_acids / self.mstruct))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        return 5*(parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.VMAX_SPROTEINS * max(0, (amino_acids / self.mstruct))) / (parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.K_SPROTEINS +
+                                                                                                                     max(0, (amino_acids / self.mstruct))) * \
+               parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
 
-    def calculate_D_Proteins(self, proteins):
+    def calculate_D_Proteins(self, proteins, T_effect_Vmax):
         """Rate of protein degradation (:math:`\mu mol` N proteins h-1 g-1 MS).
         First order kinetic
 
@@ -280,9 +346,9 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        return max(0, (parameters.HIDDEN_ZONE_PARAMETERS.delta_Dproteins * (proteins / self.mstruct))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        return max(0, (parameters.HIDDEN_ZONE_PARAMETERS.delta_Dproteins * (proteins / self.mstruct))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
 
-    def calculate_Regul_S_Fructan(self, Loading_Sucrose):
+    def calculate_Regul_S_Fructan(self, Loading_Sucrose): # TODO : ON ne va pas chercher les paramètres au bon endroit
         """Regulating function for fructan maximal rate of synthesis.
         Negative regulation by the loading of sucrose from the phloem ("swith-off" sigmoïdal kinetic).
 
@@ -301,7 +367,7 @@ class HiddenZone(Organ):
                                PhotosyntheticOrgan.PARAMETERS.K_REGUL_SFRUCTAN**PhotosyntheticOrgan.PARAMETERS.N_REGUL_SFRUCTAN))
         return Vmax_Sfructans
 
-    def calculate_S_Fructan(self, sucrose, Regul_S_Fructan):
+    def calculate_S_Fructan(self, sucrose, Regul_S_Fructan, T_effect_Vmax): # TODO : ON ne va pas chercher les paramètres au bon endroit
         """Rate of fructan synthesis (:math:`\mu mol` C fructan g-1 mstruct h-1).
         Sigmoïdal function of sucrose.
 
@@ -313,9 +379,10 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        return ((max(0, sucrose)/self.mstruct) * Regul_S_Fructan)/((max(0, sucrose)/self.mstruct) + PhotosyntheticOrgan.PARAMETERS.K_SFRUCTAN) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        return ((max(0, sucrose)/self.mstruct) * Regul_S_Fructan)/((max(0, sucrose)/self.mstruct) + PhotosyntheticOrgan.PARAMETERS.K_SFRUCTAN) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * \
+               T_effect_Vmax * 1.5
 
-    def calculate_D_Fructan(self, sucrose, fructan):
+    def calculate_D_Fructan(self, sucrose, fructan, T_effect_Vmax): # TODO : ON ne va pas chercher les paramètres au bon endroit
         """Rate of fructan degradation (:math:`\mu mol` C fructan g-1 mstruct h-1).
         Inhibition function by the end product i.e. sucrose (Bancal et al., 2012).
 
@@ -327,7 +394,7 @@ class HiddenZone(Organ):
         :Returns Type:
             :class:`float`
         """
-        d_potential = ((PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN * PhotosyntheticOrgan.PARAMETERS.VMAX_DFRUCTAN) /
+        d_potential = ((PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN * PhotosyntheticOrgan.PARAMETERS.VMAX_DFRUCTAN * T_effect_Vmax) /
                        ((max(0, sucrose) / self.mstruct) + PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
         d_actual = min(d_potential, max(0, fructan))
         return d_actual
@@ -422,13 +489,13 @@ class Phloem(Organ):
         sucrose_derivative = 0
         for contributor in contributors:
             if isinstance(contributor, PhotosyntheticOrganElement):
-                sucrose_derivative += contributor.Loading_Sucrose
+                sucrose_derivative += contributor.Loading_Sucrose * contributor.nb_replications
             elif isinstance(contributor, Grains):
                 sucrose_derivative -= contributor.S_grain_structure + (contributor.S_grain_starch * contributor.structural_dry_mass)
             elif isinstance(contributor, Roots):
                 sucrose_derivative -= contributor.Unloading_Sucrose * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
             elif isinstance(contributor, HiddenZone):
-                sucrose_derivative -= contributor.Unloading_Sucrose
+                sucrose_derivative -= contributor.Unloading_Sucrose * contributor.nb_replications
 
         return sucrose_derivative
 
@@ -445,18 +512,18 @@ class Phloem(Organ):
         amino_acids_derivative = 0
         for contributor in contributors:
             if isinstance(contributor, PhotosyntheticOrganElement):
-                amino_acids_derivative += contributor.Loading_Amino_Acids
+                amino_acids_derivative += contributor.Loading_Amino_Acids * contributor.nb_replications
             elif isinstance(contributor, Grains):
                 amino_acids_derivative -= contributor.S_Proteins
             elif isinstance(contributor, Roots):
                 amino_acids_derivative -= contributor.Unloading_Amino_Acids * contributor.mstruct * contributor.__class__.PARAMETERS.ALPHA
             elif isinstance(contributor, HiddenZone):
-                amino_acids_derivative -= contributor.Unloading_Amino_Acids
+                amino_acids_derivative -= contributor.Unloading_Amino_Acids * contributor.nb_replications
 
         return amino_acids_derivative
 
 
-class Grains(Organ):
+class Grains(Organ): # TODO : temperature effects ?
     """
     The class :class:`Grains` defines the CN exchanges in a set of grains.
     """
@@ -676,7 +743,7 @@ class Roots(Organ):
         self.HATS_LATS = None                  #: Nitrate influx (:math:`\mu mol` N)
         self.sum_respi = None                  #: Sum of respirations for roots i.e. related to N uptake, amino acids synthesis and residual (:math:`\mu mol` C)
 
-    def calculate_aggregated_variables(self):
+    def calculate_integrative_variables(self):
         self.Total_Organic_Nitrogen = self.calculate_Total_Organic_Nitrogen(self.amino_acids, self.Nstruct)
 
     # VARIABLES
@@ -695,7 +762,7 @@ class Roots(Organ):
         """
         return amino_acids + (Nstruct / EcophysiologicalConstants.N_MOLAR_MASS)*1E6
 
-    def calculate_regul_transpiration(self, total_surfacic_transpiration):
+    def calculate_regul_transpiration(self, total_surfacic_transpiration, total_transpiration):
         """A function to regulate metabolite exports from roots by shoot transpiration
 
         :Parameters:
@@ -705,24 +772,27 @@ class Roots(Organ):
         :Returns Type:
             :class:`float`
         """
+        # total_transpiration * 0.0152 / (total_transpiration + Roots.PARAMETERS.K_TRANSPIRATION * 0.0152)
         return total_surfacic_transpiration / (total_surfacic_transpiration + Roots.PARAMETERS.K_TRANSPIRATION)
+
 
     # FLUXES
 
-    def calculate_Unloading_Sucrose(self, sucrose_phloem, mstruct_axis):
+    def calculate_Unloading_Sucrose(self, sucrose_phloem, mstruct_axis, T_effect_conductivity):
         """Rate of sucrose Unloading from phloem to roots (:math:`\mu mol` C sucrose unloaded g-1 mstruct h-1).
         Michaelis-Menten function of the sucrose concentration in phloem.
 
         :Parameters:
             - `sucrose_phloem` (:class:`float`) - Sucrose concentration in phloem (:math:`\mu mol` C g-1 mstruct)
             - `mstruct_axis` (:class:`float`) -The structural dry mass of the axis (g)
+            - `T_effect_conductivity` (:class:`float`) - Effect of the temperature on the conductivity rate at 20°C (AU)
         :Returns:
             Rate of Sucrose Unloading (:math:`\mu mol` C g-1 mstruct h-1)
         :Returns Type:
             :class:`float`
         """
-        return (((max(0, sucrose_phloem)/(mstruct_axis * Axis.PARAMETERS.ALPHA)) * Roots.PARAMETERS.VMAX_SUCROSE_UNLOADING) /
-                ((max(0, sucrose_phloem)/(mstruct_axis * Axis.PARAMETERS.ALPHA)) + Roots.PARAMETERS.K_SUCROSE_UNLOADING)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        return (((max(0, sucrose_phloem)/(mstruct_axis * Axis.PARAMETERS.ALPHA)) * Roots.PARAMETERS.VMAX_SUCROSE_UNLOADING * T_effect_conductivity ) /
+                ((max(0, sucrose_phloem)/(mstruct_axis * Axis.PARAMETERS.ALPHA)) + Roots.PARAMETERS.K_SUCROSE_UNLOADING )) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
 
     def calculate_Unloading_Amino_Acids(self, Unloading_Sucrose, sucrose_phloem, amino_acids_phloem):
         """Unloading of amino_acids from phloem to roots.
@@ -737,13 +807,13 @@ class Roots(Organ):
         :Returns Type:
             :class:`float`
         """
-        if amino_acids_phloem <= 0:
+        if amino_acids_phloem <= 0 or sucrose_phloem <= 0:
             Unloading_Amino_Acids = 0
         else:
             Unloading_Amino_Acids = Unloading_Sucrose * (amino_acids_phloem / sucrose_phloem)
         return Unloading_Amino_Acids
 
-    def calculate_Uptake_Nitrates(self, Conc_Nitrates_Soil, nitrates_roots, sucrose_roots):
+    def calculate_Uptake_Nitrates(self, Conc_Nitrates_Soil, nitrates_roots, sucrose_roots, T_effect_Vmax):
         """Rate of nitrate uptake by roots
             - Nitrate uptake is calculated as the sum of the 2 transport systems: HATS and LATS
             - HATS and LATS parameters are calculated as a function of root nitrate concentration (negative regulation)
@@ -763,11 +833,12 @@ class Roots(Organ):
         #: High Affinity Transport System (HATS)
         VMAX_HATS_MAX = Roots.PARAMETERS.A_VMAX_HATS * np.exp(-Roots.PARAMETERS.LAMBDA_VMAX_HATS * conc_nitrates_roots)  #: Maximal rate of nitrates influx at saturating soil N concentration;HATS (:math:`\mu mol` N nitrates g-1 mstruct s-1)
         K_HATS = Roots.PARAMETERS.A_K_HATS * np.exp(-Roots.PARAMETERS.LAMBDA_K_HATS * conc_nitrates_roots)               #: Affinity coefficient of nitrates influx at saturating soil N concentration;HATS (:math:`\mu mol` m-3)
-        HATS = (VMAX_HATS_MAX * Conc_Nitrates_Soil)/ (K_HATS + Conc_Nitrates_Soil)                                       #: Rate of nitrate influx by HATS (:math:`\mu mol` N nitrates uptaked s-1 g-1 mstruct)
+        HATS = (VMAX_HATS_MAX * Conc_Nitrates_Soil)/ (K_HATS + Conc_Nitrates_Soil) * T_effect_Vmax                                 #: Rate of nitrate influx by HATS (:math:`\mu mol` N nitrates uptaked s-1
+        # g-1 mstruct)
 
         #: Low Affinity Transport System (LATS)
         K_LATS = Roots.PARAMETERS.A_LATS * np.exp(-Roots.PARAMETERS.LAMBDA_LATS * conc_nitrates_roots)                   #: Rate constant for nitrates influx at low soil N concentration; LATS (m3 g-1 mstruct s-1)
-        LATS = (K_LATS * Conc_Nitrates_Soil)                                                                             #: Rate of nitrate influx by LATS (:math:`\mu mol` N nitrates uptaked s-1 g-1 mstruct)
+        LATS = (K_LATS * Conc_Nitrates_Soil) * T_effect_Vmax                                                             #: Rate of nitrate influx by LATS (:math:`\mu mol` N nitrates g-1 mstruct)
 
         #: Nitrate influx (:math:`\mu mol` N)
         HATS_LATS = (HATS + LATS) * self.mstruct * parameters.SECOND_TO_HOUR_RATE_CONVERSION
@@ -777,7 +848,7 @@ class Roots(Organ):
         net_nitrate_uptake = HATS_LATS * Roots.PARAMETERS.NET_INFLUX_UPTAKE_RATIO * regul_C                              #: Net nitrate uptake (:math:`\mu mol` N nitrates uptaked by roots)
         return net_nitrate_uptake, HATS_LATS
 
-    def calculate_S_amino_acids(self, nitrates, sucrose):
+    def calculate_S_amino_acids(self, nitrates, sucrose, T_effect_Vmax):
         """Rate of amino acid synthesis in roots (:math:`\mu mol` N amino acids g-1 mstruct h-1).
         Bi-substrate Michaelis-Menten function of nitrates and sucrose.
 
@@ -789,7 +860,7 @@ class Roots(Organ):
         :Returns Type:
             :class:`float`
         """
-        return Roots.PARAMETERS.VMAX_AMINO_ACIDS / ((1 + Roots.PARAMETERS.K_AMINO_ACIDS_NITRATES/(nitrates/(self.mstruct*Roots.PARAMETERS.ALPHA))) *
+        return T_effect_Vmax * Roots.PARAMETERS.VMAX_AMINO_ACIDS / ((1 + Roots.PARAMETERS.K_AMINO_ACIDS_NITRATES/(nitrates/(self.mstruct*Roots.PARAMETERS.ALPHA))) *
                                                     (1 + Roots.PARAMETERS.K_AMINO_ACIDS_SUCROSE/(sucrose/(self.mstruct*Roots.PARAMETERS.ALPHA)))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
 
     def calculate_Export_Nitrates(self, nitrates, regul_transpiration):
@@ -828,11 +899,11 @@ class Roots(Organ):
             Export_Amino_Acids = 0
         else:
             f_amino_acids = (amino_acids/(self.mstruct * Roots.PARAMETERS.ALPHA)) * Roots.PARAMETERS.K_AMINO_ACIDS_EXPORT
-            Export_Amino_Acids = f_amino_acids * self.mstruct * regul_transpiration * parameters.SECOND_TO_HOUR_RATE_CONVERSION  #: Amino acids export regulation by plant transpiration (:math:`\mu mol` N)
+            Export_Amino_Acids = f_amino_acids * self.mstruct * regul_transpiration * parameters.SECOND_TO_HOUR_RATE_CONVERSION  #: Amino acids export regulation by plant transpiration (:math:`\mu  mol` N)
 
         return Export_Amino_Acids
 
-    def calculate_exudation(self, Unloading_Sucrose, sucrose_roots, amino_acids_roots, amino_acids_phloem):
+    def calculate_exudation(self, Unloading_Sucrose, sucrose_roots, amino_acids_roots, amino_acids_phloem, T_effect_Vmax):
         """C sucrose and N amino acids lost by root exudation (:math:`\mu mol` C or N g-1 mstruct).
             - C exudation is calculated as a fraction of C Unloading from phloem
             - N exudation is calculated from C exudation using the ratio amino acids:sucrose of the phloem
@@ -847,14 +918,14 @@ class Roots(Organ):
         :Returns Type:
             :class:`tuple` of 2 :class:`float`
         """
-        C_exudation = min(sucrose_roots, Unloading_Sucrose * Roots.PARAMETERS.C_EXUDATION)  #: C exudated (:math:`\mu mol` g-1 mstruct)
+        C_exudation = min(sucrose_roots, Unloading_Sucrose * Roots.PARAMETERS.C_EXUDATION * T_effect_Vmax)  #: C exudated (:math:`\mu mol` g-1 mstruct)
         if amino_acids_phloem <= 0 or amino_acids_roots <= 0 or sucrose_roots <= 0:
             N_exudation = 0
         else:
             N_exudation = (amino_acids_roots/sucrose_roots) * C_exudation
         return C_exudation, N_exudation
 
-    def calculate_S_cytokinins(self, sucrose_roots, nitrates_roots):
+    def calculate_S_cytokinins(self, sucrose_roots, nitrates_roots, T_effect_Vmax):
         """ Rate of cytokinin synthesis (AU cytokinins g-1 mstruct h-1).
         Cytokinin synthesis regulated by both root sucrose and nitrates. As a signal molecule, cytokinins are assumed have a neglected effect on sucrose.
         Thus, no cost in C is applied to the sucrose pool.
@@ -871,7 +942,7 @@ class Roots(Organ):
         conc_Nitrates = max(0, (nitrates_roots/self.mstruct))
         f_sucrose = conc_sucrose**Roots.PARAMETERS.N_SUC_CYTOKININS/(conc_sucrose**Roots.PARAMETERS.N_SUC_CYTOKININS + Roots.PARAMETERS.K_SUCROSE_CYTOKININS**Roots.PARAMETERS.N_SUC_CYTOKININS)
         f_nitrates = conc_Nitrates**Roots.PARAMETERS.N_NIT_CYTOKININS/(conc_Nitrates**Roots.PARAMETERS.N_NIT_CYTOKININS + Roots.PARAMETERS.K_NITRATES_CYTOKININS**Roots.PARAMETERS.N_NIT_CYTOKININS)
-        S_cytokinins = Roots.PARAMETERS.VMAX_S_CYTOKININS * f_sucrose * f_nitrates * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        S_cytokinins = Roots.PARAMETERS.VMAX_S_CYTOKININS * f_sucrose * f_nitrates * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
         return S_cytokinins
 
     def calculate_Export_cytokinins(self, cytokinins, regul_transpiration):
@@ -980,11 +1051,11 @@ class PhotosyntheticOrgan(Organ):
         self.enclosed_element = enclosed_element  #: the enclosed element
         self.mstruct = None                       #: the structural dry mass
 
-    def calculate_aggregated_variables(self):
+    def calculate_integrative_variables(self):
         self.mstruct = 0
         for element in (self.exposed_element, self.enclosed_element):
             if element is not None:
-                element.calculate_aggregated_variables()
+                element.calculate_integrative_variables()
                 self.mstruct += element.mstruct
 
 
@@ -1058,9 +1129,11 @@ class PhotosyntheticOrganElement(object):
     def __init__(self, label=None, green_area=INIT_COMPARTMENTS.green_area, mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
                        triosesP=INIT_COMPARTMENTS.triosesP, starch=INIT_COMPARTMENTS.starch, sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan,
                        nitrates=INIT_COMPARTMENTS.nitrates, amino_acids=INIT_COMPARTMENTS.amino_acids, proteins=INIT_COMPARTMENTS.proteins, cytokinins=INIT_COMPARTMENTS.cytokinins,
-                       Tr=INIT_COMPARTMENTS.Tr, Ag=INIT_COMPARTMENTS.Ag, Ts=INIT_COMPARTMENTS.Ts, is_growing=INIT_COMPARTMENTS.is_growing):
+                       Tr=INIT_COMPARTMENTS.Tr, Ag=INIT_COMPARTMENTS.Ag, Ts=INIT_COMPARTMENTS.Ts, is_growing=INIT_COMPARTMENTS.is_growing, cohorts = [], index = None):
 
         self.label = label                   #: the label of the element
+        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
+        self.index = index #: the index of the phytomer TEMPORARY
 
         # state parameters
         self.mstruct = mstruct               #: Structural dry mass (g)
@@ -1069,7 +1142,7 @@ class PhotosyntheticOrganElement(object):
         self.green_area = green_area         #: green area (m-2)
         self.Tr = Tr                         #: Transpiration rate (mmol m-2 s-1)
         self.Ag = Ag                         #: Gross assimilation (:math:`\mu mol` m-2 s-1)
-        self.Ts = Ts                         #: Organ temperature (:math:`^{\circ}C`)
+        self.Ts = Ts                         #: Organ temperature (°C)
 
         # state variables
         self.triosesP = triosesP             #: :math:`\mu mol` C
@@ -1112,7 +1185,11 @@ class PhotosyntheticOrganElement(object):
         self.Photosynthesis = None          #: Total Photosynthesis of an element integrated over a delta t (:math:`\mu mol` C)
         self.sum_respi = None               #: Sum of respirations for the element i.e. related to C loading to phloem, amino acids synthesis and residual (:math:`\mu mol` C)
 
-    def calculate_aggregated_variables(self):
+    @property
+    def nb_replications(self):
+        return sum(v <= self.index for v in self.cohorts) + 1
+
+    def calculate_integrative_variables(self):
         """Calculate the integrative variables of the element.
         """
         self.Total_Organic_Nitrogen = self.calculate_Total_Organic_Nitrogen(self.amino_acids, self.proteins, self.Nstruct)
@@ -1130,7 +1207,7 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        return Ag * green_area * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        return Ag * green_area * parameters.SECOND_TO_HOUR_RATE_CONVERSION # * 0.70
 
     def calculate_Total_Transpiration(self, Tr, green_area):
         """Surfacic transpiration rate of an element
@@ -1182,7 +1259,7 @@ class PhotosyntheticOrganElement(object):
 
     # FLUXES
 
-    def calculate_S_Starch(self, triosesP):
+    def calculate_S_Starch(self, triosesP, T_effect_Vmax):
         """Rate of starch synthesis (:math:`\mu mol` C starch g-1 mstruct h-1).
         Michaelis-Menten function of triose phosphates.
 
@@ -1194,9 +1271,9 @@ class PhotosyntheticOrganElement(object):
             :class:`float`
         """
         return (((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * PhotosyntheticOrgan.PARAMETERS.VMAX_STARCH) /
-                ((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_STARCH)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+                ((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_STARCH)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
 
-    def calculate_D_Starch(self, starch):
+    def calculate_D_Starch(self, starch, T_effect_Vmax):
         """Rate of starch degradation (:math:`\mu mol` C starch g-1 mstruct h-1).
         First order kinetic.
 
@@ -1207,9 +1284,9 @@ class PhotosyntheticOrganElement(object):
         :Returns Type:
             :class:`float`
         """
-        return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_DSTARCH * (starch/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_DSTARCH * (starch/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
 
-    def calculate_S_Sucrose(self, triosesP):
+    def calculate_S_Sucrose(self, triosesP, T_effect_Vmax):
         """Rate of sucrose synthesis (:math:`\mu mol` C sucrose g-1 mstruct h-1).
         Michaelis-Menten function of triose phosphates.
 
@@ -1221,9 +1298,9 @@ class PhotosyntheticOrganElement(object):
             :class:`float`
         """
         return (((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * PhotosyntheticOrgan.PARAMETERS.VMAX_SUCROSE) /
-                ((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SUCROSE)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+                ((max(0, triosesP)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SUCROSE)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
 
-    def calculate_Loading_Sucrose(self, sucrose, sucrose_phloem, mstruct_axis):
+    def calculate_Loading_Sucrose(self, sucrose, sucrose_phloem, mstruct_axis, T_effect_conductivity):
         """Rate of sucrose loading to phloem (:math:`\mu mol` C sucrose h-1).
         Transport-resistance model.
 
@@ -1231,6 +1308,8 @@ class PhotosyntheticOrganElement(object):
             - `sucrose` (:class:`float`) - Amount of sucrose in the element (:math:`\mu mol` C)
             - `sucrose_phloem` (:class:`float`) - Amount of sucrose in the phloem (:math:`\mu mol` C)
             - `mstruct_axis` (:class:`float`) - Structural dry mass of the axis (g)
+            - `T_effect_conductivity` (:class:`float`) - Effect of the temperature on the conductivity rate at 20°C (AU)
+
         :Returns:
             Rate of Sucrose loading (:math:`\mu mol` C h-1)
         :Returns Type:
@@ -1243,11 +1322,11 @@ class PhotosyntheticOrganElement(object):
         #: Gradient of sucrose between the element and the phloem (:math:`\mu mol` C g-1 mstruct)
         diff_sucrose = conc_sucrose_element - conc_sucrose_phloem
         #: Conductance depending on mstruct (g2 :math:`\mu mol`-1 s-1)
-        conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_SUCROSE * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
+        conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_SUCROSE * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3) * T_effect_conductivity
 
         return driving_sucrose_compartment * diff_sucrose * conductance * parameters.SECOND_TO_HOUR_RATE_CONVERSION
 
-    def calculate_export_sucrose(self, sucrose, sucrose_hiddenzone, mstruct_hiddenzone):
+    def calculate_export_sucrose(self, sucrose, sucrose_hiddenzone, mstruct_hiddenzone, T_effect_conductivity):
         """Rate of sucrose exportation to hidden zone (:math:`\mu mol` C sucrose h-1).
         Transport-resistance model.
 
@@ -1265,11 +1344,11 @@ class PhotosyntheticOrganElement(object):
         #: Gradient of sucrose between the element and the hidden zone (:math:`\mu mol` C g-1 mstruct)
         diff_sucrose = conc_sucrose_element - conc_sucrose_hiddenzone
         #: Conductance depending on mstruct
-        conductance = HiddenZone.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * mstruct_hiddenzone**(2/3)
+        conductance = HiddenZone.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * mstruct_hiddenzone**(2/3) * T_effect_conductivity
 
         return diff_sucrose * conductance * parameters.SECOND_TO_HOUR_RATE_CONVERSION
 
-    def calculate_S_Fructan(self, sucrose, Regul_S_Fructan):
+    def calculate_S_Fructan(self, sucrose, Regul_S_Fructan, T_effect_Vmax):
         """Rate of fructan synthesis (:math:`\mu mol` C fructan g-1 mstruct h-1).
         Sigmoïdal function of sucrose.
 
@@ -1282,9 +1361,9 @@ class PhotosyntheticOrganElement(object):
             :class:`float`
         """
         return ((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) * Regul_S_Fructan) /\
-               ((max(0, sucrose) / (self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SFRUCTAN) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+               ((max(0, sucrose) / (self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SFRUCTAN) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
 
-    def calculate_D_Fructan(self, sucrose, fructan):
+    def calculate_D_Fructan(self, sucrose, fructan, T_effect_Vmax):
         """Rate of fructan degradation (:math:`\mu mol` C fructan g-1 mstruct h-1).
         Inhibition function by the end product i.e. sucrose (Bancal et al., 2012).
 
@@ -1297,7 +1376,7 @@ class PhotosyntheticOrganElement(object):
             :class:`float`
         """
         d_potential = ((PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN * PhotosyntheticOrgan.PARAMETERS.VMAX_DFRUCTAN) /
-                       ((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+                       ((max(0, sucrose)/(self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_DFRUCTAN)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
         d_actual = min(d_potential, max(0, fructan))
         return d_actual
 
@@ -1339,7 +1418,7 @@ class PhotosyntheticOrganElement(object):
             Amino_Acids_import = 0
         return Amino_Acids_import
 
-    def calculate_S_amino_acids(self, nitrates, triosesP):
+    def calculate_S_amino_acids(self, nitrates, triosesP, T_effect_Vmax):
         """Rate of amino acids synthesis (:math:`\mu mol` N amino acids h-1 g-1 MS).
         Bi-substrate Michaelis-Menten function of nitrates and triose phosphates.
 
@@ -1356,10 +1435,11 @@ class PhotosyntheticOrganElement(object):
         else:
             calculate_S_amino_acids = PhotosyntheticOrgan.PARAMETERS.VMAX_AMINO_ACIDS /\
                                       ((1 + PhotosyntheticOrgan.PARAMETERS.K_AMINO_ACIDS_NITRATES / (nitrates/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) *
-                                       (1 + PhotosyntheticOrgan.PARAMETERS.K_AMINO_ACIDS_TRIOSESP/(triosesP/(self.mstruct*self.__class__.PARAMETERS.ALPHA)))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+                                       (1 + PhotosyntheticOrgan.PARAMETERS.K_AMINO_ACIDS_TRIOSESP/(triosesP/(self.mstruct*self.__class__.PARAMETERS.ALPHA)))) * \
+                                      parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
         return calculate_S_amino_acids
 
-    def calculate_S_proteins(self, amino_acids):
+    def calculate_S_proteins(self, amino_acids, T_effect_Vmax):
         """Rate of protein synthesis (:math:`\mu mol` N proteins h-1 g-1 MS).
         Michaelis-Menten function of amino acids.
 
@@ -1371,10 +1451,10 @@ class PhotosyntheticOrganElement(object):
             :class:`float`
         """
         calculate_S_proteins = (((max(0, amino_acids) / (self.mstruct*self.__class__.PARAMETERS.ALPHA)) * PhotosyntheticOrgan.PARAMETERS.VMAX_SPROTEINS) /
-                                ((max(0, amino_acids) / (self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SPROTEINS)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+                                ((max(0, amino_acids) / (self.mstruct*self.__class__.PARAMETERS.ALPHA)) + PhotosyntheticOrgan.PARAMETERS.K_SPROTEINS)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
         return calculate_S_proteins
 
-    def calculate_D_Proteins(self, proteins, cytokinins):
+    def calculate_D_Proteins(self, proteins, cytokinins, T_effect_Vmax):
         """Rate of protein degradation (:math:`\mu mol` N proteins s-1 g-1 MS h-1).
         First order kinetic regulated by cytokinins concentration.
 
@@ -1390,10 +1470,11 @@ class PhotosyntheticOrganElement(object):
         conc_cytokinins = max(0, cytokinins / self.mstruct)
         k_proteins = (PhotosyntheticOrgan.PARAMETERS.VMAX_DPROTEINS * PhotosyntheticOrgan.PARAMETERS.K_DPROTEINS**PhotosyntheticOrgan.PARAMETERS.N_DPROTEINS) /\
                      (conc_cytokinins**PhotosyntheticOrgan.PARAMETERS.N_DPROTEINS + PhotosyntheticOrgan.PARAMETERS.K_DPROTEINS**PhotosyntheticOrgan.PARAMETERS.N_DPROTEINS)
+        # k_proteins = 1e-07
 
-        return k_proteins, max(0, k_proteins * (proteins / (self.mstruct*self.__class__.PARAMETERS.ALPHA))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        return k_proteins * T_effect_Vmax , max(0, k_proteins * (proteins / (self.mstruct*self.__class__.PARAMETERS.ALPHA))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
 
-    def calculate_Loading_Amino_Acids(self, amino_acids, amino_acids_phloem, mstruct_axis):
+    def calculate_Loading_Amino_Acids(self, amino_acids, amino_acids_phloem, mstruct_axis, T_effect_conductivity):
         """Rate of amino acids loading to phloem (:math:`\mu mol` N amino acids h-1).
         Transport-resistance model.
 
@@ -1401,6 +1482,7 @@ class PhotosyntheticOrganElement(object):
             - `amino_acids` (:class:`float`) - Amount of amino acids in the element (:math:`\mu mol` N)
             - `amino_acids_phloem` (:class:`float`) - Amount of amino acids in the phloem (:math:`\mu mol` N)
             - `mstruct_axis` (:class:`float`) - Structural dry mass of the axis (g)
+            - `T_effect_conductivity` (:class:`float`) - Effect of the temperature on the conductivity rate at 20°C (AU)
         :Returns:
             Amino acids loading (:math:`\mu mol` N h-1)
         :Returns Type:
@@ -1413,11 +1495,11 @@ class PhotosyntheticOrganElement(object):
         #: Gradient of amino acids between the element and the phloem (:math:`\mu mol` N g-1 mstruct)
         diff_amino_acids = Conc_Amino_Acids_element - Conc_Amino_Acids_phloem
         #: Conductance depending on mstruct (g2 :math:`\mu mol`-1 s-1)
-        conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_AMINO_ACIDS * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3)
+        conductance = PhotosyntheticOrgan.PARAMETERS.SIGMA_AMINO_ACIDS * PhotosyntheticOrgan.PARAMETERS.BETA * self.mstruct**(2/3) * T_effect_conductivity
 
         return driving_amino_acids_compartment * diff_amino_acids * conductance * parameters.SECOND_TO_HOUR_RATE_CONVERSION
 
-    def calculate_Export_Amino_Acids(self, amino_acids, amino_acids_hiddenzone, mstruct_hiddenzone):
+    def calculate_Export_Amino_Acids(self, amino_acids, amino_acids_hiddenzone, mstruct_hiddenzone, T_effect_conductivity):
         """Rate of amino acids exportation to hidden zone (:math:`\mu mol` N amino acids h-1).
         Transport-resistance model.
 
@@ -1435,7 +1517,7 @@ class PhotosyntheticOrganElement(object):
         #: Gradient of amino acids between the element and the hidden zone (:math:`\mu mol` N g-1 mstruct)
         diff_amino_acids = Conc_Amino_Acids_element - Conc_Amino_Acids_hiddenzone
         #: Conductance depending on mstruct
-        conductance = HiddenZone.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * mstruct_hiddenzone**(2/3)
+        conductance = HiddenZone.PARAMETERS.SIGMA * PhotosyntheticOrgan.PARAMETERS.BETA * mstruct_hiddenzone**(2/3) * T_effect_conductivity
 
         return diff_amino_acids * conductance * parameters.SECOND_TO_HOUR_RATE_CONVERSION
 
@@ -1458,18 +1540,25 @@ class PhotosyntheticOrganElement(object):
             cytokinins_import = 0
         return cytokinins_import
 
-    def calculate_D_cytokinins(self, cytokinins):
+    def calculate_D_cytokinins(self, cytokinins, T_effect_Vmax):
         """Rate of cytokinins degradation (AU g-1 mstruct h-1).
-        First order kinetic.
+        First order kinetic. Vary with organ temperature.
 
         :Parameters:
             - `cytokinins` (:class:`float`) - Amount of cytokinins (AU)
+            - `Ts` (:class:`float`) - Element temperature calculated by Farqhuar-wheat (°C)
         :Returns:
             Rate of Cytokinin degradation (AU h-1 g-1 mstruct)
         :Returns Type:
             :class:`float`
         """
-        return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_D_CYTOKININS * (cytokinins/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        # We consider that DELTA_D_CYTOKININS is the rate at 20°C. The actual rate varies lineraly with organ temperature and is 0.59  at and below zero °C
+        # 0.59 is the regulation of phloem translocation at 0°C
+        # 0.98 pour corriger la différence entre regulation de la transpiration par Tair, et régulation D_cyto par Ts (pas même équation non plus)
+        # return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_D_CYTOKININS * ((1-0.1)/20*max(0,Ts) + 0.1) * (cytokinins/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * \
+        #        parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        return max(0, PhotosyntheticOrgan.PARAMETERS.DELTA_D_CYTOKININS * (cytokinins/(self.mstruct*self.__class__.PARAMETERS.ALPHA))) * \
+               parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
 
     # COMPARTMENTS
 
@@ -1641,7 +1730,7 @@ class Soil(object):
 
         # state parameters
         self.volume = volume                   #: volume of soil explored by roots (m3)
-        self.Tsoil = Tsoil                     #: soil temperature (:math:`^{\circ}C`)
+        self.Tsoil = Tsoil                     #: soil temperature (°C)
 
         # state variables
         self.nitrates = nitrates               #: :math:`\mu mol` N nitrates
@@ -1649,6 +1738,30 @@ class Soil(object):
         # intermediate variables
         self.Conc_Nitrates_Soil = None         #: soil nitrate concentration Unloading (:math:`\mu mol` N m-3 soil)
         self.mineralisation = None             #: mineralisation on organic N into nitrates in soil (:math:`\mu mol`)
+
+    def calculate_temperature_effect_on_Vmax(self, Tsoil):
+        """Effect of the temperature on maximal enzyme activity
+        Should multiply the rate at 20°C
+
+        :Parameters:
+            - `Tsoil` (:class:`float`) - Soil temperature (°C)
+        :Returns:
+            Correction to apply to enzyme activity
+        :Returns Type:
+            :class:`float`
+        """
+        Tref = 20 + 273.15
+        Tk = Tsoil + 273.15
+        R = 8.3144  #: Physical parameter: Gas constant (J mol-1 K-1)
+        deltaHa = 55#89.7  #: Enthalpie of activation of parameter pname (kJ mol-1)
+        deltaS = 0.48#0.486  #: entropy term of parameter pname (kJ mol-1 K-1)
+        deltaHd = 154 #149.3 #: Enthalpie of deactivation of parameter pname (kJ mol-1)
+
+        f_activation = np.exp((deltaHa * (Tk - Tref)) / (R * 1E-3 * Tref * Tk))  #: Energy of activation (normalized to unity)
+
+        f_deactivation = (1 + np.exp((Tref * deltaS - deltaHd) / (Tref * R * 1E-3))) / (1 + np.exp((Tk * deltaS - deltaHd) / (Tk * R * 1E-3)))  #: Energy of deactivation (normalized to unity)
+
+        return f_activation * f_deactivation
 
     # VARIABLES
 
@@ -1665,7 +1778,7 @@ class Soil(object):
         return max(0, (nitrates / self.volume))
 
     # FLUX
-    def calculate_mineralisation(self):
+    def calculate_mineralisation(self,T_effect_Vmax):
         """Mineralisation on organic N into nitrates in soil.
 
         :Parameters:
@@ -1675,7 +1788,7 @@ class Soil(object):
         :Returns Type:
             :class:`float`
         """
-        return parameters.SOIL_PARAMETERS.MINERALISATION_RATE * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        return parameters.SOIL_PARAMETERS.MINERALISATION_RATE * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
 
     # COMPARTMENTS
 

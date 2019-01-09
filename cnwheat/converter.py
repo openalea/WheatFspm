@@ -53,8 +53,8 @@ SOILS_VARIABLES = simulation.Simulation.SOILS_INDEXES + simulation.Simulation.SO
 
 #: the mapping of the CN-Wheat organ classes to organ names in MTG
 CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING = {model.Internode: 'internode', model.Lamina: 'blade',
-                                         model.Sheath: 'sheath', model.Peduncle: 'peduncle', model.Chaff: 'ear',
-                                         model.Roots: 'roots', model.Grains: 'grains', model.Phloem: 'phloem', model.HiddenZone: 'hiddenzone'}
+                                               model.Sheath: 'sheath', model.Peduncle: 'peduncle', model.Chaff: 'ear',
+                                               model.Roots: 'roots', model.Grains: 'grains', model.Phloem: 'phloem', model.HiddenZone: 'hiddenzone'}
 
 #: the mapping of the name of each element, from Dataframe to CN-Wheat
 DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING = {'HiddenElement': 'enclosed_element', 'StemElement': 'exposed_element', 'LeafElement1': 'exposed_element'}
@@ -91,6 +91,7 @@ def from_dataframes(organs_inputs=None, hiddenzones_inputs=None, elements_inputs
     convert_dataframe_to_soils_dict = soils_inputs is not None
 
     if convert_dataframes_to_population:
+
         population = model.Population()
 
         for plant_index in organs_inputs.plant.unique():

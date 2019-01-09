@@ -200,9 +200,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+    ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
     ax.set_title(title)
     plt.tight_layout()
 
