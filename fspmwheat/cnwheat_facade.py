@@ -117,11 +117,11 @@ class CNWheatFacade(object):
                                        cnwheat_elements_data_df=model_elements_inputs_df,
                                        cnwheat_soils_data_df=model_soils_inputs_df)
 
-    def run(self):
+    def run(self, Tair=12, Tsoil = 12):
         """
         Run the model and update the MTG and the dataframes shared between all models.
         """
-        self._initialize_model()
+        self._initialize_model(Tair=Tair,Tsoil=Tsoil)
         self._simulation.run()
         self._update_shared_MTG()
 
@@ -141,10 +141,10 @@ class CNWheatFacade(object):
         """
         Run the postprocessing.
         """
-        (axes_postprocessing_df,
-         hiddenzones_postprocessing_df,
-         organs_postprocessing_df,
+        (_, _, organs_postprocessing_df,
          elements_postprocessing_df,
+         hiddenzones_postprocessing_df,
+         axes_postprocessing_df,
          soils_postprocessing_df) = cnwheat_postprocessing.postprocessing(axes_df=axes_outputs_df, hiddenzones_df=hiddenzone_outputs_df,
                                                                           organs_df=organs_outputs_df, elements_df=elements_outputs_df,
                                                                           soils_df=soils_outputs_df, delta_t=delta_t)
@@ -163,10 +163,11 @@ class CNWheatFacade(object):
                                                 soils_df=soils_postprocessing_df,
                                                 graphs_dirpath=graphs_dirpath)
 
-    def _initialize_model(self):
+    def _initialize_model(self, Tair=12, Tsoil=12):
         """
         Initialize the inputs of the model from the MTG shared between all models and the soils.
         """
+
         self.population = cnwheat_model.Population()
 
         # traverse the MTG recursively from top
@@ -175,8 +176,19 @@ class CNWheatFacade(object):
             # create a new plant
             cnwheat_plant = cnwheat_model.Plant(mtg_plant_index)
             is_valid_plant = False
+
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+
+                #: Hack to treat tillering cases : TEMPORARY
+                if mtg_axis_label != 'MS':
+                    try:
+                        tiller_rank = int( mtg_axis_label[1:] )
+                    except:
+                        continue
+                    cnwheat_plant.cohorts.append(tiller_rank + 3)
+
+                #: MS
                 # create a new axis
                 cnwheat_axis = cnwheat_model.Axis(mtg_axis_label)
                 is_valid_axis = True
@@ -194,10 +206,10 @@ class CNWheatFacade(object):
                                 cnwheat_organ_data_dict[cnwheat_organ_data_name] = mtg_organ_properties[cnwheat_organ_data_name]
 
                                 # MG
-                                if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] is None:
-                                    print(mtg_axis_vid)
-                                    print(mtg_organ_label)
-                                    print(cnwheat_organ_data_name)
+                                # if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] is None:
+                                #     print(mtg_axis_vid)
+                                #     print(mtg_organ_label)
+                                #     print(cnwheat_organ_data_name)
 
                             cnwheat_organ.__dict__.update(cnwheat_organ_data_dict)
                             cnwheat_organ.initialize()
@@ -218,7 +230,7 @@ class CNWheatFacade(object):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
 
                     # create a new phytomer
-                    cnwheat_phytomer = cnwheat_model.Phytomer(mtg_metamer_index)
+                    cnwheat_phytomer = cnwheat_model.Phytomer(mtg_metamer_index,cohorts=cnwheat_plant.cohorts) #: Hack to treat tillering cases : TEMPORARY
 
                     mtg_hiddenzone_label = cnwheat_converter.CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnwheat_model.HiddenZone]
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
@@ -232,13 +244,13 @@ class CNWheatFacade(object):
                                 cnwheat_hiddenzone_data_dict[cnwheat_hiddenzone_data_name] = mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]
 
                                 # MG
-                                if math.isnan(mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]) or mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name] is None:
-                                    print(mtg_metamer_vid)
-                                    print(mtg_hiddenzone_label)
-                                    print(cnwheat_hiddenzone_data_name)
+                                # if math.isnan(mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]) or mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name] is None:
+                                #     print(mtg_metamer_vid)
+                                #     print(mtg_hiddenzone_label)
+                                #     print(cnwheat_hiddenzone_data_name)
 
                             # create a new hiddenzone
-                            cnwheat_hiddenzone = cnwheat_model.HiddenZone(mtg_hiddenzone_label, **cnwheat_hiddenzone_data_dict)
+                            cnwheat_hiddenzone = cnwheat_model.HiddenZone(mtg_hiddenzone_label,cohorts=cnwheat_plant.cohorts, index = cnwheat_phytomer.index, **cnwheat_hiddenzone_data_dict) #: TEMPORARY
                             cnwheat_hiddenzone.initialize()
                             # add the new hiddenzone to current phytomer
                             setattr(cnwheat_phytomer, mtg_hiddenzone_label, cnwheat_hiddenzone)
@@ -260,13 +272,14 @@ class CNWheatFacade(object):
                         has_valid_element = False
 
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
-
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
                             if mtg_element_label not in cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING \
-                               or (self._shared_mtg.get_vertex_property(mtg_element_vid)['length'] == 0)  \
-                               or ((mtg_element_label == 'HiddenElement') and (self._shared_mtg.get_vertex_property(mtg_organ_vid).get('is_growing', True))):
-                                continue
+                                    or (self._shared_mtg.get_vertex_property(mtg_element_vid)['length'] == 0) \
+                                    or  (self._shared_mtg.get_vertex_property(mtg_element_vid).get('mstruct',0) == 0) \
+                                    or ((mtg_element_label == 'HiddenElement') and (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True))) \
+                                    or  (self._shared_mtg.get_vertex_property(mtg_element_vid).get('green_area',0)  <= 0.25E-6 ) :
+                                continue ## TODO: Check that we are not taking out some relevant cases with the condition on mstruct == 0
 
                             has_valid_element = True
                             cnwheat_element_data_dict = {}
@@ -274,9 +287,13 @@ class CNWheatFacade(object):
                                 mtg_element_data_value = mtg_element_properties.get(cnwheat_element_data_name)
                                 # In case the value is None, or the proprety is not even defined, we take default value from InitCompartment
                                 if mtg_element_data_value is None or np.isnan(mtg_element_data_value):
-                                    mtg_element_data_value = cnwheat_parameters.PhotosyntheticOrganElementInitCompartments().__dict__[cnwheat_element_data_name]
+                                    if cnwheat_element_data_name == 'Ts':
+                                        mtg_element_data_value = Tair
+                                    else :
+                                        mtg_element_data_value = cnwheat_parameters.PhotosyntheticOrganElementInitCompartments().__dict__[cnwheat_element_data_name]
                                 cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_data_value
-                            cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, **cnwheat_element_data_dict)
+                            cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label,cohorts=cnwheat_plant.cohorts, index = cnwheat_phytomer.index,
+                                                                                                      **cnwheat_element_data_dict)
                             setattr(cnwheat_organ, cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
 
                         if has_valid_element:
@@ -297,7 +314,7 @@ class CNWheatFacade(object):
             if is_valid_plant:
                 self.population.plants.append(cnwheat_plant)
 
-        self._simulation.initialize(self.population, self.soils)
+        self._simulation.initialize(self.population, self.soils, Tair=Tair, Tsoil=Tsoil)
 
     def _update_shared_MTG(self):
         """
