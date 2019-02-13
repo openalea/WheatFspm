@@ -118,6 +118,6 @@ class Simulation(object):
                                                          element_inputs['height'],
                                                          PARa, Ta, ambient_CO2, RH, Ur, organ_label, height_canopy)
 
-            element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs, 'width': element_inputs['width'], 'height': element_inputs['height']}
+            element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
 
             self.outputs[element_id] = element_outputs
