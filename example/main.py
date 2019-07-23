@@ -1,5 +1,4 @@
 # -*- coding: latin-1 -*-
-
 import os
 
 import numpy as np
@@ -21,9 +20,7 @@ from elongwheat import simulation as elongwheat_simulation, converter as elongwh
     before running this script with the command `python`.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
-
-    .. seealso:: Barillot et al. 2016.
+    :license: see LICENSE for details.
 
 """
 
@@ -40,16 +37,6 @@ OUTPUTS_PRECISION = 8
 
 INPUTS_DIRPATH = 'inputs'
 GRAPHS_DIRPATH = 'graphs'
-
-if OPTION_SHOW_ADEL:
-    from fspmwheat import elongwheat_facade
-    from alinea.adel.echap_leaf import echap_leaves
-    from alinea.adel.adel_dynamic import AdelWheatDyn
-    #  adelwheat inputs at t0
-    ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat')  # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
-    adel_wheat = AdelWheatDyn(seed=1234,  scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-    adel_wheat.pars = adel_wheat.read_pars(dir=ADELWHEAT_INPUTS_DIRPATH)
-    g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
 
 # elongwheat inputs
 HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
@@ -101,18 +88,28 @@ hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df = elongwheat_converter
 hiddenzone_outputs_df['t_step'] = desired_t_step
 element_outputs_df['t_step'] = desired_t_step
 SAM_outputs_df['t_step'] = desired_t_step
+
 # increment the general output dataframes
 if not run_from_outputs:
     all_hiddenzone_outputs_df = all_hiddenzone_outputs_df.append(hiddenzone_outputs_df)
     all_element_outputs_df = all_element_outputs_df.append(element_outputs_df)
     all_SAM_outputs_df = all_SAM_outputs_df.append(SAM_outputs_df)
 
-
 # define the time step in hours for each elongwheat
 elongwheat_ts = 1
 
 # --- ADEL
 if OPTION_SHOW_ADEL:
+    from fspmwheat import elongwheat_facade
+    from alinea.adel.echap_leaf import echap_leaves
+    from alinea.adel.adel_dynamic import AdelWheatDyn
+
+    # adelwheat inputs at t0
+    ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat')  # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
+    adel_wheat = AdelWheatDyn(seed=1234, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
+    adel_wheat.pars = adel_wheat.read_pars(dir=ADELWHEAT_INPUTS_DIRPATH)
+    g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
+
     hour_to_second_conversion_factor = 3600
 
     elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g, elongwheat_ts * hour_to_second_conversion_factor, SAM_outputs_df, hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df,
@@ -121,7 +118,6 @@ if OPTION_SHOW_ADEL:
     adel_wheat.plot(g)
 
 # --- SETUP RUN
-
 
 # --- MAIN
 
@@ -132,7 +128,7 @@ simulation_ = elongwheat_simulation.Simulation(delta_t=delta_t)
 start_time = time.time()
 
 # Loop for several runs
-for t_step in range(desired_t_step+1, loop_end+1, elongwheat_ts):
+for t_step in range(desired_t_step + 1, loop_end + 1, elongwheat_ts):
 
     print(t_step)
 
@@ -146,7 +142,7 @@ for t_step in range(desired_t_step+1, loop_end+1, elongwheat_ts):
     Tair, Tsoil = meteo.loc[t_step, ['air_temperature', 'soil_temperature']]
 
     # run the simulation
-    simulation_.run(Tair=Tair, Tsoil=Tsoil)
+    simulation_.run(Tair=Tair, Tsoil=Tsoil, optimal_growth_option=True)
 
     # convert the outputs to Pandas dataframe
     hiddenzone_outputs_df, element_outputs_df, SAM_outputs_df = elongwheat_converter.to_dataframes(simulation_.outputs)
@@ -165,7 +161,6 @@ for t_step in range(desired_t_step+1, loop_end+1, elongwheat_ts):
     element_outputs_df['t_step'] = t_step
     SAM_outputs_df['t_step'] = t_step
 
-    # increment the general output dataframes
     # increment the general output dataframes, only for current output dataframes which are not empty
     if len(hiddenzone_outputs_df) != 0:
         all_hiddenzone_outputs_df = all_hiddenzone_outputs_df.append(hiddenzone_outputs_df)
@@ -173,7 +168,6 @@ for t_step in range(desired_t_step+1, loop_end+1, elongwheat_ts):
         all_element_outputs_df = all_element_outputs_df.append(element_outputs_df)
     if len(SAM_outputs_df) != 0:
         all_SAM_outputs_df = all_SAM_outputs_df.append(SAM_outputs_df)
-
 
 # --- RESUTS
 
@@ -186,4 +180,3 @@ print("--- %s seconds ---" % (time.time() - start_time))
 
 # --- GRAPHS
 execfile("graphs.py")
-
