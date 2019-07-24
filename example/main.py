@@ -1,11 +1,10 @@
 # -*- coding: latin-1 -*-
 
-
 import pandas as pd
 
 from farquharwheat import simulation, converter
 
-"""
+'''
     main
     ~~~~
 
@@ -18,19 +17,19 @@ from farquharwheat import simulation, converter
     before running this script with the command `python`.
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
-"""
+'''
 
-"""
+'''
     Information about this versioned file:
         $LastChangedBy$
         $LastChangedDate$
         $LastChangedRevision$
         $URL$
         $Id$
-"""
+'''
+
 
 INPUTS_ELEMENT_FILENAME = 'elements_inputs.csv'
 INPUTS_SAM_FILENAME = 'SAMs_inputs.csv'

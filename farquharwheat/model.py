@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
 from __future__ import division  # use '//' to do integer division
@@ -13,9 +12,8 @@ from math import sqrt, log,  exp
     Internal CO2 and organ temperature are found numerically.
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -56,7 +54,7 @@ class Model(object):
     GSMIN = 0.05            #: Stomatal conductance parameter: Minimum gsw, measured in the dark (mol m-2 s-1). Braune et al. (2009).
     GB = 3.5                #: Stomatal conductance parameter: Boundary layer conductance to water vapour (mol m-2 s-1). Muller et al., (2005)
 
-    A = 2.5                 #: Physical parameter: Attenuation coefficient of wind within a wheat canopy. From Campbell and Norman (1998), second edition. Can also be estimated by: A = sqrt((0.2*LAI*h)/sqrt((4*width*h)/(pi*LAI))
+    A = 2.5                 #: Physical parameter: Attenuation coefficient of wind within a wheat canopy. From Campbell and Norman (1998), 2nd edition. Can also be estimated by: A = sqrt((0.2*LAI*h)/sqrt((4*width*h)/(pi*LAI))
     GAMMA = 66E-3           #: Physical parameter: Psychrometric constant (KPa K-1). Mean value
     I0 = 1370               #: Physical parameter: Extraterrestrial solar radiation (W m-2)
     K = 0.40                #: Physical parameter: Von Kármán's constant (dimensionless)
@@ -90,23 +88,20 @@ class Model(object):
         """
         Energy balance for the estimation of organ temperature
 
-        :Parameters:
-            - `w` (:class:`float`) - organ characteristic dimension (m) to be considered for heat transfer through forced convection (by wind).
+        :param float w: organ characteristic dimension (m) to be considered for heat transfer through forced convection (by wind).
                  For a leaf: its width (more related to wind direction than length), for cylindric stem elements: diameter.
-            - `z` (:class:`float`) - organ height from soil (m)
-            - `Zh` (:class:`float`) - canopy height (m)
-            - `Ur` (:class:`float`) - wind speed (m s-1) at the reference height (zr), e.g. top of the canopy + 2m (in the case of wheat, Ur can be approximated as the wind speed at 2m from soil)
-            - `PAR` (:class:`float`) - absorbed PAR (µmol m-2 s-1)
-            - `gsw` (:class:`float`) - stomatal conductance to water vapour (mol m-2 s-1)
-            - `Ta` (:class:`float`) - air temperature (degree C)
-            - `Ts` (:class:`float`) - organ temperature (degree C). Ts = Ta at the first iteration of the numeric resolution
-            - `RH` (:class:`float`) - Relative humidity (decimal fraction)
-            - `organ_name` (:class:`string`) - name of the organ to which belongs the element (used to distinguish lamina from cylindric organs)
+        :param float z: organ height from soil (m)
+        :param float Zh: canopy height (m)
+        :param float Ur: wind speed (m s-1) at the reference height (zr), e.g. top of the canopy + 2m (in the case of wheat, Ur can be approximated as the wind speed at 2m from soil)
+        :param float PAR: absorbed PAR (µmol m-2 s-1)
+        :param float gsw: stomatal conductance to water vapour (mol m-2 s-1)
+        :param float Ta: air temperature (degree C)
+        :param float Ts: organ temperature (degree C). Ts = Ta at the first iteration of the numeric resolution
+        :param float RH: Relative humidity (decimal fraction)
+        :param str organ_name: name of the organ to which belongs the element (used to distinguish lamina from cylindric organs)
 
-        :Returns:
-            Ts (organ temperature, degree C), Tr (organ transpiration rate, mm s-1)
-        :Returns Type:
-            :class:`float`
+        :return: Ts (organ temperature, degree C), Tr (organ transpiration rate, mm s-1)
+        :rtype: (float, float)
         """
 
         d = 0.7 * Zh                                         #: Zero plane displacement height (m)
@@ -154,7 +149,7 @@ class Model(object):
         rbw = 0.96 * rbh                                                   #: Boundary layer resistance for water (s m-1)
         gsw_physic = (gsw * cls.R * (Ts+cls.KELVIN_DEGREE)) / cls.PATM     #: Stomatal conductance to water in physical units (m s-1). Relation given by A. Tuzet (2003)
         rswp = 1/gsw_physic                                                #: Stomatal resistance for water (s m-1)
-        Tr = max(0, (s * Rn + (cls.RHOCP * VPDa)/(rbh + ra)) / (cls.LAMBDA * (s + cls.GAMMA*((rbw + ra + rswp)/(rbh + ra)))))  #: mm s-1
+        Tr = max(0., (s * Rn + (cls.RHOCP * VPDa)/(rbh + ra)) / (cls.LAMBDA * (s + cls.GAMMA*((rbw + ra + rswp)/(rbh + ra)))))  #: mm s-1
 
         #: Organ temperature
         Ts = Ta + ((rbh + ra) * (Rn - cls.LAMBDA*Tr)) / cls.RHOCP
@@ -166,21 +161,19 @@ class Model(object):
         """
         Ball, Woodrow, and Berry model of stomatal conductance (1987)
 
-        :Parameters:
-            - `Ag` (:class:`float`) - gross assimilation rate (µmol m-2 s-1)
-            - `An` (:class:`float`) - net assimilation rate (µmol m-2 s-1)
-            - `surfacic_nitrogen` (:class:`float`) - surfacic nitrogen content(g m-2)
-            - `ambient_CO2` (:class:`float`) - Air CO2 (µmol mol-1)
-            - `RH` (:class:`float`) - Relative humidity (decimal fraction)
-        :Returns:
-            gsw (mol m-2 s-1)
-        :Returns Type:
-            :class:`float`
+        :param float Ag: gross assimilation rate (µmol m-2 s-1)
+        :param float An: net assimilation rate (µmol m-2 s-1)
+        :param float surfacic_nitrogen: surfacic nitrogen content(g m-2)
+        :param float ambient_CO2: Air CO2 (µmol mol-1)
+        :param float RH: Relative humidity (decimal fraction)
+
+        :return: gsw (mol m-2 s-1)
+        :rtype: float
         """
 
-        Cs = ambient_CO2 - An * (1.37/cls.GB)                   #: CO2 concentration at organ surface (µmol mol-1 or Pa). From Prieto et al. (2012). GB in mol m-2 s-1
-        m = cls.PARAM_N['delta1'] * surfacic_nitrogen**cls.PARAM_N['delta2']    #: Scaling factor dependance to surfacic_nitrogen (dimensionless). This focntion is maintained although I'm not conviced that it should be taken into account
-        gsw = (cls.GSMIN + m*((Ag*RH)/Cs))                     #: Stomatal conductance to water vapour (mol m-2 s-1), from Braune et al. (2009), Muller et al. (2005): using Ag rather than An. Would be better with a function of VPD and with (Ci-GAMMA) instead of Cs.
+        Cs = ambient_CO2 - An * (1.37/cls.GB)  #: CO2 concentration at organ surface (µmol mol-1 or Pa). From Prieto et al. (2012). GB in mol m-2 s-1
+        m = cls.PARAM_N['delta1'] * surfacic_nitrogen**cls.PARAM_N['delta2']  #: Scaling factor dependance to surfacic_nitrogen (dimensionless). This focntion is maintained although I'm not conviced that it should be taken into account
+        gsw = (cls.GSMIN + m*((Ag*RH)/Cs))     #: Stomatal conductance to water vapour (mol m-2 s-1), from Braune et al. (2009), Muller et al. (2005): using Ag rather than An. Would be better with a function of VPD and with (Ci-GAMMA) instead of Cs.
         return gsw
 
     @classmethod
@@ -188,14 +181,12 @@ class Model(object):
         """
         Calculates the internal CO2 concentration (Ci)
 
-        :Parameters:
-            - `ambient_CO2` (:class:`float`) - air CO2 (µmol mol-1)
-            - `An` (:class:`float`) -net assimilation rate of CO2 (µmol m-2 s-1)
-            - `gsw` (:class:`float`) - stomatal conductance to water vapour (mol m-2 s-1)
-        :Returns:
-            Ci (µmol mol-1)
-        :Returns Type:
-            :class:`float`
+        :param float ambient_CO2: air CO2 (µmol mol-1)
+        :param float An: net assimilation rate of CO2 (µmol m-2 s-1)
+        :param float gsw: stomatal conductance to water vapour (mol m-2 s-1)
+
+        :return: Ci (µmol mol-1)
+        :rtype: float
         """
         Ci = ambient_CO2 - An * ((1.6/gsw) + (1.37/cls.GB))  #: Intercellular concentration of CO2 (µmol mol-1)
         # gsw and GB in mol m-2 s-1 so that  (An * ((1.6/gs) + (1.37/cls.GB)) is thus in µmol mol-1 as ambient_CO2
@@ -207,14 +198,12 @@ class Model(object):
         """
         Photosynthetic parameters relation to temperature
 
-        :Parameters:
-            - `pname` (:class:`string`) - name of parameter
-            - `p25` (:class:`float`) - parameter value at 25 degree C
-            - `T` (:class:`float`) - organ temperature (degree C)
-        :Returns:
-            p (parameter value at organ temperature)
-        :Returns Type:
-            :class:`float`
+        :param str pname: name of parameter
+        :param float p25: parameter value at 25 degree C
+        :param float T: organ temperature (degree C)
+
+        :return: p (parameter value at organ temperature)
+        :rtype: float
         """
         Tk = T + cls.KELVIN_DEGREE
         deltaHa = cls.PARAM_TEMP['deltaHa'][pname]                  #: Enthalpie of activation of parameter pname (kJ mol-1)
@@ -239,15 +228,13 @@ class Model(object):
         Computes photosynthesis rate following Farquhar's model with regulation by organ temperature and nitrogen content.
         In this version, most of parameters are derived from Braune et al. (2009) on barley and Evers et al. (2010) for N dependencies.
 
-        :Parameters:
-            - `PAR` (:class:`float`) - PAR absorbed (µmol m-2 s-1)
-            - `surfacic_nitrogen` (:class:`float`) - surfacic nitrogen content(g m-2)
-            - `Ts` (:class:`float`) - organ temperature (degree C)
-            - `Ci` (:class:`float`) - internal CO2 (µmol mol-1), Ci = 0.7*CO2air for the first iteration
-        :Returns:
-            Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1)
-        :Returns Type:
-            :class:`float`
+        :param float PAR: PAR absorbed (µmol m-2 s-1)
+        :param float surfacic_nitrogen: surfacic nitrogen content(g m-2)
+        :param float Ts: organ temperature (degree C)
+        :param float Ci: internal CO2 (µmol mol-1), Ci = 0.7*CO2air for the first iteration
+
+        :return: Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1)
+        :rtype: (float, float, float)
         """
 
         #: RuBisCO parameters dependance to temperature
@@ -288,7 +275,7 @@ class Model(object):
 
         #: Mitochondrial respiration rate of organ in light Rd (processes other than photorespiration)
         Rdark25 = cls.PARAM_N['S_surfacic_nitrogen']['Rdark25'] * (surfacic_nitrogen - cls.PARAM_N['surfacic_nitrogen_min']['Rdark25'])  #: Relation between Rdark25 (respiration in obscurity at 25 degree C) and surfacic_nitrogen (µmol m-2 s-1)
-        Rdark = cls._f_temperature('Rdark', Rdark25, Ts)                                        #: Relation between Rdark and temperature (µmol m-2 s-1)
+        Rdark = cls._f_temperature('Rdark', Rdark25, Ts)                                      #: Relation between Rdark and temperature (µmol m-2 s-1)
         Rd = Rdark * (0.33 + (1-0.33) * 0.5 ** (PAR/15))                                      # Found in Muller et al. (2005), eq. 19 (µmol m-2 s-1)
 
         #: Net C assimilation (µmol m-2 s-1)
@@ -303,18 +290,14 @@ class Model(object):
     def calculate_surfacic_nitrogen(cls, nitrates, amino_acids, proteins, Nstruct, green_area):
         """Surfacic content of nitrogen
 
-        : Parameters:
-            - `nitrates` (:class:`float`) - amount of nitrates (µmol N)
-            - `amino_acids` (:class:`float`) - amount of amino_acids (µmol N)
-            - `proteins` (:class:`float`) - amount of proteins (µmol N)
-            - `Nstruct` (:class:`float`) - structural N (g)
-            - `green_area` (:class:`float`) - green area (m-2)
+        :param float nitrates: amount of nitrates (µmol N)
+        :param float amino_acids: amount of amino_acids (µmol N)
+        :param float proteins: amount of proteins (µmol N)
+        :param float Nstruct: structural N (g)
+        :param float green_area: green area (m-2)
 
-        : Returns:
-            Surfacic nitrogen (g m-2)
-
-        :Returns Type:
-            :class:`float`
+        :return: Surfacic nitrogen (g m-2)
+        :rtype: float
         """
         mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * cls.N_MOLAR_MASS + Nstruct
         return mass_N_tot / green_area
@@ -325,34 +308,23 @@ class Model(object):
         Computes the photosynthesis of a photosynthetic element. The photosynthesis is computed by using the biochemical FCB model (Farquhar et al., 1980) coupled to the semiempirical
         BWB model of stomatal conductance (Ball, 1987).
 
-        :Parameters:
-            - `surfacic_nitrogen` (:class:`float`) - total surfacic nitrogen content of organs (g m-2), obtained by the sum of nitrogen, amino acids, proteins and structural N.
+        :param float surfacic_nitrogen: total surfacic nitrogen content of organs (g m-2), obtained by the sum of nitrogen, amino acids, proteins and structural N.
                Properly speaking, photosynthesis should be related to proteins (RubisCO), but parameters of most Farquhar models are calibrated on total N measurements (DUMAS method).
                If None, surfacic_nitrogen = :attr:`NA_0`
-
-            - `width` (:class:`float`) - width of the organ (or diameter for stem organ) (m),
+        :param float width: width of the organ (or diameter for stem organ) (m),
                characteristic dimension to be considered for heat transfer through forced convection (by wind).
-
-            - `height` (:class:`float`) - height of the organ from soil (m)
-
-            - `PAR` (:class:`float`) - absorbed PAR (µmol m-2 s-1)
-
-            - `Ta` (:class:`float`) - air temperature (°C)
-
-            - `ambient_CO2` (:class:`float`) - air CO2 (µmol mol-1)
-
-            - `RH` (:class:`float`) - relative humidity (decimal fraction)
-
-            - `Ur` (:class:`float`) - Ur: wind at the reference height (zr) (m s-1), e.g. top of the canopy + 2m
+        :param float height: height of the organ from soil (m)
+        :param float PAR: absorbed PAR (µmol m-2 s-1)
+        :param float Ta: air temperature (°C)
+        :param float ambient_CO2: air CO2 (µmol mol-1)
+        :param float RH: relative humidity (decimal fraction)
+        :param float Ur: wind at the reference height (zr) (m s-1), e.g. top of the canopy + 2m
                (in the case of wheat, Ur can be approximated as the wind speed at 2m from soil)
+        :param str organ_name: name of the organ to which belongs the element (used to distinguish lamina from cylindric organs)
+        :param float height_canopy: total canopy height (m)
 
-            - `organ_name` (:class:`string`) - name of the organ to which belongs the element (used to distinguish lamina from cylindric organs)
-
-        :Returns:
-            Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1), Tr (mmol m-2 s-1), Ts (°C) and  gsw (mol m-2 s-1)
-
-        :Returns Type:
-            :class:`float`
+        :return: Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1), Tr (mmol m-2 s-1), Ts (°C) and  gsw (mol m-2 s-1)
+        :rtype: (float, float, float, float, float, float)
         """
 
         if surfacic_nitrogen is None:
@@ -378,10 +350,10 @@ class Model(object):
             if count >= 30:  # TODO: test a faire? Semble prendre du tps de calcul
                 if abs((Ci - prec_Ci)/prec_Ci) >= cls.DELTA_CONVERGENCE:
                     print ('{}, Ci cannot converge, prec_Ci= {}, Ci= {}'.format(organ_name, prec_Ci, Ci))
-                if abs((Ts - prec_Ts)/prec_Ts) >= cls.DELTA_CONVERGENCE:
+                if prec_Ts != 0 and abs((Ts - prec_Ts)/prec_Ts) >= cls.DELTA_CONVERGENCE:
                     print ('{}, Ts cannot converge, prec_Ts= {}, Ts= {}'.format(organ_name, prec_Ts, Ts))
                 break
-            if abs((Ci - prec_Ci)/prec_Ci) < cls.DELTA_CONVERGENCE and abs((Ts - prec_Ts)/prec_Ts) < cls.DELTA_CONVERGENCE:
+            if abs((Ci - prec_Ci)/prec_Ci) < cls.DELTA_CONVERGENCE and ((prec_Ts == 0 and (Ts - prec_Ts) == 0) or abs((Ts - prec_Ts)/prec_Ts) < cls.DELTA_CONVERGENCE):
                 break
 
         #: Conversion of Tr from mm s-1 to mmol m-2 s-1 (more suitable for further use of Tr)

@@ -11,9 +11,8 @@ import pandas as pd
     :class:`dataframes <pandas.DataFrame>` to/from FarquharWheat inputs or outputs format.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2016.
 """
 
 """
@@ -46,20 +45,14 @@ def from_dataframe(element_inputs, SAM_inputs):
     """
     Convert inputs/outputs from Pandas dataframe to Farquhar-Wheat format.
 
-    :Parameters:
-        - `element_inputs` (:class:`pandas.DataFrame`) - Emerging and mature element inputs dataframe to convert, with one line by element.
-        - `SAM_inputs` (:class:`pandas.DataFrame`) - Shoot Apical Meristem inputs dataframe to convert, with one line by SAM ie. one line per axis.
+    :param pandas.DataFrame element_inputs: Emerging and mature element inputs dataframe to convert, with one line by element.
+    :param pandas.DataFrame SAM_inputs: Shoot Apical Meristem inputs dataframe to convert, with one line by SAM ie. one line per axis.
 
-
-    :Returns:
-        The inputs/outputs in a dictionary.
-
-    :Returns Type:
-        :class:`dict` of :class:`dict`
+    :return: The inputs/outputs in a dictionary.
+    :rtype: dict [dict]
 
     .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Farquhar-Wheat inputs/outputs.
-
     """
     all_elements_dict = {}
     data_columns = element_inputs.columns.difference(ELEMENT_TOPOLOGY_COLUMNS)
@@ -82,19 +75,13 @@ def to_dataframe(data_dict):
     """
     Convert inputs/outputs from Farquhar-Wheat format to Pandas dataframe.
 
-    :Parameters:
+    :param dict data_dict: The inputs/outputs in Farquhar-Wheat format.
 
-        - `data_dict` (:class:`dict`) - The inputs/outputs in Farquhar-Wheat format.
-
-    :Returns:
-         - one dataframe for element outputs
-
-    :Returns Type:
-        :class:`pandas.DataFrame`
+    :return: one dataframe for element outputs
+    :rtype: pandas.DataFrame
 
     .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Farquhar-Wheat inputs/outputs.
-
     """
     ids_df = pd.DataFrame(data_dict.keys(), columns=ELEMENT_TOPOLOGY_COLUMNS)
     data_df = pd.DataFrame(data_dict.values())

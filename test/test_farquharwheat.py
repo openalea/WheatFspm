@@ -17,9 +17,8 @@ from farquharwheat import simulation, converter
     before running this script with the command `python`.
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -31,10 +30,14 @@ from farquharwheat import simulation, converter
         $Id$
 """
 
+# the file names of the inputs
 INPUTS_ELEMENT_FILENAME = 'elements_inputs.csv'
 INPUTS_SAM_FILENAME = 'SAMs_inputs.csv'
 
+# desired outputs filenames
 DESIRED_OUTPUTS_FILENAME = 'desired_outputs.csv'
+
+# actual outputs filenames
 ACTUAL_OUTPUTS_FILENAME = 'actual_outputs.csv'
 
 PRECISION = 6
@@ -42,7 +45,7 @@ RELATIVE_TOLERANCE = 10**-PRECISION
 ABSOLUTE_TOLERANCE = RELATIVE_TOLERANCE
 
 
-def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None):
+def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None, overwrite_desired_data=False):
     # read desired data
     desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
     desired_data_df = pd.read_csv(desired_data_filepath)
@@ -51,17 +54,22 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
 
-    # keep only numerical data
-    for column in ('axis', 'organ', 'element', 'label'):
-        if column in desired_data_df.columns:
-            del desired_data_df[column]
-            del actual_data_df[column]
+    if overwrite_desired_data:
+        desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
+        actual_data_df.to_csv(desired_data_filepath, na_rep='NA', index=False)
 
-    # compare to the desired data
-    np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
+    else:
+        # keep only numerical data
+        for column in ('axis', 'organ', 'element', 'label'):
+            if column in desired_data_df.columns:
+                del desired_data_df[column]
+                del actual_data_df[column]
+
+        # compare to the desired data
+        np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
 
 
-def test_run():
+def test_run(overwrite_desired_data=False):
 
     # create a simulation and a converter
     simulation_ = simulation.Simulation()
@@ -77,7 +85,7 @@ def test_run():
     # convert the outputs to Pandas dataframe
     outputs_df = converter.to_dataframe(simulation_.outputs)
     # compare outputs
-    compare_actual_to_desired('.', outputs_df, DESIRED_OUTPUTS_FILENAME, ACTUAL_OUTPUTS_FILENAME)
+    compare_actual_to_desired('.', outputs_df, DESIRED_OUTPUTS_FILENAME, ACTUAL_OUTPUTS_FILENAME, overwrite_desired_data)
 
 
 if __name__ == '__main__':

@@ -11,9 +11,8 @@ import model
     The module :mod:`farquharwheat.simulation` is the front-end to run the Farquhar-Wheat :mod:`model <farquharwheat.model>`.
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -58,9 +57,7 @@ class Simulation(object):
         """
         Initialize :attr:`inputs` from `inputs`.
 
-        :Parameters:
-
-            - `inputs` (:class:`dict`) - Dictionary of two dictionaries :
+        :param dict inputs: Dictionary of two dictionaries :
                     - `elements` : The inputs by element.
                     - `SAMs` : The inputs by axis.
               `inputs` must be a dictionary with the same structure as :attr:`inputs`.
@@ -76,17 +73,12 @@ class Simulation(object):
         Compute Farquhar variables for each element in :attr:`inputs` and put
         the results in :attr:`outputs`.
 
-        :Parameters:
-
-            - `Ta` (:class:`float`) - air temperature at t (degree Celsius)
-
-            - `ambient_CO2` (:class:`float`) - air CO2 at t (µmol mol-1)
-
-            - `RH` (:class:`float`) - relative humidity at t (decimal fraction)
-
-            - `Ur` (:class:`float`) - wind speed at the top of the canopy at t (m s-1)
-
+        :param float Ta: air temperature at t (degree Celsius)
+        :param float ambient_CO2: air CO2 at t (µmol mol-1)
+        :param float RH: relative humidity at t (decimal fraction)
+        :param float Ur: wind speed at the top of the canopy at t (m s-1)
         """
+
         self.outputs.update({inputs_type: {} for inputs_type in self.inputs['elements'].keys()})
 
         for (element_id, element_inputs) in self.inputs['elements'].items():
@@ -97,14 +89,13 @@ class Simulation(object):
             axe_label = SAM_id[1]
             if axe_label != 'MS':  # Calculation only for the main stem
                 continue
-
-            if element_inputs['height'] is None:  # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
-                # element_label == 'HiddenElement' or
+            # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
+            if element_inputs['height'] is None:
                 Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
                 Ts = self.inputs['SAMs'][SAM_id]['SAM_temperature']
                 Tr = 0.1  # Default transpiration value for small organs under ADEL's resolution (green_area == 0)
             else:
-                PARa = element_inputs['PARa']     #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
+                PARa = element_inputs['PARa']  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
 
                 surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
                                                                             element_inputs['amino_acids'],
@@ -118,6 +109,6 @@ class Simulation(object):
                                                          element_inputs['height'],
                                                          PARa, Ta, ambient_CO2, RH, Ur, organ_label, height_canopy)
 
-            element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs}
+            element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs, 'width': element_inputs['width'], 'height': element_inputs['height']}
 
             self.outputs[element_id] = element_outputs
