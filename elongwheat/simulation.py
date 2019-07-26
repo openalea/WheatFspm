@@ -270,14 +270,15 @@ class Simulation(object):
                 prev_hiddenzone_id = tuple(list(SAM_id) + [phytomer_id - 1])
                 if prev_hiddenzone_id in all_hiddenzone_inputs:
                     prev_leaf_emerged = all_hiddenzone_inputs[prev_hiddenzone_id]['leaf_is_emerged']
+                    prev_hiddenzone_inputs = all_hiddenzone_inputs[prev_hiddenzone_id]
                 else:
                     prev_leaf_emerged = True
-
-                prev2_hiddenzone_id = tuple(list(SAM_id) + [phytomer_id - 2])
-                if prev2_hiddenzone_id in all_hiddenzone_inputs:
-                    prev2_leaf_emerged = all_hiddenzone_inputs[prev2_hiddenzone_id]['leaf_is_emerged']
+                
+                prev_leaf2_hiddenzone_id = tuple(list(SAM_id) + [phytomer_id - 2])
+                if prev_leaf2_hiddenzone_id in all_hiddenzone_inputs:
+                    prev_leaf2_emerged = all_hiddenzone_inputs[prev_leaf2_hiddenzone_id]['leaf_is_emerged']
                 else:
-                    prev2_leaf_emerged = True
+                    prev_leaf2_emerged = True
 
                 # Cumulated length of internodes up to the hidden zone
                 below_internode_lengths = all_sheath_internode_lengths[SAM_id][phytomer_id]['cumulated_internode']
@@ -318,9 +319,10 @@ class Simulation(object):
                     if leaf_pseudostem_length < 0:
                         warnings.warn('Pseudostem length of {} decreased while leaf growing.'.format(hiddenzone_id))
 
-                    if prev2_leaf_emerged and not curr_hiddenzone_outputs['leaf_is_emerged']:
+                    if prev_leaf2_emerged and not curr_hiddenzone_outputs['leaf_is_emerged']:
+                        time_prev_leaf2_emergence = prev_hiddenzone_inputs['leaf_pseudo_age']
                         curr_hiddenzone_outputs['mean_conc_sucrose'] = model.calculate_mean_conc_sucrose(hiddenzone_inputs['mean_conc_sucrose'],
-                                                                                                         hiddenzone_inputs['leaf_pseudo_age'],
+                                                                                                         time_prev_leaf2_emergence,
                                                                                                          curr_SAM_outputs['delta_teq'],
                                                                                                          hiddenzone_inputs['sucrose'],
                                                                                                          hiddenzone_inputs['mstruct'])

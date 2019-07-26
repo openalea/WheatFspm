@@ -402,26 +402,26 @@ def calculate_sheath_Lmax(leaf_Lmax, lamina_Lmax):
     return leaf_Lmax - lamina_Lmax
 
 
-def calculate_mean_conc_sucrose(prev_mean_conc_sucrose, time_leafN2_emergence, delta_teq, sucrose, mstruct):
+def calculate_mean_conc_sucrose(prev_mean_conc_sucrose, time_prev_leaf2_emergence, delta_teq, sucrose, mstruct):
     """ Update the mean sucrose concentration of the hiddenzone since leaf n-2 emergence.
-    Calculation starts at leaf n-2 emergence, the updated means accounts for the conc_sucrose of current time step weighted by a function of temperature.
+    Calculation starts at leaf n-2 emergence, the updated mean accounts for the [sucrose] of current time step weighted by a function of temperature.
 
     :param float prev_mean_conc_sucrose: Mean sucrose concentration of the hiddenzone at the end of previous simulation time step (µmol C g-1).
-    :param float time_leafN2_emergence: Time elapsed since leaf n-2 emergence (s at Tref).
+    :param float time_prev_leaf2_emergence: Time elapsed since leaf n-2 emergence (s at Tref).
     :param float delta_teq: Duration of the current simulation time step (s at Tref).
     :param float sucrose: Sucrose in the hidden zone (µmol C).
     :param float mstruct: Mstruct of the hidden zone (g).
 
-    :return: Updated mean sucrose concentration of the hiddenzone since time_leafN2_emergence (µmol C g-1)
+    :return: Updated mean sucrose concentration of the hiddenzone since leaf n-2 emergence (µmol C g-1)
     :rtype: float
     """
     conc_sucrose = sucrose / mstruct
     #: Just after leaf initiation
-    if time_leafN2_emergence == 0:
+    if time_prev_leaf2_emergence == 0:
         new_integral_conc_sucrose = conc_sucrose
     #: Else
     else:
-        new_integral_conc_sucrose = (prev_mean_conc_sucrose * time_leafN2_emergence + conc_sucrose * delta_teq) / (time_leafN2_emergence + delta_teq)
+        new_integral_conc_sucrose = (prev_mean_conc_sucrose * time_prev_leaf2_emergence + conc_sucrose * delta_teq) / (time_prev_leaf2_emergence + delta_teq)
     return new_integral_conc_sucrose
 
 
