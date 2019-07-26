@@ -18,9 +18,7 @@ from growthwheat import simulation, converter
     before running this script with the command `python`.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
-
-    .. seealso:: Barillot et al. 2016.
+    :license: see LICENSE for details.
 
 """
 
@@ -32,6 +30,7 @@ from growthwheat import simulation, converter
         $URL$
         $Id$
 """
+
 
 INPUTS_DIRPATH = 'inputs'
 

@@ -13,9 +13,8 @@ import simulation
     :class:`dataframes <pandas.DataFrame>` to/from GrowthWheat inputs or outputs format.
     
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2016.
 """
 
 """
@@ -38,21 +37,15 @@ def from_dataframes(hiddenzone_inputs, element_inputs, root_inputs, SAM_inputs):
     """
     Convert inputs/outputs from Pandas dataframe to Growth-Wheat format.
 
-    :Parameters:
+    :param pandas.DataFrame hiddenzone_inputs: Hidden zone inputs dataframe to convert, with one line by hidden zone.
+    :param pandas.DataFrame element_inputs: Element inputs dataframe to convert, with one line by element.
+    :param pandas.DataFrame root_inputs: Root inputs dataframe to convert, with one line by root.
+    :param pandas.DataFrame SAM_inputs: SAM inputs dataframe to convert, with one line by SAM.
 
-        - `hiddenzone_inputs` (:class:`pandas.DataFrame`) - Hidden zone inputs dataframe to convert, with one line by hidden zone.
-        - `element_inputs` (:class:`pandas.DataFrame`) - Element inputs dataframe to convert, with one line by element.
-        - `root_inputs` (:class:`pandas.DataFrame`) - Root inputs dataframe to convert, with one line by root.
-        - `SAM_inputs` (:class:`pandas.DataFrame`) - SAM inputs dataframe to convert, with one line by SAM.
-
-    :Returns:
-        The inputs in a dictionary.
-
-    :Returns Type:
-        :class:`dict` of :class:`dict`
+    :return: The inputs in a dictionary.
+    :rtype: dict [dict]
 
     .. seealso:: see :attr:`simulation.Simulation.inputs` for the structure of Growth-Wheat inputs.
-
     """
     all_hiddenzone_dict = {}
     all_element_dict = {}
@@ -95,18 +88,12 @@ def to_dataframes(data_dict):
     """
     Convert outputs from Growth-Wheat format to Pandas dataframe.
 
-    :Parameters:
+    :param dict data_dict: The outputs in Growth-Wheat format.
 
-        - `data_dict` (:class:`dict`) - The outputs in Growth-Wheat format.
-
-    :Returns:
-        One dataframe for hiddenzone outputs and one dataframe for element outputs.
-
-    :Returns Type:
-        :class:`tuple` of :class:`pandas.DataFrame`
+    :return: One dataframe for hiddenzone outputs and one dataframe for element outputs.
+    :rtype: pandas.DataFrame
 
     .. seealso:: see :attr:`simulation.Simulation.outputs` for the structure of Growth-Wheat outputs.
-
     """
     dataframes_dict = {}
     for (current_key, current_topology_columns, current_outputs_names) in (('hiddenzone', HIDDENZONE_TOPOLOGY_COLUMNS, simulation.HIDDENZONE_OUTPUTS),
