@@ -167,7 +167,6 @@ class HiddenZoneInit(object):
         self.hiddenzone_age = 0
         self.is_over = False
         self.ratio_DZ = 1.0
-        self.ratio_EOZ = 0
 
         # Default values used for RER calculation in elong wheat
         self.sucrose = 5E-6                      #: µmol C
@@ -181,7 +180,7 @@ class HiddenZoneInit(object):
         self.Nstruct = self.leaf_enclosed_Nstruct + self.internode_enclosed_Nstruct  #: g
         self.proteins = 2.6E-03                   #: µmol N - about 9% N
         self.conc_cytokinins = 150                #: AU / g mstruct
-        self.integral_conc_sucrose_em_prec = 0  #: µmol C / g mstruct
+        self.mean_conc_sucrose = 0  #: µmol C / g mstruct
 
 
 class ElementInit(object):
