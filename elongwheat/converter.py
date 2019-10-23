@@ -42,7 +42,7 @@ def from_dataframes(hiddenzone_inputs, element_inputs, SAM_inputs):
     :param pandas.DataFrame element_inputs: Emergeing and mature element inputs dataframe to convert, with one line by element.
 
     :return: The inputs in a dictionary.
-    :rtype: dict [dict]
+    :rtype: dict [str, dict]
 
     .. seealso:: :attr:`simulation.Simulation.inputs` for the structure of Elong-Wheat inputs.
 

@@ -76,10 +76,10 @@ leaf_W_L_int_MAX = 5800
 leaf_SSLW = {1: 22, 2: 22, 3: 22, 4: 22, 5: 22, 6: 22, 7: 22, 8: 24, 9: 25, 10: 28, 11: 31}  # SSLW (g m-2)
 leaf_SSLW_NEMA = {1: 15, 2: 23, 3: 25, 4: 24, 5: 21, 6: 18, 7: 16, 8: 18, 9: 21, 10: 26, 11: 33}  # Manip NEMA 05/06 traitments N+ (from data of J. Bertheloot, 2004) sauf pour F7/F8
 # {1: 15,2: 23,3: 25,4: 18,5: 22,6: 25,7: 20,8: 23,9: 26,10: 28,11: 31} # Test correction
-leaf_SSLW_MIN = 5
-leaf_SSLW_MAX = 45
-leaf_SSLW_integral_min = 400
-leaf_SSLW_integral_max = 5200
+leaf_SSLW_MIN = 5.
+leaf_SSLW_MAX = 45.
+leaf_SSLW_integral_min = 400.
+leaf_SSLW_integral_max = 5200.
 
 leaf_LSSW_dict = {1: 0.08, 2: 0.09, 3: 0.11, 4: 0.18, 5: 0.17, 6: 0.21, 7: 0.24, 8: 0.4, 9: 0.5, 10: 0.55, 11: 0.65}  # Manip NEMA 05/06 Soissons N+ (from data of J. Bertheloot, 2004)
 # leaf_LSSW_nominal = {1: 0.09, 2: 0.088, 3: 0.11, 4: 0.19, 5: 0.17, 6: 0.21, 7: 0.23, 8: 0.36, 9: 0.45, 10: 0.5, 11: 0.58}
