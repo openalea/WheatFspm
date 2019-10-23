@@ -43,7 +43,7 @@ def from_dataframes(hiddenzone_inputs, element_inputs, root_inputs, SAM_inputs):
     :param pandas.DataFrame SAM_inputs: SAM inputs dataframe to convert, with one line by SAM.
 
     :return: The inputs in a dictionary.
-    :rtype: dict [dict]
+    :rtype: dict [str, dict]
 
     .. seealso:: see :attr:`simulation.Simulation.inputs` for the structure of Growth-Wheat inputs.
     """
