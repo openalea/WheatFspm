@@ -14,7 +14,7 @@ import tools
     with all the tedious initialization and conversion processes.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: LICENSE for details.
 
     .. seealso:: Barillot et al. 2016.
 """
@@ -53,15 +53,7 @@ class GrowthWheatFacade(object):
 
     :Parameters:
 
-        - `shared_mtg` (:class:`openalea.mtg.mtg.MTG`) - The MTG shared between all models.
-        - `delta_t` (:class:`int`) - The delta between two runs, in seconds.
-        - `model_hiddenzones_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at hiddenzones scale.
-        - `model_elements_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at elements scale.
-        - `model_roots_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at roots scale.
-        - `shared_organs_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at organs scale shared between all models.
-        - `shared_hiddenzones_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at hiddenzones scale shared between all models.
-        - `shared_elements_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at elements scale shared between all models.
-    """
+"""
 
     def __init__(self, shared_mtg, delta_t,
                  model_hiddenzones_inputs_df,
@@ -71,6 +63,18 @@ class GrowthWheatFacade(object):
                  shared_organs_inputs_outputs_df,
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df):
+
+        """
+        :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
+        :param int delta_t: The delta between two runs, in seconds.
+        :param pandas.DataFrame model_hiddenzones_inputs_df: the inputs of the model at hiddenzones scale.
+        :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
+        :param pandas.DataFrame model_roots_inputs_df: the inputs of the model at roots scale.
+        :param pandas.DataFrame model_SAM_inputs_df: the inputs of the model at SAM scale.
+        :param pandas.DataFrame shared_organs_inputs_outputs_df: the dataframe of inputs and outputs at organs scale shared between all models.
+        :param pandas.DataFrame shared_hiddenzones_inputs_outputs_df: the dataframe of inputs and outputs at hiddenzones scale shared between all models.
+        :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
+        """
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
@@ -85,12 +89,13 @@ class GrowthWheatFacade(object):
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
         self._update_shared_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df)
 
-    def run(self):
+    def run(self, postflowering_stages=False):
         """
         Run the model and update the MTG and the dataframes shared between all models.
+        :param bool postflowering_stages: if True the model will calculate root growth with the parameters calibrated for post flowering stages
         """
         self._initialize_model()
-        self._simulation.run()
+        self._simulation.run(postflowering_stages)
         self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['elements'], self._simulation.outputs['roots'])
         growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df = converter.to_dataframes(self._simulation.outputs)
         self._update_shared_dataframes(growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df)
@@ -175,9 +180,6 @@ class GrowthWheatFacade(object):
                                     for growthwheat_element_input_name in simulation.ELEMENT_INPUTS:
                                         mtg_element_input = mtg_element_properties.get(growthwheat_element_input_name)
                                         if mtg_element_input is None:
-                                            # if growthwheat_element_input_name == 'cytokinins':
-                                            #     mtg_element_input = parameters.OrganInit().__dict__['conc_cytokinins'] * mtg_element_properties.get('mstruct', parameters.OrganInit().__dict__['mstruct'])
-                                            # else:
                                             mtg_element_input = parameters.OrganInit().__dict__[growthwheat_element_input_name]
                                         growthwheat_element_inputs_dict[growthwheat_element_input_name] = mtg_element_input
                                         if remobilisation:
@@ -190,7 +192,12 @@ class GrowthWheatFacade(object):
     def _update_shared_MTG(self, all_growthwheat_hiddenzones_data_dict, all_growthwheat_elements_data_dict, all_growthwheat_roots_data_dict):
         """
         Update the MTG shared between all models from the inputs or the outputs of the model.
+
+        :param dict all_growthwheat_hiddenzones_data_dict: Growth-Wheat outputs at hidden zone scale
+        :param dict all_growthwheat_elements_data_dict: Growth-Wheat outputs at element scale
+        :param dict all_growthwheat_roots_data_dict: Growth-Wheat outputs at root scale
         """
+
         # add the properties if needed
         mtg_property_names = self._shared_mtg.property_names()
         if 'roots' not in mtg_property_names:
@@ -249,6 +256,10 @@ class GrowthWheatFacade(object):
     def _update_shared_dataframes(self, growthwheat_hiddenzones_data_df, growthwheat_elements_data_df, growthwheat_roots_data_df):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
+
+        :param pandas.DataFrame growthwheat_hiddenzones_data_df: Growth-Wheat shared dataframe at hidden zone scale
+        :param pandas.DataFrame growthwheat_elements_data_df: Growth-Wheat shared dataframe at element scale
+        :param pandas.DataFrame growthwheat_roots_data_df: Growth-Wheat shared dataframe at SAM scale
         """
 
         for growthwheat_data_df, \

@@ -8,7 +8,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 
 from alinea.adel.mtg import to_plantgl
-from openalea.plantgl.all import Viewer,Vector3
+from openalea.plantgl.all import Viewer, Vector3
 
 """
     fspmwheat.tools
@@ -17,9 +17,8 @@ from openalea.plantgl.all import Viewer,Vector3
     This module provides convenient tools needed by the facades.
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -41,13 +40,9 @@ def combine_dataframes_inplace(model_dataframe, shared_column_indexes, shared_da
            * reorder the columns: first columns in `shared_column_indexes`, then others columns alphabetically,
            * and reset the index in `shared_dataframe_to_update`.
 
-    :Parameters:
-
-        - `model_dataframe` (:class:`pandas.DataFrame`) - The dataframe to use for updating `shared_dataframe_to_update`.
-
-        - `shared_column_indexes` (:class:`list`) - The indexes to re-index `model_dataframe` and `shared_dataframe_to_update` before combining them.
-
-        - `shared_dataframe_to_update` (:class:`pandas.DataFrame`) - The dataframe to update.
+    :param pandas.DataFrame model_dataframe: dataframe to use for updating `shared_dataframe_to_update`.
+    :param list shared_column_indexes: The indexes to re-index `model_dataframe` and `shared_dataframe_to_update` before combining them.
+    :param pandas.DataFrame shared_dataframe_to_update: The dataframe to update.
 
     .. note:: `shared_dataframe_to_update` is updated in-place. Thus, `shared_dataframe_to_update` keeps the same object's memory address.
 
@@ -103,18 +98,11 @@ def plot_linear_regression(x_array, y_array, x_label='x', y_label='y', plot_file
     This is derived from http://learningzone.rspsoc.org.uk/index.php/Learning-Materials/Python-Scripting/6.4-Fitting-linear-equations,
     which is under license CC BY-NC-SA 3.0 (https://creativecommons.org/licenses/by-nc-sa/3.0/deed.en_US).
 
-    :Parameters:
-
-        - `x_array` (:class:`numpy.ndarray`) - The first set of measurements.
-
-        - `y_array` (:class:`numpy.ndarray`) - The second set of measurements.
-
-        - `x_label` (:class:`str`) - The label of the abscissa axis. Default is 'x'.
-
-        - `y_label` (:class:`str`) - The label of the ordinates axis. Default is 'y'.
-
-        - `plot_filepath` (:class:`str`) - The file path to save the plot in.
-            If `None`, do not save the plot.
+    :param numpy.ndarray x_array: The first set of measurements.
+    :param numpy.ndarray y_array: The second set of measurements.
+    :param str x_label: The label of the abscissa axis. Default is 'x'.
+    :param str y_label: The label of the ordinates axis. Default is 'y'.
+    :param str plot_filepath: The file path to save the plot in. If `None`, do not save the plot.
 
     :Examples:
 
@@ -165,24 +153,22 @@ def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
     
     def color_map(N):
         if 0 <= N <= 0.5:  # TODO: organe senescent (prendre prop)
-            color_map = [150, 100, 0]
+            vid_colors = [150, 100, 0]
         elif 0.5 < N < 5:  # Fvertes
-            color_map = [int(255 - N*51), int(255 - N * 20), 50]
+            vid_colors = [int(255 - N*51), int(255 - N * 20), 50]
         else:
-            color_map = [0, 155, 0]
-        return color_map
+            vid_colors = [0, 155, 0]
+        return vid_colors
 
     def calculate_Total_Organic_Nitrogen(amino_acids, proteins, Nstruct):
         """Total amount of organic N (amino acids + proteins + Nstruct).
 
-        :Parameters:
-            - `amino_acids` (:class:`float`) - Amount of amino acids (µmol N)
-            - `proteins` (:class:`float`) - Amount of proteins (µmol N)
-            - `Nstruct` (:class:`float`) - Structural N mass (g)
-        :Returns:
-            Total amount of organic N (mg)
-        :Returns Type:
-            :class:`float`
+        :param float amino_acids: Amount of amino acids (µmol N)
+        :param float proteins: Amount of proteins (µmol N)
+        :param float Nstruct: Structural N mass (g)
+
+        :return: Total amount of organic N (mg)
+        :rtype: float
         """
         return (amino_acids + proteins) * 14E-3 + Nstruct * 1E3
 
