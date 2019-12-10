@@ -556,7 +556,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             plt.close()
 
         # 1) Comparison Dimensions with Ljutovac 2002
-        bchmk = pd.read_csv(r'Ljutovac2002.csv')
+        bchmk = pd.read_csv(r'inputs\Ljutovac2002.csv')
         res = pd.read_csv(HIDDENZONES_STATES_FILEPATH)
         res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.leaf_Lmax)].copy()
         res_IN = res[~ np.isnan(res.internode_Lmax)]
@@ -725,7 +725,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         line3 = ax2.plot(days, share_net_roots_live, label=u'Net C Shoot production sent to roots (%)', color='red')
 
         lines = line1 + line2 + line3
-        labs = [l.get_label() for l in lines]
+        labs = [line.get_label() for line in lines]
         ax.legend(lines, labs, loc='center left', prop={'size': 10}, framealpha=0.5, bbox_to_anchor=(1, 0.815), borderaxespad=0.)
 
         ax.set_xlabel('Days')
@@ -873,5 +873,5 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=0, run_simu=False, run_postprocessing=False, generate_graphs=True, run_from_outputs=False,
+    main(2600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000})
