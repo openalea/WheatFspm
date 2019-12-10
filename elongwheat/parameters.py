@@ -45,7 +45,7 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # Exponential elongation
 RERmax_Ljutovac_fit = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000152, 10: 0.00000135, 11: 0.0000013}  # Optimal RERmax (s-1 at 12°C) allowing to simulate leaf dimensions of Ljutovac (2002)
 # { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # RER fitted from data of Ljutovac 2002 RER (s-1 at 12°C)
-RERmax = {5: 5.32e-06, 6: 2.2743e-06, 7: 2.1014e-06, 8: 2.0216e-06, 9: 1.9418e-06, 10: 1.6492e-06, 11: 1.596e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
+RERmax = {5: 3.325e-06, 6: 2.2344e-06, 7: 2.1147e-06, 8: 2.0216e-06, 9: 1.9418e-06, 10: 1.6492e-06, 11: 1.596e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
 RER_Kc = 100  #: affinity coefficient of RER to C (µmol g-1)
 RER_Kn = 15   #: affinity coefficient of RER to N (µmol g-1)
 
@@ -60,9 +60,9 @@ OFFSET_LEAF = FITTED_L0 - L0       #: Offset used for the final fitting of the b
 SCALING_FACTOR_LEAF = 1/FITTED_L0  #: Scaling factor of the leaf in automate growth (dimensionless)
 leaf_Lmax_MAX = 0.7                #: Maximum leaf_Lmax (m)
 
-leaf_pseudo_age_Vmax = 1.25  #: Maximal regulation of leaf length after emergence by CN status (dimensionless)
+leaf_pseudo_age_Vmax = 1.35  #: Maximal regulation of leaf length after emergence by CN status (dimensionless)
 leaf_pseudo_age_Kc = 150     #: affinity coefficient to C (µmol g-1)
-leaf_pseudo_age_Kn = 8       #: affinity coefficient to N (µmol g-1)
+leaf_pseudo_age_Kn = 10       #: affinity coefficient to N (µmol g-1)
 
 # Leaf maximal width  TODO doc
 leaf_Wmax_dict = {3: 0.0040, 4: 0.0045, 5: 0.0056, 6: 0.0075, 7: 0.010, 8: 0.012, 9: 0.013, 10: 0.014, 11: 0.018}  #: m (Ljutovac 2002)
