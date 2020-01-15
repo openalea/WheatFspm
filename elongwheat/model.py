@@ -284,19 +284,19 @@ def calculate_deltaL_postE(prev_leaf_pseudo_age, leaf_pseudo_age, prev_leaf_L, l
     return max(0., delta_leaf_L)
 
 
-def calculate_update_leaf_Lmax(prev_leaf_Lmax, leaf_L, leaf_pseudo_age):
+def calculate_update_leaf_Lmax(leaf_Lmax_em, leaf_L, leaf_pseudo_age):
     """ Update leaf_Lmax following a reduction of delta_leaf_L due to C and N regulation.
-    Updated final length is calculated as the sum of the theoritical remaining length to elongate (prev_leaf_Lmax * (1 - Beta_function(leaf_pseudo_age)))
+    Updated final length is calculated as the sum of the theoritical remaining length to elongate (leaf_Lmax_em * (1 - Beta_function(leaf_pseudo_age)))
     and the actual elongation at the end of the time step. This could lead to shorter or longer leaves, but the duration of elongation is not modified.
 
-    :param float prev_leaf_Lmax: Previous estimate of final leaf length (m)
+    :param float leaf_Lmax_em: Estimate of final leaf length at previous leaf emergence (m)
     :param float leaf_L: actual leaf length at the end of the time step, calculated according to CN concentration (m)
     :param float leaf_pseudo_age: Pseudo age of the leaf since beginning of automate elongation at the end of the time step (s)
 
     :return: updated leaf_Lmax (m)
     :rtype: float
     """
-    return leaf_L + prev_leaf_Lmax * (1 - Beta_function(leaf_pseudo_age))
+    return leaf_L + leaf_Lmax_em * (1 - Beta_function(leaf_pseudo_age))
 
 
 def calculate_ratio_DZ_postE(leaf_L, leaf_Lmax, leaf_pseudostem_length):
