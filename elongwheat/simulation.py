@@ -44,7 +44,7 @@ SAM_INPUTS = ['SAM_temperature', 'delta_teq', 'teq_since_primordium', 'status', 
 # TODO : add be default all the attributes of the class HiddenZoneInit and ElementInit, and define which attribute is set by growthwheat.parameters or elongwheat.parameters
 HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age', 'delta_leaf_pseudo_age', 'internode_pseudo_age', 'delta_internode_pseudo_age', 'leaf_pseudostem_length',
                       'hiddenzone_age', 'delta_leaf_pseudostem_length', 'internode_distance_to_emerge',
-                      'delta_internode_distance_to_emerge', 'leaf_L', 'delta_leaf_L', 'internode_L', 'delta_internode_L', 'leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax',
+                      'delta_internode_distance_to_emerge', 'leaf_L', 'delta_leaf_L', 'internode_L', 'delta_internode_L', 'leaf_Lmax','leaf_Lmax_em', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax',
                       'SSLW', 'LSSW', 'leaf_is_emerged', 'internode_Lmax', 'LSIW', 'internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct',
                       'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct', 'is_over', 'ratio_DZ', 'ratio_EOZ',
                       'mean_conc_sucrose']
@@ -277,6 +277,7 @@ class Simulation(object):
                 prev_leaf2_hiddenzone_id = tuple(list(SAM_id) + [phytomer_id - 2])
                 if prev_leaf2_hiddenzone_id in all_hiddenzone_inputs:
                     prev_leaf2_emerged = all_hiddenzone_inputs[prev_leaf2_hiddenzone_id]['leaf_is_emerged']
+                    prev_leaf2_hiddenzone_inputs = all_hiddenzone_inputs[prev_leaf2_hiddenzone_id]
                 else:
                     prev_leaf2_emerged = True
 
@@ -343,8 +344,8 @@ class Simulation(object):
                         curr_hiddenzone_outputs['leaf_pseudo_age'] = leaf_pseudo_age
                         curr_hiddenzone_outputs['delta_leaf_pseudo_age'] = leaf_pseudo_age - hiddenzone_inputs['leaf_pseudo_age']
 
-                        delta_leaf_L = model.calculate_deltaL_postE(leaf_pseudo_age, hiddenzone_inputs['leaf_L'], hiddenzone_inputs['leaf_Lmax_em'], hiddenzone_inputs['sucrose'],
-                                                                    hiddenzone_inputs['amino_acids'], hiddenzone_inputs['mstruct'], optimal_growth_option)
+                        delta_leaf_L = model.calculate_deltaL_postE(hiddenzone_inputs['leaf_pseudo_age'], leaf_pseudo_age, hiddenzone_inputs['leaf_L'], hiddenzone_inputs['leaf_Lmax_em'],
+                                                                    hiddenzone_inputs['sucrose'], hiddenzone_inputs['amino_acids'], hiddenzone_inputs['mstruct'], optimal_growth_option)
                         leaf_L = hiddenzone_inputs['leaf_L'] + delta_leaf_L
 
                         # Update leaf_Lmax. Subsequently, lamina_Lmax and sheath_Lmax will be updated depending of each element status (growing or mature)

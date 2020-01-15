@@ -243,9 +243,10 @@ def Beta_function(leaf_pseudo_age):
                 ((parameters.te - parameters.tb) / (parameters.te - parameters.tm)))) + parameters.OFFSET_LEAF
 
 
-def calculate_deltaL_postE(leaf_pseudo_age, prev_leaf_L, leaf_Lmax, sucrose, amino_acids, mstruct, optimal_growth_option=False):
+def calculate_deltaL_postE(prev_leaf_pseudo_age, leaf_pseudo_age, prev_leaf_L, leaf_Lmax, sucrose, amino_acids, mstruct, optimal_growth_option=False):
     """ Leaf length from the emergence of the previous leaf to the end of elongation (automate function depending on leaf pseudo age and final length).
 
+    :param float prev_leaf_pseudo_age: Pseudo age of the leaf since beginning of automate elongation at previous time step (s)
     :param float leaf_pseudo_age: Pseudo age of the leaf since beginning of automate elongation (s)
     :param float prev_leaf_L: Leaf length at previous time step (m)
     :param float leaf_Lmax: Final leaf length (m)
@@ -263,18 +264,18 @@ def calculate_deltaL_postE(leaf_pseudo_age, prev_leaf_L, leaf_Lmax, sucrose, ami
             delta_leaf_L = prev_leaf_L - parameters.FITTED_L0 * leaf_Lmax
         elif leaf_pseudo_age < parameters.te:
             # Beta function
-            leaf_L_Beta = min(leaf_Lmax, leaf_Lmax * Beta_function(leaf_pseudo_age))
+            delta_leaf_L_Beta_0 = min(leaf_Lmax, leaf_Lmax * ( Beta_function(leaf_pseudo_age) - Beta_function(prev_leaf_pseudo_age) ))
 
             if optimal_growth_option:
                 # Current leaf length
-                delta_leaf_L = leaf_L_Beta - prev_leaf_L
+                delta_leaf_L = delta_leaf_L_Beta_0
             else:
                 # Regulation by C and N
                 conc_sucrose = sucrose / mstruct
                 conc_amino_acids = amino_acids / mstruct
                 regul = parameters.leaf_pseudo_age_Vmax / (1 + parameters.leaf_pseudo_age_Kc / conc_sucrose) / (1 + parameters.leaf_pseudo_age_Kn / conc_amino_acids)
                 # Actual leaf elongation
-                delta_leaf_L = (leaf_L_Beta - prev_leaf_L) * regul
+                delta_leaf_L = delta_leaf_L_Beta_0 * regul
         else:  # end of leaf elongation
             delta_leaf_L = 0
     else:  # empty sucrose or amino acids
