@@ -7,8 +7,8 @@ from cnwheat import model as cnwheat_model, simulation as cnwheat_simulation, \
 
 from fspmwheat import tools
 
-import math
 import numpy as np
+import math
 
 """
     fspmwheat.cnwheat_facade
@@ -21,9 +21,8 @@ import numpy as np
     with all the tedious initialization and conversion processes.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2016.
 """
 
 """
@@ -69,21 +68,6 @@ class CNWheatFacade(object):
 
     Use :meth:`run` to run the model.
 
-    :Parameters:
-
-        - `shared_mtg` (:class:`openalea.mtg.mtg.MTG`) - The MTG shared between all models.
-        - `delta_t` (:class:`int`) - The delta between two runs, in seconds.
-        - `culm_density` (:class:`dict`) - The density of culm. One key per plant.
-        - `model_organs_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at organs scale.
-        - `model_hiddenzones_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at hiddenzones scale.
-        - `model_elements_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at elements scale.
-        - `model_soils_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at soils scale.
-        - `shared_axes_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at axes scale shared between all models.
-        - `shared_organs_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at organs scale shared between all models.
-        - `shared_hiddenzones_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at hiddenzones scale shared between all models.
-        - `shared_elements_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at elements scale shared between all models.
-        - `shared_soils_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at soils scale shared between all models.
-
     """
 
     def __init__(self, shared_mtg, delta_t, culm_density,
@@ -96,6 +80,21 @@ class CNWheatFacade(object):
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
                  shared_soils_inputs_outputs_df):
+        """
+        :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
+        :param int delta_t: The delta between two runs, in seconds.
+        :param dict culm_density: The density of culm. One key per plant.
+        :param pandas.DataFrame model_organs_inputs_df: the inputs of the model at organs scale.
+        :param pandas.DataFrame model_hiddenzones_inputs_df: the inputs of the model at hiddenzones scale.
+        :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
+        :param pandas.DataFrame model_soils_inputs_df: the inputs of the model at soils scale.
+        :param pandas.DataFrame shared_axes_inputs_outputs_df: the dataframe of inputs and outputs at axes scale shared between all models.
+        :param pandas.DataFrame shared_organs_inputs_outputs_df: the dataframe of inputs and outputs at organs scale shared between all models.
+        :param pandas.DataFrame shared_hiddenzones_inputs_outputs_df: the dataframe of inputs and outputs at hiddenzones scale shared between all models.
+        :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
+        :param pandas.DataFrame shared_soils_inputs_outputs_df: the dataframe of inputs and outputs at soils scale shared between all models.
+
+        """
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
@@ -107,28 +106,31 @@ class CNWheatFacade(object):
 
         self._update_shared_MTG()
 
-        self._shared_axes_inputs_outputs_df = shared_axes_inputs_outputs_df                       #: the dataframe at axes scale shared between all models
-        self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df                   #: the dataframe at organs scale shared between all models
-        self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df         #: the dataframe at hiddenzones scale shared between all models
-        self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df               #: the dataframe at elements scale shared between all models
-        self._shared_soils_inputs_outputs_df = shared_soils_inputs_outputs_df                     #: the dataframe at soils scale shared between all models
+        self._shared_axes_inputs_outputs_df = shared_axes_inputs_outputs_df  #: the dataframe at axes scale shared between all models
+        self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df  #: the dataframe at organs scale shared between all models
+        self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df  #: the dataframe at hiddenzones scale shared between all models
+        self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
+        self._shared_soils_inputs_outputs_df = shared_soils_inputs_outputs_df  #: the dataframe at soils scale shared between all models
         self._update_shared_dataframes(cnwheat_organs_data_df=model_organs_inputs_df,
                                        cnwheat_hiddenzones_data_df=model_hiddenzones_inputs_df,
                                        cnwheat_elements_data_df=model_elements_inputs_df,
                                        cnwheat_soils_data_df=model_soils_inputs_df)
 
-    def run(self, Tair=12, Tsoil = 12):
+    def run(self, Tair=12, Tsoil=12, tillers_replications=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
+
+        :param float Tair: air temperature (°C)
+        :param float Tsoil: soil temperature (°C)
+        :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value.
         """
-        self._initialize_model(Tair=Tair,Tsoil=Tsoil)
+
+        self._initialize_model(Tair=Tair, Tsoil=Tsoil, tillers_replications=tillers_replications)
         self._simulation.run()
         self._update_shared_MTG()
 
-        _, cnwheat_axes_inputs_outputs_df, _, cnwheat_organs_inputs_outputs_df, \
-        cnwheat_hiddenzones_inputs_outputs_df, cnwheat_elements_inputs_outputs_df, \
-        cnwheat_soils_inputs_outputs_df \
-            = cnwheat_converter.to_dataframes(self._simulation.population, self._simulation.soils)
+        _, cnwheat_axes_inputs_outputs_df, _, cnwheat_organs_inputs_outputs_df, cnwheat_hiddenzones_inputs_outputs_df, cnwheat_elements_inputs_outputs_df, cnwheat_soils_inputs_outputs_df = \
+            cnwheat_converter.to_dataframes(self._simulation.population, self._simulation.soils)
 
         self._update_shared_dataframes(cnwheat_axes_data_df=cnwheat_axes_inputs_outputs_df,
                                        cnwheat_organs_data_df=cnwheat_organs_inputs_outputs_df,
@@ -140,7 +142,28 @@ class CNWheatFacade(object):
     def postprocessing(axes_outputs_df, organs_outputs_df, hiddenzone_outputs_df, elements_outputs_df, soils_outputs_df, delta_t):
         """
         Run the postprocessing.
+
+        :param pandas.DataFrame axes_outputs_df: the outputs of the model at axis scale.
+        :param pandas.DataFrame organs_outputs_df: the outputs of the model at organ scale.
+        :param pandas.DataFrame hiddenzone_outputs_df: the outputs of the model at hiddenzone scale.
+        :param pandas.DataFrame elements_outputs_df: the outputs of the model at element scale.
+        :param pandas.DataFrame soils_outputs_df: the outputs of the model at element scale.
+        :param int delta_t: The delta between two runs, in seconds.
+
+    :return: post-processing for each scale:
+            * plant (see :attr:`PLANTS_RUN_POSTPROCESSING_VARIABLES`)
+            * axis (see :attr:`AXES_RUN_POSTPROCESSING_VARIABLES`)
+            * metamer (see :attr:`PHYTOMERS_RUN_POSTPROCESSING_VARIABLES`)
+            * organ (see :attr:`ORGANS_RUN_POSTPROCESSING_VARIABLES`)
+            * hidden zone (see :attr:`HIDDENZONE_RUN_POSTPROCESSING_VARIABLES`)
+            * element (see :attr:`ELEMENTS_RUN_POSTPROCESSING_VARIABLES`)
+            * and soil (see :attr:`SOILS_RUN_POSTPROCESSING_VARIABLES`)
+        depending of the dataframes given as argument.
+        For example, if user passes only dataframes `plants_df`, `axes_df` and `metamers_df`,
+        then only post-processing dataframes of plants, axes and metamers are returned.
+    :rtype: tuple [pandas.DataFrame]
         """
+
         (_, _, organs_postprocessing_df,
          elements_postprocessing_df,
          hiddenzones_postprocessing_df,
@@ -148,25 +171,46 @@ class CNWheatFacade(object):
          soils_postprocessing_df) = cnwheat_postprocessing.postprocessing(axes_df=axes_outputs_df, hiddenzones_df=hiddenzone_outputs_df,
                                                                           organs_df=organs_outputs_df, elements_df=elements_outputs_df,
                                                                           soils_df=soils_outputs_df, delta_t=delta_t)
-        return axes_postprocessing_df, hiddenzones_postprocessing_df, organs_postprocessing_df, \
-            elements_postprocessing_df, soils_postprocessing_df
+        return axes_postprocessing_df, hiddenzones_postprocessing_df, organs_postprocessing_df, elements_postprocessing_df, soils_postprocessing_df
 
     @staticmethod
     def graphs(axes_postprocessing_df, hiddenzones_postprocessing_df, organs_postprocessing_df, elements_postprocessing_df, soils_postprocessing_df, graphs_dirpath='.'):
         """
         Generate the graphs and save them into `graphs_dirpath`.
+
+        :param pandas.DataFrame axes_postprocessing_df: CN-Wheat outputs at axis scale
+        :param pandas.DataFrame hiddenzones_postprocessing_df: CN-Wheat outputs at hidden zone scale
+        :param pandas.DataFrame organs_postprocessing_df: CN-Wheat outputs at organ scale
+        :param pandas.DataFrame elements_postprocessing_df: CN-Wheat outputs at element scale
+        :param pandas.DataFrame soils_postprocessing_df: CN-Wheat outputs at soil scale
+        :param str graphs_dirpath: the path of the directory to save the generated graphs in
+
         """
         cnwheat_postprocessing.generate_graphs(axes_df=axes_postprocessing_df,
-                                                hiddenzones_df=hiddenzones_postprocessing_df,
-                                                organs_df=organs_postprocessing_df,
-                                                elements_df=elements_postprocessing_df,
-                                                soils_df=soils_postprocessing_df,
-                                                graphs_dirpath=graphs_dirpath)
+                                               hiddenzones_df=hiddenzones_postprocessing_df,
+                                               organs_df=organs_postprocessing_df,
+                                               elements_df=elements_postprocessing_df,
+                                               soils_df=soils_postprocessing_df,
+                                               graphs_dirpath=graphs_dirpath)
 
-    def _initialize_model(self, Tair=12, Tsoil=12):
+    def _initialize_model(self, Tair=12, Tsoil=12, tillers_replications=None):
         """
         Initialize the inputs of the model from the MTG shared between all models and the soils.
+
+        :param float Tair: air temperature (°C)
+        :param float Tsoil: soil temperature (°C)
+        :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value.
         """
+
+        # Convert number of replications per tiller into number of replications per cohort
+        cohorts_replications = {}
+        if tillers_replications is not None:
+            for tiller_id, replication_weight in tillers_replications.items():
+                try:
+                    tiller_rank = int(tiller_id[1:])
+                except:
+                    continue
+                cohorts_replications[tiller_rank + 3] = replication_weight
 
         self.population = cnwheat_model.Population()
 
@@ -183,7 +227,7 @@ class CNWheatFacade(object):
                 #: Hack to treat tillering cases : TEMPORARY
                 if mtg_axis_label != 'MS':
                     try:
-                        tiller_rank = int( mtg_axis_label[1:] )
+                        tiller_rank = int(mtg_axis_label[1:])
                     except:
                         continue
                     cnwheat_plant.cohorts.append(tiller_rank + 3)
@@ -206,10 +250,10 @@ class CNWheatFacade(object):
                                 cnwheat_organ_data_dict[cnwheat_organ_data_name] = mtg_organ_properties[cnwheat_organ_data_name]
 
                                 # MG
-                                # if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] is None:
-                                #     print(mtg_axis_vid)
-                                #     print(mtg_organ_label)
-                                #     print(cnwheat_organ_data_name)
+                                if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] is None:
+                                    print(mtg_axis_vid)
+                                    print(mtg_organ_label)
+                                    print(cnwheat_organ_data_name)
 
                             cnwheat_organ.__dict__.update(cnwheat_organ_data_dict)
                             cnwheat_organ.initialize()
@@ -230,7 +274,7 @@ class CNWheatFacade(object):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
 
                     # create a new phytomer
-                    cnwheat_phytomer = cnwheat_model.Phytomer(mtg_metamer_index,cohorts=cnwheat_plant.cohorts) #: Hack to treat tillering cases : TEMPORARY
+                    cnwheat_phytomer = cnwheat_model.Phytomer(mtg_metamer_index, cohorts=cnwheat_plant.cohorts, cohorts_replications=cohorts_replications)  #: Hack to treat tillering cases :TEMPORARY
 
                     mtg_hiddenzone_label = cnwheat_converter.CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnwheat_model.HiddenZone]
                     mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
@@ -243,14 +287,9 @@ class CNWheatFacade(object):
                             for cnwheat_hiddenzone_data_name in cnwheat_simulation.Simulation.HIDDENZONE_STATE:
                                 cnwheat_hiddenzone_data_dict[cnwheat_hiddenzone_data_name] = mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]
 
-                                # MG
-                                # if math.isnan(mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name]) or mtg_hiddenzone_properties[cnwheat_hiddenzone_data_name] is None:
-                                #     print(mtg_metamer_vid)
-                                #     print(mtg_hiddenzone_label)
-                                #     print(cnwheat_hiddenzone_data_name)
-
                             # create a new hiddenzone
-                            cnwheat_hiddenzone = cnwheat_model.HiddenZone(mtg_hiddenzone_label,cohorts=cnwheat_plant.cohorts, index = cnwheat_phytomer.index, **cnwheat_hiddenzone_data_dict) #: TEMPORARY
+                            cnwheat_hiddenzone = cnwheat_model.HiddenZone(mtg_hiddenzone_label, cohorts=cnwheat_plant.cohorts, cohorts_replications=cohorts_replications, index=cnwheat_phytomer.index,
+                                                                          **cnwheat_hiddenzone_data_dict)  #: TEMPORARY
                             cnwheat_hiddenzone.initialize()
                             # add the new hiddenzone to current phytomer
                             setattr(cnwheat_phytomer, mtg_hiddenzone_label, cnwheat_hiddenzone)
@@ -276,10 +315,10 @@ class CNWheatFacade(object):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
                             if mtg_element_label not in cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING \
                                     or (self._shared_mtg.get_vertex_property(mtg_element_vid)['length'] == 0) \
-                                    or  (self._shared_mtg.get_vertex_property(mtg_element_vid).get('mstruct',0) == 0) \
+                                    or (self._shared_mtg.get_vertex_property(mtg_element_vid).get('mstruct', 0) == 0) \
                                     or ((mtg_element_label == 'HiddenElement') and (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True))) \
-                                    or  (self._shared_mtg.get_vertex_property(mtg_element_vid).get('green_area',0)  <= 0.25E-6 ) :
-                                continue ## TODO: Check that we are not taking out some relevant cases with the condition on mstruct == 0
+                                    or (self._shared_mtg.get_vertex_property(mtg_element_vid).get('green_area', 0) <= 0.25E-6):
+                                continue  # TODO: Check that we are not taking out some relevant cases with the condition on mstruct == 0
 
                             has_valid_element = True
                             cnwheat_element_data_dict = {}
@@ -289,11 +328,11 @@ class CNWheatFacade(object):
                                 if mtg_element_data_value is None or np.isnan(mtg_element_data_value):
                                     if cnwheat_element_data_name == 'Ts':
                                         mtg_element_data_value = Tair
-                                    else :
+                                    else:
                                         mtg_element_data_value = cnwheat_parameters.PhotosyntheticOrganElementInitCompartments().__dict__[cnwheat_element_data_name]
                                 cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_data_value
-                            cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label,cohorts=cnwheat_plant.cohorts, index = cnwheat_phytomer.index,
-                                                                                                      **cnwheat_element_data_dict)
+                            cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, cohorts=cnwheat_plant.cohorts, cohorts_replications=cohorts_replications,
+                                                                                                      index=cnwheat_phytomer.index, **cnwheat_element_data_dict)
                             setattr(cnwheat_organ, cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
 
                         if has_valid_element:
@@ -398,6 +437,12 @@ class CNWheatFacade(object):
                                   cnwheat_soils_data_df=None):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the cnwheat model.
+
+        :param pandas.DataFrame cnwheat_axes_data_df: CN-Wheat shared dataframe at axis scale
+        :param pandas.DataFrame cnwheat_organs_data_df: CN-Wheat shared dataframe at organ scale
+        :param pandas.DataFrame cnwheat_hiddenzones_data_df: CN-Wheat shared dataframe hiddenzone scale
+        :param pandas.DataFrame cnwheat_elements_data_df: CN-Wheat shared dataframe at element scale
+        :param pandas.DataFrame cnwheat_soils_data_df: CN-Wheat shared dataframe at soil scale
         """
 
         for cnwheat_data_df, \

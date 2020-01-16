@@ -17,9 +17,8 @@ import tools
     with all the tedious initialization and conversion processes.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2016.
 """
 
 """
@@ -55,15 +54,6 @@ class SenescWheatFacade(object):
 
     Use :meth:`run` to run the model.
 
-    :Parameters:
-
-        - `shared_mtg` (:class:`openalea.mtg.mtg.MTG`) - The MTG shared between all models.
-        - `delta_t` (:class:`int`) - The delta between two runs, in seconds.
-        - `model_roots_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at roots scale.
-        - `model_elements_inputs_df` (:class:`pandas.DataFrame`) - the inputs of the model at elements scale.
-
-        - `shared_organs_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at organs scale shared between all models.
-        - `shared_elements_inputs_outputs_df` (:class:`pandas.DataFrame`) - the dataframe of inputs and outputs at elements scale shared between all models.
     """
 
     def __init__(self, shared_mtg, delta_t,
@@ -74,27 +64,41 @@ class SenescWheatFacade(object):
                  shared_SAM_inputs_outputs_df,
                  shared_elements_inputs_outputs_df):
 
+        """
+        :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
+        :param int delta_t: The delta between two runs, in seconds.
+        :param pandas.DataFrame model_roots_inputs_df: the inputs of the model at roots scale.
+        :param pandas.DataFrame model_SAM_inputs_df: the inputs of the model at SAM scale.
+        :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
+        :param pandas.DataFrame shared_organs_inputs_outputs_df: the dataframe of inputs and outputs at organs scale shared between all models.
+        :param pandas.DataFrame shared_SAM_inputs_outputs_df: the dataframe of inputs and outputs at SAM scale shared between all models.
+        :param pandas.DataFrame shared_SAM_inputs_outputs_df: the dataframe of inputs and outputs at element scale shared between all models.
+        """
+
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
         self._simulation = simulation.Simulation(delta_t=delta_t)  #: the simulator to use to run the model
 
         all_senescwheat_inputs_dict = converter.from_dataframes(model_roots_inputs_df, model_SAM_inputs_df, model_elements_inputs_df)
-        self._update_shared_MTG(all_senescwheat_inputs_dict['roots'],all_senescwheat_inputs_dict['SAM'], all_senescwheat_inputs_dict['elements'])
+        self._update_shared_MTG(all_senescwheat_inputs_dict['roots'], all_senescwheat_inputs_dict['SAM'], all_senescwheat_inputs_dict['elements'])
 
         self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df  #: the dataframe at organs scale shared between all models
         self._shared_SAM_inputs_outputs_df = shared_SAM_inputs_outputs_df  #: the dataframe at axis scale shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
-        self._update_shared_dataframes(model_roots_inputs_df,model_SAM_inputs_df, model_elements_inputs_df)
+        self._update_shared_dataframes(model_roots_inputs_df, model_SAM_inputs_df, model_elements_inputs_df)
 
     def run(self, forced_max_protein_elements=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
+
+        :param set forced_max_protein_elements: The elements ids with fixed max proteins.
         """
+
         self._initialize_model()
         self._simulation.run(forced_max_protein_elements)
         self._update_shared_MTG(self._simulation.outputs['roots'], self._simulation.outputs['SAM'], self._simulation.outputs['elements'])
         senescwheat_roots_outputs_df, senescwheat_SAM_outputs_df, senescwheat_elements_outputs_df = converter.to_dataframes(self._simulation.outputs)
-        self._update_shared_dataframes(senescwheat_roots_outputs_df,senescwheat_SAM_outputs_df, senescwheat_elements_outputs_df)
+        self._update_shared_dataframes(senescwheat_roots_outputs_df, senescwheat_SAM_outputs_df, senescwheat_elements_outputs_df)
 
     def _initialize_model(self):
         """
@@ -160,7 +164,12 @@ class SenescWheatFacade(object):
     def _update_shared_MTG(self, senescwheat_roots_data_dict, senescwheat_SAM_data_dict, senescwheat_elements_data_dict):
         """
         Update the MTG shared between all models from the inputs or the outputs of the model.
+
+        :param dict senescwheat_roots_data_dict: Senesc-Wheat outputs at root scale
+        :param dict senescwheat_SAM_data_dict: Senesc-Wheat outputs at SAM scale
+        :param dict senescwheat_elements_data_dict: Senesc-Wheat outputs at element scale
         """
+
         # add the properties if needed
         mtg_property_names = self._shared_mtg.property_names()
         if 'roots' not in mtg_property_names:
@@ -187,14 +196,14 @@ class SenescWheatFacade(object):
                 if 'SAM' not in self._shared_mtg.get_vertex_property(mtg_axis_vid):
                     self._shared_mtg.property('SAM')[mtg_axis_vid] = {}
                 mtg_SAM_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)['SAM']
-                mtg_SAM_properties.update(senescwheat_SAM_data_dict.get(roots_id,[]))
+                mtg_SAM_properties.update(senescwheat_SAM_data_dict.get(roots_id, []))
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         if mtg_organ_vid == 30:
                             pass
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        senesced_length_organ = 0. # Temporaire
+                        senesced_length_organ = 0.  # Temporaire
                         if mtg_organ_label not in PHOTOSYNTHETIC_ORGANS_NAMES: continue
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
@@ -206,13 +215,16 @@ class SenescWheatFacade(object):
                                 self._shared_mtg.property(senescwheat_element_data_name)[mtg_element_vid] = senescwheat_element_data_value
                                 # Temporaire : avant de trouver une solution pour piloter la senescence des feuilles par green_area plutot que par senesced_length
                                 if senescwheat_element_data_name == 'senesced_length':
-                                    senesced_length_organ += np.nan_to_num( self._shared_mtg.property(senescwheat_element_data_name).get(mtg_element_vid,0.) )
+                                    senesced_length_organ += np.nan_to_num(self._shared_mtg.property(senescwheat_element_data_name).get(mtg_element_vid, 0.))
                         self._shared_mtg.property('senesced_length')[mtg_organ_vid] = senesced_length_organ
 
-
-    def _update_shared_dataframes(self, senescwheat_roots_data_df,senescwheat_SAM_data_df, senescwheat_elements_data_df):
+    def _update_shared_dataframes(self, senescwheat_roots_data_df, senescwheat_SAM_data_df, senescwheat_elements_data_df):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
+
+        :param pandas.DataFrame senescwheat_roots_data_df: Elong-Wheat shared dataframe at root scale
+        :param pandas.DataFrame senescwheat_SAM_data_df: Elong-Wheat shared dataframe at SAM scale
+        :param pandas.DataFrame senescwheat_elements_data_df: Elong-Wheat shared dataframe at element scale
         """
 
         for senescwheat_data_df, \
