@@ -1,2 +1,6 @@
-plant,axis,sum_TT,status,nb_leaves,GA,height
-1,MS,481,vegetative,10,False,0
+plant,axis,status,nb_leaves,GA,height,SAM_temperature,delta_teq,delta_teq_roots,teq_since_primordium,sum_TT,cohort
+1,MS,vegetative,10,False,0,20,3600,3600,0,0,1
+1,T1,vegetative,7,False,0,20,3600,3600,0,0,4
+1,T2,vegetative,6,False,0,20,3600,3600,0,0,5
+1,T3,vegetative,5,False,0,20,3600,3600,0,0,6
+1,T4,vegetative,4,False,0,20,3600,3600,0,0,7

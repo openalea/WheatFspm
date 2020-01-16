@@ -1,7 +1,0 @@
-plant,axis,metamer,organ,element,length,is_growing,diameter,sucrose,amino_acids,fructan,proteins,mstruct,Nstruct
-1,MS,1,blade,LeafElement1,0.082,False,NA,NA,NA,NA,NA,NA,NA
-1,MS,1,sheath,StemElement,0.0285,False,NA,NA,NA,NA,NA,NA,NA
-1,MS,2,blade,LeafElement1,0.092,False,NA,NA,NA,NA,NA,NA,NA
-1,MS,2,sheath,HiddenElement,0.0285,False,NA,NA,NA,NA,NA,NA,NA
-1,MS,2,sheath,StemElement,0.0005,False,NA,NA,NA,NA,NA,NA,NA
-1,MS,3,blade,LeafElement1,0.0656258957653,True,NA,NA,NA,NA,NA,NA,NA

@@ -4,6 +4,7 @@ from __future__ import division  # use "//" to do integer division
 import pandas as pd
 
 import simulation
+
 """
     elongwheat.converter
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -12,9 +13,8 @@ import simulation
     :class:`dataframes <pandas.DataFrame>` to/from ElongWheat inputs or outputs format.
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -37,19 +37,14 @@ def from_dataframes(hiddenzone_inputs, element_inputs, SAM_inputs):
     """
     Convert inputs/outputs from Pandas dataframe to Elong-Wheat format.
 
-    :Parameters:
+    :param pandas.DataFrame SAM_inputs: Shoot Apical Meristem inputs dataframe to convert, with one line by SAM i.e. one line per axis.
+    :param pandas.DataFrame hiddenzone_inputs: Hidden zone inputs dataframe to convert, with one line by Hidden zone.
+    :param pandas.DataFrame element_inputs: Emergeing and mature element inputs dataframe to convert, with one line by element.
 
-        - `SAM_inputs` (:class:`pandas.DataFrame`) - Shoot Apical Meristem inputs dataframe to convert, with one line by SAM ie. one line per axis.
-        - `hiddenzone_inputs` (:class:`pandas.DataFrame`) - Hidden zone inputs dataframe to convert, with one line by Hidden zone.
-        - `element_inputs` (:class:`pandas.DataFrame`) - Emergeing and mature element inputs dataframe to convert, with one line by element.
+    :return: The inputs in a dictionary.
+    :rtype: dict [str, dict]
 
-    :Returns:
-        The inputs in a dictionary.
-
-    :Returns Type:
-        :class:`dict` of :class:`dict`
-
-    .. seealso:: see :attr:`simulation.Simulation.inputs` for the structure of Elong-Wheat inputs.
+    .. seealso:: :attr:`simulation.Simulation.inputs` for the structure of Elong-Wheat inputs.
 
     """
     all_hiddenzone_dict = {}
@@ -88,8 +83,8 @@ def from_dataframes(hiddenzone_inputs, element_inputs, SAM_inputs):
             cumulated_internode_length[SAM_id].append(element_inputs_dict['length'])
             if not all_length_dict[SAM_id][phytomer_id]['cumulated_internode']:  # if list is empty for that phytomer, the list of all phytomer lengths is written
                 all_length_dict[SAM_id][phytomer_id]['cumulated_internode'].extend(cumulated_internode_length[SAM_id])
-            else:
-                all_length_dict[SAM_id][phytomer_id]['cumulated_internode'].append(element_inputs_dict['length'])  # else, only the last internode length is written (case of organs with hidden and visible part)
+            else:  # only the last internode length is written (case of organs with hidden and visible part)
+                all_length_dict[SAM_id][phytomer_id]['cumulated_internode'].append(element_inputs_dict['length'])
 
     for hiddenzone_inputs_id, hiddenzone_inputs_group in sorted(hiddenzone_inputs.groupby(HIDDENZONE_TOPOLOGY_COLUMNS)):
         # hiddenzone
@@ -116,18 +111,12 @@ def to_dataframes(data_dict):
     """
     Convert outputs from Elong-Wheat format to Pandas dataframe.
 
-    :Parameters:
+    :param dict data_dict: The outputs in Elong-Wheat format.
 
-        - `data_dict` (:class:`dict`) - The outputs in Elong-Wheat format.
+    :return: One dataframe for hiddenzone outputs, one dataframe for element outputs and one dataframe for SAM outputs.
+    :rtype: (pandas.DataFrame, pandas.DataFrame, pandas.DataFrame)
 
-    :Returns:
-        One dataframe for hiddenzone outputs, one dataframe for element outputs and one dataframe for SAM outputs.
-
-    :Returns Type:
-        :class:`tuple` of :class:`pandas.DataFrame`
-
-    .. seealso:: see :attr:`simulation.Simulation.outputs` for the structure of Elong-Wheat outputs.
-
+    .. seealso:: :attr:`simulation.Simulation.outputs` for the structure of Elong-Wheat outputs.
     """
     dataframes_dict = {}
     for (current_key, current_topology_columns, current_outputs_names) in (('hiddenzone', HIDDENZONE_TOPOLOGY_COLUMNS, simulation.HIDDENZONE_OUTPUTS),
