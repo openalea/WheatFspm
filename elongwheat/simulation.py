@@ -70,7 +70,7 @@ class Simulation(object):
     """The Simulation class allows to initialize and run a simulation.
     """
 
-    def __init__(self, delta_t=1):
+    def __init__(self, delta_t=1, update_parameters=None):
         """The inputs of elong-Wheat."""
         #: `inputs` is a dictionary of dictionaries:
         #:     {'hiddenzone': {(plant_index, axis_label, metamer_index): {hiddenzone_input_name: hiddenzone_input_value, ...}, ...},
@@ -96,6 +96,10 @@ class Simulation(object):
 
         #: the delta t of the simulation (in seconds)
         self.delta_t = delta_t
+
+        #: Update parameters if specified
+        if update_parameters:
+            parameters.__dict__.update(update_parameters)
 
     def initialize(self, inputs):
         """

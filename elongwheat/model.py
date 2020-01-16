@@ -111,7 +111,6 @@ def calculate_SAM_primodia(status, teq_since_primordium, delta_teq, nb_leaves, c
     :return: Number of leaf to be initiated (should be 0 or 1), updated leaf number on the SAM, status, time since last primordium intiation (in time equivalent to a reference temperature, s)
     :rtype: (int, int, str, float)
     """
-
     init_leaf = 0
     teq_since_primordium += delta_teq
 
