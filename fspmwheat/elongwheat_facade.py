@@ -55,7 +55,7 @@ class ElongWheatFacade(object):
                  shared_SAM_inputs_outputs_df,
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
-                 geometrical_model, option_static=False):
+                 geometrical_model, update_parameters=None, option_static=False):
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
         :param int delta_t: The delta between two runs, in seconds.
@@ -67,12 +67,13 @@ class ElongWheatFacade(object):
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
         :param alinea.adel.adel_dynamic.AdelWheatDyn geometrical_model: The model which deals with geometry.
                 This model must implement a method `add_metamer(mtg, plant_index, axis_label)` to add a metamer to a specific axis of a plant in a MTG.
+        :param dict update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
         :param bool option_static: Whether the model should be run for a static plant architecture
         """
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
-        self._simulation = simulation.Simulation(delta_t=delta_t)  #: the simulator to use to run the model
+        self._simulation = simulation.Simulation(delta_t=delta_t, update_parameters=update_parameters)  #: the simulator to use to run the model
 
         self.geometrical_model = geometrical_model  #: the model which deals with geometry
 

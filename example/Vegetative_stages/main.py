@@ -211,6 +211,11 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         elongwheat_SAM_inputs_t0 = SAM_inputs_t0[
             elongwheat_facade.converter.SAM_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.SAM_INPUTS if i in SAM_inputs_t0.columns]].copy()
 
+        # Update parameters if specified
+        if update_parameters_all_models and 'elongwheat' in update_parameters_all_models:
+            update_parameters_elongwheat = update_parameters_all_models['elongwheat']
+        else:
+            update_parameters_elongwheat = None
         elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
                                                                 elongwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                 elongwheat_SAM_inputs_t0,
@@ -219,7 +224,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                                 shared_SAM_inputs_outputs_df,
                                                                 shared_hiddenzones_inputs_outputs_df,
                                                                 shared_elements_inputs_outputs_df,
-                                                                adel_wheat)
+                                                                adel_wheat,
+                                                                update_parameters_elongwheat)
 
         # caribu
         caribu_facade_ = caribu_facade.CaribuFacade(g,
@@ -883,13 +889,11 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 if __name__ == '__main__':
     main(2600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
-         update_parameters_all_models={'cnwheat': {'hiddenzone': {'ALPHA': 10}, 'PhotosyntheticOrgan': {'VMAX_SUCROSE': 80, 'VMAX_STARCH': 90}, 'roots': {'SIGMA_SUCROSE': 0.5e-7}}})
+         update_parameters_all_models={'cnwheat': {'hiddenzone': {'ALPHA': 10}, 'PhotosyntheticOrgan': {'VMAX_SUCROSE': 80, 'VMAX_STARCH': 90}, 'roots': {'SIGMA_SUCROSE': 0.5e-7}},
+                                       'elongwheat': {'PLASTOCHRONE': 547921}})
 
-
-update_parameters_all_models = {'model1': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
-                                           'Organ2': {'param1': 'val1', 'param2': 'val2'}
-                                           },
-                                'model2': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
-                                           'Organ2': {'param1': 'val1', 'param2': 'val2'}
-                                           }
+update_parameters_all_models = {'cnwheat': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
+                                            'Organ2': {'param1': 'val1', 'param2': 'val2'}
+                                            },
+                                'elongwheat': {'param1': 'val1', 'param2': 'val2'}
                                 }
