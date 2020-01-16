@@ -114,7 +114,7 @@ LOGGING_LEVEL = logging.INFO  # can be one of: DEBUG, INFO, WARNING, ERROR, CRIT
 
 
 def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, option_static=False, tillers_replications=None,
-         heterogeneous_canopy=True, N_fertilizations=None):
+         heterogeneous_canopy=True, N_fertilizations=None, update_parameters_all_models=None):
     if run_simu:
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
 
@@ -200,6 +200,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             soils_inputs_t0 = pd.read_csv(SOILS_INPUTS_FILEPATH)
 
         # create the facades
+
         # elongwheat (created first because it is the only facade to add new metamers)
         elongwheat_hiddenzones_inputs_t0 = hiddenzones_inputs_t0[
             elongwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.HIDDENZONE_INPUTS if i in
@@ -281,9 +282,16 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         cnwheat_elements_inputs_t0 = elements_inputs_t0[[i for i in cnwheat_facade.cnwheat_converter.ELEMENTS_VARIABLES if i in elements_inputs_t0.columns]].copy()
         cnwheat_soils_inputs_t0 = soils_inputs_t0[[i for i in cnwheat_facade.cnwheat_converter.SOILS_VARIABLES if i in soils_inputs_t0.columns]].copy()
 
+        # Update parameters if specified
+        if update_parameters_all_models and 'cnwheat' in update_parameters_all_models:
+            update_parameters_cnwheat = update_parameters_all_models['cnwheat']
+        else:
+            update_parameters_cnwheat = {}
+
         cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
                                                        cnwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                        PLANT_DENSITY,
+                                                       update_parameters_cnwheat,
                                                        cnwheat_organs_inputs_t0,
                                                        cnwheat_hiddenzones_inputs_t0,
                                                        cnwheat_elements_inputs_t0,
@@ -874,4 +882,14 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 if __name__ == '__main__':
     main(2600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
-         option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000})
+         option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
+         update_parameters_all_models={'cnwheat': {'hiddenzone': {'ALPHA': 10}, 'PhotosyntheticOrgan': {'VMAX_SUCROSE': 80, 'VMAX_STARCH': 90}, 'roots': {'SIGMA_SUCROSE': 0.5e-7}}})
+
+
+update_parameters_all_models = {'model1': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
+                                           'Organ2': {'param1': 'val1', 'param2': 'val2'}
+                                           },
+                                'model2': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
+                                           'Organ2': {'param1': 'val1', 'param2': 'val2'}
+                                           }
+                                }

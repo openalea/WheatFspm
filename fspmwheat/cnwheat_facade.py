@@ -70,7 +70,7 @@ class CNWheatFacade(object):
 
     """
 
-    def __init__(self, shared_mtg, delta_t, culm_density,
+    def __init__(self, shared_mtg, delta_t, culm_density, update_parameters,
                  model_organs_inputs_df,
                  model_hiddenzones_inputs_df,
                  model_elements_inputs_df,
@@ -84,6 +84,7 @@ class CNWheatFacade(object):
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
         :param int delta_t: The delta between two runs, in seconds.
         :param dict culm_density: The density of culm. One key per plant.
+        :param dict update_parameters: A dictionary with the parameters to update, should have the form {'Organ_label1': {'param1': value1, 'param2': value2}, ...}.
         :param pandas.DataFrame model_organs_inputs_df: the inputs of the model at organs scale.
         :param pandas.DataFrame model_hiddenzones_inputs_df: the inputs of the model at hiddenzones scale.
         :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
@@ -101,6 +102,8 @@ class CNWheatFacade(object):
         self._simulation = cnwheat_simulation.Simulation(respiration_model=respiwheat_model, delta_t=delta_t, culm_density=culm_density)
 
         self.population, self.soils = cnwheat_converter.from_dataframes(model_organs_inputs_df, model_hiddenzones_inputs_df, model_elements_inputs_df, model_soils_inputs_df)
+
+        self._update_parameters = update_parameters
 
         self._simulation.initialize(self.population, self.soils)
 
@@ -256,6 +259,11 @@ class CNWheatFacade(object):
                                     print(cnwheat_organ_data_name)
 
                             cnwheat_organ.__dict__.update(cnwheat_organ_data_dict)
+
+                            # Update parameters if specified
+                            if mtg_organ_label in self._update_parameters:
+                                cnwheat_organ.PARAMETERS.__dict__.update(self._update_parameters[mtg_organ_label])
+
                             cnwheat_organ.initialize()
                             # add the new organ to current axis
                             setattr(cnwheat_axis, mtg_organ_label, cnwheat_organ)
@@ -289,7 +297,12 @@ class CNWheatFacade(object):
 
                             # create a new hiddenzone
                             cnwheat_hiddenzone = cnwheat_model.HiddenZone(mtg_hiddenzone_label, cohorts=cnwheat_plant.cohorts, cohorts_replications=cohorts_replications, index=cnwheat_phytomer.index,
-                                                                          **cnwheat_hiddenzone_data_dict)  #: TEMPORARY
+                                                                          **cnwheat_hiddenzone_data_dict)
+
+                            # Update parameters if specified
+                            if mtg_hiddenzone_label in self._update_parameters:
+                                cnwheat_hiddenzone.PARAMETERS.__dict__.update(self._update_parameters[mtg_hiddenzone_label])
+
                             cnwheat_hiddenzone.initialize()
                             # add the new hiddenzone to current phytomer
                             setattr(cnwheat_phytomer, mtg_hiddenzone_label, cnwheat_hiddenzone)
@@ -307,9 +320,15 @@ class CNWheatFacade(object):
                         # create a new organ
                         cnwheat_organ_class = MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]
                         cnwheat_organ = cnwheat_organ_class(mtg_organ_label)
+
+                        # Update parameters if specified
+                        if 'PhotosyntheticOrgan' in self._update_parameters:
+                            cnwheat_organ.PARAMETERS.__dict__.update(self._update_parameters['PhotosyntheticOrgan'])
+
                         cnwheat_organ.initialize()
                         has_valid_element = False
 
+                        # Create a new element
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
@@ -333,6 +352,10 @@ class CNWheatFacade(object):
                                 cnwheat_element_data_dict[cnwheat_element_data_name] = mtg_element_data_value
                             cnwheat_element = CNWHEAT_ORGANS_TO_ELEMENTS_MAPPING[cnwheat_organ_class](mtg_element_label, cohorts=cnwheat_plant.cohorts, cohorts_replications=cohorts_replications,
                                                                                                       index=cnwheat_phytomer.index, **cnwheat_element_data_dict)
+                            # Add parameters from organ scale
+                            cnwheat_element.PARAMETERS.__dict__.update(cnwheat_organ.PARAMETERS.__dict__)
+
+                            # add the new element to current organ
                             setattr(cnwheat_organ, cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnwheat_element)
 
                         if has_valid_element:
