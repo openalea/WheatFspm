@@ -240,7 +240,7 @@ def Beta_function(leaf_pseudo_age):
 
     return abs((1 + (max(0, (parameters.te - leaf_pseudo_age)) / (parameters.te - parameters.tm))) *
                (min(1.0, float(leaf_pseudo_age - parameters.tb) / float(parameters.te - parameters.tb)) **
-                ((parameters.te - parameters.tb) / (parameters.te - parameters.tm)))) + parameters.OFFSET_LEAF
+                ((parameters.te - parameters.tb) / (parameters.te - parameters.tm))))
 
 
 def calculate_deltaL_postE(prev_leaf_pseudo_age, leaf_pseudo_age, prev_leaf_L, leaf_Lmax, sucrose, amino_acids, mstruct, optimal_growth_option=False):
@@ -261,7 +261,7 @@ def calculate_deltaL_postE(prev_leaf_pseudo_age, leaf_pseudo_age, prev_leaf_L, l
 
     if sucrose > 0 and amino_acids > 0:
         if leaf_pseudo_age <= parameters.tb:
-            delta_leaf_L = prev_leaf_L - parameters.FITTED_L0 * leaf_Lmax
+            delta_leaf_L = prev_leaf_L - Beta_function(0.) * leaf_Lmax
         elif leaf_pseudo_age < parameters.te:
             # Beta function
             delta_leaf_L_Beta_0 = min(leaf_Lmax, leaf_Lmax * ( Beta_function(leaf_pseudo_age) - Beta_function(prev_leaf_pseudo_age) ))
@@ -365,7 +365,7 @@ def calculate_leaf_Lmax(leaf_Lem_prev):
     :return: Final leaf length (m)
     :rtype: float
     """
-    return min(leaf_Lem_prev * parameters.SCALING_FACTOR_LEAF, parameters.leaf_Lmax_MAX)
+    return min(leaf_Lem_prev / Beta_function(0.) , parameters.leaf_Lmax_MAX)
 
 
 def calculate_SL_ratio(leaf_rank):
@@ -508,6 +508,16 @@ def calculate_emerged_sheath_L(leaf_L, leaf_pseudostem_length, lamina_L, sheath_
     """
     return max(min(leaf_L - leaf_pseudostem_length - lamina_L, sheath_Lmax), 0.)
 
+def calculate_hidden_lamina_L(lamina_L, lamina_Lmax):
+    """ Hidden lamina length at the end of lamina growth.
+
+    :param float lamina_L: Length of the emerged lamina at the end of its growth (m)
+    :param float lamina_Lmax: Final lamina length (m)
+
+    :return: Hidden lamina length (m)
+    :rtype: float
+    """
+    return max( lamina_Lmax - lamina_L, 0.)
 
 # -------------------------------------------------------------------------------------------------------------------
 # --- Internodes
