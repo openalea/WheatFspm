@@ -67,7 +67,7 @@ def calculate_delta_leaf_enclosed_mstruct(leaf_L, delta_leaf_L, ratio_mstruct_DM
 def calculate_delta_leaf_enclosed_mstruct_postE(delta_leaf_pseudo_age, leaf_pseudo_age, leaf_pseudostem_L, enclosed_mstruct, LSSW):
     """ mstruct of the enclosed leaf from the emergence of the leaf to the end of elongation.
     Final mstruct of the enclosed leaf matches sheath mstruct calculation when it is mature.
-    #TODO : Hiddenzone mstruct calculation will not work for sheath sorten than previous one.
+    #TODO : Hiddenzone mstruct calculation is not correct for sheath shorten than previous one.
 
     :param float delta_leaf_pseudo_age: Delta of Pseudo age of the leaf since beginning of automate elongation (s)
     :param float leaf_pseudo_age: Pseudo age of the leaf since beginning of automate elongation (s)
@@ -214,6 +214,17 @@ def calculate_s_mstruct_sucrose(delta_hiddenzone_mstruct, delta_lamina_mstruct, 
 
     return s_mstruct_sucrose_C
 
+def calculate_sheath_mstruct(sheath_L, LSSW):
+    """ mstruct of the sheath.
+      Final mstruct of the enclosed leaf matches sheath mstruct calculation when it is mature.
+
+      :param float sheath_L: Sheath length (m)
+      :param float LSSW: Lineic Structural Sheath Weight (g m-1).
+
+      :return: Structural mass of the sheath (g)
+      :rtype: float
+      """
+    return sheath_L * LSSW
 
 # Roots
 def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_teq, postflowering_stages):

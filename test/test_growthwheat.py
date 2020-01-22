@@ -75,7 +75,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
 
     else:
         # keep only numerical data
-        for column in ('axis', 'organ', 'element', 'leaf_is_emerged', 'internode_is_visible', 'is_growing', 'is_over'):
+        for column in ('axis', 'organ', 'element', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_remobilizing', 'internode_is_remobilizing', 'is_growing', 'is_over'):
             if column in desired_data_df.columns:
                 assert desired_data_df[column].equals(actual_data_df[column])
                 del desired_data_df[column]

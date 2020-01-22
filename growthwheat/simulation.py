@@ -36,14 +36,14 @@ HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age
                      'leaf_pseudostem_length',
                      'delta_leaf_pseudostem_length', 'internode_distance_to_emerge', 'delta_internode_distance_to_emerge', 'SSLW', 'LSSW', 'LSIW', 'leaf_is_emerged', 'internode_is_visible',
                      'sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct',
-                     'internode_enclosed_Nstruct', 'mstruct', 'internode_Lmax', 'leaf_Lmax', 'is_over']
+                     'internode_enclosed_Nstruct', 'mstruct', 'internode_Lmax', 'leaf_Lmax', 'sheath_Lmax' , 'is_over', 'leaf_is_remobilizing', 'internode_is_remobilizing']
 ELEMENT_INPUTS = ['is_growing', 'mstruct', 'green_area', 'length', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'cytokinins', 'Nstruct']
 ROOT_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct']
 SAM_INPUTS = ['delta_teq', 'delta_teq_roots']
 
 #: the outputs computed by GrowthWheat
 HIDDENZONE_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct',
-                      'Nstruct', 'Respi_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct', 'is_over']
+                      'Nstruct', 'Respi_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct', 'is_over', 'leaf_is_remobilizing', 'internode_is_remobilizing']
 ELEMENT_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'mstruct', 'Nstruct', 'green_area', 'max_proteins', 'max_mstruct', 'Nresidual', 'senesced_length']
 ROOT_OUTPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'Respi_growth', 'rate_mstruct_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct']
 
@@ -278,8 +278,15 @@ class Simulation(object):
                 self.outputs['hiddenzone'][hiddenzone_id] = curr_hiddenzone_outputs
 
                 # Remobilisation at the end of leaf elongation
-                if not hiddenzone_inputs['leaf_is_growing'] and hiddenzone_inputs['delta_leaf_L'] > 0:
-                    share = curr_hiddenzone_outputs['leaf_enclosed_mstruct'] / curr_hiddenzone_outputs['mstruct']
+                if hiddenzone_inputs['leaf_is_remobilizing']:
+                    share_leaf = curr_hiddenzone_outputs['leaf_enclosed_mstruct'] / curr_hiddenzone_outputs['mstruct']
+
+                    # Case when the hiddenzone contains a hidden part of lamina
+                    if hiddenzone_inputs['leaf_pseudostem_length'] > hiddenzone_inputs['sheath_Lmax']:
+                        hidden_sheath_mstruct = model.calculate_sheath_mstruct(hiddenzone_inputs['sheath_Lmax'], hiddenzone_inputs['LSSW'] )
+                        share_hidden_sheath = hidden_sheath_mstruct / curr_hiddenzone_outputs['leaf_enclosed_mstruct']
+                    else:
+                        share_hidden_sheath = 1
 
                     # Add to hidden part of the sheath
                     hidden_sheath_id = hiddenzone_id + tuple(['sheath', 'HiddenElement'])
@@ -287,14 +294,27 @@ class Simulation(object):
                         new_sheath_outputs = parameters.OrganInit().__dict__
                         self.outputs['elements'][hidden_sheath_id] = new_sheath_outputs
                     curr_hidden_sheath_outputs = self.outputs['elements'][hidden_sheath_id]
-                    curr_hidden_sheath_outputs['mstruct'] = curr_hiddenzone_outputs['leaf_enclosed_mstruct']
-                    curr_hidden_sheath_outputs['max_mstruct'] = curr_hiddenzone_outputs['leaf_enclosed_mstruct']
-                    curr_hidden_sheath_outputs['Nstruct'] = curr_hiddenzone_outputs['leaf_enclosed_Nstruct']
-                    curr_hidden_sheath_outputs['sucrose'] = curr_hiddenzone_outputs['sucrose'] * share
-                    curr_hidden_sheath_outputs['amino_acids'] = curr_hiddenzone_outputs['amino_acids'] * share
-                    curr_hidden_sheath_outputs['fructan'] = curr_hiddenzone_outputs['fructan'] * share
-                    curr_hidden_sheath_outputs['proteins'] = curr_hiddenzone_outputs['proteins'] * share
+                    curr_hidden_sheath_outputs['mstruct'] = curr_hiddenzone_outputs['leaf_enclosed_mstruct'] * share_hidden_sheath
+                    curr_hidden_sheath_outputs['max_mstruct'] = curr_hiddenzone_outputs['leaf_enclosed_mstruct'] * share_hidden_sheath
+                    curr_hidden_sheath_outputs['Nstruct'] = curr_hiddenzone_outputs['leaf_enclosed_Nstruct'] * share_hidden_sheath
+                    curr_hidden_sheath_outputs['sucrose'] = curr_hiddenzone_outputs['sucrose'] * share_leaf  * share_hidden_sheath
+                    curr_hidden_sheath_outputs['amino_acids'] = curr_hiddenzone_outputs['amino_acids'] * share_leaf * share_hidden_sheath
+                    curr_hidden_sheath_outputs['fructan'] = curr_hiddenzone_outputs['fructan'] * share_leaf * share_hidden_sheath
+                    curr_hidden_sheath_outputs['proteins'] = curr_hiddenzone_outputs['proteins'] * share_leaf * share_hidden_sheath
                     self.outputs['elements'][hidden_sheath_id] = curr_hidden_sheath_outputs
+
+                    # Add to hidden par of the lamina, if any
+                    if share_hidden_sheath < 1:
+                        hidden_lamina_id = hiddenzone_id + tuple(['blade', 'HiddenElement'])
+                        curr_hidden_lamina_outputs = self.outputs['elements'][hidden_lamina_id]
+                        curr_hidden_lamina_outputs['mstruct'] = curr_hiddenzone_outputs['leaf_enclosed_mstruct'] * (1 - share_hidden_sheath)
+                        curr_hidden_lamina_outputs['max_mstruct'] = curr_hiddenzone_outputs['leaf_enclosed_mstruct'] * (1 - share_hidden_sheath)
+                        curr_hidden_lamina_outputs['Nstruct'] = curr_hiddenzone_outputs['leaf_enclosed_Nstruct'] * (1 - share_hidden_sheath)
+                        curr_hidden_lamina_outputs['sucrose'] = curr_hiddenzone_outputs['sucrose'] * share_leaf * (1 - share_hidden_sheath)
+                        curr_hidden_lamina_outputs['amino_acids'] = curr_hiddenzone_outputs['amino_acids'] * share_leaf * (1 - share_hidden_sheath)
+                        curr_hidden_lamina_outputs['fructan'] = curr_hiddenzone_outputs['fructan'] * share_leaf * (1 - share_hidden_sheath)
+                        curr_hidden_lamina_outputs['proteins'] = curr_hiddenzone_outputs['proteins'] * share_leaf * (1 - share_hidden_sheath)
+                        self.outputs['elements'][hidden_lamina_id] = curr_hidden_lamina_outputs
 
                     # Remove in hiddenzone
                     curr_hiddenzone_outputs = self.outputs['hiddenzone'][hiddenzone_id]
@@ -302,11 +322,14 @@ class Simulation(object):
                     curr_hiddenzone_outputs['leaf_enclosed_Nstruct'] = 0
                     curr_hiddenzone_outputs['mstruct'] = curr_hiddenzone_outputs['internode_enclosed_mstruct']
                     curr_hiddenzone_outputs['Nstruct'] = curr_hiddenzone_outputs['internode_enclosed_Nstruct']
-                    curr_hiddenzone_outputs['sucrose'] -= curr_hiddenzone_outputs['sucrose'] * share
-                    curr_hiddenzone_outputs['amino_acids'] -= curr_hiddenzone_outputs['amino_acids'] * share
-                    curr_hiddenzone_outputs['fructan'] -= curr_hiddenzone_outputs['fructan'] * share
-                    curr_hiddenzone_outputs['proteins'] -= curr_hiddenzone_outputs['proteins'] * share
+                    curr_hiddenzone_outputs['sucrose'] -= curr_hiddenzone_outputs['sucrose'] * share_leaf
+                    curr_hiddenzone_outputs['amino_acids'] -= curr_hiddenzone_outputs['amino_acids'] * share_leaf
+                    curr_hiddenzone_outputs['fructan'] -= curr_hiddenzone_outputs['fructan'] * share_leaf
+                    curr_hiddenzone_outputs['proteins'] -= curr_hiddenzone_outputs['proteins'] * share_leaf
                     self.outputs['hiddenzone'][hiddenzone_id] = curr_hiddenzone_outputs
+
+                    # Turn remobilizing flag to False
+                    self.outputs['hiddenzone'][hiddenzone_id]['leaf_is_remobilizing'] = False
 
                 # Remobilisation at the end of internode elongation
                 if not hiddenzone_inputs['internode_is_growing'] and hiddenzone_inputs['internode_L'] > 0:  # Internodes stop to elongate after leaves. We cannot test delta_internode_L > 0 for the cases of short internodes which are mature before GA production.
@@ -325,6 +348,9 @@ class Simulation(object):
                     curr_hidden_internode_outputs['proteins'] += curr_hiddenzone_outputs['proteins']
                     curr_hidden_internode_outputs['is_growing'] = False
                     self.outputs['elements'][hidden_internode_id] = curr_hidden_internode_outputs
+
+                    # Turn remobilizing flag to False
+                    self.outputs['hiddenzone'][hiddenzone_id]['internode_is_remobilizing'] = False
 
                     #: Turn the flag to true after remobilisation in order to Delete Hiddenzone in both MTG and shared_outputs
                     self.outputs['hiddenzone'][hiddenzone_id]['is_over'] = True
