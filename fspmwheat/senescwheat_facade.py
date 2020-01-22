@@ -200,8 +200,6 @@ class SenescWheatFacade(object):
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
-                        if mtg_organ_vid == 30:
-                            pass
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
                         senesced_length_organ = 0.  # Temporaire
                         if mtg_organ_label not in PHOTOSYNTHETIC_ORGANS_NAMES: continue

@@ -167,12 +167,10 @@ class GrowthWheatFacade(object):
 
                                     growthwheat_element_inputs_dict = {}
 
-                                    # Exclude the HiddenElement appart from remobilisation cases
+                                    # Exclude the HiddenElement appart from remobilization cases
                                     remobilisation = False
                                     if mtg_element_label == 'HiddenElement':
-                                        if (mtg_organ_label in LEAF_LABELS and not growthwheat_hiddenzone_inputs_dict['leaf_is_growing'] and growthwheat_hiddenzone_inputs_dict['delta_leaf_L'] > 0) or\
-                                                (mtg_organ_label == 'internode' and not growthwheat_hiddenzone_inputs_dict['internode_is_growing'] and
-                                                 growthwheat_hiddenzone_inputs_dict['delta_internode_L'] > 0):
+                                        if growthwheat_hiddenzone_inputs_dict['leaf_is_remobilizing'] or growthwheat_hiddenzone_inputs_dict['internode_is_remobilizing']:
                                             remobilisation = True
                                         else:
                                             continue
