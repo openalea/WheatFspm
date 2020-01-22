@@ -182,7 +182,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             soils_inputs_t0 = soils_previous_outputs[idx].drop(['t'], axis=1)
 
             # Make sure boolean columns have either type bool or float
-            bool_columns = ['is_over', 'is_growing', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_growing', 'internode_is_growing']
+            bool_columns = ['is_over', 'is_growing', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_growing', 'internode_is_growing', 'leaf_is_remobilizing', 'internode_is_remobilizing']
             for df in [elements_inputs_t0, hiddenzones_inputs_t0]:
                 for cln in bool_columns:
                     if cln in df.keys():
@@ -332,10 +332,23 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                 print('t senescwheat is {}'.format(t_senescwheat))
                 senescwheat_facade_.run()
 
-                if shared_elements_inputs_outputs_df.shape[0] == 0:
-                    print('Simulation stopped because all the elements are fully senescent.')
+                # Test for dead plant # TODO: adapt in case of multiple plants
+                if np.nansum( shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement','LeafElement1']), 'green_area'] ) == 0:
+
+                    print('\n' '! Simulation stopped because all the emerged elements are fully senescent !')
+
+                    # append the inputs and outputs at current step to global lists
+                    all_simulation_steps.append(t_senescwheat)
+                    axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
+                    organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
+                    hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
+                    elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                    SAM_all_data_list.append(shared_SAM_inputs_outputs_df.copy())
+                    soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+
                     break
 
+                # Run the rest of the model if the plant is alive
                 for t_farquharwheat in range(t_senescwheat, t_senescwheat + senescwheat_ts, farquharwheat_ts):
                     # get the meteo of the current step
                     Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature_MA2', 'ambient_CO2_MA2', 'humidity_MA2', 'Wind_MA2']]
@@ -382,6 +395,12 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                 elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
                                 SAM_all_data_list.append(shared_SAM_inputs_outputs_df.copy())
                                 soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+
+            else:
+                # Continue if SenescWheat loop wasn't broken because of dead plant.
+                continue
+            # SenescWheat loop was broken, break the Caribu loop.
+            break
 
         execution_time = int(time.time() - current_time_of_the_system)
         print ('\n' 'Simulation run in {}'.format(str(datetime.timedelta(seconds=execution_time))))
@@ -873,5 +892,5 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 
 if __name__ == '__main__':
-    main(2600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000})
