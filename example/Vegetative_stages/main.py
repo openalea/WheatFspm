@@ -18,7 +18,7 @@ from fspmwheat import farquharwheat_facade
 from fspmwheat import growthwheat_facade
 from fspmwheat import senescwheat_facade
 
-from alinea.adel.adel_dynamic import AdelWheatDyn
+from alinea.adel.adel_dynamic import AdelDyn
 from alinea.adel.echap_leaf import echap_leaves
 
 """
@@ -127,8 +127,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         cnwheat_ts = 1
 
         # read adelwheat inputs at t0
-        adel_wheat = AdelWheatDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-        adel_wheat.pars = adel_wheat.read_pars(dir=INPUTS_DIRPATH)
+        adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
+       # adel_wheat.pars = adel_wheat.read_pars(dir=INPUTS_DIRPATH)
         g = adel_wheat.load(dir=INPUTS_DIRPATH)
 
         # create empty dataframes to shared data between the models
@@ -888,9 +888,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 if __name__ == '__main__':
     main(2600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
-         option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
-         update_parameters_all_models={'cnwheat': {'hiddenzone': {'ALPHA': 10}, 'PhotosyntheticOrgan': {'VMAX_SUCROSE': 80, 'VMAX_STARCH': 90}, 'roots': {'SIGMA_SUCROSE': 0.5e-7}},
-                                       'elongwheat': {'PLASTOCHRONE': 547921}})
+         option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000})
 
 update_parameters_all_models = {'cnwheat': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
                                             'Organ2': {'param1': 'val1', 'param2': 'val2'}
