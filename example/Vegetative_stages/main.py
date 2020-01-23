@@ -302,6 +302,11 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                        shared_elements_inputs_outputs_df,
                                                        shared_soils_inputs_outputs_df)
 
+        # Run cnwheat with constant nitrates concentration in the soil if specified
+        if N_fertilizations is not None and len(N_fertilizations) > 0:
+            if 'constant_Conc_Nitrates' in N_fertilizations.keys():
+                cnwheat_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = N_fertilizations['constant_Conc_Nitrates']
+
         # Update geometry
         adel_wheat.update_geometry(g)
         adel_wheat.plot(g)
@@ -900,12 +905,15 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 
 if __name__ == '__main__':
-    main(10, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+    main(2600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000})
 
-update_parameters_all_models = {'cnwheat': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
-                                            'Organ2': {'param1': 'val1', 'param2': 'val2'}
-                                            },
-                                'elongwheat': {'param1': 'val1', 'param2': 'val2'}
-                                }
+# update_parameters_all_models = {'cnwheat': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
+#                                             'Organ2': {'param1': 'val1', 'param2': 'val2'}
+#                                             },
+#                                 'elongwheat': {'param1': 'val1', 'param2': 'val2'}
+#                                 }
+
+# N_fertilizations = {time_step1: N_fertilization_qty, time_step2: N_fertilization_qty} # Nitrates concentrations fluctuactes and we add N to the soil
+# or N_fertilizations = {'constant_Conc_Nitrates': True} # Nitrates concentrations is set to constant (soil inputs file)
