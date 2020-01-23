@@ -305,8 +305,6 @@ class ElongWheatFacade(object):
 
                     # Organ scale
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
-                        if mtg_organ_vid == 60:
-                            pass
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
 
                         if mtg_organ_label not in ('blade', 'sheath', 'internode'): continue
