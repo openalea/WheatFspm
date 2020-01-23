@@ -29,7 +29,7 @@ from elongwheat import simulation as elongwheat_simulation, converter as elongwh
 OPTION_SHOW_ADEL = True
 run_from_outputs = False
 delta_t = 3600
-loop_end = 1000
+loop_end = 900
 desired_t_step = 0
 
 # setup outup precision
@@ -101,13 +101,13 @@ elongwheat_ts = 1
 # --- ADEL
 if OPTION_SHOW_ADEL:
     from fspmwheat import elongwheat_facade
+    from alinea.adel.adel_dynamic import AdelDyn
     from alinea.adel.echap_leaf import echap_leaves
-    from alinea.adel.adel_dynamic import AdelWheatDyn
 
     # adelwheat inputs at t0
     ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat')  # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'
-    adel_wheat = AdelWheatDyn(seed=1234, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-    adel_wheat.pars = adel_wheat.read_pars(dir=ADELWHEAT_INPUTS_DIRPATH)
+    adel_wheat = AdelDyn(seed=1234, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
+    # adel_wheat.pars = adel_wheat.read_pars(dir=ADELWHEAT_INPUTS_DIRPATH)
     g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
 
     hour_to_second_conversion_factor = 3600

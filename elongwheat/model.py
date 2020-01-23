@@ -239,7 +239,7 @@ def Beta_function(leaf_pseudo_age):
 
     return abs((1 + (max(0, (parameters.te - leaf_pseudo_age)) / (parameters.te - parameters.tm))) *
                (min(1.0, float(leaf_pseudo_age - parameters.tb) / float(parameters.te - parameters.tb)) **
-                ((parameters.te - parameters.tb) / (parameters.te - parameters.tm)))) + parameters.OFFSET_LEAF
+                ((parameters.te - parameters.tb) / (parameters.te - parameters.tm))))
 
 
 def calculate_deltaL_postE(prev_leaf_pseudo_age, leaf_pseudo_age, prev_leaf_L, leaf_Lmax, sucrose, amino_acids, mstruct, optimal_growth_option=False):
@@ -260,7 +260,7 @@ def calculate_deltaL_postE(prev_leaf_pseudo_age, leaf_pseudo_age, prev_leaf_L, l
 
     if sucrose > 0 and amino_acids > 0:
         if leaf_pseudo_age <= parameters.tb:
-            delta_leaf_L = prev_leaf_L - parameters.FITTED_L0 * leaf_Lmax
+            delta_leaf_L = prev_leaf_L - Beta_function(0.) * leaf_Lmax
         elif leaf_pseudo_age < parameters.te:
             # Beta function
             delta_leaf_L_Beta_0 = min(leaf_Lmax, leaf_Lmax * ( Beta_function(leaf_pseudo_age) - Beta_function(prev_leaf_pseudo_age) ))
@@ -364,7 +364,7 @@ def calculate_leaf_Lmax(leaf_Lem_prev):
     :return: Final leaf length (m)
     :rtype: float
     """
-    return min(leaf_Lem_prev * parameters.SCALING_FACTOR_LEAF, parameters.leaf_Lmax_MAX)
+    return min(leaf_Lem_prev / Beta_function(0.) , parameters.leaf_Lmax_MAX)
 
 
 def calculate_SL_ratio(leaf_rank):
@@ -507,6 +507,16 @@ def calculate_emerged_sheath_L(leaf_L, leaf_pseudostem_length, lamina_L, sheath_
     """
     return max(min(leaf_L - leaf_pseudostem_length - lamina_L, sheath_Lmax), 0.)
 
+def calculate_hidden_lamina_L(lamina_L, lamina_Lmax):
+    """ Hidden lamina length at the end of lamina growth.
+
+    :param float lamina_L: Length of the emerged lamina at the end of its growth (m)
+    :param float lamina_Lmax: Final lamina length (m)
+
+    :return: Hidden lamina length (m)
+    :rtype: float
+    """
+    return max( lamina_Lmax - lamina_L, 0.)
 
 # -------------------------------------------------------------------------------------------------------------------
 # --- Internodes
@@ -553,7 +563,7 @@ def calculate_internode_Lmax(internode_L_lig):
     :rtype: float
     """
 
-    internode_Lmax = internode_L_lig * parameters.SCALING_FACTOR_INT
+    internode_Lmax = internode_L_lig / Beta_function_internode(0.)
 
     return internode_Lmax
 
@@ -662,18 +672,19 @@ def Beta_function_internode(internode_pseudo_age):
     :return: normalized internode_L (m)
     :rtype: float
     """
-    return (abs((1 + (max(0, (parameters.te_IN - internode_pseudo_age)) / (parameters.te_IN - parameters.tm_IN))) *
+    return ( abs((1 + (max(0, (parameters.te_IN - internode_pseudo_age)) / (parameters.te_IN - parameters.tm_IN))) *
                 (min(1.0, float(internode_pseudo_age - parameters.tb_IN) /
                      float(parameters.te_IN - parameters.tb_IN)) ** ((parameters.te_IN - parameters.tb_IN) /
-                                                                     (parameters.te_IN - parameters.tm_IN)))) + parameters.OFFSET_INT)
+                                                                     (parameters.te_IN - parameters.tm_IN)))) )
 
 
-def calculate_delta_internode_L_postL(internode_pseudo_age, prev_internode_L, internode_Lmax, sucrose, amino_acids, mstruct, optimal_growth_option=False):
+def calculate_delta_internode_L_postL(prev_internode_pseudo_age, internode_pseudo_age, prev_internode_L, internode_Lmax_lig, sucrose, amino_acids, mstruct, optimal_growth_option=False):
     """ Internode length, from the ligulation of the previous leaf to the end of elongation (automate function depending on leaf pseudo age and final length).
 
+    :param float prev_internode_pseudo_age: Pseudo age of the internode since beginning of automate elongation at previous time step (s)
     :param float internode_pseudo_age: Pseudo age of the internode since beginning of automate elongation (s)
     :param float prev_internode_L: Internode length before elongation (m)
-    :param float internode_Lmax: Final internode length (m)
+    :param float internode_Lmax_lig: Estimate of final internode length at rpevious leaf ligulation (m)
     :param float sucrose: Amount of sucrose (µmol C)
     :param float amino_acids: Amount of amino acids (µmol N)
     :param float mstruct: Structural mass (µmol N)
@@ -684,14 +695,14 @@ def calculate_delta_internode_L_postL(internode_pseudo_age, prev_internode_L, in
     """
     if sucrose > 0 and amino_acids > 0:
         if internode_pseudo_age <= parameters.tb_IN:
-            delta_internode_L = prev_internode_L - parameters.L0_INT * internode_Lmax
+            delta_internode_L = prev_internode_L - Beta_function_internode(0.) * internode_Lmax_lig
         elif internode_pseudo_age < parameters.te_IN:
             # Beta function
-            internode_L_Beta = min(internode_Lmax, internode_Lmax * Beta_function_internode(internode_pseudo_age))
+            delta_internode_L_Beta_0 = min(internode_Lmax_lig, internode_Lmax_lig * ( Beta_function_internode(internode_pseudo_age) - Beta_function_internode(prev_internode_pseudo_age) ))
 
             if optimal_growth_option:
                 # Current internode length
-                delta_internode_L = internode_L_Beta - prev_internode_L
+                delta_internode_L = delta_internode_L_Beta_0
             else:  # TODO: not tested yet
                 # Regulation by C and N
                 conc_sucrose = sucrose / mstruct
@@ -699,7 +710,7 @@ def calculate_delta_internode_L_postL(internode_pseudo_age, prev_internode_L, in
                 regul = parameters.leaf_pseudo_age_Vmax / (1 + parameters.leaf_pseudo_age_Kc / conc_sucrose) / (1 + parameters.leaf_pseudo_age_Kn / conc_amino_acids)
 
                 # Current internode length
-                delta_internode_L = regul * (internode_L_Beta - prev_internode_L)
+                delta_internode_L = regul * delta_internode_L_Beta_0
         else:
             delta_internode_L = 0
     else:
@@ -708,17 +719,17 @@ def calculate_delta_internode_L_postL(internode_pseudo_age, prev_internode_L, in
     return delta_internode_L
 
 
-def calculate_update_internode_Lmax(prev_internode_Lmax, internode_L, internode_pseudo_age):
+def calculate_update_internode_Lmax(internode_Lmax_lig, internode_L, internode_pseudo_age):
     """ Update internode_Lmax following a reduction of delta_leaf_L due to C and N regulation
 
-    :param float prev_internode_Lmax: Previous final internode length (m)
-    :param float internode_L: Internode length (m)
-    :param float internode_pseudo_age: Pseudo age of the internode since beginning of automate elongation (s)
+    :param float internode_Lmax_lig: Estimate of final internode length at previous leaf ligulation (m)
+    :param float internode_L: actual internode length at the end of the time step, calculated according to CN concentration  (m)
+    :param float internode_pseudo_age: Pseudo age of the internode since beginning of automate elongation at the end of the time step (s)
 
     :return: Updated internode Lmax (m)
     :rtype: float
     """
-    return internode_L + prev_internode_Lmax * (1 - Beta_function_internode(internode_pseudo_age))
+    return internode_L + internode_Lmax_lig * (1 - Beta_function_internode(internode_pseudo_age))
 
 
 def calculate_internode_visibility(internode_L, internode_distance_to_emerge):
