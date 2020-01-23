@@ -43,9 +43,9 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # --- Leaves
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_Ljutovac_fit = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000152, 10: 0.00000135, 11: 0.0000013}  # Optimal RERmax (s-1 at 12°C) allowing to simulate leaf dimensions of Ljutovac (2002)
-# { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # RER fitted from data of Ljutovac 2002 RER (s-1 at 12°C)
-RERmax = {5: 3.35e-06, 6: 2.35e-06, 7: 2.22e-06, 8: 2.115e-06, 9: 2.03e-06, 10: 1.75e-06, 11: 1.596e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
+RERmax_Ljutovac_fit = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000151, 10: 0.00000134, 11: 0.00000129} # Optimal RERmax (s-1 at 12°C) allowing to simulate leaf dimensions of Ljutovac (2002)
+# { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # Observed RER on data of Ljutovac 2002 RER (s-1 at 12°C)
+RERmax = {5: 3.35e-06, 6: 2.35e-06, 7: 2.22e-06, 8: 2.1e-06, 9: 2.02e-06, 10: 1.7e-06, 11: 1.596e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
 RER_Kc = 100  #: affinity coefficient of RER to C (µmol g-1)
 RER_Kn = 15   #: affinity coefficient of RER to N (µmol g-1)
 # 8: 2.13e-06, 9: 2e-06, 10: 1.8e-06 [8 et 10 trop élevés)
@@ -103,14 +103,14 @@ ratio_DZ_l_end = 0.7        #: normalized log of leaf length at which the the le
 # --- Internodes
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_dict_IN = {3: 2.48E-06, 4: 2.48E-06, 5: 2.48E-06, 6: 2.48E-06, 7: 3.1E-06, 8: 1.9E-06, 9: 2E-06, 10: 2.05E-06, 11: 1.92E-06}  #: s-1 at 12°C FIT dec 18
-# { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.9E-06 , 8 : 2.3E-06 , 9 : 2.45E-06 , 10 :2.35E-06 , 11 : 2.2E-06 }#: s-1 at 12°C FIT nov 18
+RERmax_dict_IN = {3: 2.4E-06, 4: 2.4E-06, 5: 2.4E-06, 6: 2.4E-06, 7: 2.16E-06, 8: 1.8E-06, 9: 1.91E-06, 10: 1.9E-06, 11: 1.76E-06}  #: s-1 at 12°C FIT jan 20
+# {3: 2.48E-06, 4: 2.48E-06, 5: 2.48E-06, 6: 2.48E-06, 7: 3.1E-06, 8: 1.9E-06, 9: 2E-06, 10: 2.05E-06, 11: 1.92E-06}  #: s-1 at 12°C FIT dec 18
 # { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.48E-06 , 8 : 2.48E-06 , 9 : 2.48E-06 , 10 : 1.9E-06 , 11 : 1.6E-06 }#: s-1 at 12°C
 # estimate from Ljutovac 2002 over the period until leaf ligulation i.e. wider than in the model.
 # Because i) not enought data if we consider only up to previous leaf ligulation, ii) same exponential like period
 
 # SCALING_FACTOR_INT = 59  #: Scaling factor of the internode in automate growth (dimensionless), Malvoisin 1984 II
-SCALING_FACTOR_INT = 53    #: Scaling factor of the internode in automate growth (dimensionless), Ljutovac 2002, 250pl.m-2
+# SCALING_FACTOR_INT = 53    #: Scaling factor of the internode in automate growth (dimensionless), Ljutovac 2002, 250pl.m-2
 
 # Initiation of internode elongation
 nb_PLASTO_internode_init = 5  #: Delay between leaf initiation and internode initiation expressed as a number of plastochron. From Malvoisin 1984b, associated with priodia of 5.10-4 m
@@ -120,11 +120,9 @@ internode_L_init = 5E-5       #: Initial internode length (m)
 # te_IN = 210 * 3600 * 24 /12  #: end of internode elongation in automate growth; Malvoisin 1984 II
 # tm_IN = 156 * 3600 * 24 /12  #: time at which internode elongation rate is maximal in automate growth (s); Malvoisin 1984 II
 # tb_IN = -70 * 3600 * 24 /12  #: beginning of internode elongation in automate growth (s); Malvoisin 1984 II
-te_IN = 274 * 3600 * 24 / 12  #: end of internode elongation in automate growth; Ljutovac 2002, 250pl.m-2
-tm_IN = 159 * 3600 * 24 / 12  #: time at which internode elongation rate is maximal in automate growth (s);Ljutovac 2002, 250pl.m-2
-tb_IN = 0  #: beginning of internode elongation in automate growth (s);Ljutovac 2002, 250pl.m-2
-L0_INT = (1 + (te_IN / (te_IN - tm_IN))) * (min(1.0, float(-tb_IN) / float(te_IN - tb_IN))**((te_IN - tb_IN) / (te_IN - tm_IN)))  #: Internode length at t=0 in automate growth (beta function) (m)
-OFFSET_INT = 1 / SCALING_FACTOR_INT - L0_INT
+te_IN = 331.7538 * 3600 * 24 / 12  #: end of internode elongation in automate growth; Ljutovac 2002, 250pl.m-2
+tm_IN = 252.7798 * 3600 * 24 / 12  #: time at which internode elongation rate is maximal in automate growth (s);Ljutovac 2002, 250pl.m-2
+tb_IN = -374.2918 * 3600 * 24 / 12  #: beginning of internode elongation in automate growth (s);Ljutovac 2002, 250pl.m-2
 
 ratio_LSIW_LSSW = 2.5  #: ratio lineic structural internode mass / lineic structural sheath mass  of the specific structural dry masses (from data of J. Bertheloot, 2004)
 internode_LSIW_dict = {1: 2.8, 2: 2.8, 3: 2.8, 4: 2.8, 5: 2.8, 6: 2.8, 7: 2.8, 8: 2.8, 9: 2.3, 10: 1.7, 11: 1.6, 12: 1.4, 13: 0.7}  #: experiment of M.Gauthier 2017/18, consistent with that of R.Barillot 2014
@@ -155,6 +153,7 @@ class HiddenZoneInit(object):
         self.LSSW = None                         #: g m-1, no calculation before emergence Ln-1 (about 2)
         self.leaf_is_emerged = False
         self.internode_Lmax = None               #: m, no calculation before ligulation Ln
+        self.internode_Lmax_lig = None           #: m, no calculation before ligulation Ln
         self.LSIW = None                         #: g m-1, no calculation before ligulation Ln
         self.internode_is_visible = False
         self.leaf_pseudo_age = 0

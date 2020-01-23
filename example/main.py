@@ -29,7 +29,7 @@ from elongwheat import simulation as elongwheat_simulation, converter as elongwh
 OPTION_SHOW_ADEL = True
 run_from_outputs = False
 delta_t = 3600
-loop_end = 1000
+loop_end = 900
 desired_t_step = 0
 
 # setup outup precision
