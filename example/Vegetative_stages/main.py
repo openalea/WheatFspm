@@ -51,36 +51,10 @@ np.random.seed(1234)
 # number of seconds in 1 hour
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
-INPUTS_DIRPATH = 'inputs'
+# Define plant density (culm m-2)
+PLANT_DENSITY = {1: 250}
 
-# the directory  must contain files 'adel_pars.RData', 'adel0000.pckl' and 'scene0000.bgeom' for ADELWHEAT
-
-# inputs
-SAM_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'SAM_inputs.csv')
-ORGANS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'organs_inputs.csv')
-HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
-ELEMENTS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'elements_inputs.csv')
-SOILS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'soils_inputs.csv')
-METEO_FILEPATH = os.path.join(INPUTS_DIRPATH, 'meteo_Ljutovac2002.csv')
-
-# the path of the CSV files where to save the states of the modeled system at each step
-OUTPUTS_DIRPATH = 'outputs'
-AXES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'axes_states.csv')
-SAM_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'SAM_states.csv')
-ORGANS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'organs_states.csv')
-HIDDENZONES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hiddenzones_states.csv')
-ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'elements_states.csv')
-SOILS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'soils_states.csv')
-
-# post-processing directory path
-POSTPROCESSING_DIRPATH = 'postprocessing'
-AXES_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'axes_postprocessing.csv')
-ORGANS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'organs_postprocessing.csv')
-HIDDENZONES_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'hiddenzones_postprocessing.csv')
-ELEMENTS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'elements_postprocessing.csv')
-SOILS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'soils_postprocessing.csv')
-
-GRAPHS_DIRPATH = 'graphs'
+INPUTS_OUTPUTS_PRECISION = 8
 
 AXES_INDEX_COLUMNS = ['t', 'plant', 'axis']
 ELEMENTS_INDEX_COLUMNS = ['t', 'plant', 'axis', 'metamer', 'organ', 'element']
@@ -88,12 +62,6 @@ HIDDENZONES_INDEX_COLUMNS = ['t', 'plant', 'axis', 'metamer']
 ORGANS_INDEX_COLUMNS = ['t', 'plant', 'axis', 'organ']
 SAM_INDEX_COLUMNS = ['t', 'plant', 'axis']
 SOILS_INDEX_COLUMNS = ['t', 'plant', 'axis']
-
-# Define plant density (culm m-2)
-PLANT_DENSITY = {1: 250}
-
-INPUTS_OUTPUTS_PRECISION = 8
-
 
 def save_df_to_csv(df, states_filepath):
     try:
@@ -114,7 +82,33 @@ LOGGING_LEVEL = logging.INFO  # can be one of: DEBUG, INFO, WARNING, ERROR, CRIT
 
 
 def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, option_static=False, tillers_replications=None,
-         heterogeneous_canopy=True, N_fertilizations=None, update_parameters_all_models=None):
+         heterogeneous_canopy=True, N_fertilizations=None, update_parameters_all_models=None,
+         INPUTS_DIRPATH='inputs',OUTPUTS_DIRPATH = 'outputs',POSTPROCESSING_DIRPATH = 'postprocessing', GRAPHS_DIRPATH = 'graphs' ):
+
+    # the inputs directory  must contain files 'adel_pars.RData', 'adel0000.pckl' and 'scene0000.bgeom' for ADELWHEAT
+    # inputs
+    SAM_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'SAM_inputs.csv')
+    ORGANS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'organs_inputs.csv')
+    HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
+    ELEMENTS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'elements_inputs.csv')
+    SOILS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'soils_inputs.csv')
+    METEO_FILEPATH = os.path.join(INPUTS_DIRPATH, 'meteo_Ljutovac2002.csv')
+
+    # the path of the CSV files where to save the states of the modeled system at each step
+    AXES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'axes_states.csv')
+    SAM_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'SAM_states.csv')
+    ORGANS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'organs_states.csv')
+    HIDDENZONES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hiddenzones_states.csv')
+    ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'elements_states.csv')
+    SOILS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'soils_states.csv')
+
+    # post-processing directory path
+    AXES_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'axes_postprocessing.csv')
+    ORGANS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'organs_postprocessing.csv')
+    HIDDENZONES_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'hiddenzones_postprocessing.csv')
+    ELEMENTS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'elements_postprocessing.csv')
+    SOILS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'soils_postprocessing.csv')
+
     if run_simu:
         meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
 
@@ -182,7 +176,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             soils_inputs_t0 = soils_previous_outputs[idx].drop(['t'], axis=1)
 
             # Make sure boolean columns have either type bool or float
-            bool_columns = ['is_over', 'is_growing', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_growing', 'internode_is_growing']
+            bool_columns = ['is_over', 'is_growing', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_growing', 'internode_is_growing', 'leaf_is_remobilizing', 'internode_is_remobilizing']
             for df in [elements_inputs_t0, hiddenzones_inputs_t0]:
                 for cln in bool_columns:
                     if cln in df.keys():
@@ -346,10 +340,23 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                 print('t senescwheat is {}'.format(t_senescwheat))
                 senescwheat_facade_.run()
 
-                if shared_elements_inputs_outputs_df.shape[0] == 0:
-                    print('Simulation stopped because all the elements are fully senescent.')
+                # Test for dead plant # TODO: adapt in case of multiple plants
+                if np.nansum( shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement','LeafElement1']), 'green_area'] ) == 0:
+
+                    print('\n' '! Simulation stopped because all the emerged elements are fully senescent !')
+
+                    # append the inputs and outputs at current step to global lists
+                    all_simulation_steps.append(t_senescwheat)
+                    axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
+                    organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
+                    hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
+                    elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                    SAM_all_data_list.append(shared_SAM_inputs_outputs_df.copy())
+                    soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+
                     break
 
+                # Run the rest of the model if the plant is alive
                 for t_farquharwheat in range(t_senescwheat, t_senescwheat + senescwheat_ts, farquharwheat_ts):
                     # get the meteo of the current step
                     Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature_MA2', 'ambient_CO2_MA2', 'humidity_MA2', 'Wind_MA2']]
@@ -396,6 +403,12 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                 elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
                                 SAM_all_data_list.append(shared_SAM_inputs_outputs_df.copy())
                                 soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+
+            else:
+                # Continue if SenescWheat loop wasn't broken because of dead plant.
+                continue
+            # SenescWheat loop was broken, break the Caribu loop.
+            break
 
         execution_time = int(time.time() - current_time_of_the_system)
         print ('\n' 'Simulation run in {}'.format(str(datetime.timedelta(seconds=execution_time))))
@@ -887,8 +900,9 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 
 if __name__ == '__main__':
-    main(2600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
-         option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000})
+    main(10, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+         option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
+         heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000})
 
 update_parameters_all_models = {'cnwheat': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
                                             'Organ2': {'param1': 'val1', 'param2': 'val2'}
