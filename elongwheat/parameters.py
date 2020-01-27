@@ -45,11 +45,9 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # Exponential elongation
 RERmax_Ljutovac_fit = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000151, 10: 0.00000134, 11: 0.00000129} # Optimal RERmax (s-1 at 12°C) allowing to simulate leaf dimensions of Ljutovac (2002)
 # { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # Observed RER on data of Ljutovac 2002 RER (s-1 at 12°C)
-RERmax = {5: 3.35e-06, 6: 2.35e-06, 7: 2.22e-06, 8: 2.1e-06, 9: 2.02e-06, 10: 1.7e-06, 11: 1.596e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
+RERmax = {5: 3.35e-06, 6: 2.25e-06, 7: 2.12e-06, 8: 2.01e-06, 9: 1.93e-06, 10: 1.65e-06, 11: 1.56e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
 RER_Kc = 100  #: affinity coefficient of RER to C (µmol g-1)
 RER_Kn = 15   #: affinity coefficient of RER to N (µmol g-1)
-# 8: 2.13e-06, 9: 2e-06, 10: 1.8e-06 [8 et 10 trop élevés)
-# 8: 2.12e-06, 9: 2.02e-06  trop faibles
 
 # Automate elongation
 te = 300 * 3600 * 24 / 12    #: end of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
