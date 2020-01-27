@@ -51,9 +51,6 @@ np.random.seed(1234)
 # number of seconds in 1 hour
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
-# Define plant density (culm m-2)
-PLANT_DENSITY = {1: 250}
-
 INPUTS_OUTPUTS_PRECISION = 8
 
 AXES_INDEX_COLUMNS = ['t', 'plant', 'axis']
@@ -82,17 +79,39 @@ LOGGING_LEVEL = logging.INFO  # can be one of: DEBUG, INFO, WARNING, ERROR, CRIT
 
 
 def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, option_static=False, tillers_replications=None,
-         heterogeneous_canopy=True, N_fertilizations=None, update_parameters_all_models=None,
-         INPUTS_DIRPATH='inputs',OUTPUTS_DIRPATH = 'outputs',POSTPROCESSING_DIRPATH = 'postprocessing', GRAPHS_DIRPATH = 'graphs' ):
+         heterogeneous_canopy=True, N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
+         INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH = 'outputs', POSTPROCESSING_DIRPATH = 'postprocessing', GRAPHS_DIRPATH = 'graphs'):
+    """
+    update_parameters_all_models = {'cnwheat': {'organ1': {'param1': 'val1', 'param2': 'val2'},
+                                                'organ2': {'param1': 'val1', 'param2': 'val2'}
+                                                },
+                                    'elongwheat': {'param1': 'val1', 'param2': 'val2'}
+                                    }
 
-    # the inputs directory  must contain files 'adel_pars.RData', 'adel0000.pckl' and 'scene0000.bgeom' for ADELWHEAT
+    N_fertilizations = {time_step1: n_fertilization_qty, time_step2: n_fertilization_qty} # nitrates concentrations fluctuactes and we add n to the soil
+    or N_fertilizations = {'constant_Conc_Nitrates': True} # nitrates concentrations is set to constant (soil inputs file)
+
+    INPUTS_DIRPATH = 'str'
+    or INPUTS_DIRPATH = {'adel':str, 'plants':str, 'meteo':str, 'soils':str} #  The directory at path 'adel' must contain files 'adel_pars.RData', 'adel0000.pckl' and 'scene0000.bgeom' for ADELWHEAT
+    """
+
+# Define default plant density (culm m-2)
+    if PLANT_DENSITY is None:
+        PLANT_DENSITY = {1: 250}
+
     # inputs
-    SAM_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'SAM_inputs.csv')
-    ORGANS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'organs_inputs.csv')
-    HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
-    ELEMENTS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'elements_inputs.csv')
-    SOILS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'soils_inputs.csv')
-    METEO_FILEPATH = os.path.join(INPUTS_DIRPATH, 'meteo_Ljutovac2002.csv')
+    INPUTS_DIRPATH_DICT = {}
+    INPUTS_DIRPATH_DEFAULT = 'inputs'
+    if type(INPUTS_DIRPATH) is dict:
+        INPUTS_DIRPATH_DICT = INPUTS_DIRPATH
+    else:
+        INPUTS_DIRPATH_DEFAULT = INPUTS_DIRPATH
+    SAM_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('plants', INPUTS_DIRPATH_DEFAULT), 'SAM_inputs.csv')
+    ORGANS_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('plants', INPUTS_DIRPATH_DEFAULT), 'organs_inputs.csv')
+    HIDDENZONE_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('plants', INPUTS_DIRPATH_DEFAULT), 'hiddenzones_inputs.csv')
+    ELEMENTS_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('plants', INPUTS_DIRPATH_DEFAULT), 'elements_inputs.csv')
+    SOILS_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('soils', INPUTS_DIRPATH_DEFAULT), 'soils_inputs.csv')
+    METEO_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('meteo', INPUTS_DIRPATH_DEFAULT),METEO_FILENAME )
 
     # the path of the CSV files where to save the states of the modeled system at each step
     AXES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'axes_states.csv')
@@ -123,7 +142,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         # read adelwheat inputs at t0
         adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
        # adel_wheat.pars = adel_wheat.read_pars(dir=INPUTS_DIRPATH)
-        g = adel_wheat.load(dir=INPUTS_DIRPATH)
+        g = adel_wheat.load(dir=INPUTS_DIRPATH_DICT.get('adel', INPUTS_DIRPATH_DEFAULT))
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -903,17 +922,10 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                   plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
                                                   explicit_label=False)
 
-
 if __name__ == '__main__':
     main(2600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
-         heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000})
-
-# update_parameters_all_models = {'cnwheat': {'Organ1': {'param1': 'val1', 'param2': 'val2'},
-#                                             'Organ2': {'param1': 'val1', 'param2': 'val2'}
-#                                             },
-#                                 'elongwheat': {'param1': 'val1', 'param2': 'val2'}
-#                                 }
-
-# N_fertilizations = {time_step1: N_fertilization_qty, time_step2: N_fertilization_qty} # Nitrates concentrations fluctuactes and we add N to the soil
-# or N_fertilizations = {'constant_Conc_Nitrates': True} # Nitrates concentrations is set to constant (soil inputs file)
+         heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
+         PLANT_DENSITY={1:250}, update_parameters_all_models=None,
+         INPUTS_DIRPATH='inputs',METEO_FILENAME = 'meteo_Ljutovac2002.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'
+         )
