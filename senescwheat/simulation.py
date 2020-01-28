@@ -3,6 +3,7 @@
 from __future__ import division  # use "//" to do integer division
 
 import model
+import parameters
 
 """
     senescwheat.simulation
@@ -29,7 +30,7 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
 
-    def __init__(self, delta_t=1):
+    def __init__(self, delta_t=1, update_parameters=None):
 
         #: The inputs of Senesc-Wheat.
         #:
@@ -47,6 +48,10 @@ class Simulation(object):
 
         #: the delta t of the simulation (in seconds)
         self.delta_t = delta_t
+
+        #: Update parameters if specified
+        if update_parameters:
+            parameters.__dict__.update(update_parameters)
 
     def initialize(self, inputs):
         """
@@ -139,7 +144,7 @@ class Simulation(object):
                                                                                                                                                        element_inputs_dict['max_proteins'], delta_teq,
                                                                                                                                                        update_max_protein)
                     # Senescence with element age
-                    if element_inputs_id[3] != 'internode' and relative_delta_senesced_length == 0 and element_inputs_dict['age'] > model.SenescenceModel.AGE_EFFECT_SENESCENCE:
+                    if element_inputs_id[3] != 'internode' and relative_delta_senesced_length == 0 and element_inputs_dict['age'] > parameters.AGE_EFFECT_SENESCENCE:
                         new_senesced_length, relative_delta_senesced_length, max_proteins = model.SenescenceModel.calculate_relative_delta_senesced_length(element_inputs_id[3],
                                                                                                                                                            element_inputs_dict['senesced_length'],
                                                                                                                                                            element_inputs_dict['length'],
