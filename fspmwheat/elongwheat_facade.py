@@ -256,7 +256,7 @@ class ElongWheatFacade(object):
                     if (mtg_plant_index, mtg_axis_label) not in axis_to_metamers_mapping: continue
                     new_metamer_ids = set(axis_to_metamers_mapping[(mtg_plant_index, mtg_axis_label)]).difference(mtg_metamer_ids)
                     for _ in new_metamer_ids:
-                        self.geometrical_model.add_metamer(self._shared_mtg, mtg_plant_index, mtg_axis_label)  # Add new metamer with only top and base element
+                        self.geometrical_model.add_metamer(self._shared_mtg, plant = mtg_plant_index, axe = mtg_axis_label)  # Add new metamer with only top and base element
                     # default value to age property in order to run  update_geometry()
                     for mtg_organ_vid in self._shared_mtg.components_at_scale(mtg_axis_vid, 4):
                         if self._shared_mtg.property('label')[mtg_organ_vid] == 'blade':

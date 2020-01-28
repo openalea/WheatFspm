@@ -255,6 +255,11 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                                                                                       elements_inputs_t0.columns]].copy()
         senescwheat_SAM_inputs_t0 = SAM_inputs_t0[senescwheat_facade.converter.SAM_TOPOLOGY_COLUMNS + [i for i in senescwheat_facade.converter.SENESCWHEAT_SAM_INPUTS if i in
                                                                                                        SAM_inputs_t0.columns]].copy()
+        # Update parameters if specified
+        if update_parameters_all_models and 'senescwheat' in update_parameters_all_models:
+            update_parameters_senescwheat = update_parameters_all_models['senescwheat']
+        else:
+            update_parameters_senescwheat = None
         senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
                                                                    senescwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                    senescwheat_roots_inputs_t0,
@@ -262,7 +267,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                                    senescwheat_elements_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
                                                                    shared_SAM_inputs_outputs_df,
-                                                                   shared_elements_inputs_outputs_df)
+                                                                   shared_elements_inputs_outputs_df,
+                                                                   update_parameters_senescwheat)
 
         # farquharwheat
         farquharwheat_elements_inputs_t0 = elements_inputs_t0[farquharwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_ELEMENTS_INPUTS if i in
@@ -927,5 +933,4 @@ if __name__ == '__main__':
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
          PLANT_DENSITY={1:250}, update_parameters_all_models=None,
-         INPUTS_DIRPATH='inputs',METEO_FILENAME = 'meteo_Ljutovac2002.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'
-         )
+         INPUTS_DIRPATH='inputs',METEO_FILENAME = 'meteo_Ljutovac2002.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs')
