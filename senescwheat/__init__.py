@@ -6,9 +6,8 @@
     The model Senesc-Wheat
 
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
     
-    .. seealso:: Barillot et al. 2015.
 """
 
 """
@@ -20,4 +19,4 @@
         $Id$
 """
 
-__version__  = '0.0.1'
+__version__ = '1.0'

@@ -11,9 +11,8 @@ import pandas as pd
     :class:`dataframes <pandas.DataFrame>` to/from SenescWheat inputs or outputs format.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2016.
 """
 
 """
@@ -25,16 +24,15 @@ import pandas as pd
         $Id$
 """
 
-
 #: the inputs needed by SenescWheat at roots scale
 SENESCWHEAT_ROOTS_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'cytokinins']
 
 #: the inputs needed by SenescWheat at SAM scale
-SENESCWHEAT_SAM_INPUTS = ['delta_teq','delta_teq_roots','sum_TT']
+SENESCWHEAT_SAM_INPUTS = ['delta_teq', 'delta_teq_roots', 'sum_TT']
 
 #: the inputs needed by SenescWheat at element scale
-SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'senesced_length','length', 'proteins', 'mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan', 'cytokinins', 'sucrose', \
-                              'is_growing']
+SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'senesced_length', 'length', 'proteins', 'mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan', 'cytokinins', 'sucrose',
+                               'is_growing', 'max_mstruct', 'Nresidual', 'age']
 
 #: the outputs computed by SenescWheat at roots scale
 SENESCWHEAT_ROOTS_OUTPUTS = ['rate_mstruct_death', 'mstruct', 'Nstruct', 'cytokinins']
@@ -43,7 +41,8 @@ SENESCWHEAT_ROOTS_OUTPUTS = ['rate_mstruct_death', 'mstruct', 'Nstruct', 'cytoki
 SENESCWHEAT_SAM_OUTPUTS = []
 
 #: the outputs computed by SenescWheat at elements scale
-SENESCWHEAT_ELEMENTS_OUTPUTS = ['senesced_length','green_area', 'mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinins']
+SENESCWHEAT_ELEMENTS_OUTPUTS = ['senesced_length', 'green_area', 'mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinins', 'N_content_total', 'Nresidual',
+                                'is_over']
 
 #: the inputs and outputs of SenescWheat at roots scale
 SENESCWHEAT_ROOTS_INPUTS_OUTPUTS = sorted(list(set(SENESCWHEAT_ROOTS_INPUTS + SENESCWHEAT_ROOTS_OUTPUTS)))
@@ -68,17 +67,12 @@ def from_dataframes(roots_inputs, SAM_inputs, elements_inputs):
     """
     Convert inputs/outputs from Pandas dataframes to Senesc-Wheat format.
 
-    :Parameters:
+    :param pandas.DataFrame roots_inputs: Roots inputs dataframe to convert, with one line by roots.
+    :param pandas.DataFrame SAM_inputs: SAMs inputs dataframe to convert, with one line by SAM.
+    :param pandas.DataFrame elements_inputs: Elements inputs dataframe to convert, with one line by element.
 
-        - `roots_inputs` (:class:`pandas.DataFrame`) - Roots inputs dataframe to convert, with one line by roots.
-
-        - `elements_inputs` (:class:`pandas.DataFrame`) - Elements inputs dataframe to convert, with one line by element.
-
-    :Returns:
-        The inputs/outputs in a dictionary.
-
-    :Returns Type:
-        :class:`dict` of :class:`dict`
+    :return: The inputs/outputs in a dictionary.
+    :rtype: dict [str, dict]
 
     .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Senesc-Wheat inputs/outputs.
@@ -103,15 +97,10 @@ def to_dataframes(data_dict):
     """
     Convert inputs/outputs from Senesc-Wheat format to Pandas dataframe.
 
-    :Parameters:
+    :param dict data_dict: The inputs/outputs in Senesc-Wheat format.
 
-        - `data_dict` (:class:`dict`) - The inputs/outputs in Senesc-Wheat format.
-
-    :Returns:
-        One dataframe for roots inputs/outputs, one dataframe for SAM inputs/outputs,  one dataframe for elements inputs/outputs.
-
-    :Returns Type:
-        :class:`tuple` of :class:`pandas.DataFrame`
+    :return: One dataframe for roots inputs/outputs, one dataframe for SAM inputs/outputs,  one dataframe for elements inputs/outputs.
+    :rtype: (pandas.DataFrame, pandas.DataFrame, pandas.DataFrame)
 
     .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Senesc-Wheat inputs/outputs.

@@ -6,7 +6,7 @@ import pandas as pd
 
 from senescwheat import simulation, converter
 
-"""
+'''
     main
     ~~~~
 
@@ -19,19 +19,18 @@ from senescwheat import simulation, converter
     before running this script with the command `python`.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
-    :license: TODO, see LICENSE for details.
+    :license: see LICENSE for details.
 
-    .. seealso:: Barillot et al. 2016.
-"""
+'''
 
-"""
+'''
     Information about this versioned file:
         $LastChangedBy$
         $LastChangedDate$
         $LastChangedRevision$
         $URL$
         $Id$
-"""
+'''
 
 # inputs paths
 INPUTS_DIRPATH = 'inputs'
