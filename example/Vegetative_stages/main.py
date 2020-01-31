@@ -89,7 +89,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                     }
 
     N_fertilizations = {time_step1: n_fertilization_qty, time_step2: n_fertilization_qty} # nitrates concentrations fluctuactes and we add n to the soil
-    or N_fertilizations = {'constant_Conc_Nitrates': True} # nitrates concentrations is set to constant (soil inputs file)
+    or N_fertilizations = {'constant_Conc_Nitrates': val} # nitrates concentrations is set to a constant value
 
     INPUTS_DIRPATH = 'str'
     or INPUTS_DIRPATH = {'adel':str, 'plants':str, 'meteo':str, 'soils':str} #  The directory at path 'adel' must contain files 'adel_pars.RData', 'adel0000.pckl' and 'scene0000.bgeom' for ADELWHEAT
@@ -97,7 +97,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 # Define default plant density (culm m-2)
     if PLANT_DENSITY is None:
-        PLANT_DENSITY = {1: 250}
+        PLANT_DENSITY = {1: 250.}
 
     # inputs
     INPUTS_DIRPATH_DICT = {}
@@ -260,6 +260,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             update_parameters_senescwheat = update_parameters_all_models['senescwheat']
         else:
             update_parameters_senescwheat = None
+
         senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
                                                                    senescwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                    senescwheat_roots_inputs_t0,
@@ -291,6 +292,12 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         growthwheat_SAM_inputs_t0 = SAM_inputs_t0[
             growthwheat_facade.converter.SAM_TOPOLOGY_COLUMNS + [i for i in growthwheat_facade.simulation.SAM_INPUTS if i in SAM_inputs_t0.columns]].copy()
 
+        # Update parameters if specified
+        if update_parameters_all_models and 'growthwheat' in update_parameters_all_models:
+            update_parameters_growthwheat = update_parameters_all_models['growthwheat']
+        else:
+            update_parameters_growthwheat = None
+
         growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
                                                                    growthwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                    growthwheat_hiddenzones_inputs_t0,
@@ -299,7 +306,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                                    growthwheat_SAM_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
                                                                    shared_hiddenzones_inputs_outputs_df,
-                                                                   shared_elements_inputs_outputs_df)
+                                                                   shared_elements_inputs_outputs_df,
+                                                                   update_parameters_growthwheat)
 
         # cnwheat
         cnwheat_organs_inputs_t0 = organs_inputs_t0[[i for i in cnwheat_facade.cnwheat_converter.ORGANS_VARIABLES if i in organs_inputs_t0.columns]].copy()
@@ -330,7 +338,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         # Run cnwheat with constant nitrates concentration in the soil if specified
         if N_fertilizations is not None and len(N_fertilizations) > 0:
             if 'constant_Conc_Nitrates' in N_fertilizations.keys():
-                cnwheat_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = N_fertilizations['constant_Conc_Nitrates']
+                cnwheat_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True
+                cnwheat_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * cnwheat_facade_.soils[(1, 'MS')].volume
 
         # Update geometry
         adel_wheat.update_geometry(g)
@@ -361,7 +370,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             PARi = meteo.loc[t_caribu, ['PARi_MA4']].iloc[0]
             DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
             hour = meteo.loc[t_caribu, ['hour']].iloc[0]
-            caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy)
+            caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1] )
+            #TODO: plant_density is not updated in case heterogeneous_canopy = False !
             print('t caribu is {}'.format(t_caribu))
 
             for t_senescwheat in range(t_caribu, t_caribu + caribu_ts, senescwheat_ts):

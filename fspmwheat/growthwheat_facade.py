@@ -62,7 +62,8 @@ class GrowthWheatFacade(object):
                  model_SAM_inputs_df,
                  shared_organs_inputs_outputs_df,
                  shared_hiddenzones_inputs_outputs_df,
-                 shared_elements_inputs_outputs_df):
+                 shared_elements_inputs_outputs_df,
+                 update_parameters):
 
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
@@ -74,11 +75,12 @@ class GrowthWheatFacade(object):
         :param pandas.DataFrame shared_organs_inputs_outputs_df: the dataframe of inputs and outputs at organs scale shared between all models.
         :param pandas.DataFrame shared_hiddenzones_inputs_outputs_df: the dataframe of inputs and outputs at hiddenzones scale shared between all models.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
+        :param dict update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
         """
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
-        self._simulation = simulation.Simulation(delta_t=delta_t)  #: the simulator to use to run the model
+        self._simulation = simulation.Simulation(delta_t=delta_t, update_parameters=update_parameters)  #: the simulator to use to run the model
 
         all_growthwheat_inputs_dict = converter.from_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df, model_SAM_inputs_df)
 
