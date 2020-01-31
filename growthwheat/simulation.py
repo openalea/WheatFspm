@@ -63,7 +63,7 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
 
-    def __init__(self, delta_t=1):
+    def __init__(self, delta_t=1, update_parameters=None):
 
         #: The inputs of growth-Wheat.
         #:
@@ -87,6 +87,10 @@ class Simulation(object):
 
         #: the delta t of the simulation (in seconds)
         self.delta_t = delta_t
+
+        #: Update parameters if specified
+        if update_parameters:
+            parameters.__dict__.update(update_parameters)
 
     def initialize(self, inputs):
         """
