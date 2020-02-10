@@ -202,10 +202,10 @@ def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_teq, leaf
 
     if sucrose > 0 and amino_acids > 0:
         if optimal_growth_option:
-            RER_max = parameters.RERmax_Ljutovac_fit[leaf_rank]
+            RER_max = parameters.RERmax_Ljutovac_fit.get(leaf_rank, parameters.RERmax_Ljutovac_fit[ max(parameters.RERmax_Ljutovac_fit.keys()) ] )
             delta_leaf_L = leaf_L * RER_max * delta_teq
         else:
-            RER_max = parameters.RERmax[leaf_rank]
+            RER_max = parameters.RERmax.get(leaf_rank, parameters.RERmax[ max(parameters.RERmax.keys()) ] )
             # Enzymatic rate for bi-substrats with random fixation
             conc_amino_acids = (amino_acids / mstruct)
             conc_sucrose = (sucrose / mstruct)
@@ -375,7 +375,7 @@ def calculate_SL_ratio(leaf_rank):
     :return: Sheath:Lamina ratio (dimensionless)
     :rtype: float
     """
-    return parameters.SL_ratio_a * leaf_rank ** 3 + parameters.SL_ratio_b * leaf_rank ** 2 - parameters.SL_ratio_c * leaf_rank + parameters.SL_ratio_d
+    return parameters.SL_ratio_a * leaf_rank ** 3 + parameters.SL_ratio_b * leaf_rank ** 2 + parameters.SL_ratio_c * leaf_rank + parameters.SL_ratio_d
 
 
 def calculate_lamina_Lmax(leaf_Lmax, sheath_lamina_ratio):
@@ -622,10 +622,10 @@ def calculate_delta_internode_L_preL(phytomer_rank, sucrose, internode_L, amino_
 
     if sucrose > 0 and amino_acids > 0:
         if optimal_growth_option:
-            RER_max = parameters.RERmax_dict_IN[phytomer_rank]
+            RER_max = parameters.RERmax_dict_IN.get(phytomer_rank, parameters.RERmax_dict_IN[ max(parameters.RERmax_dict_IN.keys()) ] )
             delta_internode_L = internode_L * RER_max * delta_teq
         else:  # TODO: not tested yet
-            RER_max = parameters.RERmax_dict_IN[phytomer_rank]
+            RER_max = parameters.RERmax_dict_IN.get(phytomer_rank, parameters.RERmax_dict_IN[ max(parameters.RERmax_dict_IN.keys()) ] )
             # Enzymatic rate for bi-substrats with random fixation
             conc_amino_acids = (amino_acids / mstruct)
             conc_sucrose = (sucrose / mstruct)

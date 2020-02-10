@@ -87,7 +87,7 @@ leaf_LSSW_MAX = 0.8
 # Sheath: lamina ratio. Parameters of a polynomial function, from Dornbush 2011
 SL_ratio_a = -0.0021
 SL_ratio_b = 0.037
-SL_ratio_c = 0.1527
+SL_ratio_c = - 0.1527
 SL_ratio_d = 0.4962
 
 # Ratio of leaf length composed by the division zone.
