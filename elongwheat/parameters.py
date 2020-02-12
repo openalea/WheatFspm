@@ -187,7 +187,7 @@ class ElementInit(object):
         self.is_growing = True
         self.is_over = False
         self.length = 0               #: m
-        self.senesced_length = 0      #: m
+        self.senesced_length_element = 0  #: m
         self.age = 0                  #: Thermal Time
         self.max_proteins = 0         #: µmol N
         self.Nresidual = 0            #: g
