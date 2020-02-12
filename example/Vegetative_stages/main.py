@@ -10,6 +10,9 @@ import warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+
+import statsmodels.api as sm
 
 from fspmwheat import caribu_facade
 from fspmwheat import cnwheat_facade
@@ -17,6 +20,7 @@ from fspmwheat import elongwheat_facade
 from fspmwheat import farquharwheat_facade
 from fspmwheat import growthwheat_facade
 from fspmwheat import senescwheat_facade
+from elongwheat import parameters as elongwheat_parameters
 
 from alinea.adel.adel_dynamic import AdelDyn
 from alinea.adel.echap_leaf import echap_leaves
@@ -623,7 +627,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             plt.close()
 
         # 1) Comparison Dimensions with Ljutovac 2002
-        bchmk = pd.read_csv(r'inputs\Ljutovac2002.csv')
+        data_obs = pd.read_csv(r'inputs\Ljutovac2002.csv')
+        bchmk = data_obs
         res = pd.read_csv(HIDDENZONES_STATES_FILEPATH)
         res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.leaf_Lmax)].copy()
         res_IN = res[~ np.isnan(res.internode_Lmax)]
@@ -730,39 +735,64 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         cnwheat_tools.plot_cnwheat_ouputs(pd.DataFrame(LAI_dict), 't', 'LAI', x_label='Time (Hour)', y_label='LAI', plot_filepath=os.path.join(GRAPHS_DIRPATH, 'LAI.PNG'), explicit_label=False)
 
         # 3) RER during the exponentiel-like phase
-        df = postprocessing_df_dict[hiddenzones_postprocessing_file_basename]
-        df = df[df['axis'] == 'MS'].copy()
-        df['day'] = df['t'] // 24 + 1
-        grouped_df = df.groupby(['day', 'plant', 'metamer'])['RER']
 
-        df_leaf_emergence = df[['plant', 'metamer']].drop_duplicates()
-        df_leaf_emergence['prev_leaf_emergence_day'] = 0
-        for key, leaf_emergence_t in sorted(leaf_emergence.items()):
-            plant, metamer = key[0], key[1]
-            if metamer == 4: continue
-            prev_leaf_emergence_day = leaf_emergence[(plant, metamer - 1)] // 24 + 1
-            df_leaf_emergence.loc[(df_leaf_emergence['plant'] == plant) & (df_leaf_emergence['metamer'] == metamer), 'prev_leaf_emergence_day'] = prev_leaf_emergence_day
-        for plant in df_leaf_emergence.plant.drop_duplicates():
-            last_metamer = df_leaf_emergence.loc[(df_leaf_emergence['plant'] == plant) & (df_leaf_emergence['prev_leaf_emergence_day'] == max(df_leaf_emergence.loc[(df_leaf_emergence['plant'] == plant
-                                                                                                                                                                     )]['prev_leaf_emergence_day']))][
-                'metamer']
-            last_metamer = last_metamer.values[0]
-            prev_leaf_emergence_day = leaf_emergence[(plant, last_metamer)] // 24 + 1
-            df_leaf_emergence.loc[(df_leaf_emergence['plant'] == plant) & (df_leaf_emergence['metamer'] == last_metamer + 1), 'prev_leaf_emergence_day'] = prev_leaf_emergence_day
-            # leaves without previous one emerged
-            for metamer in df_leaf_emergence[(df_leaf_emergence['plant'] == plant) & (df_leaf_emergence['metamer'] > last_metamer + 1)].metamer:
-                df_leaf_emergence.loc[(df_leaf_emergence['plant'] == plant) & (df_leaf_emergence['metamer'] == metamer), 'prev_leaf_emergence_day'] = 1000
+        ## RER parameters
+        rer_param = dict((k, v) for k, v in elongwheat_parameters.RERmax.iteritems())
 
-        RER_dict = {'day': [], 'plant': [], 'metamer': [], 'RER': []}
-        for name, RER in grouped_df:
-            day, plant, metamer = name[0], name[1], name[2]
-            if day <= df_leaf_emergence.loc[(df_leaf_emergence['plant'] == plant) & (df_leaf_emergence['metamer'] == metamer), 'prev_leaf_emergence_day'].iloc[0]:
-                RER_dict['day'].append(day)
-                RER_dict['plant'].append(plant)
-                RER_dict['metamer'].append(metamer)
-                RER_dict['RER'].append(RER.mean())
+        ## Simulated RER
 
-        cnwheat_tools.plot_cnwheat_ouputs(pd.DataFrame(RER_dict), 'day', 'RER', x_label='Time (day)', y_label='RER (s-1)', plot_filepath=os.path.join(GRAPHS_DIRPATH, 'RER.PNG'), explicit_label=False)
+        # import simulation outputs
+        data_RER = pd.read_csv(HIDDENZONES_STATES_FILEPATH)
+        data_RER = data_RER[(data_RER.axis == 'MS') & (data_RER.metamer >= 4)].copy()
+        data_RER.sort_values(['t', 'metamer'], inplace=True)
+        data_teq = pd.read_csv(SAM_STATES_FILEPATH)
+        data_teq = data_teq[data_teq.axis == 'MS'].copy()
+
+        ## Time previous leaf emergence
+        tmp = data_RER[data_RER.leaf_is_emerged]
+        leaf_em = tmp.groupby('metamer', as_index=False)['t'].min()
+        leaf_em['t_em'] = leaf_em.t
+        prev_leaf_em = leaf_em
+        prev_leaf_em.metamer = leaf_em.metamer + 1
+
+        data_RER2 = pd.merge(data_RER, prev_leaf_em[['metamer', 't_em']], on='metamer')
+        data_RER2 = data_RER2[data_RER2.t <= data_RER2.t_em]
+
+        ## SumTimeEq
+        data_teq['SumTimeEq'] = np.cumsum(data_teq.delta_teq)
+        data_RER3 = pd.merge(data_RER2, data_teq[['t', 'SumTimeEq']], on='t')
+
+        ## logL
+        data_RER3['logL'] = np.log(data_RER3.leaf_L)
+
+        ## Estimate RER
+        RER_sim = {}
+        for l in data_RER3.metamer.drop_duplicates():
+            Y = data_RER3.logL[data_RER3.metamer == l]
+            X = data_RER3.SumTimeEq[data_RER3.metamer == l]
+            X = sm.add_constant(X)
+            mod = sm.OLS(Y, X)
+            fit_RER = mod.fit()
+            RER_sim[l] = fit_RER.params['SumTimeEq']
+
+        ## Graph
+        fig, (ax1) = plt.subplots(1)
+        ax1.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+
+        x, y = zip(*sorted(RER_sim.items()))
+        ax1.plot(x, y, label=r'Simulated RER', linestyle='-', color='g')
+        ax1.errorbar(data_obs.metamer, data_obs.RER, yerr=data_obs.RER_confint, marker='o', color='g', linestyle='', label="Observed RER", markersize=2)
+        ax1.plot(rer_param.keys(), rer_param.values(), marker='*', color='k', linestyle='', label="Model parameters")
+
+        # Formatting
+        ax1.set_ylabel(u'Relative Elongation Rate at 12°C (s$^{-1}$)')
+        ax1.legend(prop={'size': 12}, bbox_to_anchor=(0.05, .6, 0.9, .5), loc='upper center', ncol=3, mode="expand", borderaxespad=0.)
+        ax1.legend(loc='upper left')
+        ax1.set_xlabel('Phytomer rank')
+        ax1.set_ylim(bottom=0., top=6e-6)
+        ax1.set_xlim(left=4)
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'RER_comparison.PNG'), format='PNG', bbox_inches='tight', dpi=200)
+        plt.close()
 
         # 4) Total C production vs. Root C allcoation
         df_org = postprocessing_df_dict[organs_postprocessing_file_basename]
@@ -867,7 +897,6 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         ax.plot(C_usages.t, (C_usages.NS_phloem + C_usages.NS_other) / C_usages.C_produced * 100, label=u'Non-structural C', color='darkorange')
         ax.plot(C_usages.t, (C_usages.Respi_roots + C_usages.Respi_shoot) / C_usages.C_produced * 100, label=u'C loss by respiration', color='b')
         ax.plot(C_usages.t, C_usages.exudation / C_usages.C_produced * 100, label=u'C loss by exudation', color='c')
-        ax.plot(C_usages.t, C_usages.C_budget * 100, label=u'C consumption vs. production', color='k')
 
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         ax.set_xlabel('Time (h)')
@@ -919,35 +948,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         ax.set_title('Thermal Time')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SumTT.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
-        # 8) C costs of Leaf growth
-        df_elt['Net_Photosynthesis_tillers'] = df_elt['Photosynthesis'] * df_elt['nb_replications'] - df_elt['sum_respi_tillers']
-        df_hz['Growth_Costs_C_tillers'] = df_hz['sucrose_consumption_mstruct'] * df_hz['nb_replications'] + df_hz['Respi_growth_tillers']
-
-        df_elt_ms = df_elt.loc[df_elt['axis'] == 'MS']  # df_elt.loc[ df_elt['organ'].isin(['sheath','blade']) & (df_elt['axis'] == 'MS') ]
-        Net_Photosynthesis_leaves = df_elt_ms.groupby(['plant', 'metamer', 't'], as_index=False)['Net_Photosynthesis_tillers'].agg('sum')
-        Net_Photosynthesis_leaves['Net_Photosynthesis_leaves_cum'] = Net_Photosynthesis_leaves.groupby(['plant', 'metamer'])['Net_Photosynthesis_tillers'].cumsum()
-
-        df_hz_ms = df_hz.loc[df_hz['axis'] == 'MS']
-        Growth_Costs_C = df_hz_ms.groupby(['plant', 'metamer', 't'], as_index=False)['Growth_Costs_C_tillers'].agg('sum')
-        Growth_Costs_C['Growth_Costs_C_cum'] = Growth_Costs_C.groupby(['plant', 'metamer'])['Growth_Costs_C_tillers'].cumsum()
-
-        df_8 = pd.merge(Growth_Costs_C, Net_Photosynthesis_leaves, how='left', on=['plant', 'metamer', 't'])
-        for lf in df_8.metamer.unique():
-            sub = df_8.loc[df_8.metamer == lf]
-            fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-            ax1.plot(sub.t, sub.Growth_Costs_C_tillers, label=u'C used for growth')
-            ax1.plot(sub.t, sub.Net_Photosynthesis_tillers, label=u'Net Photosynthesis')
-            ax1.set_ylabel(u'Hourly C (µmol.h$^{-1}$)')
-            ax1.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
-            ax1.set_title('Growth costs in C for metamer {}'.format(lf))
-            ax2.plot(sub.t, sub.Growth_Costs_C_cum)
-            ax2.plot(sub.t, sub.Net_Photosynthesis_leaves_cum)
-            ax2.set_ylabel(u'Cumulated C (µmol)')
-            ax2.set_xlabel('Time (h)')
-            fig.subplots_adjust(hspace=0)
-            plt.savefig(os.path.join(GRAPHS_DIRPATH, 'GrowthCostsC_metamer_{}.PNG'.format(lf)), dpi=200, format='PNG', bbox_inches='tight')
-
-        # 9) Residual N : ratio_N_mstruct_max
+        # 7) Residual N : ratio_N_mstruct_max
         df_elt_outputs = pd.read_csv(ELEMENTS_STATES_FILEPATH)
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.axis == 'MS']
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.mstruct != 0]
@@ -969,7 +970,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                   explicit_label=False)
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
          PLANT_DENSITY={1:250}, update_parameters_all_models=None,

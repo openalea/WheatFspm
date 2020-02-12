@@ -63,7 +63,7 @@ class GrowthWheatFacade(object):
                  shared_organs_inputs_outputs_df,
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
-                 update_parameters):
+                 update_parameters=None):
 
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
@@ -77,6 +77,8 @@ class GrowthWheatFacade(object):
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
         :param dict update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
         """
+        if update_parameters is None:
+            update_parameters = {}
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
