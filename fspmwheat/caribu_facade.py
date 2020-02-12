@@ -77,7 +77,8 @@ class CaribuFacade(object):
         :param int azimuts: The number of azimutal positions.
         :param int zenits: The number of zenital positions.
         :param bool heterogeneous_canopy: Whether to create a duplicated heterogeneous canopy from the initial mtg.
-
+        :param float plant_density: Number of plant per m2 in the stand (plant m-2).
+        :param float inter_row: Inter-row spacing in the stand (m).
         """
         c_scene_sky, c_scene_sun = self._initialize_model(energy, diffuse_model, azimuts, zenits, DOY, hourTU, latitude, heterogeneous_canopy, plant_density, inter_row)
 
