@@ -184,7 +184,7 @@ class Simulation(object):
                     curr_visible_internode_outputs['mstruct'] += delta_internode_mstruct
                     curr_visible_internode_outputs['max_mstruct'] = curr_visible_internode_outputs['mstruct']
                     curr_visible_internode_outputs['Nstruct'] += delta_internode_Nstruct
-                    curr_visible_internode_outputs['sucrose'] += internode_export_sucrose
+                    curr_visible_internode_outputs['sucrose'] += internode_export_sucrose + internode_remob_fructan
                     curr_visible_internode_outputs['amino_acids'] += internode_export_amino_acids
                     curr_visible_internode_outputs['proteins'] += internode_export_proteins
                     self.outputs['elements'][visible_internode_id] = curr_visible_internode_outputs
@@ -229,7 +229,7 @@ class Simulation(object):
                         curr_visible_lamina_outputs['mstruct'] += delta_lamina_mstruct
                         curr_visible_lamina_outputs['max_mstruct'] = curr_visible_lamina_outputs['mstruct']
                         curr_visible_lamina_outputs['Nstruct'] += delta_lamina_Nstruct
-                        curr_visible_lamina_outputs['sucrose'] += leaf_export_sucrose
+                        curr_visible_lamina_outputs['sucrose'] += leaf_export_sucrose + leaf_remob_fructan
                         curr_visible_lamina_outputs['amino_acids'] += leaf_export_amino_acids
                         curr_visible_lamina_outputs['proteins'] += leaf_export_proteins
                         curr_visible_lamina_outputs['cytokinins'] += addition_cytokinins
@@ -256,7 +256,7 @@ class Simulation(object):
                         curr_visible_sheath_outputs['mstruct'] += delta_sheath_mstruct
                         curr_visible_sheath_outputs['max_mstruct'] = curr_visible_sheath_outputs['mstruct']
                         curr_visible_sheath_outputs['Nstruct'] += delta_sheath_Nstruct
-                        curr_visible_sheath_outputs['sucrose'] += leaf_export_sucrose
+                        curr_visible_sheath_outputs['sucrose'] += leaf_export_sucrose + leaf_remob_fructan
                         curr_visible_sheath_outputs['amino_acids'] += leaf_export_amino_acids
                         # curr_visible_sheath_outputs['fructan'] += 0
                         curr_visible_sheath_outputs['proteins'] += leaf_export_proteins
@@ -279,7 +279,7 @@ class Simulation(object):
                 curr_hiddenzone_outputs['mstruct'] = curr_hiddenzone_outputs['leaf_enclosed_mstruct'] + curr_hiddenzone_outputs['internode_enclosed_mstruct']
                 curr_hiddenzone_outputs['Nstruct'] = curr_hiddenzone_outputs['leaf_enclosed_Nstruct'] + curr_hiddenzone_outputs['internode_enclosed_Nstruct']
                 curr_hiddenzone_outputs['sucrose'] -= (curr_hiddenzone_outputs['sucrose_consumption_mstruct'] + curr_hiddenzone_outputs['Respi_growth'] + leaf_export_sucrose + internode_export_sucrose)
-                curr_hiddenzone_outputs['sucrose'] += leaf_remob_fructan + internode_remob_fructan
+                curr_hiddenzone_outputs['fructan'] -= (leaf_remob_fructan + internode_remob_fructan)
                 curr_hiddenzone_outputs['amino_acids'] -= (curr_hiddenzone_outputs['AA_consumption_mstruct'] + leaf_export_amino_acids + internode_export_amino_acids)
                 curr_hiddenzone_outputs['proteins'] -= (leaf_export_proteins + internode_export_proteins)
                 self.outputs['hiddenzone'][hiddenzone_id] = curr_hiddenzone_outputs
