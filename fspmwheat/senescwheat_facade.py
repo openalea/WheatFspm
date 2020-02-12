@@ -89,15 +89,16 @@ class SenescWheatFacade(object):
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
         self._update_shared_dataframes(model_roots_inputs_df, model_SAM_inputs_df, model_elements_inputs_df)
 
-    def run(self, forced_max_protein_elements=None):
+    def run(self, forced_max_protein_elements=None, postflowering_stages=False):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
         :param set forced_max_protein_elements: The elements ids with fixed max proteins.
+        :param bool postflowering_stages: True to run a simulation with postflo parameter
         """
 
         self._initialize_model()
-        self._simulation.run(forced_max_protein_elements)
+        self._simulation.run(forced_max_protein_elements=forced_max_protein_elements, postflowering_stages=postflowering_stages)
         self._update_shared_MTG(self._simulation.outputs['roots'], self._simulation.outputs['SAM'], self._simulation.outputs['elements'])
         senescwheat_roots_outputs_df, senescwheat_SAM_outputs_df, senescwheat_elements_outputs_df = converter.to_dataframes(self._simulation.outputs)
         self._update_shared_dataframes(senescwheat_roots_outputs_df, senescwheat_SAM_outputs_df, senescwheat_elements_outputs_df)
@@ -203,7 +204,7 @@ class SenescWheatFacade(object):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        senesced_length_organ = 0.  # Temporaire
+                        # senesced_length_organ = 0.  # Temporaire
                         if mtg_organ_label not in PHOTOSYNTHETIC_ORGANS_NAMES: continue
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
@@ -213,10 +214,11 @@ class SenescWheatFacade(object):
                             senescwheat_element_data_dict = senescwheat_elements_data_dict[element_id]
                             for senescwheat_element_data_name, senescwheat_element_data_value in senescwheat_element_data_dict.items():
                                 self._shared_mtg.property(senescwheat_element_data_name)[mtg_element_vid] = senescwheat_element_data_value
-                                # Temporaire : avant de trouver une solution pour piloter la senescence des feuilles par green_area plutot que par senesced_length
-                                if senescwheat_element_data_name == 'senesced_length':
-                                    senesced_length_organ += np.nan_to_num(self._shared_mtg.property(senescwheat_element_data_name).get(mtg_element_vid, 0.))
-                        self._shared_mtg.property('senesced_length')[mtg_organ_vid] = senesced_length_organ
+                                # Temporaire avant de trouver une solution pour :
+                                # 1) piloter la senescence des feuilles par green_area plutot que par senesced_length,
+                                # 2) updater les organes à partir des éléments et non l'inverse.
+                                if senescwheat_element_data_name == 'senesced_length_element' and mtg_element_label in ['LeafElement1','StemElement']:
+                                    self._shared_mtg.property('senesced_length')[mtg_organ_vid] =  np.nan_to_num(self._shared_mtg.property(senescwheat_element_data_name).get(mtg_element_vid, 0.))
 
     def _update_shared_dataframes(self, senescwheat_roots_data_df, senescwheat_SAM_data_df, senescwheat_elements_data_df):
         """
