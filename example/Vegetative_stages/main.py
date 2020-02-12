@@ -802,52 +802,82 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         ax.set_title('C allocation to roots')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_allocation.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
-        # 5) Fluxes
+        # 5) C usages relatif to Net Photosynthesis
+        df_org = postprocessing_df_dict[organs_postprocessing_file_basename]
+        df_roots = df_org[df_org['organ'] == 'roots'].copy()
+        df_roots['day'] = df_roots['t'] // 24 + 1
+        df_phloem = df_org[df_org['organ'] == 'phloem'].copy()
+        df_phloem['day'] = df_phloem['t'] // 24 + 1
 
-        df_roots['R_tot'] = (df_roots['sum_respi'] + df_roots['Respi_growth'])
-        df_roots['R_tot_mstruct'] = (df_roots['R_tot']) / df_roots['mstruct']  # ( df['R_Nnit_upt'] + df['R_Nnit_red'] + df['R_residual'] + df['R_maintenance'] ) / df['mstruct']
-        df_roots['sucrose_consumption_permstruct'] = df_roots['sucrose_consumption_mstruct'] / df_roots['mstruct']
-        df_roots['C_used_tot'] = df_roots['sucrose_consumption_permstruct'] + df_roots['R_tot_mstruct'] + df_roots['C_exudation']
+        AMINO_ACIDS_C_RATIO = 4.15  #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+        AMINO_ACIDS_N_RATIO = 1.25  #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+
+        # Photosynthesis
+        df_elt['Photosynthesis_tillers'] = df_elt['Photosynthesis'].fillna(0) * df_elt['nb_replications'].fillna(1.)
+        Tillers_Photosynthesis_Ag = df_elt.groupby(['t'], as_index=False).agg({'Photosynthesis_tillers': 'sum'})
+        C_usages = pd.DataFrame({'t': Tillers_Photosynthesis_Ag['t']})
+        C_usages['C_produced'] = np.cumsum(Tillers_Photosynthesis_Ag.Photosynthesis_tillers)
+
+        # Respiration
+        C_usages['Respi_roots'] = np.cumsum(df_axe.C_respired_roots)
+        C_usages['Respi_shoot'] = np.cumsum(df_axe.C_respired_shoot)
+
+        # Exudation
+        C_usages['exudation'] = np.cumsum(df_axe.C_exudated.fillna(0))
+
+        # Structural growth
+        C_consumption_mstruct_roots = df_roots.sucrose_consumption_mstruct.fillna(0) + df_roots.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        C_usages['Structure_roots'] = np.cumsum(C_consumption_mstruct_roots.reset_index(drop=True))
+
+        df_hz['C_consumption_mstruct'] = df_hz.sucrose_consumption_mstruct.fillna(0) + df_hz.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_hz['C_consumption_mstruct_tillers'] = df_hz['C_consumption_mstruct'] * df_hz['nb_replications']
+        C_consumption_mstruct_shoot = df_hz.groupby(['t'])['C_consumption_mstruct_tillers'].sum()
+        C_usages['Structure_shoot'] = np.cumsum(C_consumption_mstruct_shoot.reset_index(drop=True))
+
+        # Non structural C
+        df_phloem['C_NS'] = df_phloem.sucrose.fillna(0) + df_phloem.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        C_NS_phloem_init = df_phloem.C_NS - df_phloem.C_NS[0]
+        C_usages['NS_phloem'] = C_NS_phloem_init.reset_index(drop=True)
+
+        df_elt['C_NS'] = df_elt.sucrose.fillna(0) + df_elt.fructan.fillna(0) + df_elt.starch.fillna(0) + (
+                    df_elt.amino_acids.fillna(0) + df_elt.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_elt['C_NS_tillers'] = df_elt['C_NS'] * df_elt['nb_replications'].fillna(1.)
+        C_elt = df_elt.groupby(['t']).agg({'C_NS_tillers': 'sum'})
+
+        df_hz['C_NS'] = df_hz.sucrose.fillna(0) + df_hz.fructan.fillna(0) + (df_hz.amino_acids.fillna(0) + df_hz.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_hz['C_NS_tillers'] = df_hz['C_NS'] * df_hz['nb_replications'].fillna(1.)
+        C_hz = df_hz.groupby(['t']).agg({'C_NS_tillers': 'sum'})
+
+        df_roots['C_NS'] = df_roots.sucrose.fillna(0) + df_roots.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+
+        C_NS_autre = df_roots.C_NS.reset_index(drop=True) + C_elt.C_NS_tillers + C_hz.C_NS_tillers
+        C_NS_autre_init = C_NS_autre - C_NS_autre[0]
+        C_usages['NS_other'] = C_NS_autre_init.reset_index(drop=True)
+
+        # Total
+        C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
+                               C_usages.C_produced
+
+        # ----- Graph
         fig, ax = plt.subplots()
-        # line1, = ax.plot(df_roots['t'], df_roots['Unloading_Sucrose'], label=u'C unloading to roots')
-        # line2, = ax.plot(df_roots['t'], df_roots['C_exudation'], label=u'C lost by exudation')
-        # line3, = ax.plot(df_roots['t'], df_roots['R_tot_mstruct'], label='Respiration')
-        # line4, = ax.plot(df_roots['t'], df_roots['sucrose_consumption_permstruct'], label='C for growth')
-        # line5, = ax.plot(df_roots['t'], df_roots['C_used_tot'], label='C consumed by the roots')
+        ax.plot(C_usages.t, C_usages.Structure_shoot / C_usages.C_produced * 100,
+                label=u'Structural mass - Shoot', color='g')
+        ax.plot(C_usages.t, C_usages.Structure_roots / C_usages.C_produced * 100,
+                label=u'Structural mass - Roots', color='r')
+        ax.plot(C_usages.t, (C_usages.NS_phloem + C_usages.NS_other) / C_usages.C_produced * 100, label=u'Non-structural C', color='darkorange')
+        ax.plot(C_usages.t, (C_usages.Respi_roots + C_usages.Respi_shoot) / C_usages.C_produced * 100, label=u'C loss by respiration', color='b')
+        ax.plot(C_usages.t, C_usages.exudation / C_usages.C_produced * 100, label=u'C loss by exudation', color='c')
+        ax.plot(C_usages.t, C_usages.C_budget * 100, label=u'C consumption vs. production', color='k')
 
-        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         ax.set_xlabel('Time (h)')
-        ax.set_ylabel(u'C (µmol C.g$^{-1}$ mstruct.h$^{-1}$ )')
-        ax.set_title('Fluxes of C in the roots')
-        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Fluxes.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+        ax.set_ylabel(u'Carbon usages : Photosynthesis (%)')
+        ax.set_ylim(bottom=0, top=100.)
 
-        # 5bis) Cumulated fluxes # TODO : faire le graphe cumulé en ajoutant consumption growth shoot
-        df_hz = postprocessing_df_dict[hiddenzones_postprocessing_file_basename]
+        fig.suptitle(u'Total cumulated usages are ' + str(round(C_usages.C_budget.tail(1)*100, 0)) + u' % of Photosynthesis')
 
-        # R_tot_cum = np.cumsum(df_roots['R_tot'])
-        # sucrose_consumption_mstruct_cum = np.cumsum(df_roots['sucrose_consumption_mstruct'])
-        # C_exudation_cum = np.cumsum(df_roots['C_exudation'] * df_roots['mstruct'])
-        # Total_Photosynthesis_cum = np.cumsum(df_axe['Tillers_Photosynthesis'])  # total phothosynthesis of all tillers
-        # Total_Photosynthesis_An_cum = np.cumsum(df_axe['Tillers_Photosynthesis_An'])  # total net phothosynthesis of all tillers (An)
-        df_hz['Respi_growth_tillers'] = df_hz['Respi_growth'] * df_hz['nb_replications']
-        # Shoot_respiration = df_elt.groupby(['t'])['sum_respi_tillers'].agg('sum') + df_hz.groupby(['t'])['Respi_growth_tillers'].agg('sum')
-        # Net_Photosynthesis_cum = np.cumsum(df_axe['Tillers_Photosynthesis'] - Shoot_respiration[1:].reset_index()[0])
-        # Unloading_Sucrose_tot_cum = np.cumsum(df_roots['Unloading_Sucrose_tot'])
-
-        fig, ax = plt.subplots()
-        # line1, = ax.plot(df_roots['t'], Unloading_Sucrose_tot_cum, label=u'C unloading to roots')
-        # line2, = ax.plot(df_roots['t'], C_exudation_cum, label=u'C lost by exudation')
-        # line3, = ax.plot(df_roots['t'], R_tot_cum, label='Total Roots Respiration')
-        # line4, = ax.plot(df_roots['t'], sucrose_consumption_mstruct_cum, label='C for roots structural growth')
-        # line5, = ax.plot(df_axe['t'], Total_Photosynthesis_cum, label=u'Gross Photosynthesis')
-        # line6, = ax.plot(df_axe['t'], Net_Photosynthesis_cum, label=u'Photosynthesis - Total shoot respiration')
-        # line7, = ax.plot(df_axe['t'], Total_Photosynthesis_An_cum, label=u'Net Photosynthesis (An)')
-
-        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
-        ax.set_xlabel('Time (h)')
-        ax.set_ylabel(u'C (µmol C)')
-        ax.set_title('Cumulated fluxes of C')
-        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Fluxes_cumulated.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_usages_cumulated.PNG'), format='PNG', bbox_inches='tight')
+        plt.close()
 
         # 6) RUE
         df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'] * 3600 / 2.02 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
@@ -939,7 +969,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                   explicit_label=False)
 
 if __name__ == '__main__':
-    main(2600, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
          PLANT_DENSITY={1:250}, update_parameters_all_models=None,
