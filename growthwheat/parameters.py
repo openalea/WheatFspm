@@ -54,6 +54,7 @@ internode_rapid_growth_t = 288000  # Pseudo age at which the internode starts th
 VMAX_ROOTS_GROWTH_POSTFLO = 0.015 * CONVERSION_FACTOR_20_TO_12  #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) post flo at 12°C
 VMAX_ROOTS_GROWTH_PREFLO = 0.0855 * CONVERSION_FACTOR_20_TO_12  #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) pre flo at 12°C
 K_ROOTS_GROWTH = 1250                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS) post flo
+N_ROOTS_GROWTH = 1.8
 RATIO_C_MSTRUCT_ROOTS = 0.444         #: Mean contribution of carbon to root structural dry mass (g C g-1 Mstruct) : same as shoot
 RATIO_N_MSTRUCT_ROOTS_ = 0.005        #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct) : same as shoot
 
@@ -64,7 +65,7 @@ class OrganInit:
     """
     def __init__(self):
         self.is_growing = True
-        self.senesced_length = 0      #: m
+        self.senesced_length_element = 0      #: m
         self.green_area = 0           #: m2
         self.sucrose = 0              #: µmol C
         self.amino_acids = 0          #: µmol N

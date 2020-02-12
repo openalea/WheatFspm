@@ -85,7 +85,7 @@ def calculate_delta_leaf_enclosed_mstruct_postE(delta_leaf_pseudo_age, leaf_pseu
     else:
         delta_enclosed_mstruct = 0
 
-    return delta_enclosed_mstruct
+    return max(0., delta_enclosed_mstruct)
 
 
 def calculate_delta_internode_enclosed_mstruct(internode_L, delta_internode_L, ratio_mstruct_DM):
@@ -130,7 +130,7 @@ def calculate_delta_internode_enclosed_mstruct_postL(delta_internode_pseudo_age,
     else:
         delta_enclosed_mstruct = 0
 
-    return delta_enclosed_mstruct
+    return max(0.,delta_enclosed_mstruct)
 
 
 def calculate_delta_emerged_tissue_mstruct(SW, previous_mstruct, metric):
@@ -145,7 +145,7 @@ def calculate_delta_emerged_tissue_mstruct(SW, previous_mstruct, metric):
     """
     updated_mstruct = SW * metric
     delta_mstruct = updated_mstruct - previous_mstruct
-    return delta_mstruct
+    return max(0.,delta_mstruct)
 
 
 def calculate_delta_Nstruct(delta_mstruct):
@@ -245,7 +245,7 @@ def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_teq, pos
         Vmax = parameters.VMAX_ROOTS_GROWTH_POSTFLO
     else:
         Vmax = parameters.VMAX_ROOTS_GROWTH_PREFLO
-    N = 1.8
+    N = parameters.N_ROOTS_GROWTH
 
     mstruct_C_growth = ((conc_sucrose ** N) * Vmax) / ((conc_sucrose ** N) + (parameters.K_ROOTS_GROWTH ** N)) * delta_teq * mstruct  #: root growth in C (µmol of C)
     mstruct_growth = (mstruct_C_growth * 1E-6 * parameters.C_MOLAR_MASS) / parameters.RATIO_C_MSTRUCT_ROOTS  #: root growth (g of structural dry mass)
