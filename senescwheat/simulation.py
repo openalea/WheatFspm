@@ -105,6 +105,7 @@ class Simulation(object):
         all_elements_outputs = self.outputs['elements']
         for element_inputs_id, element_inputs_dict in all_elements_inputs.items():
 
+
             axe_label = element_inputs_id[1]
             if axe_label != 'MS':  # Calculation only for the main stem
                 continue
@@ -118,7 +119,7 @@ class Simulation(object):
 
             if model.SenescenceModel.calculate_if_element_is_over(element_inputs_dict['green_area'], element_inputs_dict['is_growing'],element_inputs_dict['mstruct']):
                 element_outputs_dict['green_area'] = 0.0
-                element_outputs_dict['senesced_length'] = element_inputs_dict['length']
+                element_outputs_dict['senesced_length_element'] = element_inputs_dict['length']
                 element_outputs_dict['mstruct'] = 0
                 element_outputs_dict['is_over'] = True
             elif not element_inputs_dict['is_growing']:
@@ -132,12 +133,12 @@ class Simulation(object):
                                                                                                                                         update_max_protein)
 
                     # Temporaire
-                    new_senesced_length = relative_delta_green_area * (element_inputs_dict['length'] - element_inputs_dict.get('senesced_length', 0))
+                    new_senesced_length = relative_delta_green_area * (element_inputs_dict['length'] - element_inputs_dict.get('senesced_length_element', 0))
 
                 else:
                     # Temporaire
                     new_senesced_length, relative_delta_senesced_length, max_proteins = model.SenescenceModel.calculate_relative_delta_senesced_length(element_inputs_id[3],
-                                                                                                                                                       element_inputs_dict['senesced_length'],
+                                                                                                                                                       element_inputs_dict['senesced_length_element'],
                                                                                                                                                        element_inputs_dict['length'],
                                                                                                                                                        element_inputs_dict['proteins'] /
                                                                                                                                                        element_inputs_dict['mstruct'],
@@ -146,7 +147,7 @@ class Simulation(object):
                     # Senescence with element age
                     if element_inputs_id[3] != 'internode' and relative_delta_senesced_length == 0 and element_inputs_dict['age'] > parameters.AGE_EFFECT_SENESCENCE:
                         new_senesced_length, relative_delta_senesced_length, max_proteins = model.SenescenceModel.calculate_relative_delta_senesced_length(element_inputs_id[3],
-                                                                                                                                                           element_inputs_dict['senesced_length'],
+                                                                                                                                                           element_inputs_dict['senesced_length_element'],
                                                                                                                                                            element_inputs_dict['length'],
                                                                                                                                                            0,
                                                                                                                                                            max_proteins, delta_teq,
@@ -157,8 +158,7 @@ class Simulation(object):
 
                 # Remobilisation
                 N_content_total = model.SenescenceModel.calculate_N_content_total(element_inputs_dict['proteins'], element_inputs_dict['amino_acids'], element_inputs_dict['nitrates'],
-                                                                                  element_inputs_dict['Nstruct'], element_inputs_dict['max_mstruct'], element_inputs_dict['mstruct'],
-                                                                                  element_inputs_dict['Nresidual'])
+                                                                                  element_inputs_dict['Nstruct'], element_inputs_dict['max_mstruct'], element_inputs_dict['Nresidual'])
 
                 remob_starch = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['starch'], relative_delta_green_area)
                 remob_fructan = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['fructan'], relative_delta_green_area)
@@ -166,8 +166,9 @@ class Simulation(object):
                                                                                                                     relative_delta_green_area, N_content_total, opt_full_remob)
                 loss_cytokinins = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['cytokinins'], relative_delta_green_area)
 
-                # Loss of mstruct
+                # Loss of mstruct and Nstruct
                 new_mstruct, new_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element_inputs_dict['mstruct'], element_inputs_dict['Nstruct'])
+                delta_Nresidual += element_inputs_dict['Nstruct'] - new_Nstruct
 
                 if new_mstruct == 0:
                     is_over = True
@@ -176,7 +177,7 @@ class Simulation(object):
 
                 # Turn 'is_over' to True when the element is fully senescent (to delete the element in the shared elements inputs/outputs)
                 element_outputs_dict = {'green_area': new_green_area,
-                                        'senesced_length': new_senesced_length,
+                                        'senesced_length_element': new_senesced_length,
                                         'mstruct': new_mstruct,
                                         'Nstruct': new_Nstruct,
                                         'starch': element_inputs_dict['starch'] - remob_starch,

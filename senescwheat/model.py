@@ -27,7 +27,7 @@ import parameters
 class SenescenceModel(object):
 
     @classmethod
-    def calculate_N_content_total(cls, proteins, amino_acids, nitrates, Nstruct, max_mstruct, mstruct, Nresidual):
+    def calculate_N_content_total(cls, proteins, amino_acids, nitrates, Nstruct, max_mstruct, Nresidual):
         """ N content in the whole element (both green and senesced tissues).
 
         :param float proteins: protein concentration (µmol N proteins g-1 mstruct)
@@ -35,13 +35,12 @@ class SenescenceModel(object):
         :param float nitrates: nitrates concentration (µmol N nitrates g-1 mstruct)
         :param float Nstruct: structural N mass (g). Should be constant during leaf life.
         :param float max_mstruct: structural mass maximal of the element i.e. structural mass of the whole element before senescence (g)
-        :param float mstruct: structural mass (g)
         :param float Nresidual: residual mass of N in the senescent tissu (g)
 
         :return: N_content_total (between 0 and 1)
         :rtype: float
         """
-        return ((proteins + amino_acids + nitrates) * 1E-6 * parameters.N_MOLAR_MASS + Nresidual) / max_mstruct + Nstruct / mstruct
+        return ((proteins + amino_acids + nitrates) * 1E-6 * parameters.N_MOLAR_MASS + Nresidual + Nstruct) / max_mstruct
 
     @classmethod
     def calculate_forced_relative_delta_green_area(cls, green_area_df, group_id, prev_green_area):
@@ -185,14 +184,14 @@ class SenescenceModel(object):
             remob_proteins = delta_amino_acids = proteins * relative_delta_green_area
             delta_Nresidual = 0
         else:
-            if ratio_N_mstruct_max <= parameters.RATIO_N_MSTRUCT.get(element_index, parameters.DEFAULT_RATIO_N_MSTRUCT):  # then all the proteins are converted into Nresidual
+            if ratio_N_mstruct_max <= parameters.RATIO_N_MSTRUCT.get(element_index, parameters.DEFAULT_RATIO_N_MSTRUCT):  # all the proteins are converted into Nresidual
                 remob_proteins = proteins
                 delta_Nresidual = remob_proteins * 1E-6 * parameters.N_MOLAR_MASS
                 delta_amino_acids = 0
-            else:  # then part of the proteins are converted into amino_acids, the rest is converted into Nresidual
+            else:  # part of the proteins are converted into amino_acids
                 remob_proteins = proteins * relative_delta_green_area
-                delta_amino_acids = remob_proteins * 2 / 3.
-                delta_Nresidual = (remob_proteins - delta_amino_acids) * 1E-6 * parameters.N_MOLAR_MASS
+                delta_amino_acids = remob_proteins
+                delta_Nresidual = 0
         return remob_proteins, delta_amino_acids, delta_Nresidual
 
     @classmethod
@@ -238,6 +237,6 @@ class SenescenceModel(object):
         :rtype: bool
         """
         is_over = False
-        if (green_area < parameters.MIN_GREEN_AREA and not is_growing) or mstruct == 0:
+        if (green_area < parameters.MIN_GREEN_AREA or mstruct == 0) and not is_growing :
             is_over = True
         return is_over
