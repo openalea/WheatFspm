@@ -36,7 +36,7 @@ HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age
                      'hiddenzone_age', 'leaf_Lmax', 'leaf_Lmax_em', 'lamina_Lmax', 'sheath_Lmax', 'leaf_Wmax', 'SSLW', 'LSSW', 'leaf_is_emerged', 'internode_Lmax','internode_Lmax_lig', 'LSIW',
                      'internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct',
                      'internode_enclosed_Nstruct', 'mstruct', 'is_over', 'mean_conc_sucrose']
-ELEMENT_INPUTS = ['length', 'is_growing', 'age', 'is_over']
+ELEMENT_INPUTS = ['length', 'Wmax', 'is_growing', 'age', 'is_over']
 SAM_INPUTS = ['SAM_temperature', 'delta_teq', 'teq_since_primordium', 'status', 'nb_leaves', 'GA', 'height', 'cohort', 'sum_TT']
 
 #: the outputs computed by ElongWheat
@@ -47,7 +47,7 @@ HIDDENZONE_OUTPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_ag
                       'SSLW', 'LSSW', 'leaf_is_emerged', 'internode_Lmax','internode_Lmax_lig', 'LSIW', 'internode_is_visible', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct',
                       'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct', 'is_over', 'ratio_DZ', 'ratio_EOZ',
                       'mean_conc_sucrose', 'leaf_is_remobilizing', 'internode_is_remobilizing']
-ELEMENT_OUTPUTS = ['length', 'is_growing', 'diameter', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'mstruct', 'Nstruct', 'age', 'Nresidual', 'max_proteins', 'senesced_length_element', 'is_over']
+ELEMENT_OUTPUTS = ['length', 'Wmax', 'is_growing',  'sucrose', 'amino_acids', 'fructan', 'proteins', 'mstruct', 'Nstruct', 'age', 'Nresidual', 'max_proteins', 'senesced_length_element', 'is_over']
 SAM_OUTPUTS = ['SAM_temperature', 'delta_teq', 'delta_teq_roots', 'teq_since_primordium', 'status', 'nb_leaves', 'GA', 'height', 'cohort', 'sum_TT']
 
 #: the inputs and outputs of ElongWheat.
@@ -219,42 +219,42 @@ class Simulation(object):
                         tiller_lamina_id = hiddenzone_id + tuple(['blade', 'LeafElement1'])
                         if tiller_to_MS_lamina_id in all_element_outputs.keys():
                             self.outputs['elements'][tiller_lamina_id] = all_element_outputs[tiller_to_MS_lamina_id]
-                        else:
-                            warnings.warn('No leaf found on main stem for tiller {}.'.format(tiller_to_MS_lamina_id))
+                        # else:
+                        #     warnings.warn('No leaf found on main stem for tiller {}.'.format(tiller_to_MS_lamina_id))
 
                         # Emerged Sheath
                         tiller_to_MS_emerged_sheath_id = tiller_to_MS_phytomer_id + tuple(['sheath', 'StemElement'])
                         tiller_emerged_sheath_id = hiddenzone_id + tuple(['sheath', 'StemElement'])
                         if tiller_to_MS_emerged_sheath_id in all_element_outputs.keys():
                             self.outputs['elements'][tiller_emerged_sheath_id] = all_element_outputs[tiller_to_MS_emerged_sheath_id]
-                        else:
-                            warnings.warn('No emerged sheath found on main stem for tiller {}.'.format(tiller_to_MS_emerged_sheath_id))
+                        # else:
+                        #     warnings.warn('No emerged sheath found on main stem for tiller {}.'.format(tiller_to_MS_emerged_sheath_id))
 
                         # Enclosed Sheath
                         tiller_to_MS_enclosed_sheath_id = tiller_to_MS_phytomer_id + tuple(['sheath', 'HiddenElement'])
                         tiller_enclosed_sheath_id = hiddenzone_id + tuple(['sheath', 'HiddenElement'])
                         if tiller_to_MS_enclosed_sheath_id in all_element_outputs.keys():
                             self.outputs['elements'][tiller_enclosed_sheath_id] = all_element_outputs[tiller_to_MS_enclosed_sheath_id]
-                        else:
-                            warnings.warn('No enclosed sheath found on main stem for tiller {}.'.format(tiller_to_MS_enclosed_sheath_id))
+                        # else:
+                        #     warnings.warn('No enclosed sheath found on main stem for tiller {}.'.format(tiller_to_MS_enclosed_sheath_id))
 
                         # Emerged internode
                         tiller_to_MS_emerged_internode_id = tiller_to_MS_phytomer_id + tuple(['internode', 'StemElement'])
                         tiller_emerged_internode_id = hiddenzone_id + tuple(['internode', 'StemElement'])
                         if tiller_to_MS_emerged_internode_id in all_element_outputs.keys():
                             self.outputs['elements'][tiller_emerged_internode_id] = all_element_outputs[tiller_to_MS_emerged_internode_id]
-                        else:
-                            warnings.warn('No emerged internode found on main stem for tiller {}.'.format(tiller_to_MS_emerged_internode_id))
+                        # else:
+                        #     warnings.warn('No emerged internode found on main stem for tiller {}.'.format(tiller_to_MS_emerged_internode_id))
 
                         # Enclosed internode
                         tiller_to_MS_enclosed_internode_id = tiller_to_MS_phytomer_id + tuple(['internode', 'HiddenElement'])
                         tiller_enclosed_internode_id = hiddenzone_id + tuple(['internode', 'HiddenElement'])
                         if tiller_to_MS_enclosed_internode_id in all_element_outputs.keys():
                             self.outputs['elements'][tiller_enclosed_internode_id] = all_element_outputs[tiller_to_MS_enclosed_internode_id]
-                        else:
-                            warnings.warn('No enclosed internode found on main stem for tiller {}.'.format(tiller_to_MS_enclosed_internode_id))
-                else:
-                    warnings.warn('No main stem found for tiller {}.'.format(tiller_to_MS_phytomer_id))
+                        # else:
+                        #     warnings.warn('No enclosed internode found on main stem for tiller {}.'.format(tiller_to_MS_enclosed_internode_id))
+                # else:
+                #     warnings.warn('No main stem found for tiller {}.'.format(tiller_to_MS_phytomer_id))
 
             #: Main Stem
             else:
