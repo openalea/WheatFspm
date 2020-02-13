@@ -247,6 +247,11 @@ class ElongWheatFacade(object):
         # add new metamer(s)
         if not option_static:
             axis_to_metamers_mapping = {}
+            for metamer_id in sorted(all_elongwheat_elements_data_dict.keys()):
+                axis_id = (metamer_id[0], metamer_id[1])
+                if axis_id not in axis_to_metamers_mapping:
+                    axis_to_metamers_mapping[axis_id] = []
+                axis_to_metamers_mapping[axis_id].append(metamer_id[:3])
             for metamer_id in sorted(all_elongwheat_hiddenzones_data_dict.keys()):
                 axis_id = (metamer_id[0], metamer_id[1])
                 if axis_id not in axis_to_metamers_mapping:
@@ -324,9 +329,15 @@ class ElongWheatFacade(object):
                                 mtg_elements_data_from_organ_data[organ_data_name] = mtg_organ_properties[organ_data_name]
 
                         # Data from hidden zones to be stored at organ scale
-                        if len(mtg_organs_data_from_elongwheat_hiddenzone_data) != 0 and mtg_organ_label == 'blade':
-                            self._shared_mtg.property('shape_mature_length')[mtg_organ_vid] = mtg_organs_data_from_elongwheat_hiddenzone_data['lamina_Lmax']
-                            self._shared_mtg.property('shape_max_width')[mtg_organ_vid] = mtg_organs_data_from_elongwheat_hiddenzone_data['leaf_Wmax']
+                        if mtg_organ_label == 'blade':
+                            if len(mtg_organs_data_from_elongwheat_hiddenzone_data) != 0:
+                                self._shared_mtg.property('shape_mature_length')[mtg_organ_vid] = mtg_organs_data_from_elongwheat_hiddenzone_data['lamina_Lmax']
+                                self._shared_mtg.property('shape_max_width')[mtg_organ_vid] = mtg_organs_data_from_elongwheat_hiddenzone_data['leaf_Wmax']
+                            else:
+                                blade_id = organ_id + ('LeafElement1',)
+                                if blade_id in all_elongwheat_elements_data_dict.keys():
+                                    self._shared_mtg.property('shape_mature_length')[mtg_organ_vid] = all_elongwheat_elements_data_dict[organ_id + ('LeafElement1',)]['length']
+                                    self._shared_mtg.property('shape_max_width')[mtg_organ_vid] = all_elongwheat_elements_data_dict[organ_id + ('LeafElement1',)]['Wmax']
 
                         # Update of organ scale from elements dataframe
                         # Organ length should be correct in order to get correct lengths at both organ and element scales after performing the update_geometry()
