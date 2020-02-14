@@ -368,8 +368,8 @@ class Simulation(object):
                                 new_lamina = parameters.ElementInit().__dict__
                                 self.outputs['elements'][lamina_id] = new_lamina
 
-                                # Length of emerged lamina
                                 curr_lamina_outputs = all_element_outputs[lamina_id]
+                                # Length of emerged lamina
                                 lamina_L = model.calculate_lamina_L(leaf_L, leaf_pseudostem_length, hiddenzone_id, curr_hiddenzone_outputs['lamina_Lmax'])
                                 curr_lamina_outputs['length'] = lamina_L
 
@@ -391,7 +391,7 @@ class Simulation(object):
                                     warnings.warn('No next hidden zone found for hiddenzone {}.'.format(hiddenzone_id))
 
                                 # Define lamina_Wmax and structural weight of the current sheath and lamina
-                                curr_hiddenzone_outputs['leaf_Wmax'] = model.calculate_leaf_Wmax(curr_hiddenzone_outputs['lamina_Lmax'], hiddenzone_id[2],
+                                curr_hiddenzone_outputs['leaf_Wmax'] = self.outputs['elements'][lamina_id]['Wmax'] = model.calculate_leaf_Wmax(curr_hiddenzone_outputs['lamina_Lmax'], hiddenzone_id[2],
                                                                                                  curr_hiddenzone_outputs['mean_conc_sucrose'], optimal_growth_option)
                                 curr_hiddenzone_outputs['SSLW'] = model.calculate_SSLW(hiddenzone_id[2], curr_hiddenzone_outputs['mean_conc_sucrose'], optimal_growth_option)
                                 curr_hiddenzone_outputs['LSSW'] = model.calculate_LSSW(hiddenzone_id[2], curr_hiddenzone_outputs['mean_conc_sucrose'], optimal_growth_option)
@@ -404,6 +404,7 @@ class Simulation(object):
                                 new_hidden_lamina = parameters.ElementInit().__dict__
                                 self.outputs['elements'][hidden_lamina_id] = new_hidden_lamina
                                 self.outputs['elements'][hidden_lamina_id]['length'] = curr_hiddenzone_outputs['lamina_Lmax'] = model.calculate_lamina_Lmax(curr_hiddenzone_outputs['leaf_Lmax'], sheath_lamina_ratio)
+                                self.outputs['elements'][hidden_lamina_id]['Wmax'] = curr_hiddenzone_outputs['leaf_Wmax']
                                 self.outputs['elements'][hidden_lamina_id]['is_growing'] = False
                                 # Initialise hidden sheath outputs
                                 new_sheath = parameters.ElementInit().__dict__
@@ -464,6 +465,7 @@ class Simulation(object):
                                     new_hidden_lamina = parameters.ElementInit().__dict__
                                     self.outputs['elements'][hidden_lamina_id] = new_hidden_lamina
                                     self.outputs['elements'][hidden_lamina_id]['length'] = hidden_lamina_L
+                                    self.outputs['elements'][hidden_lamina_id]['Wmax'] = curr_hiddenzone_outputs['leaf_Wmax']
                                     self.outputs['elements'][hidden_lamina_id]['is_growing'] = False
                                     # End of sheath elongation
                                     self.outputs['elements'][visible_sheath_id]['is_growing'] = False
