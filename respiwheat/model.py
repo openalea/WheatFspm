@@ -158,7 +158,10 @@ class RespirationModel(object):
         :return: R_N2fix (µmol C respired)
         :rtype: float`
         """
-        R_N2fix = cls.C_NFIX * I_Nfix
+        if I_Nfix <= 0:
+            R_N2fix = 0
+        else:
+            R_N2fix = cls.C_NFIX * I_Nfix
         return R_N2fix
 
     @classmethod
@@ -188,10 +191,15 @@ class RespirationModel(object):
         :return: R_residual, R_maintenance (µmol C respired h-1)
         :rtype: (float, float)
         """
-        conc_sucrose = sucrose / mstruct
+
         Q10 = 2
         T_ref = 20
-        R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot * Q10**((Ts - T_ref)/10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
+
+        if sucrose <= 0 or mstruct <=0:
+            R_residual = 0
+        else:
+            conc_sucrose = sucrose / mstruct
+            R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot * Q10**((Ts - T_ref)/10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
 
         rm = 0.004208754
         R_maintenance = rm*mstruct * Q10**((Ts - T_ref)/10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
