@@ -350,10 +350,10 @@ def calculate_lamina_L(leaf_L, leaf_pseudostem_length, hiddenzone_id, lamina_Lma
     :rtype: float
     """
     lamina_L = leaf_L - leaf_pseudostem_length
-    if lamina_L <= 0:
-        raise Warning('The leaf is shorther than its pseudostem for {}'.format(hiddenzone_id))
+    # if lamina_L <= 0:
+    #     raise Warning('The leaf is shorther than its pseudostem for {}'.format(hiddenzone_id))
 
-    return max(0., min(lamina_L, lamina_Lmax))
+    return max(10**-5, min(lamina_L, lamina_Lmax)) # Minimum length set to 10^-6 m to make sure growth-wheat can run even if the lamina turns back hidden (case when an older sheath elongates faster)
 
 
 def calculate_leaf_Lmax(leaf_Lem_prev):
@@ -580,7 +580,7 @@ def calculate_LSIW(LSSW, phytomer_rank, optimal_growth_option=False):
     :rtype: float
     """
     if optimal_growth_option:
-        LSIW = parameters.internode_LSIW_dict[phytomer_rank]
+        LSIW = parameters.internode_LSIW_dict.get(phytomer_rank, parameters.internode_LSIW_dict[ max(parameters.internode_LSIW_dict.keys()) ] )
     else:
         LSIW = LSSW * parameters.ratio_LSIW_LSSW  # TODO : changer mode de calcul car rapport non stable suivant numéro de phytomère
     return LSIW
