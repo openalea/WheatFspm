@@ -228,72 +228,6 @@ def graph_summary(scenario, graph_list=None):
     plt.savefig( os.path.join(scenario_graphs_dirpath,'Summary.PNG'), format='PNG', bbox_inches='tight', dpi=200)
     plt.close()
 
-## ------- Table
-
-def table_C_usages(scenario):
-
-    scenario_name = 'Scenario_{}'.format(scenario)
-    scenario_postprocessing_dirpath = os.path.join(scenario_name, 'postprocessing')
-
-    # --- Import simulations prostprocessings
-    df_axe = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'axes_postprocessing.csv'))
-    df_elt = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'elements_postprocessing.csv'))
-    df_org = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'organs_postprocessing.csv'))
-    df_hz = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'hiddenzones_postprocessing.csv'))
-
-    df_roots = df_org[df_org['organ'] == 'roots'].copy()
-    df_phloem = df_org[df_org['organ'] == 'phloem'].copy()
-
-    # --- C usages relatif to Net Photosynthesis
-    AMINO_ACIDS_C_RATIO = 4.15              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    AMINO_ACIDS_N_RATIO = 1.25              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-
-    # Photosynthesis
-    df_elt['Photosynthesis_tillers'] = df_elt['Photosynthesis'].fillna(0) * df_elt['nb_replications'].fillna(1.)
-    Tillers_Photosynthesis_Ag = df_elt.groupby(['t'], as_index=False).agg({'Photosynthesis_tillers': 'sum'})
-    C_usages = pd.DataFrame( {'t' : Tillers_Photosynthesis_Ag['t']})
-    C_usages['C_produced'] = np.cumsum(Tillers_Photosynthesis_Ag.Photosynthesis_tillers)
-
-    # Respiration
-    C_usages['Respi_roots'] = np.cumsum(df_axe.C_respired_roots)
-    C_usages['Respi_shoot'] = np.cumsum(df_axe.C_respired_shoot)
-
-    # Exudation
-    C_usages['exudation'] = np.cumsum(df_axe.C_exudated.fillna(0))
-
-    # Structural growth
-    C_consumption_mstruct_roots = df_roots.sucrose_consumption_mstruct.fillna(0) + df_roots.AA_consumption_mstruct.fillna(0)* AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
-    C_usages['Structure_roots'] = np.cumsum(C_consumption_mstruct_roots.reset_index(drop=True))
-
-    df_hz['C_consumption_mstruct'] = df_hz.sucrose_consumption_mstruct.fillna(0) + df_hz.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
-    df_hz['C_consumption_mstruct_tillers'] = df_hz['C_consumption_mstruct'] * df_hz['nb_replications']
-    C_consumption_mstruct_shoot = df_hz.groupby(['t'])['C_consumption_mstruct_tillers'].sum()
-    C_usages['Structure_shoot'] = np.cumsum(C_consumption_mstruct_shoot.reset_index(drop=True))
-
-    # Non structural C
-    df_phloem['C_NS'] = df_phloem.sucrose.fillna(0) + df_phloem.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
-    C_NS_phloem_init = df_phloem.C_NS - df_phloem.C_NS.reset_index(drop=True)[0]
-    C_usages['NS_phloem'] = C_NS_phloem_init.reset_index(drop=True)
-
-    df_elt['C_NS'] = df_elt.sucrose.fillna(0) + df_elt.fructan.fillna(0) + df_elt.starch.fillna(0) + (df_elt.amino_acids.fillna(0) + df_elt.proteins.fillna(0))* AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
-    df_elt['C_NS_tillers'] = df_elt['C_NS'] * df_elt['nb_replications'].fillna(1.)
-    C_elt = df_elt.groupby(['t']).agg({'C_NS_tillers': 'sum'})
-
-    df_hz['C_NS'] = df_hz.sucrose.fillna(0) + df_hz.fructan.fillna(0) + (df_hz.amino_acids.fillna(0) + df_hz.proteins.fillna(0))* AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
-    df_hz['C_NS_tillers'] = df_hz['C_NS'] * df_hz['nb_replications'].fillna(1.)
-    C_hz = df_hz.groupby(['t']).agg({'C_NS_tillers': 'sum'})
-
-    df_roots['C_NS'] = df_roots.sucrose.fillna(0) + df_roots.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
-
-    C_NS_autre = df_roots.C_NS.reset_index(drop=True) + C_elt.C_NS_tillers.reset_index(drop=True) + C_hz.C_NS_tillers.reset_index(drop=True)
-    C_NS_autre_init = C_NS_autre - C_NS_autre.reset_index(drop=True)[0]
-    C_usages['NS_other'] = C_NS_autre_init.reset_index(drop=True)
-
-    # Total
-    C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
-                           C_usages.C_produced
-
-    C_usages.to_csv(os.path.join(scenario_postprocessing_dirpath,'C_usages.csv'))
 
 
 if __name__ == '__main__':
@@ -305,4 +239,3 @@ if __name__ == '__main__':
         graph_C_usages(int(scenario))
         graph_summary(int(scenario), graph_list=['LAI','sum_dry_mass_axis','shoot_roots_ratio_axis','N_content_shoot_axis','Conc_Amino_acids_phloem','Conc_Sucrose_phloem', 'leaf_Lmax',
                       'green_area_blade'] )
-        table_C_usages(int(scenario))

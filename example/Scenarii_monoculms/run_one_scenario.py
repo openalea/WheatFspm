@@ -6,6 +6,7 @@ import pandas as pd
 import main
 import tools
 import additional_graphs
+import additional_postprocessing
 
 my_dir = os.getcwd()
 
@@ -13,7 +14,6 @@ my_dir = os.getcwd()
 scenarii_df = pd.read_csv( os.path.join('inputs','scenarii_list.csv'), index_col='Scenario')
 scenarii_df['Scenario'] = scenarii_df.index
 scenarii = scenarii_df.Scenario
-
 
 def run_one_scenario(param):
     if type(param) != list:
@@ -61,7 +61,8 @@ def run_one_scenario(param):
                   update_parameters_all_models = scenario_dict)
         additional_graphs.graph_RER(scenario)
         additional_graphs.graph_summary(scenario)
-        additional_graphs.table_C_usages(scenario)
+        additional_postprocessing.table_C_usages(scenario)
+        additional_postprocessing.calculate_performance_indices(scenario)
 
     except Exception as e:
         print e

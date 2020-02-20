@@ -742,7 +742,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         # 3) RUE
         df_elt['day'] = df_elt['t'] // 24 + 1
         days = df_elt['day'].unique()
-        df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'] * 3600 / 2.02 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
+        df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'] * 3600 / 4.6 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
+        df_elt['RGa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'] * 3600 / 2.02 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
         PARa = df_elt.groupby(['day'])['PARa_MJ'].agg('sum')
         PARa_cum = np.cumsum(PARa)
 
@@ -759,7 +760,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         ax.plot(PARa_cum, sum_dry_mass_shoot, label='Shoot dry mass (g)')
         ax.plot(PARa_cum, sum_dry_mass, label='Plant dry mass (g)')
         ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
-        ax.set_xlabel('Cumulative absorbed global radiation (MJ)')
+        ax.set_xlabel('Cumulative absorbed PAR (MJ)')
         ax.set_ylabel('Dry mass (g)')
         ax.set_title('RUE')
         plt.text(max(PARa_cum) * 0.02, max(sum_dry_mass) * 0.95, 'RUE shoot : {0:.2f} , RUE plant : {1:.2f}'.format(round(RUE_shoot, 2), round(RUE_plant, 2)))
@@ -774,6 +775,37 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         ax.set_xlabel('Days')
         ax.set_title('RUE investigations')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'RUE2.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+        plt.close()
+
+        # 3bis) Photosynthetic efficiency of the plant
+        df_elt['Photosynthesis_tillers'] = df_elt.Ag * df_elt.green_area * df_elt.nb_replications.fillna(1.)
+        df_elt['PARa_tot_tillers'] = df_elt.PARa * df_elt.green_area * df_elt.nb_replications.fillna(1.)
+        df_elt['green_area_tillers'] = df_elt.green_area * df_elt.nb_replications.fillna(1.)
+        photo_y = df_elt.groupby(['t'],as_index=False).agg({'Photosynthesis_tillers':'sum', 'PARa_tot_tillers':'sum', 'green_area_tillers':'sum'})
+        photo_y['Photosynthetic_efficiency_plant'] = photo_y.Photosynthesis_tillers / photo_y.PARa_tot_tillers
+
+        fig, ax = plt.subplots()
+        ax.plot(photo_y.t, photo_y.Photosynthetic_efficiency_plant)
+        ax.set_ylim(bottom=0.)
+        ax.set_xlabel('t')
+        ax.set_ylabel(u'Photosynthetic efficiency (µmol C/µmol PARa)')
+        ax.set_title('Photosynthetic efficiency of the plant')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Photosynthetic_efficiency_plant.PNG'), dpi=200, format='PNG', bbox_inches='tight')
+        plt.close()
+
+        PARa2 = df_elt.groupby(['day'])['PARa_tot_tillers'].agg('sum')
+        PARa2_cum = np.cumsum(PARa2)
+        Photosynthesis = df_elt.groupby(['day'])['Photosynthesis_tillers'].agg('sum')
+        Photosynthesis_cum = np.cumsum(Photosynthesis)
+
+        avg_photo_y = np.polyfit(PARa2_cum, Photosynthesis_cum, 1)[0]
+
+        fig, ax = plt.subplots()
+        ax.plot(PARa2_cum, Photosynthesis_cum)
+        ax.set_xlabel(u'Cumulative absorbed PAR (µmol.s$^{-1}$)')
+        ax.set_ylabel(u'Cumulative photosynthesis (µmol C.s$^{-1}$)')
+        ax.set_title('Average photosynthetic efficiency of the plant: {:.2%}'.format(round(avg_photo_y, 3)))
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Photosynthetic_efficiency_plant2.PNG'), dpi=200, format='PNG', bbox_inches='tight')
         plt.close()
 
         # 4) Sum thermal time
@@ -886,7 +918,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
 
 if __name__ == '__main__':
-    main(2000, forced_start_time=1990, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True,
+    main(2000, forced_start_time=1990, run_simu=False, run_postprocessing=True, generate_graphs=True, run_from_outputs=True,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True,
          PLANT_DENSITY={1:250.}, update_parameters_all_models=None,

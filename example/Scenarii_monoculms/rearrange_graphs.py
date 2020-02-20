@@ -6,7 +6,7 @@ import pandas as pd
 graphs_titles_inputs = ['N_content_roots_axis','N_content_shoot_axis','N_content_blade','shoot_roots_ratio_axis','green_area_blade','Ag_blade',
                  'lamina_Wmax','leaf_Lmax','internode_Lmax','sheath_Lmax','phyllochron','Conc_Sucrose_phloem','Conc_Amino_acids_phloem', 'S_Amino_Acids_roots','LAI','RER_comparison',
                  'Conc_Nitrates_roots','Conc_Sucrose_roots','sum_dry_mass_roots_axis','sum_dry_mass_shoot_axis','sum_dry_mass_axis','Summary','SSLW','RUE','SLN_blade','SLN_nonstruct_blade',
-                 'C_usages_cumulated']
+                 'C_usages_cumulated','Photosynthetic_yield_blade','Photosynthetic_yield_plante','Photosynthetic_yield_plante2','Ts_blade']
 
 
 ## Get the list of scenarii

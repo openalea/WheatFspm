@@ -5,6 +5,7 @@ import os
 
 import run_one_scenario
 import rearrange_graphs
+import rearrange_postprocessing
 
 scenarii_df = pd.read_csv( os.path.join('inputs','scenarii_list.csv'), index_col='Scenario')
 scenarii_df['Scenario'] = scenarii_df.index
@@ -20,6 +21,9 @@ if __name__ == '__main__':
     p.join()
 
     rearrange_graphs.rearrange_graphs( scenarii = list(scenarii) )
+    rearrange_postprocessing.rearrange_postprocessing( postprocessing_tables=['axes_postprocessing'],t=1999, scenarii = list(scenarii) )
+    rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999,  scenarii = list(scenarii) )
+    rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['performance_indices'],  scenarii = list(scenarii) )
 
     tend = time.time()
     tmp = (tend - tstart) / 60.
