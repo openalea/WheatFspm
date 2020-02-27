@@ -67,11 +67,11 @@ class Population(object):
             plants = []
         self.plants = plants  #: the list of plants
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the population recursively.
         """
         for plant in self.plants:
-            plant.calculate_integrative_variables()
+            plant.calculate_aggregated_variables()
 
 
 class Plant(object):
@@ -90,11 +90,11 @@ class Plant(object):
         self.axes = axes  #: the list of axes
         self.cohorts = [] #: list of cohort values - Hack to treat tillering cases : TEMPORARY
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the plant recursively.
         """
         for axis in self.axes:
-            axis.calculate_integrative_variables()
+            axis.calculate_aggregated_variables()
 
     def calculate_temperature_effect_on_conductivity(self, Tair):
         """Effect of the temperature on phloeme translocation conductivity (Farrar 1988)
@@ -137,6 +137,7 @@ class Plant(object):
 
         return f_activation * f_deactivation
 
+
 class Axis(object):
     """
     The class :class:`Axis` defines the CN exchanges at axis scale.
@@ -162,20 +163,20 @@ class Axis(object):
         # integrative variables
         self.Total_Transpiration = None  #: the total transpiration (mmol s-1)
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the axis recursively.
         """
         self.mstruct = 0
         if self.roots is not None:
-            self.roots.calculate_integrative_variables()
+            self.roots.calculate_aggregated_variables()
             self.mstruct += self.roots.mstruct
         if self.phloem is not None:
-            self.phloem.calculate_integrative_variables()
+            self.phloem.calculate_aggregated_variables()
         if self.grains is not None:
-            self.grains.calculate_integrative_variables()
+            self.grains.calculate_aggregated_variables()
             self.mstruct += self.grains.structural_dry_mass
         for phytomer in self.phytomers:
-            phytomer.calculate_integrative_variables()
+            phytomer.calculate_aggregated_variables()
             self.mstruct += phytomer.mstruct * phytomer.nb_replications
 
 
@@ -203,19 +204,18 @@ class Phytomer(object):
         self.mstruct = None  #: the structural mass of the phytomer (g)
         self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the phytomer recursively.
         """
         self.mstruct = 0
         for organ_ in (self.chaff, self.peduncle, self.lamina, self.internode, self.sheath, self.hiddenzone):
             if organ_ is not None:
-                organ_.calculate_integrative_variables()
+                organ_.calculate_aggregated_variables()
                 self.mstruct += organ_.mstruct
 
     @property
     def nb_replications(self):
         return sum(v <= self.index for v in self.cohorts) + 1
-
 
 
 class Organ(object):
@@ -233,7 +233,7 @@ class Organ(object):
         """
         pass
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the organ recursively.
         """
         pass
@@ -248,12 +248,12 @@ class HiddenZone(Organ):
     INIT_COMPARTMENTS = parameters.HIDDEN_ZONE_INIT_COMPARTMENTS  #: the initial values of compartments and state parameters
 
     def __init__(self, label='hiddenzone',  mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
-                 sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan, amino_acids=INIT_COMPARTMENTS.amino_acids, proteins=INIT_COMPARTMENTS.proteins,cohorts=[], index = None):
+                 sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan, amino_acids=INIT_COMPARTMENTS.amino_acids, proteins=INIT_COMPARTMENTS.proteins, cohorts=[], index=None):
 
         super(HiddenZone, self).__init__(label)
 
         self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
-        self.index = index #: the index of the phytomer TEMPORARY
+        self.index = index  #: the index of the phytomer TEMPORARY
 
         # state parameters
         self.mstruct = mstruct                      #: g
@@ -314,13 +314,13 @@ class HiddenZone(Organ):
         """
         conductance = parameters.HIDDEN_ZONE_PARAMETERS.SIGMA * parameters.PHOTOSYNTHETIC_ORGAN_PARAMETERS.BETA * self.mstruct**(2/3) * T_effect_conductivity
 
-        flux =  ((amino_acids_phloem / mstruct_axis) - (amino_acids / self.mstruct)) * conductance * parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        flux = ((amino_acids_phloem / mstruct_axis) - (amino_acids / self.mstruct)) * conductance * parameters.SECOND_TO_HOUR_RATE_CONVERSION
         # res = 0
         # if flux > 0:
         res = flux
         return res
 
-    def calculate_S_proteins(self, amino_acids, T_effect_Vmax): # TODO : ON ne va pas chercher les paramètres au bon endroit
+    def calculate_S_proteins(self, amino_acids, T_effect_Vmax):  # TODO : ON ne va pas chercher les paramètres au bon endroit
         """Rate of protein synthesis (:math:`\mu mol` N proteins h-1 g-1 MS).
         Michaelis-Menten function of amino acids.
 
@@ -743,7 +743,7 @@ class Roots(Organ):
         self.HATS_LATS = None                  #: Nitrate influx (:math:`\mu mol` N)
         self.sum_respi = None                  #: Sum of respirations for roots i.e. related to N uptake, amino acids synthesis and residual (:math:`\mu mol` C)
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         self.Total_Organic_Nitrogen = self.calculate_Total_Organic_Nitrogen(self.amino_acids, self.Nstruct)
 
     # VARIABLES
@@ -1051,11 +1051,11 @@ class PhotosyntheticOrgan(Organ):
         self.enclosed_element = enclosed_element  #: the enclosed element
         self.mstruct = None                       #: the structural dry mass
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         self.mstruct = 0
         for element in (self.exposed_element, self.enclosed_element):
             if element is not None:
-                element.calculate_integrative_variables()
+                element.calculate_aggregated_variables()
                 self.mstruct += element.mstruct
 
 
@@ -1189,7 +1189,7 @@ class PhotosyntheticOrganElement(object):
     def nb_replications(self):
         return sum(v <= self.index for v in self.cohorts) + 1
 
-    def calculate_integrative_variables(self):
+    def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the element.
         """
         self.Total_Organic_Nitrogen = self.calculate_Total_Organic_Nitrogen(self.amino_acids, self.proteins, self.Nstruct)

@@ -1,4 +1,6 @@
 # -*- coding: latin-1 -*-
+import logging
+
 """
     cnwheat
     ~~~~~~~
@@ -33,8 +35,7 @@
         $Id$
 """
 
-__version__  = '0.0.1'
+__version__ = '2.0'
 
 # Add a do-nothing handler to prevent an error message being output to sys.stderr in the absence of logging configuration
-import logging
 logging.getLogger(__name__).addHandler(logging.NullHandler())

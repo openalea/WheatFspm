@@ -257,7 +257,8 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
     cnwheat_model_logger.disabled = not log_model  # set to False to log messages from cnwheat.model
     logging.getLogger('cnwheat.compartments').disabled = not log_compartments  # set to False to log the compartments
     logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives  # set to False to log the derivatives
-    
+
+
 def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None, precision=4):
     """Compare 
     
