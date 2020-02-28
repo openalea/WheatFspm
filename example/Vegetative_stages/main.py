@@ -347,7 +347,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
         # Update geometry
         adel_wheat.update_geometry(g)
-        adel_wheat.plot(g)
+        #adel_wheat.plot(g)
 
         # define the start and the end of the whole simulation (in hours)
         start_time = max(0, new_start_time)
@@ -417,7 +417,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
 
                         # Update geometry
                         adel_wheat.update_geometry(g)
-                        adel_wheat.plot(g)
+                        #adel_wheat.plot(g)
 
                         for t_growthwheat in range(t_elongwheat, t_elongwheat + elongwheat_ts, growthwheat_ts):
 
