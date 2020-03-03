@@ -144,12 +144,12 @@ class SenescenceModel(object):
         :param float prev_mstruct: previous value of an organ structural mass (g)
         :param float prev_Nstruct: previous value of an organ structural N (g)
 
-        :return: new_mstruct (g), new_Nstruct (g)
+        :return: delta_mstruct (g), delta_Nstruct (g)
         :rtype: tuple [float, float]
         """
-        new_mstruct = prev_mstruct - prev_mstruct * relative_delta_green_area
-        new_Nstruct = prev_Nstruct - prev_Nstruct * relative_delta_green_area
-        return new_mstruct, new_Nstruct
+        delta_mstruct =  prev_mstruct * relative_delta_green_area
+        delta_Nstruct = prev_Nstruct * relative_delta_green_area
+        return delta_mstruct, delta_Nstruct
 
     @classmethod
     def calculate_remobilisation(cls, metabolite, relative_delta_structure):
@@ -162,6 +162,22 @@ class SenescenceModel(object):
         :rtype: float
         """
         return metabolite * relative_delta_structure
+
+    @classmethod
+    def calculate_if_element_is_over(cls, green_area, is_growing, mstruct):
+        """Define is an element is fully senescent
+
+        :param float green_area: Green area of the element (m2)
+        :param bool is_growing: flag is the element is still growing
+        :param float mstruct: Strucural mass of the element (g)
+
+        :return: is_over which indicates if the element is fully senescent
+        :rtype: bool
+        """
+        is_over = False
+        if (green_area < parameters.MIN_GREEN_AREA or mstruct == 0) and not is_growing :
+            is_over = True
+        return is_over
 
     @classmethod
     def calculate_remobilisation_proteins(cls, organ, element_index, proteins, relative_delta_green_area, ratio_N_mstruct_max, full_remob):
@@ -226,17 +242,18 @@ class SenescenceModel(object):
         return (rate_mstruct_death * delta_t) / root_mstruct
 
     @classmethod
-    def calculate_if_element_is_over(cls, green_area, is_growing, mstruct):
-        """Define is an element is fully senescent
+    def calculate_delta_mstruct_root(cls, rate_mstruct_death, rate_Nstruct_death,  delta_teq):
+        """delta of structural mass due to senescence of roots
 
-        :param float green_area: Green area of the element (m2)
-        :param bool is_growing: flag is the element is still growing
-        :param float mstruct: Strucural mass of the element (g)
+        :param float rate_mstruct_death: relative delta of root structural mass over delta_t (g s-1)
+        :param float rate_Nstruct_death: relative delta of root N structural mass over delta_t (g s-1)
+        :param float delta_teq: previous value of an organ structural N (s)
 
-        :return: is_over which indicates if the element is fully senescent
-        :rtype: bool
+        :return: delta_mstruct (g), delta_Nstruct (g)
+        :rtype: tuple [float, float]
         """
-        is_over = False
-        if (green_area < parameters.MIN_GREEN_AREA or mstruct == 0) and not is_growing :
-            is_over = True
-        return is_over
+        delta_mstruct = rate_mstruct_death * delta_teq
+        delta_Nstruct = rate_Nstruct_death * delta_teq
+
+        return delta_mstruct, delta_Nstruct
+

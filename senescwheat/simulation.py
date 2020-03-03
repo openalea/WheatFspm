@@ -79,25 +79,27 @@ class Simulation(object):
 
         self.outputs.update({inputs_type: {} for inputs_type in self.inputs.keys()})
 
-        # SAM
-        all_SAM_inputs = self.inputs['SAM']
+        # axes
+        all_axes_inputs = self.inputs['axes']
 
         # Roots
         all_roots_inputs = self.inputs['roots']
         all_roots_outputs = self.outputs['roots']
         for roots_inputs_id, roots_inputs_dict in all_roots_inputs.items():
             # Temperature-compensated time (delta_teq)
-            delta_teq = all_SAM_inputs[roots_inputs_id]['delta_teq_roots']
+            delta_teq = all_axes_inputs[roots_inputs_id]['delta_teq_roots']
 
             # loss of mstruct and Nstruct
             rate_mstruct_death, rate_Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'], postflowering_stages)
             relative_delta_mstruct = model.SenescenceModel.calculate_relative_delta_mstruct_roots(rate_mstruct_death, roots_inputs_dict['mstruct'], delta_teq)
+            delta_mstruct, delta_Nstruct = model.SenescenceModel.calculate_delta_mstruct_root(rate_mstruct_death, rate_Nstruct_death, delta_teq)
             # loss of cytokinins (losses of nitrates, amino acids and sucrose are neglected)
             loss_cytokinins = model.SenescenceModel.calculate_remobilisation(roots_inputs_dict['cytokinins'], relative_delta_mstruct)
             # Update of root outputs
-            all_roots_outputs[roots_inputs_id] = {'mstruct': roots_inputs_dict['mstruct'] - (rate_mstruct_death * delta_teq),  #: TODO: a faire dans une fonction a part et apres growth-wheat
+            all_roots_outputs[roots_inputs_id] = {'mstruct': roots_inputs_dict['mstruct'] - delta_mstruct,
+                                                  'senesced_mstruct': roots_inputs_dict['senesced_mstruct'] + delta_mstruct,
                                                   'rate_mstruct_death': rate_mstruct_death,
-                                                  'Nstruct': roots_inputs_dict['Nstruct'] - (rate_Nstruct_death * delta_teq),  #: TODO: a faire dans une fonction a part et apres growth-wheat
+                                                  'Nstruct': roots_inputs_dict['Nstruct'] - delta_Nstruct,
                                                   'cytokinins': roots_inputs_dict['cytokinins'] - loss_cytokinins}
 
         # Elements
@@ -105,14 +107,13 @@ class Simulation(object):
         all_elements_outputs = self.outputs['elements']
         for element_inputs_id, element_inputs_dict in all_elements_inputs.items():
 
-
             axe_label = element_inputs_id[1]
             if axe_label != 'MS':  # Calculation only for the main stem
                 continue
 
             # Temperature-compensated time (delta_teq)
             axe_id = element_inputs_id[:2]
-            delta_teq = all_SAM_inputs[axe_id]['delta_teq']
+            delta_teq = all_axes_inputs[axe_id]['delta_teq']
 
             # Senescence
             element_outputs_dict = element_inputs_dict.copy()
@@ -121,6 +122,7 @@ class Simulation(object):
                 element_outputs_dict['green_area'] = 0.0
                 element_outputs_dict['senesced_length_element'] = element_inputs_dict['length']
                 element_outputs_dict['mstruct'] = 0
+                element_outputs_dict['senesced_mstruct'] += element_inputs_dict['mstruct']
                 element_outputs_dict['is_over'] = True
             elif not element_inputs_dict['is_growing']:
                 update_max_protein = forced_max_protein_elements is None or element_inputs_id not in forced_max_protein_elements
@@ -167,7 +169,10 @@ class Simulation(object):
                 loss_cytokinins = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['cytokinins'], relative_delta_green_area)
 
                 # Loss of mstruct and Nstruct
-                new_mstruct, new_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element_inputs_dict['mstruct'], element_inputs_dict['Nstruct'])
+                delta_mstruct, delta_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element_inputs_dict['mstruct'], element_inputs_dict['Nstruct'])
+                new_mstruct = element_inputs_dict['mstruct'] - delta_mstruct
+                new_Nstruct = element_inputs_dict['Nstruct'] - delta_Nstruct
+
                 delta_Nresidual += element_inputs_dict['Nstruct'] - new_Nstruct
 
                 if new_mstruct == 0:
@@ -179,6 +184,7 @@ class Simulation(object):
                 element_outputs_dict = {'green_area': new_green_area,
                                         'senesced_length_element': new_senesced_length,
                                         'mstruct': new_mstruct,
+                                        'senesced_mstruct':element_inputs_dict['senesced_mstruct'] + delta_mstruct,
                                         'Nstruct': new_Nstruct,
                                         'starch': element_inputs_dict['starch'] - remob_starch,
                                         'sucrose': element_inputs_dict['sucrose'] + remob_starch + remob_fructan,

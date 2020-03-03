@@ -35,7 +35,7 @@ INPUTS_DIRPATH = 'inputs'
 # the file names of the inputs
 ROOTS_INPUTS_FILENAME = 'roots_inputs.csv'
 ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
-SAMS_INPUTS_FILENAME = 'SAM_inputs.csv'
+AXES_INPUTS_FILENAME = 'axes_inputs.csv'
 
 # outputs directory path
 OUTPUTS_DIRPATH = 'outputs'
@@ -84,10 +84,10 @@ def test_run(overwrite_desired_data=False):
     # read inputs from Pandas dataframe
     roots_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOTS_INPUTS_FILENAME))
     elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))
-    SAMs_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, SAMS_INPUTS_FILENAME))
+    axes_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, AXES_INPUTS_FILENAME))
 
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframes(roots_inputs_df, SAMs_inputs_df, elements_inputs_df)
+    inputs = converter.from_dataframes(roots_inputs_df, axes_inputs_df, elements_inputs_df)
 
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)

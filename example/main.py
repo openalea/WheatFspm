@@ -36,7 +36,7 @@ from senescwheat import simulation, converter
 INPUTS_DIRPATH = 'inputs'
 
 ROOTS_INPUTS_FILENAME = 'roots_inputs.csv'
-SAM_INPUTS_FILENAME = 'SAM_inputs.csv'
+AXES_INPUTS_FILENAME = 'axes_inputs.csv'
 ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
 
 # outputs paths
@@ -55,10 +55,10 @@ if __name__ == '__main__':
     simulation_ = simulation.Simulation(delta_t=3600)
     # read inputs from Pandas dataframes
     roots_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOTS_INPUTS_FILENAME))
-    SAM_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, SAM_INPUTS_FILENAME))
+    axes_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, AXES_INPUTS_FILENAME))
     elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))
     # convert the dataframes to simulation inputs format
-    inputs = converter.from_dataframes(roots_inputs_df, SAM_inputs_df, elements_inputs_df)
+    inputs = converter.from_dataframes(roots_inputs_df, axes_inputs_df, elements_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
     # run the simulation
