@@ -197,6 +197,7 @@ class ElementInit(object):
         self.fructan = 0              #: µmol C
         self.proteins = 0             #: µmol N
         self.mstruct = 0              #: g
+        self.senesced_mstruct = 0  #: g
         self.max_mstruct = 0          #: g
         self.Nstruct = 0              #: g
         self.cytokinins = 0           #: g
