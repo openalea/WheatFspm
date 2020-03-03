@@ -28,7 +28,7 @@ class RespirationModel(object):
     SECOND_TO_HOUR_RATE_CONVERSION = 3600
 
     # R_growth#
-    YG = 0.8               # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth). Range 0±75 to 0±85 in Cannell and Thornley, 2000.
+    YG = 0.75#0.8               # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth). Range 0±75 to 0±85 in Cannell and Thornley, 2000.
 
     YG_GRAINS = 0.71       # Growth yield (units of C appearing in new biomass per unit of C substrate utilized for growth)
 
@@ -165,19 +165,19 @@ class RespirationModel(object):
         return R_N2fix
 
     @classmethod
-    def R_min_upt(cls, delta_BMstruct):
+    def R_min_upt(cls, delta_mineral_plant):
         """ Mineral ion (other than N) uptake-linked respiration
 
-        :param float delta_BMstruct: gross plant structural growth rate (g)
+        :param float delta_mineral_plant: Uptake of mineral by the plant (g)
 
         :return: R_min_upt (µmol C respired)
         :rtype float
         """
         # Uptake of minerals (g)
-        Umin = (cls.ASHE_CONTENT * delta_BMstruct) * 0.5  # 0.5: minerals internally recycled from senescing leaves
+        Umin = delta_mineral_plant
         # Respiratory cost
         R_min_upt = cls.CMIN_UPT * Umin
-        return R_min_upt
+        return max(0., R_min_upt)
 
     @classmethod
     def R_residual(cls, sucrose, mstruct, Ntot, Ts):
@@ -192,11 +192,11 @@ class RespirationModel(object):
         :rtype: (float, float)
         """
 
-        Q10 = 2
-        T_ref = 20
+        Q10 = 2.
+        T_ref = 20.
 
-        if sucrose <= 0 or mstruct <=0:
-            R_residual = 0
+        if sucrose <= 0. or mstruct <=0.:
+            R_residual = 0.
         else:
             conc_sucrose = sucrose / mstruct
             R_residual = ((cls.KM_MAX * conc_sucrose)/(cls.KM + conc_sucrose)) * Ntot * Q10**((Ts - T_ref)/10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
