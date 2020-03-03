@@ -27,7 +27,7 @@ import pandas as pd
 #: the inputs needed by FarquharWheat at element scale
 FARQUHARWHEAT_ELEMENTS_INPUTS = ['width', 'height', 'PARa', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area']
 #: the inputs needed by FarquharWheat at axis scale
-FARQUHARWHEAT_SAMS_INPUTS = ['SAM_temperature', 'height_canopy']
+FARQUHARWHEAT_AXES_INPUTS = ['SAM_temperature', 'height_canopy']
 
 #: the outputs computed by FarquharWheat
 FARQUHARWHEAT_ELEMENTS_OUTPUTS = ['Ag', 'An', 'Rd', 'Tr', 'Ts', 'gs', 'width', 'height']
@@ -38,15 +38,15 @@ FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS = set(FARQUHARWHEAT_ELEMENTS_INPUTS + FARQ
 #: the columns which define the topology in the input/output elements dataframe
 ELEMENT_TOPOLOGY_COLUMNS = ['plant', 'axis', 'metamer', 'organ', 'element']
 #: the columns which define the topology in the input/output elements dataframe
-SAM_TOPOLOGY_COLUMNS = ['plant', 'axis']
+AXIS_TOPOLOGY_COLUMNS = ['plant', 'axis']
 
 
-def from_dataframe(element_inputs, SAM_inputs):
+def from_dataframe(element_inputs, axes_inputs):
     """
     Convert inputs/outputs from Pandas dataframe to Farquhar-Wheat format.
 
     :param pandas.DataFrame element_inputs: Emerging and mature element inputs dataframe to convert, with one line by element.
-    :param pandas.DataFrame SAM_inputs: Shoot Apical Meristem inputs dataframe to convert, with one line by SAM ie. one line per axis.
+    :param pandas.DataFrame axes_inputs: axes inputs dataframe to convert, with one line per axis  (Shoot Apical Meristem)
 
     :return: The inputs/outputs in a dictionary.
     :rtype: dict [dict]
@@ -61,14 +61,14 @@ def from_dataframe(element_inputs, SAM_inputs):
         current_dict = current_series[data_columns].to_dict()
         all_elements_dict[current_id] = current_dict
 
-    all_SAMs_dict = {}
-    data_columns = SAM_inputs.columns.difference(SAM_TOPOLOGY_COLUMNS)
-    for current_id, current_group in SAM_inputs.groupby(SAM_TOPOLOGY_COLUMNS):
+    all_axes_dict = {}
+    data_columns = axes_inputs.columns.difference(AXIS_TOPOLOGY_COLUMNS)
+    for current_id, current_group in axes_inputs.groupby(AXIS_TOPOLOGY_COLUMNS):
         current_series = current_group.loc[current_group.first_valid_index()]
         current_dict = current_series[data_columns].to_dict()
-        all_SAMs_dict[current_id] = current_dict
+        all_axes_dict[current_id] = current_dict
 
-    return {'elements': all_elements_dict, 'SAMs': all_SAMs_dict}
+    return {'elements': all_elements_dict, 'axes': all_axes_dict}
 
 
 def to_dataframe(data_dict):

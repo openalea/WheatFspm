@@ -32,7 +32,7 @@ from farquharwheat import simulation, converter
 
 
 INPUTS_ELEMENT_FILENAME = 'elements_inputs.csv'
-INPUTS_SAM_FILENAME = 'SAMs_inputs.csv'
+INPUTS_AXIS_FILENAME = 'axes_inputs.csv'
 OUTPUTS_FILENAME = 'outputs.csv'
 
 OUTPUTS_PRECISION = 6
@@ -43,9 +43,9 @@ if __name__ == '__main__':
     simulation_ = simulation.Simulation()
     # read inputs from Pandas dataframe
     elements_inputs_df = pd.read_csv(INPUTS_ELEMENT_FILENAME)
-    SAMs_inputs_df = pd.read_csv(INPUTS_SAM_FILENAME)
+    axes_inputs_df = pd.read_csv(INPUTS_AXIS_FILENAME)
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframe(elements_inputs_df, SAMs_inputs_df)
+    inputs = converter.from_dataframe(elements_inputs_df, axes_inputs_df)
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
     # run the simulation

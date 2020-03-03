@@ -59,7 +59,7 @@ class Simulation(object):
 
         :param dict inputs: Dictionary of two dictionaries :
                     - `elements` : The inputs by element.
-                    - `SAMs` : The inputs by axis.
+                    - `axes` : The inputs by axis.
               `inputs` must be a dictionary with the same structure as :attr:`inputs`.
 
             See :meth:`Model.run <farquharwheat.model.Model.run>`
@@ -83,16 +83,16 @@ class Simulation(object):
 
         for (element_id, element_inputs) in self.inputs['elements'].items():
 
-            SAM_id = element_id[:2]
+            axis_id = element_id[:2]
             organ_label = element_id[3]
 
-            axe_label = SAM_id[1]
+            axe_label = axis_id[1]
             if axe_label != 'MS':  # Calculation only for the main stem
                 continue
             # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
             if element_inputs['height'] is None:
                 Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
-                Ts = self.inputs['SAMs'][SAM_id]['SAM_temperature']
+                Ts = self.inputs['axes'][axis_id]['SAM_temperature']
                 Tr = 0.1  # Default transpiration value for small organs under ADEL's resolution (green_area == 0)
             else:
                 PARa = element_inputs['PARa']  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
@@ -103,7 +103,7 @@ class Simulation(object):
                                                                             element_inputs['Nstruct'],
                                                                             element_inputs['green_area'])
 
-                height_canopy = self.inputs['SAMs'][SAM_id]['height_canopy']
+                height_canopy = self.inputs['axes'][axis_id]['height_canopy']
                 Ag, An, Rd, Tr, Ts, gs = model.Model.run(surfacic_nitrogen,
                                                          element_inputs['width'],
                                                          element_inputs['height'],
