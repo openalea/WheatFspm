@@ -43,7 +43,7 @@ def graph_RER(scenario):
     data_RER = pd.read_csv(os.path.join(scenario_name, 'outputs', 'hiddenzones_states.csv'))
     data_RER = data_RER[(data_RER.axis == 'MS') & (data_RER.metamer >= 4)].copy()
     data_RER.sort_values(['t','metamer'], inplace=True)
-    data_teq = pd.read_csv(os.path.join(scenario_name, 'outputs', 'SAM_states.csv'))
+    data_teq = pd.read_csv(os.path.join(scenario_name, 'outputs', 'axes_states.csv'))
     data_teq = data_teq[data_teq.axis == 'MS'].copy()
 
     ## Time previous leaf emergence
@@ -100,16 +100,6 @@ def graph_C_usages(scenario):
 
     scenario_name = 'Scenario_{}'.format(scenario)
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
-
-    # --- Import simulations prostprocessings
-    df_elt = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'elements_postprocessing.csv'))
-    df_elt['day'] = df_elt['t'] // 24 + 1
-    df_org = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'organs_postprocessing.csv'))
-    df_org['day'] = df_org['t'] // 24 + 1
-    df_axe = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'axes_postprocessing.csv'))
-    df_axe['day'] = df_axe['t'] // 24 + 1
-    df_hz = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'hiddenzones_postprocessing.csv'))
-    df_hz['day'] = df_hz['t'] // 24 + 1
 
     # --- Import simulations prostprocessings
     df_elt = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'elements_postprocessing.csv'))
@@ -189,6 +179,90 @@ def graph_C_usages(scenario):
     plt.savefig(os.path.join(scenario_graphs_dirpath, 'C_usages_cumulated.PNG'), format='PNG', bbox_inches='tight')
     plt.close()
 
+
+def graph_Conc_Nitrates(scenario):
+
+    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+
+    # --- Import simulations prostprocessings
+    df_elt = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'elements_postprocessing.csv'))
+    df_org = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'organs_postprocessing.csv'))
+    df_axe = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'axes_postprocessing.csv'))
+    df_roots = df_org[df_org['organ'] == 'roots'].copy()
+    df_roots = df_roots.reset_index(drop=True)
+
+    # --- Conc_Nitrates_shoot
+    nitrates_shoot = df_elt.groupby(['t'], as_index=False).agg({'nitrates':'sum'})
+    nitrates_shoot['Conc_Nitrates_DM'] = nitrates_shoot.nitrates / df_axe.sum_dry_mass_shoot
+
+    fig, ax = plt.subplots()
+    ax.plot(nitrates_shoot.t,  nitrates_shoot.Conc_Nitrates_DM )
+    ax.set_xlabel('Time (h)')
+    ax.set_ylabel(u'[Nitrates] (µmol g$^{-1}$ DM)')
+    plt.savefig(os.path.join(scenario_graphs_dirpath, 'Conc_Nitrates_shoot_DM.PNG'), format='PNG', bbox_inches='tight')
+    plt.close()
+
+    # --- Conc_Nitrates_roots
+    nitrates_shoot = df_elt.groupby(['t'], as_index=False).agg({'nitrates':'sum'})
+    df_roots['Conc_Nitrates_DM'] = df_roots.nitrates / df_axe.sum_dry_mass_roots
+
+    fig, ax = plt.subplots()
+    ax.plot(df_roots.t,  df_roots.Conc_Nitrates_DM )
+    ax.set_xlabel('Time (h)')
+    ax.set_ylabel(u'[Nitrates] (µmol g$^{-1}$ DM)')
+    plt.savefig(os.path.join(scenario_graphs_dirpath, 'Conc_Nitrates_roots_DM.PNG'), format='PNG', bbox_inches='tight')
+    plt.close()
+
+    # --- Conc_Nitrates_plant
+    nitrates_plant = nitrates_shoot.nitrates + df_roots.nitrates
+    df_axe['Conc_Nitrates_DM'] = nitrates_plant / df_axe.sum_dry_mass
+
+    fig, ax = plt.subplots()
+    ax.plot(df_axe.t,  df_axe.Conc_Nitrates_DM )
+    ax.set_xlabel('Time (h)')
+    ax.set_ylabel(u'[Nitrates] (µmol g$^{-1}$ DM)')
+    plt.savefig(os.path.join(scenario_graphs_dirpath, 'Conc_Nitrates_plant_DM.PNG'), format='PNG', bbox_inches='tight')
+    plt.close()
+
+def graph_Uptake_N(scenario):
+    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+
+    # --- Import simulations outsptus
+    df_org = pd.read_csv(os.path.join(scenario_name, 'outputs', 'organs_states.csv'))
+    df_roots = df_org[df_org['organ'] == 'roots'].copy()
+    df_roots = df_roots.reset_index(drop=True)
+
+    df_roots['Specific_Uptake_Nitrates'] = df_roots.Uptake_Nitrates/ df_roots.mstruct / 3600
+
+    fig, ax = plt.subplots()
+    ax.plot(df_roots.t,  df_roots.Specific_Uptake_Nitrates )
+    ax.set_xlabel('Time (h)')
+    ax.set_ylabel(u'N uptake rate (µmol g$^{-1}$ mstruct s$^{-1}$)')
+    plt.savefig(os.path.join(scenario_graphs_dirpath, 'Uptake_Nitrates_Specific.PNG'), format='PNG', bbox_inches='tight')
+    plt.close()
+
+def graph_phi_s_Devienne1994a(scenario):
+    """Sum of NO3- reduction flux and NO3- deposition into the sylem sap"""
+
+    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+
+    # --- Import simulations outsptus
+    df_org = pd.read_csv(os.path.join(scenario_name, 'outputs', 'organs_states.csv'))
+    df_roots = df_org[df_org['organ'] == 'roots'].copy()
+    df_roots = df_roots.reset_index(drop=True)
+
+    df_roots['phi_s'] = (df_roots.Export_Nitrates/ df_roots.mstruct / 3600) + (df_roots.S_Amino_Acids/3600)
+
+    fig, ax = plt.subplots()
+    ax.plot(df_roots.t,  df_roots.phi_s )
+    ax.set_xlabel('Time (h)')
+    ax.set_ylabel(u'NO3- root reduction + NO3- export xylem (µmol N g$^{-1}$ mstruct s$^{-1}$)')
+    plt.savefig(os.path.join(scenario_graphs_dirpath, 'phi_s.PNG'), format='PNG', bbox_inches='tight')
+    plt.close()
+
 def graph_summary(scenario, graph_list=None):
     if graph_list is None:
         graph_list = ['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
@@ -235,6 +309,9 @@ if __name__ == '__main__':
     ## ------- Make the graphs and tables for all the scenarii
 
     for scenario in scenarii:
+        # graph_phi_s_Devienne1994a(int(scenario))
+        # graph_Uptake_N(int(scenario))
+        # graph_Conc_Nitrates(int(scenario))
         graph_RER(int(scenario))
         graph_C_usages(int(scenario))
         graph_summary(int(scenario), graph_list=['LAI','sum_dry_mass_axis','shoot_roots_ratio_axis','N_content_shoot_axis','Conc_Amino_acids_phloem','Conc_Sucrose_phloem', 'leaf_Lmax',

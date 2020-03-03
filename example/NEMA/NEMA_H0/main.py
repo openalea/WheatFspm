@@ -65,7 +65,7 @@ CNWHEAT_SOILS_INPUTS_FILEPATH = os.path.join(CNWHEAT_INPUTS_DIRPATH, 'soils_inpu
 # farquharwheat inputs at t0
 FARQUHARWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'farquharwheat')
 FARQUHARWHEAT_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'inputs.csv')
-FARQUHARWHEAT_SAM_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
+FARQUHARWHEAT_AXES_INPUTS_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 METEO_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'meteo_Clermont_rebuild.csv')
 CARIBU_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'inputs_eabs.csv')
 
@@ -73,12 +73,12 @@ CARIBU_FILEPATH = os.path.join(FARQUHARWHEAT_INPUTS_DIRPATH, 'inputs_eabs.csv')
 ELONGWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'elongwheat')
 ELONGWHEAT_HZ_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
 ELONGWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'elements_inputs.csv')
-ELONGWHEAT_SAM_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
+ELONGWHEAT_AXES_INPUTS_FILEPATH = os.path.join(ELONGWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 
 # senescwheat inputs at t0
 SENESCWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'senescwheat')
 SENESCWHEAT_ROOTS_INPUTS_FILEPATH = os.path.join(SENESCWHEAT_INPUTS_DIRPATH, 'roots_inputs.csv')
-SENESCWHEAT_SAM_INPUTS_FILEPATH = os.path.join(SENESCWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
+SENESCWHEAT_AXES_INPUTS_FILEPATH = os.path.join(SENESCWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH = os.path.join(SENESCWHEAT_INPUTS_DIRPATH, 'elements_inputs.csv')
 
 # growthwheat inputs at t0
@@ -86,7 +86,7 @@ GROWTHWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'growthwheat')
 GROWTHWHEAT_HIDDENZONE_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
 GROWTHWHEAT_ORGANS_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'organs_inputs.csv')
 GROWTHWHEAT_ROOTS_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'roots_inputs.csv')
-GROWTHWHEAT_SAM_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
+GROWTHWHEAT_AXES_INPUTS_FILEPATH = os.path.join(GROWTHWHEAT_INPUTS_DIRPATH, 'SAM_inputs.csv')
 
 # the path of the CSV files where to save the states of the modeled system at each step
 OUTPUTS_DIRPATH = 'outputs'
@@ -182,7 +182,6 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
-        shared_SAM_inputs_outputs_df = pd.DataFrame()
         shared_organs_inputs_outputs_df = pd.DataFrame()
         shared_hiddenzones_inputs_outputs_df = pd.DataFrame()
         shared_elements_inputs_outputs_df = pd.DataFrame()
@@ -197,50 +196,51 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         # senescwheat
         senescwheat_roots_inputs_t0 = pd.read_csv(SENESCWHEAT_ROOTS_INPUTS_FILEPATH)
-        senescwheat_SAM_inputs_t0 = pd.read_csv(SENESCWHEAT_SAM_INPUTS_FILEPATH)
+        senescwheat_axes_inputs_t0 = pd.read_csv(SENESCWHEAT_AXES_INPUTS_FILEPATH)
         senescwheat_elements_inputs_t0 = pd.read_csv(SENESCWHEAT_ELEMENTS_INPUTS_FILEPATH)
         senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
                                                                    senescwheat_ts * hour_to_second_conversion_factor,
                                                                    senescwheat_roots_inputs_t0,
-                                                                   senescwheat_SAM_inputs_t0,
+                                                                   senescwheat_axes_inputs_t0,
                                                                    senescwheat_elements_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
-                                                                   shared_SAM_inputs_outputs_df,
+                                                                   shared_axes_inputs_outputs_df,
                                                                    shared_elements_inputs_outputs_df)
         # growthwheat
         growthwheat_hiddenzones_inputs_t0 = pd.read_csv(GROWTHWHEAT_HIDDENZONE_INPUTS_FILEPATH)
         growthwheat_organ_inputs_t0 = pd.read_csv(GROWTHWHEAT_ORGANS_INPUTS_FILEPATH)
         growthwheat_root_inputs_t0 = pd.read_csv(GROWTHWHEAT_ROOTS_INPUTS_FILEPATH)
-        growthwheat_SAM_inputs_t0 = pd.read_csv(GROWTHWHEAT_SAM_INPUTS_FILEPATH)
+        growthwheat_axes_inputs_t0 = pd.read_csv(GROWTHWHEAT_AXES_INPUTS_FILEPATH)
         growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
                                                                    growthwheat_ts * hour_to_second_conversion_factor,
                                                                    growthwheat_hiddenzones_inputs_t0,
                                                                    growthwheat_organ_inputs_t0,
                                                                    growthwheat_root_inputs_t0,
-                                                                   growthwheat_SAM_inputs_t0,
+                                                                   growthwheat_axes_inputs_t0,
                                                                    shared_organs_inputs_outputs_df,
                                                                    shared_hiddenzones_inputs_outputs_df,
-                                                                   shared_elements_inputs_outputs_df)
+                                                                   shared_elements_inputs_outputs_df,
+                                                                   shared_axes_inputs_outputs_df)
 
         # farquharwheat
         farquharwheat_elements_inputs_t0 = pd.read_csv(FARQUHARWHEAT_INPUTS_FILEPATH)
-        farquharwheat_SAM_inputs_t0 = pd.read_csv(FARQUHARWHEAT_SAM_INPUTS_FILEPATH)
+        farquharwheat_axes_inputs_t0 = pd.read_csv(FARQUHARWHEAT_AXES_INPUTS_FILEPATH)
         farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
                                                                          farquharwheat_elements_inputs_t0,
-                                                                         farquharwheat_SAM_inputs_t0,
+                                                                         farquharwheat_axes_inputs_t0,
                                                                          shared_elements_inputs_outputs_df)
 
         # elongwheat # Only for temperature related computations
         elongwheat_hiddenzones_inputs_t0 = pd.read_csv(ELONGWHEAT_HZ_INPUTS_FILEPATH)
         elongwheat_elements_inputs_t0 =pd.read_csv(ELONGWHEAT_ELEMENTS_INPUTS_FILEPATH)
-        elongwheat_SAM_inputs_t0 =  pd.read_csv(ELONGWHEAT_SAM_INPUTS_FILEPATH)
+        elongwheat_axes_inputs_t0 =  pd.read_csv(ELONGWHEAT_AXES_INPUTS_FILEPATH)
 
         elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
                                                                 elongwheat_ts * hour_to_second_conversion_factor,
-                                                                elongwheat_SAM_inputs_t0,
+                                                                elongwheat_axes_inputs_t0,
                                                                 elongwheat_hiddenzones_inputs_t0,
                                                                 elongwheat_elements_inputs_t0,
-                                                                shared_SAM_inputs_outputs_df,
+                                                                shared_axes_inputs_outputs_df,
                                                                 shared_hiddenzones_inputs_outputs_df,
                                                                 shared_elements_inputs_outputs_df,
                                                                 adel_wheat, option_static = True)
@@ -288,75 +288,76 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # run the simulators
         current_time_of_the_system = time.time()
 
-        for t_elongwheat in xrange(start_time, stop_time, elongwheat_ts): # Only to compute temperature related variable
+        try:
 
-            # run ElongWheat
-            print('t elongwheat is {}'.format(t_elongwheat))
-            Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']]
-            elongwheat_facade_.run(Tair, Tsoil, option_static=True)
+            for t_elongwheat in xrange(start_time, stop_time, elongwheat_ts): # Only to compute temperature related variable
 
-            for t_senescwheat in xrange(t_elongwheat, t_elongwheat + elongwheat_ts, senescwheat_ts):
+                # run ElongWheat
+                print('t elongwheat is {}'.format(t_elongwheat))
+                Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']]
+                elongwheat_facade_.run(Tair, Tsoil, option_static=True)
 
-                # run SenescWheat
-                print('t senescwheat is {}'.format(t_senescwheat))
-                senescwheat_facade_.run(forced_max_protein_elements, postflowering_stages=True)
+                for t_senescwheat in xrange(t_elongwheat, t_elongwheat + elongwheat_ts, senescwheat_ts):
 
-                for t_growthwheat in xrange(t_senescwheat, t_senescwheat + senescwheat_ts, growthwheat_ts):
-                    # run GrowthWheat
-                    print('t growthwheat is {}'.format(t_growthwheat))
-                    growthwheat_facade_.run(postflowering_stages=True)
+                    # run SenescWheat
+                    print('t senescwheat is {}'.format(t_senescwheat))
+                    senescwheat_facade_.run(forced_max_protein_elements, postflowering_stages=True)
 
-                    for t_farquharwheat in xrange(t_growthwheat, t_growthwheat + growthwheat_ts, farquharwheat_ts):
-                        # get the meteo of the current step
-                        Tair, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
-                        # get PARa for current step
-                        aggregated_PARa = calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False)
-                        print('t caribu is {}'.format(t_farquharwheat))
-                        # caribu_facade_.run(energy=PARi,sun_sky_option='sky')
-                        caribu_facade_.update_shared_MTG(aggregated_PARa)
-                        caribu_facade_.update_shared_dataframes(aggregated_PARa)
-                        # run FarquharWheat
-                        print('t farquhar is {}'.format(t_farquharwheat))
-                        farquharwheat_facade_.run(Tair, ambient_CO2, RH, Ur)
+                    for t_growthwheat in xrange(t_senescwheat, t_senescwheat + senescwheat_ts, growthwheat_ts):
+                        # run GrowthWheat
+                        print('t growthwheat is {}'.format(t_growthwheat))
+                        growthwheat_facade_.run(postflowering_stages=True)
 
-                        for t_cnwheat in xrange(t_farquharwheat, t_farquharwheat + senescwheat_ts, cnwheat_ts):
-                                Tair, Tsoil = meteo.loc[t_cnwheat, ['air_temperature', 'air_temperature']]
-                                # run CNWheat
-                                print('t cnwheat is {}'.format(t_cnwheat))
-                                cnwheat_facade_.run(Tair=Tair, Tsoil=Tsoil)
+                        for t_farquharwheat in xrange(t_growthwheat, t_growthwheat + growthwheat_ts, farquharwheat_ts):
+                            # get the meteo of the current step
+                            Tair, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
+                            # get PARa for current step
+                            aggregated_PARa = calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False)
+                            print('t caribu is {}'.format(t_farquharwheat))
+                            # caribu_facade_.run(energy=PARi,sun_sky_option='sky')
+                            caribu_facade_.update_shared_MTG(aggregated_PARa)
+                            caribu_facade_.update_shared_dataframes(aggregated_PARa)
+                            # run FarquharWheat
+                            print('t farquhar is {}'.format(t_farquharwheat))
+                            farquharwheat_facade_.run(Tair, ambient_CO2, RH, Ur)
 
-                                # append the inputs and outputs at current step to global lists
-                                all_simulation_steps.append(t_cnwheat)
-                                axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                                organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                                elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                                soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+                            for t_cnwheat in xrange(t_farquharwheat, t_farquharwheat + senescwheat_ts, cnwheat_ts):
+                                    Tair, Tsoil = meteo.loc[t_cnwheat, ['air_temperature', 'air_temperature']]
+                                    # run CNWheat
+                                    print('t cnwheat is {}'.format(t_cnwheat))
+                                    cnwheat_facade_.run(Tair=Tair, Tsoil=Tsoil)
 
-        execution_time = int(time.time() - current_time_of_the_system)
-        print '\n', 'Simulation run in ', str(datetime.timedelta(seconds=execution_time))
+                                    # append the inputs and outputs at current step to global lists
+                                    all_simulation_steps.append(t_cnwheat)
+                                    axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
+                                    organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
+                                    elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                                    soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
 
-        # write all inputs and outputs to CSV files
-        all_axes_inputs_outputs = pd.concat(axes_all_data_list, keys=all_simulation_steps)
-        all_axes_inputs_outputs.reset_index(0, inplace=True)
-        all_axes_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_axes_inputs_outputs.to_csv(AXES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            execution_time = int(time.time() - current_time_of_the_system)
+            print '\n', 'Simulation run in ', str(datetime.timedelta(seconds=execution_time))
 
-        all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps)
-        all_organs_inputs_outputs.reset_index(0, inplace=True)
-        all_organs_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        finally:
+            # write all inputs and outputs to CSV files
+            all_axes_inputs_outputs = pd.concat(axes_all_data_list, keys=all_simulation_steps)
+            all_axes_inputs_outputs.reset_index(0, inplace=True)
+            all_axes_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
+            all_axes_inputs_outputs.to_csv(AXES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
-        all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
-##        all_elements_inputs_outputs = all_elements_inputs_outputs.loc[(all_elements_inputs_outputs.plant == 1) & ### TODO: temporary ; to remove when there will be default input values for each element in the mtg
-##                                                                      (all_elements_inputs_outputs.axis == 'MS')]
-        all_elements_inputs_outputs.reset_index(0, inplace=True)
-        all_elements_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps)
+            all_organs_inputs_outputs.reset_index(0, inplace=True)
+            all_organs_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
+            all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
-        all_soils_inputs_outputs = pd.concat(soils_all_data_list, keys=all_simulation_steps)
-        all_soils_inputs_outputs.reset_index(0, inplace=True)
-        all_soils_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
+            all_elements_inputs_outputs.reset_index(0, inplace=True)
+            all_elements_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
+            all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+
+            all_soils_inputs_outputs = pd.concat(soils_all_data_list, keys=all_simulation_steps)
+            all_soils_inputs_outputs.reset_index(0, inplace=True)
+            all_soils_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
+            all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
     ########POST-PROCESSING##
 

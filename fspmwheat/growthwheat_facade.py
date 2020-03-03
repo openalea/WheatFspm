@@ -34,7 +34,7 @@ LEAF_LABELS = ['blade', 'sheath']
 EMERGED_GROWING_ORGAN_LABELS = ['StemElement', 'LeafElement1']
 ELEMENT_LABELS = ['StemElement', 'LeafElement1', 'HiddenElement']
 
-SHARED_SAM_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
+SHARED_AXES_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
 
 SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'organ']
 
@@ -59,10 +59,11 @@ class GrowthWheatFacade(object):
                  model_hiddenzones_inputs_df,
                  model_elements_inputs_df,
                  model_roots_inputs_df,
-                 model_SAM_inputs_df,
+                 model_axes_inputs_df,
                  shared_organs_inputs_outputs_df,
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
+                 shared_axes_inputs_outputs_df,
                  update_parameters=None):
 
         """
@@ -71,10 +72,11 @@ class GrowthWheatFacade(object):
         :param pandas.DataFrame model_hiddenzones_inputs_df: the inputs of the model at hiddenzones scale.
         :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
         :param pandas.DataFrame model_roots_inputs_df: the inputs of the model at roots scale.
-        :param pandas.DataFrame model_SAM_inputs_df: the inputs of the model at SAM scale.
+        :param pandas.DataFrame model_axes_inputs_df: the inputs of the model at axes scale.
         :param pandas.DataFrame shared_organs_inputs_outputs_df: the dataframe of inputs and outputs at organs scale shared between all models.
         :param pandas.DataFrame shared_hiddenzones_inputs_outputs_df: the dataframe of inputs and outputs at hiddenzones scale shared between all models.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
+        :param pandas.DataFrame shared_axes_inputs_outputs_df: the dataframe of inputs and outputs at axis scale shared between all models.
         :param dict update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
         """
         if update_parameters is None:
@@ -84,14 +86,15 @@ class GrowthWheatFacade(object):
 
         self._simulation = simulation.Simulation(delta_t=delta_t, update_parameters=update_parameters)  #: the simulator to use to run the model
 
-        all_growthwheat_inputs_dict = converter.from_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df, model_SAM_inputs_df)
+        all_growthwheat_inputs_dict = converter.from_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df, model_axes_inputs_df)
 
-        self._update_shared_MTG(all_growthwheat_inputs_dict['hiddenzone'], all_growthwheat_inputs_dict['elements'], all_growthwheat_inputs_dict['roots'])
+        self._update_shared_MTG(all_growthwheat_inputs_dict['hiddenzone'], all_growthwheat_inputs_dict['elements'], all_growthwheat_inputs_dict['roots'], all_growthwheat_inputs_dict['axes'])
 
         self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df  #: the dataframe at organs scale shared between all models
         self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df  #: the dataframe at hiddenzones scale shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
-        self._update_shared_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df)
+        self._shared_axes_inputs_outputs_df = shared_axes_inputs_outputs_df  #: the dataframe at axis scale shared between all models
+        self._update_shared_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df, model_axes_inputs_df)
 
     def run(self, postflowering_stages=False):
         """
@@ -100,9 +103,9 @@ class GrowthWheatFacade(object):
         """
         self._initialize_model()
         self._simulation.run(postflowering_stages)
-        self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['elements'], self._simulation.outputs['roots'])
-        growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df = converter.to_dataframes(self._simulation.outputs)
-        self._update_shared_dataframes(growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df)
+        self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['elements'], self._simulation.outputs['roots'], self._simulation.outputs['axes'])
+        growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df, growthwheat_axes_outputs_df = converter.to_dataframes(self._simulation.outputs)
+        self._update_shared_dataframes(growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df, growthwheat_axes_outputs_df)
 
     def _initialize_model(self):
         """
@@ -112,7 +115,7 @@ class GrowthWheatFacade(object):
         all_growthwheat_hiddenzones_inputs_dict = {}
         all_growthwheat_elements_inputs_dict = {}
         all_growthwheat_roots_inputs_dict = {}
-        all_growthwheat_SAM_inputs_dict = {}
+        all_growthwheat_axes_inputs_dict = {}
 
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
@@ -121,8 +124,15 @@ class GrowthWheatFacade(object):
                 if mtg_axis_label != 'MS':
                     continue
 
-                # Roots
                 mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
+                axis_id = (mtg_plant_index, mtg_axis_label)
+                if set(mtg_axis_properties).issuperset(simulation.AXIS_INPUTS):
+                    growthwheat_axis_inputs_dict = {}
+                    for growthwheat_axis_input_name in simulation.AXIS_INPUTS:
+                        growthwheat_axis_inputs_dict[growthwheat_axis_input_name] = mtg_axis_properties[growthwheat_axis_input_name]
+                    all_growthwheat_axes_inputs_dict[axis_id] = growthwheat_axis_inputs_dict
+
+                # Roots
                 if 'roots' in mtg_axis_properties:
                     roots_id = (mtg_plant_index, mtg_axis_label, 'roots')
                     mtg_roots_properties = mtg_axis_properties['roots']
@@ -132,15 +142,7 @@ class GrowthWheatFacade(object):
                         for growthwheat_roots_input_name in simulation.ROOT_INPUTS:
                             growthwheat_roots_inputs_dict[growthwheat_roots_input_name] = mtg_roots_properties[growthwheat_roots_input_name]
                         all_growthwheat_roots_inputs_dict[roots_id] = growthwheat_roots_inputs_dict
-                if 'SAM' in mtg_axis_properties:
-                    SAM_id = (mtg_plant_index, mtg_axis_label)
-                    mtg_SAM_properties = mtg_axis_properties['SAM']
 
-                    if set(mtg_SAM_properties).issuperset(simulation.SAM_INPUTS):
-                        growthwheat_SAM_inputs_dict = {}
-                        for growthwheat_SAM_input_name in simulation.SAM_INPUTS:
-                            growthwheat_SAM_inputs_dict[growthwheat_SAM_input_name] = mtg_SAM_properties[growthwheat_SAM_input_name]
-                        all_growthwheat_SAM_inputs_dict[SAM_id] = growthwheat_SAM_inputs_dict
 
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
 
@@ -189,15 +191,16 @@ class GrowthWheatFacade(object):
                                     all_growthwheat_elements_inputs_dict[element_id] = growthwheat_element_inputs_dict
 
         self._simulation.initialize({'hiddenzone': all_growthwheat_hiddenzones_inputs_dict, 'elements': all_growthwheat_elements_inputs_dict,
-                                     'roots': all_growthwheat_roots_inputs_dict, 'SAM': all_growthwheat_SAM_inputs_dict})
+                                     'roots': all_growthwheat_roots_inputs_dict, 'axes': all_growthwheat_axes_inputs_dict})
 
-    def _update_shared_MTG(self, all_growthwheat_hiddenzones_data_dict, all_growthwheat_elements_data_dict, all_growthwheat_roots_data_dict):
+    def _update_shared_MTG(self, all_growthwheat_hiddenzones_data_dict, all_growthwheat_elements_data_dict, all_growthwheat_roots_data_dict, all_growthwheat_axes_data_dict):
         """
         Update the MTG shared between all models from the inputs or the outputs of the model.
 
         :param dict all_growthwheat_hiddenzones_data_dict: Growth-Wheat outputs at hidden zone scale
         :param dict all_growthwheat_elements_data_dict: Growth-Wheat outputs at element scale
         :param dict all_growthwheat_roots_data_dict: Growth-Wheat outputs at root scale
+        :param dict all_growthwheat_axes_data_dict: Growth-Wheat outputs at axis scale
         """
 
         # add the properties if needed
@@ -213,8 +216,15 @@ class GrowthWheatFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                axis_id = (mtg_plant_index, mtg_axis_label)
+
                 if mtg_axis_label != 'MS':
                     continue
+
+                growthwheat_axis_data_dict = all_growthwheat_axes_data_dict[axis_id]
+                for axis_data_name, axis_data_value in growthwheat_axis_data_dict.items():
+                    self._shared_mtg.property(axis_data_name)[mtg_axis_vid] = axis_data_value
+
                 roots_id = (mtg_plant_index, mtg_axis_label, 'roots')
                 if roots_id in all_growthwheat_roots_data_dict:
                     growthwheat_roots_data_dict = all_growthwheat_roots_data_dict[roots_id]
@@ -255,20 +265,22 @@ class GrowthWheatFacade(object):
                                 for element_data_name, element_data_value in growthwheat_element_data_dict.items():
                                     self._shared_mtg.property(element_data_name)[mtg_element_vid] = element_data_value
 
-    def _update_shared_dataframes(self, growthwheat_hiddenzones_data_df, growthwheat_elements_data_df, growthwheat_roots_data_df):
+    def _update_shared_dataframes(self, growthwheat_hiddenzones_data_df, growthwheat_elements_data_df, growthwheat_roots_data_df, growthwheat_axes_data_df):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the model.
 
         :param pandas.DataFrame growthwheat_hiddenzones_data_df: Growth-Wheat shared dataframe at hidden zone scale
         :param pandas.DataFrame growthwheat_elements_data_df: Growth-Wheat shared dataframe at element scale
-        :param pandas.DataFrame growthwheat_roots_data_df: Growth-Wheat shared dataframe at SAM scale
+        :param pandas.DataFrame growthwheat_roots_data_df: Growth-Wheat shared dataframe at roots scale
+        :param pandas.DataFrame growthwheat_axes_data_df: Growth-Wheat shared dataframe at axis scale
         """
 
         for growthwheat_data_df, \
             shared_inputs_outputs_indexes, \
             shared_inputs_outputs_df in ((growthwheat_hiddenzones_data_df, SHARED_HIDDENZONES_INPUTS_OUTPUTS_INDEXES, self._shared_hiddenzones_inputs_outputs_df),
                                          (growthwheat_elements_data_df, SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES, self._shared_elements_inputs_outputs_df),
-                                         (growthwheat_roots_data_df, SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES, self._shared_organs_inputs_outputs_df)):
+                                         (growthwheat_roots_data_df, SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES, self._shared_organs_inputs_outputs_df),
+                                         (growthwheat_axes_data_df, SHARED_AXES_INPUTS_OUTPUTS_INDEXES, self._shared_axes_inputs_outputs_df)):
 
             if growthwheat_data_df is growthwheat_roots_data_df:
                 growthwheat_data_df = growthwheat_data_df.copy()

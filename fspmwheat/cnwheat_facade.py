@@ -406,6 +406,12 @@ class CNWheatFacade(object):
                     mtg_axis_vid = next(mtg_axes_iterator)
                     if self._shared_mtg.label(mtg_axis_vid) == cnwheat_axis_label:
                         break
+
+                cnwheat_axis_property_names = [property_name for property_name in cnwheat_simulation.Simulation.AXES_STATE if hasattr(cnwheat_axis, property_name)]
+                for cnwheat_axis_property_name in cnwheat_axis_property_names:
+                    cnwheat_axis_property_value = getattr(cnwheat_axis, cnwheat_axis_property_name)
+                    self._shared_mtg.property(cnwheat_axis_property_name)[mtg_axis_vid] = cnwheat_axis_property_value
+
                 for mtg_organ_label in MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING.keys():
                     if mtg_organ_label not in self._shared_mtg.get_vertex_property(mtg_axis_vid):
                         # Add a property describing the organ to the current axis of the MTG

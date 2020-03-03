@@ -50,8 +50,11 @@ def rearrange_postprocessing(postprocessing_tables, t=None,  scenarii=None, merg
 
             scenario_name = 'Scenario_' + str(scenario)
             scenario_postprocessing_dirpath = os.path.join(scenario_name, 'postprocessing')
+            scenario_postprocessing_table_dirpath = os.path.join(scenario_postprocessing_dirpath, pp_table + '.csv')
 
-            pp_res = pd.read_csv( os.path.join(scenario_postprocessing_dirpath, pp_table + '.csv') )
+            if not os.path.exists(scenario_postprocessing_table_dirpath):
+                continue
+            pp_res = pd.read_csv( scenario_postprocessing_table_dirpath )
             if 't' in pp_res.columns:
                 if t not in pp_res.t:
                     continue
@@ -87,5 +90,6 @@ def rearrange_postprocessing(postprocessing_tables, t=None,  scenarii=None, merg
 
 
 if __name__ == '__main__':
+    rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
     rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=2999)
     rearrange_postprocessing(postprocessing_tables=['performance_indices'])
