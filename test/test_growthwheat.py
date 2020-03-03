@@ -40,7 +40,7 @@ INPUTS_DIRPATH = 'inputs'
 HIDDENZONES_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
 ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
 ROOTS_INPUTS_FILENAME = 'roots_inputs.csv'
-SAMS_INPUTS_FILENAME = 'SAMs_inputs.csv'
+AXES_INPUTS_FILENAME = 'axes_inputs.csv'
 
 # outputs directory path
 OUTPUTS_DIRPATH = 'outputs'
@@ -93,10 +93,10 @@ def test_run(overwrite_desired_data=False):
     hiddenzones_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, HIDDENZONES_INPUTS_FILENAME))
     elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))
     roots_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOTS_INPUTS_FILENAME))
-    SAMs_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, SAMS_INPUTS_FILENAME))
+    axes_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, AXES_INPUTS_FILENAME))
 
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframes(hiddenzones_inputs_df, elements_inputs_df, roots_inputs_df, SAMs_inputs_df)
+    inputs = converter.from_dataframes(hiddenzones_inputs_df, elements_inputs_df, roots_inputs_df, axes_inputs_df)
 
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
@@ -117,7 +117,7 @@ def test_run(overwrite_desired_data=False):
         simulation_.run()
 
         # convert outputs to dataframes
-        hiddenzone_outputs_df, element_outputs_df, root_outputs_df = converter.to_dataframes(simulation_.outputs)
+        hiddenzone_outputs_df, element_outputs_df, root_outputs_df, axes_outputs_df = converter.to_dataframes(simulation_.outputs)
 
         # append the outputs at current t to the lists of dataframes
         for df, list_ in ((hiddenzone_outputs_df, hiddenzones_outputs_df_list),

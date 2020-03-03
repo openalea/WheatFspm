@@ -183,25 +183,27 @@ def calculate_init_cytokinins_emerged_tissue(delta_mstruct):
     return delta_mstruct * parameters.INIT_CYTOKININS_EMERGED_TISSUE  # TODO: Set according to protein concentration ?
 
 
-def calculate_s_Nstruct_amino_acids(delta_hiddenzone_Nstruct, delta_lamina_Nstruct, delta_sheath_Nstruct):
+def calculate_s_Nstruct_amino_acids(delta_hiddenzone_Nstruct, delta_lamina_Nstruct, delta_sheath_Nstruct, delta_internode_Nstruct):
     """Consumption of amino acids for the calculated mstruct growth (µmol N consumed by mstruct growth)
 
     :param float delta_hiddenzone_Nstruct: Nstruct growth of the hidden zone (g)
     :param float delta_lamina_Nstruct: Nstruct growth of the lamina (g)
     :param float delta_sheath_Nstruct: Nstruct growth of the sheath (g)
+    :param float delta_internode_Nstruct: Nstruct growth of the internode (g)
 
     :return: Amino acid consumption (µmol N)
     :rtype: float
     """
-    return (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) / parameters.N_MOLAR_MASS * 1E6
+    return (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct + delta_internode_Nstruct) / parameters.N_MOLAR_MASS * 1E6
 
 
-def calculate_s_mstruct_sucrose(delta_hiddenzone_mstruct, delta_lamina_mstruct, delta_sheath_mstruct, s_Nstruct_amino_acids_N):
+def calculate_s_mstruct_sucrose(delta_hiddenzone_mstruct, delta_lamina_mstruct, delta_sheath_mstruct, delta_internode_mstruct, s_Nstruct_amino_acids_N):
     """Consumption of sucrose for the calculated mstruct growth (µmol C consumed by mstruct growth)
 
     :param float delta_hiddenzone_mstruct: mstruct growth of the hidden zone (g)
     :param float delta_lamina_mstruct: mstruct growth of the lamina (g)
     :param float delta_sheath_mstruct: mstruct growth of the sheath (g)
+    :param float delta_internode_mstruct: mstruct growth of the internode (g)
     :param float s_Nstruct_amino_acids_N: Total amino acid consumption (µmol N) due to Nstruct (µmol N)
 
     :return: Sucrose consumption (µmol C)
@@ -270,3 +272,15 @@ def calculate_roots_s_mstruct_sucrose(delta_roots_mstruct, s_Nstruct_amino_acids
     s_mstruct_sucrose_C = s_mstruct_C - s_mstruct_amino_acids_C  #: µmol of coming from sucrose
 
     return s_mstruct_sucrose_C
+
+def calculate_mineral_plant(mstruct, senesced_mstruct):
+    """ Mineral mass.
+
+    :param float mstruct: structural mass of the plant (g)
+    :param float senesced_mstruct: senesced structural mass of the plant (g)
+
+    :return: Mineral mass of the plant (g)
+    :rtype: float
+    """
+    mineral_plant = (mstruct * parameters.MINERAL_LIVING_TISSUE) + (senesced_mstruct * parameters.MINERAL_SENESCED_TISSUE)
+    return mineral_plant

@@ -58,6 +58,9 @@ N_ROOTS_GROWTH = 1.8
 RATIO_C_MSTRUCT_ROOTS = 0.444         #: Mean contribution of carbon to root structural dry mass (g C g-1 Mstruct) : same as shoot
 RATIO_N_MSTRUCT_ROOTS_ = 0.005        #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct) : same as shoot
 
+MINERAL_LIVING_TISSUE = 0.05 #: Mineral content of the structural mass (g g-1 mstruct) (Thornley and Cannell, 2000)
+MINERAL_SENESCED_TISSUE = 0.05/2 #: Mineral content of the structural mass of a senescent tissue (g g-1 mstruct) (Thornley and Cannell, 2000)
+
 
 class OrganInit:
     """
@@ -66,6 +69,7 @@ class OrganInit:
     def __init__(self):
         self.is_growing = True
         self.senesced_length_element = 0      #: m
+        self.senesced_mstruct = 0     #: g
         self.green_area = 0           #: m2
         self.sucrose = 0              #: µmol C
         self.amino_acids = 0          #: µmol N
