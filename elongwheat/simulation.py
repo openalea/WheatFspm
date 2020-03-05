@@ -564,7 +564,7 @@ class Simulation(object):
                         #: Elongation only if Gibberelin production by SAM
                         if curr_axis_outputs['GA']:
                             #: Case of internodes that will not fully elongate, GA synthesis started after their previous leaf ligulation (i.e. no Lmax defined)
-                            if np.isnan(curr_hiddenzone_outputs['internode_Lmax']):
+                            if not curr_hiddenzone_outputs['internode_Lmax']:
                                 curr_hiddenzone_outputs['internode_Lmax'] = curr_hiddenzone_outputs['internode_Lmax_lig'] = model.calculate_short_internode_Lmax(curr_hiddenzone_outputs['internode_L'],
                                                                                                                                                               curr_hiddenzone_outputs['internode_pseudo_age'])
 
@@ -575,7 +575,7 @@ class Simulation(object):
                             internode_L = hiddenzone_inputs['internode_L'] + delta_internode_L
 
                             # Update internode_Lmax
-                            if ~np.isnan(hiddenzone_inputs['internode_Lmax']):
+                            if hiddenzone_inputs['internode_Lmax']:
                                 curr_hiddenzone_outputs['internode_Lmax'] = model.calculate_update_internode_Lmax(hiddenzone_inputs['internode_Lmax_lig'], internode_L, internode_pseudo_age)
 
                             #: Internode is not visible

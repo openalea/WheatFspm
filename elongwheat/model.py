@@ -766,4 +766,8 @@ def calculate_end_internode_elongation(internode_L, internode_Lmax, internode_ps
     :return: Specifies if the internode has completed elongation (True) or not (False)
     :rtype: float
     """
-    return (internode_L >= internode_Lmax) or (internode_pseudo_age >= parameters.te_IN)
+    condition_A = (internode_pseudo_age >= parameters.te_IN)
+    condition_B = False
+    if internode_Lmax:
+        condition_B = (internode_L >= internode_Lmax)
+    return condition_A or condition_B

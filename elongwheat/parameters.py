@@ -194,6 +194,7 @@ class ElementInit(object):
         self.Nresidual = 0            #: g
         self.sucrose = 0              #: µmol C
         self.amino_acids = 0          #: µmol N
+        self.nitrates = 0             #: µmol N
         self.fructan = 0              #: µmol C
         self.proteins = 0             #: µmol N
         self.mstruct = 0              #: g
