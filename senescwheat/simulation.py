@@ -167,6 +167,7 @@ class Simulation(object):
                 remob_proteins, delta_aa, delta_Nresidual = model.SenescenceModel.calculate_remobilisation_proteins(element_inputs_id[3], element_inputs_id[2], element_inputs_dict['proteins'],
                                                                                                                     relative_delta_green_area, N_content_total, opt_full_remob)
                 loss_cytokinins = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['cytokinins'], relative_delta_green_area)
+                loss_nitrates = model.SenescenceModel.calculate_remobilisation(element_inputs_dict['nitrates'], relative_delta_green_area)
 
                 # Loss of mstruct and Nstruct
                 delta_mstruct, delta_Nstruct = model.SenescenceModel.calculate_delta_mstruct_shoot(relative_delta_green_area, element_inputs_dict['mstruct'], element_inputs_dict['Nstruct'])
@@ -192,6 +193,7 @@ class Simulation(object):
                                         'proteins': element_inputs_dict['proteins'] - remob_proteins,
                                         'amino_acids': element_inputs_dict['amino_acids'] + delta_aa,
                                         'cytokinins': element_inputs_dict['cytokinins'] - loss_cytokinins,
+                                        'nitrates': element_inputs_dict['nitrates'] - loss_nitrates,
                                         'max_proteins': max_proteins,
                                         'Nresidual': element_inputs_dict['Nresidual'] + delta_Nresidual,
                                         'N_content_total': N_content_total,

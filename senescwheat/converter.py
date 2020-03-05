@@ -32,7 +32,7 @@ SENESCWHEAT_AXES_INPUTS = ['delta_teq', 'delta_teq_roots', 'sum_TT']
 
 #: the inputs needed by SenescWheat at element scale
 SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'senesced_length_element', 'length', 'proteins', 'mstruct','senesced_mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan',
-                               'cytokinins', 'sucrose', 'is_growing', 'max_mstruct', 'Nresidual', 'age']
+                               'cytokinins', 'nitrates', 'sucrose', 'is_growing', 'max_mstruct', 'Nresidual', 'age']
 
 #: the outputs computed by SenescWheat at roots scale
 SENESCWHEAT_ROOTS_OUTPUTS = ['rate_mstruct_death', 'mstruct','senesced_mstruct', 'Nstruct', 'cytokinins']
@@ -41,7 +41,7 @@ SENESCWHEAT_ROOTS_OUTPUTS = ['rate_mstruct_death', 'mstruct','senesced_mstruct',
 SENESCWHEAT_AXES_OUTPUTS = []
 
 #: the outputs computed by SenescWheat at elements scale
-SENESCWHEAT_ELEMENTS_OUTPUTS = ['senesced_length_element', 'green_area', 'mstruct','senesced_mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinins',
+SENESCWHEAT_ELEMENTS_OUTPUTS = ['senesced_length_element', 'green_area', 'mstruct','senesced_mstruct', 'Nstruct', 'starch', 'sucrose', 'fructan', 'proteins', 'amino_acids', 'cytokinins','nitrates',
                                 'N_content_total', 'Nresidual', 'is_over']
 
 #: the inputs and outputs of SenescWheat at roots scale
