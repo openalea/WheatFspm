@@ -62,6 +62,11 @@ if run_from_outputs:
     element_inputs_desired_t = pd.read_csv(ELEMENT_OUTPUTS_FILEPATH)
     SAM_inputs_desired_t = pd.read_csv(AXIS_OUTPUTS_FILEPATH)
 
+    # Convert NaN to None
+    hiddenzones_inputs_desired_t = hiddenzones_inputs_desired_t.where(hiddenzones_inputs_desired_t.notnull(), None).copy(deep=True)
+    element_inputs_desired_t = element_inputs_desired_t.where(element_inputs_desired_t.notnull(), None).copy(deep=True)
+    SAM_inputs_desired_t = SAM_inputs_desired_t.where(SAM_inputs_desired_t.notnull(), None).copy(deep=True)
+
     assert 't_step' in hiddenzones_inputs_desired_t.columns
     if np.isnan(desired_t_step) or desired_t_step == 0:
         desired_t_step = max(hiddenzones_inputs_desired_t['t_step'])
@@ -78,6 +83,12 @@ else:
     hiddenzone_inputs_df = pd.read_csv(HIDDENZONE_INPUTS_FILEPATH)
     element_inputs_df = pd.read_csv(ELEMENT_INPUTS_FILEPATH)
     axis_inputs_df = pd.read_csv(AXIS_INPUTS_FILEPATH)
+
+    # Convert NaN to None
+    hiddenzone_inputs_df = hiddenzone_inputs_df.where(hiddenzone_inputs_df.notnull(), None).copy(deep=True)
+    element_inputs_df = element_inputs_df.where(element_inputs_df.notnull(), None).copy(deep=True)
+    axis_inputs_df = axis_inputs_df.where(axis_inputs_df.notnull(), None).copy(deep=True)
+
     inputs = elongwheat_converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, axis_inputs_df)
     desired_t_step = 0
 

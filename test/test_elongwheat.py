@@ -68,6 +68,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
     if actual_data_filename is not None:
         actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
+        actual_data_df.fillna(value=pd.np.nan, inplace=True)
 
     if overwrite_desired_data:
         desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
@@ -85,7 +86,6 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         # compare to the desired data
         np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE)
 
-
 def test_run(overwrite_desired_data=False):
     # create a simulation
     simulation_ = simulation.Simulation(delta_t=3600)
@@ -94,6 +94,11 @@ def test_run(overwrite_desired_data=False):
     hiddenzone_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, HIDDENZONES_INPUTS_FILENAME))
     element_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))
     axis_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, AXES_INPUTS_FILENAME))
+
+    # Convert NaN to None
+    hiddenzone_inputs_df = hiddenzone_inputs_df.where(hiddenzone_inputs_df.notnull(), None).copy(deep=True)
+    element_inputs_df = element_inputs_df.where(element_inputs_df.notnull(), None).copy(deep=True)
+    axis_inputs_df = axis_inputs_df.where(axis_inputs_df.notnull(), None).copy(deep=True)
 
     # convert the dataframe to simulation inputs format
     inputs = converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, axis_inputs_df)
