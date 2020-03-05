@@ -189,6 +189,7 @@ class ElementInit(object):
         self.length = 0               #: m
         self.Wmax = None                  #:m maximum lamina width (could store sheath and internode diameter as well)
         self.senesced_length_element = 0  #: m
+        self.green_area = 0  #: m2
         self.age = 0                  #: Thermal Time
         self.max_proteins = 0         #: µmol N
         self.Nresidual = 0            #: g
@@ -196,6 +197,7 @@ class ElementInit(object):
         self.amino_acids = 0          #: µmol N
         self.nitrates = 0             #: µmol N
         self.fructan = 0              #: µmol C
+        self.starch = 0              #: µmol C
         self.proteins = 0             #: µmol N
         self.mstruct = 0              #: g
         self.senesced_mstruct = 0  #: g
