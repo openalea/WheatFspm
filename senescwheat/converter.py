@@ -32,7 +32,7 @@ SENESCWHEAT_AXES_INPUTS = ['delta_teq', 'delta_teq_roots', 'sum_TT']
 
 #: the inputs needed by SenescWheat at element scale
 SENESCWHEAT_ELEMENTS_INPUTS = ['green_area', 'senesced_length_element', 'length', 'proteins', 'mstruct','senesced_mstruct', 'max_proteins', 'Nstruct', 'nitrates', 'amino_acids', 'starch', 'fructan',
-                               'cytokinins', 'nitrates', 'sucrose', 'is_growing', 'max_mstruct', 'Nresidual', 'age']
+                               'cytokinins', 'sucrose', 'is_growing', 'max_mstruct', 'Nresidual', 'age']
 
 #: the outputs computed by SenescWheat at roots scale
 SENESCWHEAT_ROOTS_OUTPUTS = ['rate_mstruct_death', 'mstruct','senesced_mstruct', 'Nstruct', 'cytokinins']
