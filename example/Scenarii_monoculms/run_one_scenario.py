@@ -8,12 +8,11 @@ import tools
 import additional_graphs
 import additional_postprocessing
 
-my_dir = os.getcwd()
-
 # Scenarii
-scenarii_df = pd.read_csv( os.path.join('inputs','scenarii_list.csv'), index_col='Scenario')
+scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col='Scenario')
 scenarii_df['Scenario'] = scenarii_df.index
 scenarii = scenarii_df.Scenario
+
 
 def run_one_scenario(param):
     if type(param) != list:
@@ -48,17 +47,17 @@ def run_one_scenario(param):
 
     # Run main fspmwheat
     try:
-        main.main(3000, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
-                  option_static=False, show_3Dplant = False,
-                  tillers_replications = None, heterogeneous_canopy = True,
-                  N_fertilizations = {'constant_Conc_Nitrates': scenario_dict.get('constant_Conc_Nitrates') },
-                  PLANT_DENSITY={1:scenario_dict.get('Plant_Density', 250.)},
+        main.main(5, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+                  option_static=False, show_3Dplant=False,
+                  tillers_replications=None, heterogeneous_canopy=True,
+                  N_fertilizations={'constant_Conc_Nitrates': scenario_dict.get('constant_Conc_Nitrates')},
+                  PLANT_DENSITY={1: scenario_dict.get('Plant_Density', 250.)},
                   INPUTS_DIRPATH='inputs',
                   METEO_FILENAME=scenario_dict.get('METEO_FILENAME'),
-                  GRAPHS_DIRPATH = scenario_graphs_dirpath,
-                  OUTPUTS_DIRPATH = scenario_outputs_dirpath,
+                  GRAPHS_DIRPATH=scenario_graphs_dirpath,
+                  OUTPUTS_DIRPATH=scenario_outputs_dirpath,
                   POSTPROCESSING_DIRPATH=scenario_postprocessing_dirpath,
-                  update_parameters_all_models = scenario_dict)
+                  update_parameters_all_models=scenario_dict)
         additional_graphs.graph_RER(scenario)
         additional_graphs.graph_summary(scenario)
         additional_postprocessing.table_C_usages(scenario)
@@ -68,5 +67,6 @@ def run_one_scenario(param):
         print e
     pass
 
+
 if __name__ == '__main__':
-    run_one_scenario(sys.argv)
+    run_one_scenario(5)
