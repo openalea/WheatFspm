@@ -2,7 +2,6 @@
 
 from __future__ import division  # use "//" to do integer division
 import parameters
-import numpy as np
 
 """
     growthwheat.model
@@ -120,7 +119,7 @@ def calculate_delta_internode_enclosed_mstruct_postL(delta_internode_pseudo_age,
     :return: delta_internode_enclosed_mstruct (g)
     :rtype: float
     """
-    if np.isnan(internode_Lmax):
+    if not internode_Lmax:
         enclosed_mstruct_max = internode_L * LSIW
     else:
         enclosed_mstruct_max = min(internode_pseudostem_L, internode_Lmax) * LSIW

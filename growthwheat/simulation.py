@@ -42,7 +42,8 @@ AXIS_INPUTS = ['delta_teq', 'delta_teq_roots']
 #: the outputs computed by GrowthWheat
 HIDDENZONE_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct', 'internode_enclosed_Nstruct', 'mstruct',
                       'Nstruct', 'Respi_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct', 'is_over', 'leaf_is_remobilizing', 'internode_is_remobilizing']
-ELEMENT_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'mstruct', 'Nstruct', 'green_area', 'max_proteins', 'max_mstruct', 'Nresidual', 'senesced_length_element','senesced_mstruct']
+ELEMENT_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'nitrates', 'mstruct', 'Nstruct',
+                  'green_area', 'max_proteins', 'max_mstruct', 'Nresidual', 'senesced_length_element','senesced_mstruct']
 ROOT_OUTPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'Respi_growth','R_min_upt', 'rate_mstruct_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct']
 AXIS_OUTPUTS = []
 
@@ -344,7 +345,7 @@ class Simulation(object):
                     self.outputs['hiddenzone'][hiddenzone_id]['leaf_is_remobilizing'] = False
 
                 # -- Remobilisation at the end of internode elongation
-                if not hiddenzone_inputs['internode_is_growing'] and hiddenzone_inputs['internode_L'] > 0:  # Internodes stop to elongate after leaves. We cannot test delta_internode_L > 0 for the cases of short internodes which are mature before GA production.
+                if hiddenzone_inputs['internode_is_remobilizing']:  # Internodes stop to elongate after leaves. We cannot test delta_internode_L > 0 for the cases of short internodes which are mature before GA production.
 
                     # Add to hidden part of the internode
                     hidden_internode_id = hiddenzone_id + tuple(['internode', 'HiddenElement'])

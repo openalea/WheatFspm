@@ -68,6 +68,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
     if actual_data_filename is not None:
         actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
+        actual_data_df.fillna(value=pd.np.nan, inplace=True)
 
     if overwrite_desired_data:
         desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
@@ -94,6 +95,12 @@ def test_run(overwrite_desired_data=False):
     elements_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))
     roots_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ROOTS_INPUTS_FILENAME))
     axes_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, AXES_INPUTS_FILENAME))
+
+    # Convert NaN to None
+    hiddenzones_inputs_df = hiddenzones_inputs_df.where(hiddenzones_inputs_df.notnull(), None).copy(deep=True)
+    elements_inputs_df = elements_inputs_df.where(elements_inputs_df.notnull(), None).copy(deep=True)
+    roots_inputs_df = roots_inputs_df.where(roots_inputs_df.notnull(), None).copy(deep=True)
+    axes_inputs_df = axes_inputs_df.where(axes_inputs_df.notnull(), None).copy(deep=True)
 
     # convert the dataframe to simulation inputs format
     inputs = converter.from_dataframes(hiddenzones_inputs_df, elements_inputs_df, roots_inputs_df, axes_inputs_df)

@@ -52,6 +52,12 @@ element_inputs_t0 = pd.read_csv(ELEMENT_INPUTS_FILEPATH)
 root_inputs_t0 = pd.read_csv(ROOT_INPUTS_FILEPATH)
 axis_inputs_t0 = pd.read_csv(AXIS_INPUTS_FILEPATH)
 
+# Convert NaN to None
+hiddenzones_inputs_t0 = hiddenzones_inputs_t0.where(hiddenzones_inputs_t0.notnull(), None).copy(deep=True)
+element_inputs_t0 = element_inputs_t0.where(element_inputs_t0.notnull(), None).copy(deep=True)
+root_inputs_t0 = root_inputs_t0.where(root_inputs_t0.notnull(), None).copy(deep=True)
+axis_inputs_t0 = axis_inputs_t0.where(axis_inputs_t0.notnull(), None).copy(deep=True)
+
 OUTPUTS_PRECISION = 6
 
 if __name__ == '__main__':
