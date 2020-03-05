@@ -166,6 +166,13 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             elements_previous_outputs = pd.read_csv(ELEMENTS_STATES_FILEPATH)
             soils_previous_outputs = pd.read_csv(SOILS_STATES_FILEPATH)
 
+            # Convert NaN to None
+            axes_previous_outputs = axes_previous_outputs.where(axes_previous_outputs.notnull(), None).copy(deep=True)
+            organs_previous_outputs = organs_previous_outputs.where(organs_previous_outputs.notnull(), None).copy(deep=True)
+            hiddenzones_previous_outputs = hiddenzones_previous_outputs.where(hiddenzones_previous_outputs.notnull(), None).copy(deep=True)
+            elements_previous_outputs = elements_previous_outputs.where(elements_previous_outputs.notnull(), None).copy(deep=True)
+            soils_previous_outputs = soils_previous_outputs.where(soils_previous_outputs.notnull(), None).copy(deep=True)
+
             assert 't' in hiddenzones_previous_outputs.columns
             if forced_start_time > 0:
                 new_start_time = forced_start_time + 1
@@ -215,6 +222,13 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
             elements_inputs_t0 = pd.read_csv(ELEMENTS_INPUTS_FILEPATH)
             axes_inputs_t0 = pd.read_csv(AXES_INPUTS_FILEPATH)
             soils_inputs_t0 = pd.read_csv(SOILS_INPUTS_FILEPATH)
+
+            # Convert NaN to None
+            organs_inputs_t0 = organs_inputs_t0.where(organs_inputs_t0.notnull(), None).copy(deep=True)
+            hiddenzones_inputs_t0 = hiddenzones_inputs_t0.where(hiddenzones_inputs_t0.notnull(), None).copy(deep=True)
+            elements_inputs_t0 = elements_inputs_t0.where(elements_inputs_t0.notnull(), None).copy(deep=True)
+            axes_inputs_t0 = axes_inputs_t0.where(axes_inputs_t0.notnull(), None).copy(deep=True)
+            soils_inputs_t0 = soils_inputs_t0.where(soils_inputs_t0.notnull(), None).copy(deep=True)
 
         # create the facades
 
