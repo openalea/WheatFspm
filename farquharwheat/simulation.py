@@ -93,7 +93,6 @@ class Simulation(object):
             if element_inputs['height'] is None:
                 Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
                 Ts = self.inputs['axes'][axis_id]['SAM_temperature']
-                Tr = 0.1  # Default transpiration value for small organs under ADEL's resolution (green_area == 0)
             else:
                 PARa = element_inputs['PARa']  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
 
