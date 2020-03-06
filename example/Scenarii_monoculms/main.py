@@ -130,6 +130,13 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         elements_previous_outputs = pd.read_csv('elements_outputs.csv')
         soils_previous_outputs = pd.read_csv('soilss_outputs.csv')
 
+        # Convert NaN to None
+        axes_previous_outputs = axes_previous_outputs.where(axes_previous_outputs.notnull(), None).copy(deep=True)
+        organs_previous_outputs = organs_previous_outputs.where(organs_previous_outputs.notnull(), None).copy(deep=True)
+        hiddenzones_previous_outputs = hiddenzones_previous_outputs.where(hiddenzones_previous_outputs.notnull(), None).copy(deep=True)
+        elements_previous_outputs = elements_previous_outputs.where(elements_previous_outputs.notnull(), None).copy(deep=True)
+        soils_previous_outputs = soils_previous_outputs.where(soils_previous_outputs.notnull(), None).copy(deep=True)
+
         assert 't' in hiddenzones_previous_outputs.columns
         if forced_start_time > 0:
             new_start_time = forced_start_time + 1
@@ -177,7 +184,8 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                 HIDDENZONES_INITIAL_STATE_FILENAME,
                                 ELEMENTS_INITIAL_STATE_FILENAME,
                                 SOILS_INITIAL_STATE_FILENAME):
-            inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
+            inputs_dataframe = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
+            inputs_dataframes[inputs_filename] = inputs_dataframe.where(inputs_dataframe.notnull(), None)
 
     # Start time of the simulation
     START_TIME = max(0, new_start_time)
@@ -406,10 +414,12 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     if show_3Dplant:
         adel_wheat.plot(g)
 
+    # ---------------------------------------------
+    # -----      RUN OF THE SIMULATION      -------
+    # ---------------------------------------------
+
     if run_simu:
-        # ---------------------------------------------
-        # -----      RUN OF THE SIMULATION      -------
-        # ---------------------------------------------
+
         try:
             for t_caribu in range(START_TIME, SIMULATION_LENGTH, CARIBU_TIMESTEP):
                 # run Caribu
