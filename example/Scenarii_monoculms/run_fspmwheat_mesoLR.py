@@ -7,7 +7,7 @@ import pandas as pd
 
 import main
 import tools
-import additional_postprocessing
+# import additional_postprocessing
 
 
 def run_fspmwheat(scenario_id, scenarii_file, simulation_length, outputs_dir_path):
@@ -73,8 +73,8 @@ def run_fspmwheat(scenario_id, scenarii_file, simulation_length, outputs_dir_pat
                   OUTPUTS_DIRPATH=scenario_outputs_dirpath,
                   POSTPROCESSING_DIRPATH=scenario_postprocessing_dirpath,
                   update_parameters_all_models=update_parameters)
-        additional_postprocessing.table_C_usages(scenario_name)
-        additional_postprocessing.calculate_performance_indices(scenario_name)
+        # additional_postprocessing.table_C_usages(scenario_name)
+        # additional_postprocessing.calculate_performance_indices(scenario_name)
 
     except Exception as e:
         print(e)
