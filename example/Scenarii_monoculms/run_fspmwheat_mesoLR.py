@@ -84,9 +84,10 @@ if __name__ == '__main__':
     scenariifile = None
     simlength = 3000
     outputs = None
+    array_id = int(os.environ['SLURM_ARRAY_TASK_ID'])
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "s:l:o:d", ["scenariifile=", "simlength=", "outputs="])
+        opts, args = getopt.getopt(sys.argv[1:], "i:s:l:o:d", ["id", "scenariifile=", "simlength=", "outputs="])
     except getopt.GetoptError as err:
         print(str(err))
         sys.exit(2)
@@ -98,5 +99,7 @@ if __name__ == '__main__':
             simlength = int(arg)
         elif opt in ("-o", "--outputs"):
             outputs = arg
-    # slurm = os.environ['SLURM_ARRAY_TASK_ID']
-    run_fspmwheat(scenario_id=os.environ['SLURM_ARRAY_TASK_ID'], scenarii_file=scenariifile, simulation_length=simlength, outputs_dir_path=outputs)
+        elif opt in ("-i", "--id"):
+            array_id = arg
+
+    run_fspmwheat(scenario_id=array_id, scenarii_file=scenariifile, simulation_length=simlength, outputs_dir_path=outputs)
