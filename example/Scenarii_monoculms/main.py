@@ -109,6 +109,13 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     # number of seconds in 1 hour
     HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
+    # Name of the CSV files which will contain the outputs of the model
+    AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
+    ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
+    HIDDENZONES_OUTPUTS_FILENAME = 'hiddenzones_outputs.csv'
+    ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
+    SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
+
     # -- INPUTS CONFIGURATION --
 
     # Path of the directory which contains the inputs of the model
@@ -124,50 +131,33 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     # Read the inputs from CSV files and create inputs dataframes
     inputs_dataframes = {}
     if run_from_outputs:
-        axes_previous_outputs = pd.read_csv('axes_outputs.csv')
-        organs_previous_outputs = pd.read_csv('organs_outputs.csv')
-        hiddenzones_previous_outputs = pd.read_csv('hiddenzones_outputs.csv')
-        elements_previous_outputs = pd.read_csv('elements_outputs.csv')
-        soils_previous_outputs = pd.read_csv('soilss_outputs.csv')
 
-        # Convert NaN to None
-        axes_previous_outputs = axes_previous_outputs.where(axes_previous_outputs.notnull(), None).copy(deep=True)
-        organs_previous_outputs = organs_previous_outputs.where(organs_previous_outputs.notnull(), None).copy(deep=True)
-        hiddenzones_previous_outputs = hiddenzones_previous_outputs.where(hiddenzones_previous_outputs.notnull(), None).copy(deep=True)
-        elements_previous_outputs = elements_previous_outputs.where(elements_previous_outputs.notnull(), None).copy(deep=True)
-        soils_previous_outputs = soils_previous_outputs.where(soils_previous_outputs.notnull(), None).copy(deep=True)
+        previous_outputs_dataframes = {}
+        for initial_state_filename, outputs_filename, index_columns in ((AXES_INITIAL_STATE_FILENAME, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
+                                                      (ORGANS_INITIAL_STATE_FILENAME, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
+                                                      (HIDDENZONES_INITIAL_STATE_FILENAME, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
+                                                      (ELEMENTS_INITIAL_STATE_FILENAME, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
+                                                      (SOILS_INITIAL_STATE_FILENAME, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
 
-        assert 't' in hiddenzones_previous_outputs.columns
-        if forced_start_time > 0:
-            new_start_time = forced_start_time + 1
+            previous_outputs_dataframe = pd.read_csv(os.path.join(OUTPUTS_DIRPATH,outputs_filename))
+            # Convert NaN to None
+            previous_outputs_dataframes[outputs_filename] = previous_outputs_dataframe.where(previous_outputs_dataframe.notnull(), None)
 
-            axes_previous_outputs = axes_previous_outputs[axes_previous_outputs.t <= forced_start_time]
-            organs_previous_outputs = organs_previous_outputs[organs_previous_outputs.t <= forced_start_time]
-            hiddenzones_previous_outputs = hiddenzones_previous_outputs[hiddenzones_previous_outputs.t <= forced_start_time]
-            elements_previous_outputs = elements_previous_outputs[elements_previous_outputs.t <= forced_start_time]
-            soils_previous_outputs = soils_previous_outputs[soils_previous_outputs.t <= forced_start_time]
+            assert 't' in previous_outputs_dataframes[outputs_filename].columns
+            if forced_start_time > 0:
+                new_start_time = forced_start_time + 1
+                previous_outputs_dataframes[outputs_filename] = previous_outputs_dataframes[outputs_filename][previous_outputs_dataframes[outputs_filename]['t'] <= forced_start_time]
+            else:
+                last_t_step = max(previous_outputs_dataframes[outputs_filename]['t'])
+                new_start_time = last_t_step + 1
 
-        else:
-            last_t_step = max(hiddenzones_previous_outputs['t'])
-            new_start_time = last_t_step + 1
-
-        idx = organs_previous_outputs.groupby([organ_index for organ_index in ORGANS_INDEX_COLUMNS if organ_index != 't'])['t'].transform(max) == organs_previous_outputs['t']
-        inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME] = organs_previous_outputs[idx].drop(['t'], axis=1)
-
-        idx = hiddenzones_previous_outputs.groupby([hiddenzone_index for hiddenzone_index in HIDDENZONES_INDEX_COLUMNS if hiddenzone_index != 't']
-                                                   )['t'].transform(max) == hiddenzones_previous_outputs['t']
-        inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME] = hiddenzones_previous_outputs[idx].drop(['t'], axis=1)
-
-        elements_previous_outputs_filtered = elements_previous_outputs[~elements_previous_outputs.is_over.isna()]
-        idx = elements_previous_outputs_filtered.groupby([element_index for element_index in ELEMENTS_INDEX_COLUMNS if element_index != 't']
-                                                         )['t'].transform(max) == elements_previous_outputs_filtered['t']
-        inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME] = elements_previous_outputs_filtered[idx].drop(['t'], axis=1)
-
-        idx = axes_previous_outputs.groupby([axis_index for axis_index in AXES_INDEX_COLUMNS if axis_index != 't'])['t'].transform(max) == axes_previous_outputs['t']
-        inputs_dataframes[AXES_INITIAL_STATE_FILENAME] = axes_previous_outputs[idx].drop(['t'], axis=1)
-
-        idx = soils_previous_outputs.groupby([soil_index for soil_index in SOILS_INDEX_COLUMNS if soil_index != 't'])['t'].transform(max) == soils_previous_outputs['t']
-        inputs_dataframes[SOILS_INITIAL_STATE_FILENAME] = soils_previous_outputs[idx].drop(['t'], axis=1)
+            if initial_state_filename == ELEMENTS_INITIAL_STATE_FILENAME:
+                elements_previous_outputs = previous_outputs_dataframes[outputs_filename]
+                new_initial_state = elements_previous_outputs[~elements_previous_outputs.is_over.isna()] #TODO : verifier ce que ça donne avec des None
+            else:
+                new_initial_state = previous_outputs_dataframes[outputs_filename]
+            idx = new_initial_state.groupby([col for col in index_columns if col != 't'])['t'].transform(max) == new_initial_state['t']
+            inputs_dataframes[initial_state_filename] = new_initial_state[idx].drop(['t'], axis=1)
 
         # Make sure boolean columns have either type bool or float
         bool_columns = ['is_over', 'is_growing', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_growing', 'internode_is_growing', 'leaf_is_remobilizing', 'internode_is_remobilizing']
@@ -194,13 +184,6 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t')
 
     # -- OUTPUTS CONFIGURATION --
-
-    # Name of the CSV files which will contain the outputs of the model
-    AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
-    ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
-    HIDDENZONES_OUTPUTS_FILENAME = 'hiddenzones_outputs.csv'
-    ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
-    SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
 
     # create empty dataframes to shared data between the models
     shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -496,16 +479,18 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         finally:
             # convert list of outputs into dataframs
             outputs_df_dict = {}
-            for outputs_df_list, outputs_filename in ((axes_all_data_list, AXES_OUTPUTS_FILENAME),
-                                                      (organs_all_data_list, ORGANS_OUTPUTS_FILENAME),
-                                                      (hiddenzones_all_data_list, HIDDENZONES_OUTPUTS_FILENAME),
-                                                      (elements_all_data_list, ELEMENTS_OUTPUTS_FILENAME),
-                                                      (soils_all_data_list, SOILS_OUTPUTS_FILENAME)):
+            for outputs_df_list, outputs_filename, index_columns in ((axes_all_data_list, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
+                                                      (organs_all_data_list, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
+                                                      (hiddenzones_all_data_list, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
+                                                      (elements_all_data_list, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
+                                                      (soils_all_data_list, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
                 outputs_filepath = os.path.join(OUTPUTS_DIRPATH, outputs_filename)
                 outputs_df = pd.concat(outputs_df_list, keys=all_simulation_steps, sort=False)
                 outputs_df.reset_index(0, inplace=True)
                 outputs_df.rename({'level_0': 't'}, axis=1, inplace=True)
-                outputs_df = outputs_df.reindex(AXES_INDEX_COLUMNS + outputs_df.columns.difference(AXES_INDEX_COLUMNS).tolist(), axis=1, copy=False)
+                outputs_df = outputs_df.reindex(index_columns + outputs_df.columns.difference(index_columns).tolist(), axis=1, copy=False)
+                if run_from_outputs:
+                    outputs_df = pd.concat([previous_outputs_dataframes[outputs_filename], outputs_df], sort=False)
                 save_df_to_csv(outputs_df, outputs_filepath, OUTPUTS_PRECISION)
                 outputs_file_basename = outputs_filename.split('.')[0]
                 outputs_df_dict[outputs_file_basename] = outputs_df
@@ -577,7 +562,8 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         if not run_postprocessing:
             postprocessing_df_dict = {}
 
-            for postprocessing_filename in (ORGANS_POSTPROCESSING_FILENAME,
+            for postprocessing_filename in (AXES_POSTPROCESSING_FILENAME,
+                                            ORGANS_POSTPROCESSING_FILENAME,
                                             HIDDENZONES_POSTPROCESSING_FILENAME,
                                             ELEMENTS_POSTPROCESSING_FILENAME,
                                             SOILS_POSTPROCESSING_FILENAME):
@@ -589,7 +575,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         # Retrieve last computed post-processing dataframes
         axes_postprocessing_file_basename = AXES_POSTPROCESSING_FILENAME.split('.')[0]
         organs_postprocessing_file_basename = ORGANS_POSTPROCESSING_FILENAME.split('.')[0]
-        hiddenzones_postprocessing_file_basename = AXES_POSTPROCESSING_FILENAME.split('.')[0]
+        hiddenzones_postprocessing_file_basename = HIDDENZONES_POSTPROCESSING_FILENAME.split('.')[0]
         elements_postprocessing_file_basename = ELEMENTS_POSTPROCESSING_FILENAME.split('.')[0]
         soils_postprocessing_file_basename = SOILS_POSTPROCESSING_FILENAME.split('.')[0]
 
@@ -650,7 +636,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
         # 1) Comparison Dimensions with Ljutovac 2002
         bchmk = pd.read_csv(r'inputs\Ljutovac2002.csv')
-        res = pd.read_csv(os.path(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
+        res = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
         res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.leaf_Lmax)].copy()
         res_IN = res[~ np.isnan(res.internode_Lmax)]
         last_value_idx = res.groupby(['metamer'])['t'].transform(max) == res['t']
@@ -835,7 +821,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         plt.close()
 
         # 5) Residual N : ratio_N_mstruct_max
-        df_elt_outputs = pd.read_csv(os.path(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
+        df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.axis == 'MS']
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.mstruct != 0]
         df_elt_outputs['N_content_total'] = df_elt_outputs['N_content_total'] * 100
