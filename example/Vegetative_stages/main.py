@@ -52,26 +52,22 @@ from alinea.adel.echap_leaf import echap_leaves
 random.seed(1234)
 np.random.seed(1234)
 
-# number of seconds in 1 hour
-HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
-
-INPUTS_OUTPUTS_PRECISION = 8
-
 AXES_INDEX_COLUMNS = ['t', 'plant', 'axis']
 ELEMENTS_INDEX_COLUMNS = ['t', 'plant', 'axis', 'metamer', 'organ', 'element']
 HIDDENZONES_INDEX_COLUMNS = ['t', 'plant', 'axis', 'metamer']
 ORGANS_INDEX_COLUMNS = ['t', 'plant', 'axis', 'organ']
 SOILS_INDEX_COLUMNS = ['t', 'plant', 'axis']
 
-def save_df_to_csv(df, states_filepath):
+
+def save_df_to_csv(df, outputs_filepath, precision):
     try:
-        df.to_csv(states_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        df.to_csv(outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(precision))
     except IOError as err:
-        path, filename = os.path.split(states_filepath)
+        path, filename = os.path.split(outputs_filepath)
         filename = os.path.splitext(filename)[0]
         newfilename = 'ACTUAL_{}.csv'.format(filename)
         newpath = os.path.join(path, newfilename)
-        df.to_csv(newpath, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        df.to_csv(newpath, na_rep='NA', index=False, float_format='%.{}f'.format(precision))
         warnings.warn('[{}] {}'.format(err.errno, err.strerror))
         warnings.warn('File will be saved at {}'.format(newpath))
 
@@ -81,7 +77,7 @@ LOGGING_CONFIG_FILEPATH = os.path.join('..', '..', 'logging.json')
 LOGGING_LEVEL = logging.INFO  # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 
-def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, option_static=False, show_3Dplant=True, tillers_replications=None,
+def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, option_static=False, show_3Dplant=True, tillers_replications=None,
          heterogeneous_canopy=True, N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH = 'outputs', POSTPROCESSING_DIRPATH = 'postprocessing', GRAPHS_DIRPATH = 'graphs'):
     """
@@ -97,494 +93,502 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
     INPUTS_DIRPATH = 'str'
     or INPUTS_DIRPATH = {'adel':str, 'plants':str, 'meteo':str, 'soils':str} #  The directory at path 'adel' must contain files 'adel_pars.RData', 'adel0000.pckl' and 'scene0000.bgeom' for ADELWHEAT
     """
+    # ---------------------------------------------
+    # ----- CONFIGURATION OF THE SIMULATION -------
+    # ---------------------------------------------
 
-# Define default plant density (culm m-2)
+    # -- SIMULATION PARAMETERS --
+
+    # Length of the simulation (in hours)
+    SIMULATION_LENGTH = simulation_length
+
+    # define the time step in hours for each simulator
+    CARIBU_TIMESTEP = 4
+    SENESCWHEAT_TIMESTEP = 2
+    FARQUHARWHEAT_TIMESTEP = 2
+    ELONGWHEAT_TIMESTEP = 1
+    GROWTHWHEAT_TIMESTEP = 1
+    CNWHEAT_TIMESTEP = 1
+
+    # Define default plant density (culm m-2)
     if PLANT_DENSITY is None:
         PLANT_DENSITY = {1: 250.}
 
-    # inputs
-    INPUTS_DIRPATH_DICT = {}
-    INPUTS_DIRPATH_DEFAULT = 'inputs'
-    if type(INPUTS_DIRPATH) is dict:
-        INPUTS_DIRPATH_DICT = INPUTS_DIRPATH
-    else:
-        INPUTS_DIRPATH_DEFAULT = INPUTS_DIRPATH
-    AXES_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('plants', INPUTS_DIRPATH_DEFAULT), 'axes_inputs.csv')
-    ORGANS_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('plants', INPUTS_DIRPATH_DEFAULT), 'organs_inputs.csv')
-    HIDDENZONE_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('plants', INPUTS_DIRPATH_DEFAULT), 'hiddenzones_inputs.csv')
-    ELEMENTS_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('plants', INPUTS_DIRPATH_DEFAULT), 'elements_inputs.csv')
-    SOILS_INPUTS_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('soils', INPUTS_DIRPATH_DEFAULT), 'soils_inputs.csv')
-    METEO_FILEPATH = os.path.join( INPUTS_DIRPATH_DICT.get('meteo', INPUTS_DIRPATH_DEFAULT),METEO_FILENAME )
+    # precision of floats used to write and format the output CSV files
+    OUTPUTS_PRECISION = 8
 
-    # the path of the CSV files where to save the states of the modeled system at each step
-    AXES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'axes_states.csv')
-    ORGANS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'organs_states.csv')
-    HIDDENZONES_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'hiddenzones_states.csv')
-    ELEMENTS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'elements_states.csv')
-    SOILS_STATES_FILEPATH = os.path.join(OUTPUTS_DIRPATH, 'soils_states.csv')
+    # number of seconds in 1 hour
+    HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
-    # post-processing directory path
-    AXES_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'axes_postprocessing.csv')
-    ORGANS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'organs_postprocessing.csv')
-    HIDDENZONES_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'hiddenzones_postprocessing.csv')
-    ELEMENTS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'elements_postprocessing.csv')
-    SOILS_POSTPROCESSING_FILEPATH = os.path.join(POSTPROCESSING_DIRPATH, 'soils_postprocessing.csv')
+    # Name of the CSV files which will contain the outputs of the model
+    AXES_OUTPUTS_FILENAME = 'axes_outputs.csv'
+    ORGANS_OUTPUTS_FILENAME = 'organs_outputs.csv'
+    HIDDENZONES_OUTPUTS_FILENAME = 'hiddenzones_outputs.csv'
+    ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
+    SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
 
-    if run_simu:
-        meteo = pd.read_csv(METEO_FILEPATH, index_col='t')
+    # -- INPUTS CONFIGURATION --
 
-        # define the time step in hours for each simulator
-        caribu_ts = 4
-        senescwheat_ts = 2
-        farquharwheat_ts = 2
-        elongwheat_ts = 1
-        growthwheat_ts = 1
-        cnwheat_ts = 1
+    # Path of the directory which contains the inputs of the model
+    INPUTS_DIRPATH = INPUTS_DIRPATH
 
-        # read adelwheat inputs at t0
-        adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-        g = adel_wheat.load(dir=INPUTS_DIRPATH_DICT.get('adel', INPUTS_DIRPATH_DEFAULT))
+    # Name of the CSV files which describes the initial state of the system
+    AXES_INITIAL_STATE_FILENAME = 'axes_initial_state.csv'
+    ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv'
+    HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv'
+    ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv'
+    SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv'
+    # Read the inputs from CSV files and create inputs dataframes
+    inputs_dataframes = {}
+    if run_from_outputs:
 
-        # create empty dataframes to shared data between the models
-        shared_axes_inputs_outputs_df = pd.DataFrame()
-        shared_organs_inputs_outputs_df = pd.DataFrame()
-        shared_hiddenzones_inputs_outputs_df = pd.DataFrame()
-        shared_elements_inputs_outputs_df = pd.DataFrame()
-        shared_soils_inputs_outputs_df = pd.DataFrame()
+        previous_outputs_dataframes = {}
 
-        # read the inputs
-        if run_from_outputs:
-            axes_previous_outputs = pd.read_csv(AXES_STATES_FILEPATH)
-            organs_previous_outputs = pd.read_csv(ORGANS_STATES_FILEPATH)
-            hiddenzones_previous_outputs = pd.read_csv(HIDDENZONES_STATES_FILEPATH)
-            elements_previous_outputs = pd.read_csv(ELEMENTS_STATES_FILEPATH)
-            soils_previous_outputs = pd.read_csv(SOILS_STATES_FILEPATH)
+        for initial_state_filename, outputs_filename, index_columns in ((AXES_INITIAL_STATE_FILENAME, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
+                                                      (ORGANS_INITIAL_STATE_FILENAME, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
+                                                      (HIDDENZONES_INITIAL_STATE_FILENAME, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
+                                                      (ELEMENTS_INITIAL_STATE_FILENAME, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
+                                                      (SOILS_INITIAL_STATE_FILENAME, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
 
+            previous_outputs_dataframe = pd.read_csv(os.path.join(OUTPUTS_DIRPATH,outputs_filename))
             # Convert NaN to None
-            axes_previous_outputs = axes_previous_outputs.where(axes_previous_outputs.notnull(), None).copy(deep=True)
-            organs_previous_outputs = organs_previous_outputs.where(organs_previous_outputs.notnull(), None).copy(deep=True)
-            hiddenzones_previous_outputs = hiddenzones_previous_outputs.where(hiddenzones_previous_outputs.notnull(), None).copy(deep=True)
-            elements_previous_outputs = elements_previous_outputs.where(elements_previous_outputs.notnull(), None).copy(deep=True)
-            soils_previous_outputs = soils_previous_outputs.where(soils_previous_outputs.notnull(), None).copy(deep=True)
+            previous_outputs_dataframes[outputs_filename] = previous_outputs_dataframe.where(previous_outputs_dataframe.notnull(), None)
 
-            assert 't' in hiddenzones_previous_outputs.columns
+            assert 't' in previous_outputs_dataframes[outputs_filename].columns
             if forced_start_time > 0:
                 new_start_time = forced_start_time + 1
-
-                axes_previous_outputs = axes_previous_outputs[axes_previous_outputs.t <= forced_start_time]
-                organs_previous_outputs = organs_previous_outputs[organs_previous_outputs.t <= forced_start_time]
-                hiddenzones_previous_outputs = hiddenzones_previous_outputs[hiddenzones_previous_outputs.t <= forced_start_time]
-                elements_previous_outputs = elements_previous_outputs[elements_previous_outputs.t <= forced_start_time]
-                soils_previous_outputs = soils_previous_outputs[soils_previous_outputs.t <= forced_start_time]
-
+                previous_outputs_dataframes[outputs_filename] = previous_outputs_dataframes[outputs_filename][previous_outputs_dataframes[outputs_filename]['t'] <= forced_start_time]
             else:
-                last_t_step = max(hiddenzones_previous_outputs['t'])
+                last_t_step = max(previous_outputs_dataframes[outputs_filename]['t'])
                 new_start_time = last_t_step + 1
 
-            idx = organs_previous_outputs.groupby([organ_index for organ_index in ORGANS_INDEX_COLUMNS if organ_index != 't'])['t'].transform(max) == organs_previous_outputs['t']
-            organs_inputs_t0 = organs_previous_outputs[idx].drop(['t'], axis=1)
-
-            idx = hiddenzones_previous_outputs.groupby([hiddenzone_index for hiddenzone_index in HIDDENZONES_INDEX_COLUMNS if hiddenzone_index != 't']
-                                                       )['t'].transform(max) == hiddenzones_previous_outputs['t']
-            hiddenzones_inputs_t0 = hiddenzones_previous_outputs[idx].drop(['t'], axis=1)
-
-            elements_previous_outputs_filtered = elements_previous_outputs[~elements_previous_outputs.is_over.isna()]
-            idx = elements_previous_outputs_filtered.groupby([element_index for element_index in ELEMENTS_INDEX_COLUMNS if element_index != 't']
-                                                             )['t'].transform(max) == elements_previous_outputs_filtered['t']
-            elements_inputs_t0 = elements_previous_outputs_filtered[idx].drop(['t'], axis=1)
-
-            idx = axes_previous_outputs.groupby([axis_index for axis_index in AXES_INDEX_COLUMNS if axis_index != 't'])['t'].transform(max) == axes_previous_outputs['t']
-            axes_inputs_t0 = axes_previous_outputs[idx].drop(['t'], axis=1)
-
-            idx = soils_previous_outputs.groupby([soil_index for soil_index in SOILS_INDEX_COLUMNS if soil_index != 't'])['t'].transform(max) == soils_previous_outputs['t']
-            soils_inputs_t0 = soils_previous_outputs[idx].drop(['t'], axis=1)
-
-            # Make sure boolean columns have either type bool or float
-            bool_columns = ['is_over', 'is_growing', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_growing', 'internode_is_growing', 'leaf_is_remobilizing', 'internode_is_remobilizing']
-            for df in [elements_inputs_t0, hiddenzones_inputs_t0]:
-                for cln in bool_columns:
-                    if cln in df.keys():
-                        df[cln].replace(to_replace='False', value=0.0, inplace=True)
-                        df[cln].replace(to_replace='True', value=1.0, inplace=True)
-                        df[cln] = pd.to_numeric(df[cln])
-
-        else:
-            new_start_time = -1
-
-            organs_inputs_t0 = pd.read_csv(ORGANS_INPUTS_FILEPATH)
-            hiddenzones_inputs_t0 = pd.read_csv(HIDDENZONE_INPUTS_FILEPATH)
-            elements_inputs_t0 = pd.read_csv(ELEMENTS_INPUTS_FILEPATH)
-            axes_inputs_t0 = pd.read_csv(AXES_INPUTS_FILEPATH)
-            soils_inputs_t0 = pd.read_csv(SOILS_INPUTS_FILEPATH)
-
-            # Convert NaN to None
-            organs_inputs_t0 = organs_inputs_t0.where(organs_inputs_t0.notnull(), None).copy(deep=True)
-            hiddenzones_inputs_t0 = hiddenzones_inputs_t0.where(hiddenzones_inputs_t0.notnull(), None).copy(deep=True)
-            elements_inputs_t0 = elements_inputs_t0.where(elements_inputs_t0.notnull(), None).copy(deep=True)
-            axes_inputs_t0 = axes_inputs_t0.where(axes_inputs_t0.notnull(), None).copy(deep=True)
-            soils_inputs_t0 = soils_inputs_t0.where(soils_inputs_t0.notnull(), None).copy(deep=True)
-
-        # create the facades
-
-        # elongwheat (created first because it is the only facade to add new metamers)
-        elongwheat_hiddenzones_inputs_t0 = hiddenzones_inputs_t0[
-            elongwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.HIDDENZONE_INPUTS if i in
-                                                                       hiddenzones_inputs_t0.columns]].copy()
-        elongwheat_elements_inputs_t0 = elements_inputs_t0[
-            elongwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.ELEMENT_INPUTS if i in
-                                                                    elements_inputs_t0.columns]].copy()
-        elongwheat_axes_inputs_t0 = axes_inputs_t0[
-            elongwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.AXIS_INPUTS if i in axes_inputs_t0.columns]].copy()
-
-        # Update parameters if specified
-        if update_parameters_all_models and 'elongwheat' in update_parameters_all_models:
-            update_parameters_elongwheat = update_parameters_all_models['elongwheat']
-        else:
-            update_parameters_elongwheat = None
-        elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
-                                                                elongwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                                elongwheat_axes_inputs_t0,
-                                                                elongwheat_hiddenzones_inputs_t0,
-                                                                elongwheat_elements_inputs_t0,
-                                                                shared_axes_inputs_outputs_df,
-                                                                shared_hiddenzones_inputs_outputs_df,
-                                                                shared_elements_inputs_outputs_df,
-                                                                adel_wheat,
-                                                                update_parameters_elongwheat)
-
-        # caribu
-        caribu_facade_ = caribu_facade.CaribuFacade(g,
-                                                    shared_elements_inputs_outputs_df,
-                                                    adel_wheat)
-
-        # TODO : est-ce necessaire de selectionner les colonnes en entrees ?
-
-        # senescwheat
-        senescwheat_roots_inputs_t0 = organs_inputs_t0.loc[organs_inputs_t0['organ'] == 'roots'][senescwheat_facade.converter.ROOTS_TOPOLOGY_COLUMNS +
-                                                                                                 [i for i in senescwheat_facade.converter.SENESCWHEAT_ROOTS_INPUTS if i in
-                                                                                                  organs_inputs_t0.columns]].copy()
-        senescwheat_elements_inputs_t0 = elements_inputs_t0[senescwheat_facade.converter.ELEMENTS_TOPOLOGY_COLUMNS + [i for i in senescwheat_facade.converter.SENESCWHEAT_ELEMENTS_INPUTS if i in
-                                                                                                                      elements_inputs_t0.columns]].copy()
-        senescwheat_axes_inputs_t0 = axes_inputs_t0[senescwheat_facade.converter.AXES_TOPOLOGY_COLUMNS + [i for i in senescwheat_facade.converter.SENESCWHEAT_AXES_INPUTS if i in
-                                                                                                       axes_inputs_t0.columns]].copy()
-        # Update parameters if specified
-        if update_parameters_all_models and 'senescwheat' in update_parameters_all_models:
-            update_parameters_senescwheat = update_parameters_all_models['senescwheat']
-        else:
-            update_parameters_senescwheat = None
-
-        senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
-                                                                   senescwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                                   senescwheat_roots_inputs_t0,
-                                                                   senescwheat_axes_inputs_t0,
-                                                                   senescwheat_elements_inputs_t0,
-                                                                   shared_organs_inputs_outputs_df,
-                                                                   shared_axes_inputs_outputs_df,
-                                                                   shared_elements_inputs_outputs_df,
-                                                                   update_parameters_senescwheat)
-
-        # farquharwheat
-        farquharwheat_elements_inputs_t0 = elements_inputs_t0[farquharwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_ELEMENTS_INPUTS if i in
-                                                                                                                         elements_inputs_t0.columns]].copy()
-        farquharwheat_axes_inputs_t0 = axes_inputs_t0[
-            farquharwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS + [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_AXES_INPUTS if i in axes_inputs_t0.columns]].copy()
-
-        farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
-                                                                         farquharwheat_elements_inputs_t0,
-                                                                         farquharwheat_axes_inputs_t0,
-                                                                         shared_elements_inputs_outputs_df)
-
-        # growthwheat
-        growthwheat_hiddenzones_inputs_t0 = hiddenzones_inputs_t0[
-            growthwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS + [i for i in growthwheat_facade.simulation.HIDDENZONE_INPUTS if i in hiddenzones_inputs_t0.columns]].copy()
-        growthwheat_elements_inputs_t0 = elements_inputs_t0[
-            growthwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in growthwheat_facade.simulation.ELEMENT_INPUTS if i in elements_inputs_t0.columns]].copy()
-        growthwheat_root_inputs_t0 = organs_inputs_t0.loc[organs_inputs_t0['organ'] == 'roots'][
-            growthwheat_facade.converter.ROOT_TOPOLOGY_COLUMNS + [i for i in growthwheat_facade.simulation.ROOT_INPUTS if i in organs_inputs_t0.columns]].copy()
-        growthwheat_axes_inputs_t0 = axes_inputs_t0[
-            growthwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS + [i for i in growthwheat_facade.simulation.AXIS_INPUTS if i in axes_inputs_t0.columns]].copy()
-
-        # Update parameters if specified
-        if update_parameters_all_models and 'growthwheat' in update_parameters_all_models:
-            update_parameters_growthwheat = update_parameters_all_models['growthwheat']
-        else:
-            update_parameters_growthwheat = None
-
-        growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
-                                                                   growthwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                                   growthwheat_hiddenzones_inputs_t0,
-                                                                   growthwheat_elements_inputs_t0,
-                                                                   growthwheat_root_inputs_t0,
-                                                                   growthwheat_axes_inputs_t0,
-                                                                   shared_organs_inputs_outputs_df,
-                                                                   shared_hiddenzones_inputs_outputs_df,
-                                                                   shared_elements_inputs_outputs_df,
-                                                                   shared_axes_inputs_outputs_df,
-                                                                   update_parameters_growthwheat)
-
-        # cnwheat
-        cnwheat_organs_inputs_t0 = organs_inputs_t0[[i for i in cnwheat_facade.cnwheat_converter.ORGANS_VARIABLES if i in organs_inputs_t0.columns]].copy()
-        cnwheat_hiddenzones_inputs_t0 = hiddenzones_inputs_t0[[i for i in cnwheat_facade.cnwheat_converter.HIDDENZONE_VARIABLES if i in hiddenzones_inputs_t0.columns]].copy()
-        cnwheat_elements_inputs_t0 = elements_inputs_t0[[i for i in cnwheat_facade.cnwheat_converter.ELEMENTS_VARIABLES if i in elements_inputs_t0.columns]].copy()
-        cnwheat_soils_inputs_t0 = soils_inputs_t0[[i for i in cnwheat_facade.cnwheat_converter.SOILS_VARIABLES if i in soils_inputs_t0.columns]].copy()
-
-        # Update parameters if specified
-        if update_parameters_all_models and 'cnwheat' in update_parameters_all_models:
-            update_parameters_cnwheat = update_parameters_all_models['cnwheat']
-        else:
-            update_parameters_cnwheat = {}
-
-        cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
-                                                       cnwheat_ts * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                       PLANT_DENSITY,
-                                                       update_parameters_cnwheat,
-                                                       cnwheat_organs_inputs_t0,
-                                                       cnwheat_hiddenzones_inputs_t0,
-                                                       cnwheat_elements_inputs_t0,
-                                                       cnwheat_soils_inputs_t0,
-                                                       shared_axes_inputs_outputs_df,
-                                                       shared_organs_inputs_outputs_df,
-                                                       shared_hiddenzones_inputs_outputs_df,
-                                                       shared_elements_inputs_outputs_df,
-                                                       shared_soils_inputs_outputs_df)
-
-        # Run cnwheat with constant nitrates concentration in the soil if specified
-        if N_fertilizations is not None and len(N_fertilizations) > 0:
-            if 'constant_Conc_Nitrates' in N_fertilizations.keys():
-                cnwheat_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True
-                cnwheat_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * cnwheat_facade_.soils[(1, 'MS')].volume
-
-        # Update geometry
-        adel_wheat.update_geometry(g)
-        if show_3Dplant:
-            adel_wheat.plot(g)
-
-        # define the start and the end of the whole simulation (in hours)
-        start_time = max(0, new_start_time)
-        stop_time = stop_time
-
-        # define lists of dataframes to store the inputs and the outputs of the models at each step.
-        axes_all_data_list = []
-        organs_all_data_list = []  # organs which belong to axes: roots, phloem, grains
-        hiddenzones_all_data_list = []
-        elements_all_data_list = []
-        soils_all_data_list = []
-
-        all_simulation_steps = []  # to store the steps of the simulation
-
-        print('Simulation starts')
-
-        # run the simulators
-        current_time_of_the_system = time.time()
-
-        for t_caribu in range(start_time, stop_time, caribu_ts):
-
-            # run Caribu
-            PARi = meteo.loc[t_caribu, ['PARi_MA4']].iloc[0]
-            DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
-            hour = meteo.loc[t_caribu, ['hour']].iloc[0]
-            caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1] )
-            #TODO: plant_density is not updated in case heterogeneous_canopy = False !
-            print('t caribu is {}'.format(t_caribu))
-
-            for t_senescwheat in range(t_caribu, t_caribu + caribu_ts, senescwheat_ts):
-
-                # run SenescWheat
-                print('t senescwheat is {}'.format(t_senescwheat))
-                senescwheat_facade_.run()
-
-                # Test for dead plant # TODO: adapt in case of multiple plants
-                if np.nansum( shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement','LeafElement1']), 'green_area'] ) == 0:
-
-                    print('\n' '! Simulation stopped because all the emerged elements are fully senescent !')
-
-                    # append the inputs and outputs at current step to global lists
-                    all_simulation_steps.append(t_senescwheat)
-                    axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                    organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                    hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
-                    elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                    soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
-
-                    break
-
-                # Run the rest of the model if the plant is alive
-                for t_farquharwheat in range(t_senescwheat, t_senescwheat + senescwheat_ts, farquharwheat_ts):
-                    # get the meteo of the current step
-                    Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature_MA2', 'ambient_CO2_MA2', 'humidity_MA2', 'Wind_MA2']]
-
-                    # run FarquharWheat
-                    farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
-
-                    for t_elongwheat in range(t_farquharwheat, t_farquharwheat + farquharwheat_ts, elongwheat_ts):
-
-                        # run ElongWheat
-                        print('t elongwheat is {}'.format(t_elongwheat))
-                        Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
-                        elongwheat_facade_.run(Tair, Tsoil, option_static=option_static)
-
-                        # Update geometry
-                        adel_wheat.update_geometry(g)
-                        if show_3Dplant:
-                            adel_wheat.plot(g)
-
-                        for t_growthwheat in range(t_elongwheat, t_elongwheat + elongwheat_ts, growthwheat_ts):
-
-                            # run GrowthWheat
-                            print('t growthwheat is {}'.format(t_growthwheat))
-                            growthwheat_facade_.run()
-
-                            for t_cnwheat in range(t_growthwheat, t_growthwheat + growthwheat_ts, cnwheat_ts):
-                                if t_cnwheat > 0:
-
-                                    # N fertilization if any
-                                    if N_fertilizations is not None and len(N_fertilizations) > 0:
-                                        if t_cnwheat in N_fertilizations.keys():
-                                            cnwheat_facade_.soils[(1, 'MS')].nitrates += N_fertilizations[t_cnwheat]
-
-                                    # run CNWheat
-                                    print('t cnwheat is {}'.format(t_cnwheat))
-                                    Tair = meteo.loc[t_elongwheat, 'air_temperature']
-                                    Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
-                                    cnwheat_facade_.run(Tair, Tsoil, tillers_replications)
-
-                                # append the inputs and outputs at current step to global lists
-                                all_simulation_steps.append(t_cnwheat)
-                                axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                                organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                                hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
-                                elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                                soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
-
+            if initial_state_filename == ELEMENTS_INITIAL_STATE_FILENAME:
+                elements_previous_outputs = previous_outputs_dataframes[outputs_filename]
+                new_initial_state = elements_previous_outputs[~elements_previous_outputs.is_over.isnull()]
             else:
-                # Continue if SenescWheat loop wasn't broken because of dead plant.
-                continue
-            # SenescWheat loop was broken, break the Caribu loop.
-            break
+                new_initial_state = previous_outputs_dataframes[outputs_filename]
+            idx = new_initial_state.groupby([col for col in index_columns if col != 't'])['t'].transform(max) == new_initial_state['t']
+            inputs_dataframes[initial_state_filename] = new_initial_state[idx].drop(['t'], axis=1)
 
-        execution_time = int(time.time() - current_time_of_the_system)
-        print ('\n' 'Simulation run in {}'.format(str(datetime.timedelta(seconds=execution_time))))
+        # Make sure boolean columns have either type bool or float
+        bool_columns = ['is_over', 'is_growing', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_growing', 'internode_is_growing', 'leaf_is_remobilizing', 'internode_is_remobilizing']
+        for df in [inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME], inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME]]:
+            for cln in bool_columns:
+                if cln in df.keys():
+                    df[cln].replace(to_replace='False', value=0.0, inplace=True)
+                    df[cln].replace(to_replace='True', value=1.0, inplace=True)
+                    df[cln] = pd.to_numeric(df[cln])
+    else:
+        new_start_time = -1
+        for inputs_filename in (AXES_INITIAL_STATE_FILENAME,
+                                ORGANS_INITIAL_STATE_FILENAME,
+                                HIDDENZONES_INITIAL_STATE_FILENAME,
+                                ELEMENTS_INITIAL_STATE_FILENAME,
+                                SOILS_INITIAL_STATE_FILENAME):
+            inputs_dataframe = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
+            inputs_dataframes[inputs_filename] = inputs_dataframe.where(inputs_dataframe.notnull(), None)
 
-        # convert list of outputs into dataframs
-        all_axes_inputs_outputs = pd.concat(axes_all_data_list, keys=all_simulation_steps, sort=False)
-        all_axes_inputs_outputs.reset_index(0, inplace=True)
-        all_axes_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_axes_inputs_outputs = all_axes_inputs_outputs.reindex(AXES_INDEX_COLUMNS + all_axes_inputs_outputs.columns.difference(AXES_INDEX_COLUMNS).tolist(), axis=1, copy=False)
+    # Start time of the simulation
+    START_TIME = max(0, new_start_time)
 
-        all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps, sort=False)
-        all_organs_inputs_outputs.reset_index(0, inplace=True)
-        all_organs_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_organs_inputs_outputs = all_organs_inputs_outputs.reindex(ORGANS_INDEX_COLUMNS + all_organs_inputs_outputs.columns.difference(ORGANS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
+    # Name of the CSV files which contains the meteo data
+    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t')
 
-        all_hiddenzones_inputs_outputs = pd.concat(hiddenzones_all_data_list, keys=all_simulation_steps, sort=False)
-        all_hiddenzones_inputs_outputs.reset_index(0, inplace=True)
-        all_hiddenzones_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_hiddenzones_inputs_outputs = all_hiddenzones_inputs_outputs.reindex(HIDDENZONES_INDEX_COLUMNS + all_hiddenzones_inputs_outputs.columns.difference(HIDDENZONES_INDEX_COLUMNS).tolist(),
-                                                                                axis=1,
-                                                                                copy=False)
+    # -- OUTPUTS CONFIGURATION --
 
-        all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps, sort=False)
-        all_elements_inputs_outputs.reset_index(0, inplace=True)
-        all_elements_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_elements_inputs_outputs = all_elements_inputs_outputs.reindex(ELEMENTS_INDEX_COLUMNS + all_elements_inputs_outputs.columns.difference(ELEMENTS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
+    # create empty dataframes to shared data between the models
+    shared_axes_inputs_outputs_df = pd.DataFrame()
+    shared_organs_inputs_outputs_df = pd.DataFrame()
+    shared_hiddenzones_inputs_outputs_df = pd.DataFrame()
+    shared_elements_inputs_outputs_df = pd.DataFrame()
+    shared_soils_inputs_outputs_df = pd.DataFrame()
 
-        all_soils_inputs_outputs = pd.concat(soils_all_data_list, keys=all_simulation_steps, sort=False)
-        all_soils_inputs_outputs.reset_index(0, inplace=True)
-        all_soils_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_soils_inputs_outputs = all_soils_inputs_outputs.reindex(SOILS_INDEX_COLUMNS + all_soils_inputs_outputs.columns.difference(SOILS_INDEX_COLUMNS).tolist(), axis=1, copy=False)
+    # define lists of dataframes to store the inputs and the outputs of the models at each step.
+    axes_all_data_list = []
+    organs_all_data_list = []  # organs which belong to axes: roots, phloem, grains
+    hiddenzones_all_data_list = []
+    elements_all_data_list = []
+    soils_all_data_list = []
 
-        # write all inputs and outputs to CSV files
-        if run_from_outputs:
-            all_axes_inputs_outputs = pd.concat([axes_previous_outputs, all_axes_inputs_outputs], sort=False)
-            all_organs_inputs_outputs = pd.concat([organs_previous_outputs, all_organs_inputs_outputs], sort=False)
-            all_hiddenzones_inputs_outputs = pd.concat([hiddenzones_previous_outputs, all_hiddenzones_inputs_outputs], sort=False)
-            all_elements_inputs_outputs = pd.concat([elements_previous_outputs, all_elements_inputs_outputs], sort=False)
-            all_soils_inputs_outputs = pd.concat([soils_previous_outputs, all_soils_inputs_outputs], sort=False)
+    all_simulation_steps = []  # to store the steps of the simulation
 
-        save_df_to_csv(all_axes_inputs_outputs, AXES_STATES_FILEPATH)
-        save_df_to_csv(all_organs_inputs_outputs, ORGANS_STATES_FILEPATH)
-        save_df_to_csv(all_hiddenzones_inputs_outputs, HIDDENZONES_STATES_FILEPATH)
-        save_df_to_csv(all_elements_inputs_outputs, ELEMENTS_STATES_FILEPATH)
-        save_df_to_csv(all_soils_inputs_outputs, SOILS_STATES_FILEPATH)
+    # -- POSTPROCESSING CONFIGURATION --
+
+    # Name of the CSV files which will contain the postprocessing of the model
+    AXES_POSTPROCESSING_FILENAME = 'axes_postprocessing.csv'
+    ORGANS_POSTPROCESSING_FILENAME = 'organs_postprocessing.csv'
+    HIDDENZONES_POSTPROCESSING_FILENAME = 'hiddenzones_postprocessing.csv'
+    ELEMENTS_POSTPROCESSING_FILENAME = 'elements_postprocessing.csv'
+    SOILS_POSTPROCESSING_FILENAME = 'soils_postprocessing.csv'
+
+    # -- ADEL and MTG CONFIGURATION --
+
+    # read adelwheat inputs at t0
+    adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
+    g = adel_wheat.load(dir=INPUTS_DIRPATH)
+
+    # ---------------------------------------------
+    # ----- CONFIGURATION OF THE FACADES -------
+    # ---------------------------------------------
+
+    # -- ELONGWHEAT (created first because it is the only facade to add new metamers) --
+    # Initial states
+    elongwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
+        elongwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.HIDDENZONE_INPUTS if i in
+                                                                   inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+    elongwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        elongwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.ELEMENT_INPUTS if i in
+                                                                inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+    elongwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+        elongwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.AXIS_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    # Update parameters if specified
+    if update_parameters_all_models and 'elongwheat' in update_parameters_all_models:
+        update_parameters_elongwheat = update_parameters_all_models['elongwheat']
+    else:
+        update_parameters_elongwheat = None
+
+    # Facade initialisation
+    elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
+                                                            ELONGWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                            elongwheat_axes_initial_state,
+                                                            elongwheat_hiddenzones_initial_state,
+                                                            elongwheat_elements_initial_state,
+                                                            shared_axes_inputs_outputs_df,
+                                                            shared_hiddenzones_inputs_outputs_df,
+                                                            shared_elements_inputs_outputs_df,
+                                                            adel_wheat,
+                                                            update_parameters_elongwheat)
+
+    # -- CARIBU --
+    caribu_facade_ = caribu_facade.CaribuFacade(g,
+                                                shared_elements_inputs_outputs_df,
+                                                adel_wheat)
+
+    # -- SENESCWHEAT --
+    # Initial states    
+    senescwheat_roots_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
+        senescwheat_facade.converter.ROOTS_TOPOLOGY_COLUMNS +
+        [i for i in senescwheat_facade.converter.SENESCWHEAT_ROOTS_INPUTS if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    senescwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        senescwheat_facade.converter.ELEMENTS_TOPOLOGY_COLUMNS +
+        [i for i in senescwheat_facade.converter.SENESCWHEAT_ELEMENTS_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    senescwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+        senescwheat_facade.converter.AXES_TOPOLOGY_COLUMNS +
+        [i for i in senescwheat_facade.converter.SENESCWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    # Update parameters if specified
+    if update_parameters_all_models and 'senescwheat' in update_parameters_all_models:
+        update_parameters_senescwheat = update_parameters_all_models['senescwheat']
+    else:
+        update_parameters_senescwheat = None
+
+    # Facade initialisation
+    senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
+                                                               SENESCWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                               senescwheat_roots_initial_state,
+                                                               senescwheat_axes_initial_state,
+                                                               senescwheat_elements_initial_state,
+                                                               shared_organs_inputs_outputs_df,
+                                                               shared_axes_inputs_outputs_df,
+                                                               shared_elements_inputs_outputs_df,
+                                                               update_parameters_senescwheat)
+
+    # -- FARQUHARWHEAT --
+    # Initial states    
+    farquharwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        farquharwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS +
+        [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_ELEMENTS_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    farquharwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+        farquharwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
+        [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    # Facade initialisation
+    farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
+                                                                     farquharwheat_elements_initial_state,
+                                                                     farquharwheat_axes_initial_state,
+                                                                     shared_elements_inputs_outputs_df)
+
+    # -- GROWTHWHEAT --
+    # Initial states    
+    growthwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
+        growthwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS +
+        [i for i in growthwheat_facade.simulation.HIDDENZONE_INPUTS if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    growthwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        growthwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS +
+        [i for i in growthwheat_facade.simulation.ELEMENT_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    growthwheat_root_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
+        growthwheat_facade.converter.ROOT_TOPOLOGY_COLUMNS +
+        [i for i in growthwheat_facade.simulation.ROOT_INPUTS if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    growthwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+        growthwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
+        [i for i in growthwheat_facade.simulation.AXIS_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    # Update parameters if specified
+    if update_parameters_all_models and 'growthwheat' in update_parameters_all_models:
+        update_parameters_growthwheat = update_parameters_all_models['growthwheat']
+    else:
+        update_parameters_growthwheat = None
+
+    # Facade initialisation
+    growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
+                                                               GROWTHWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                               growthwheat_hiddenzones_initial_state,
+                                                               growthwheat_elements_initial_state,
+                                                               growthwheat_root_initial_state,
+                                                               growthwheat_axes_initial_state,
+                                                               shared_organs_inputs_outputs_df,
+                                                               shared_hiddenzones_inputs_outputs_df,
+                                                               shared_elements_inputs_outputs_df,
+                                                               shared_axes_inputs_outputs_df,
+                                                               update_parameters_growthwheat)
+
+    # -- CNWHEAT --
+    # Initial states    
+    cnwheat_organs_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME][
+        [i for i in cnwheat_facade.cnwheat_converter.ORGANS_VARIABLES if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    cnwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
+        [i for i in cnwheat_facade.cnwheat_converter.HIDDENZONE_VARIABLES if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    cnwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        [i for i in cnwheat_facade.cnwheat_converter.ELEMENTS_VARIABLES if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    cnwheat_soils_initial_state = inputs_dataframes[SOILS_INITIAL_STATE_FILENAME][
+        [i for i in cnwheat_facade.cnwheat_converter.SOILS_VARIABLES if i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    # Update parameters if specified
+    if update_parameters_all_models and 'cnwheat' in update_parameters_all_models:
+        update_parameters_cnwheat = update_parameters_all_models['cnwheat']
+    else:
+        update_parameters_cnwheat = {}
+
+    # Facade initialisation
+    cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
+                                                   CNWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                   PLANT_DENSITY,
+                                                   update_parameters_cnwheat,
+                                                   cnwheat_organs_initial_state,
+                                                   cnwheat_hiddenzones_initial_state,
+                                                   cnwheat_elements_initial_state,
+                                                   cnwheat_soils_initial_state,
+                                                   shared_axes_inputs_outputs_df,
+                                                   shared_organs_inputs_outputs_df,
+                                                   shared_hiddenzones_inputs_outputs_df,
+                                                   shared_elements_inputs_outputs_df,
+                                                   shared_soils_inputs_outputs_df)
+
+    # Run cnwheat with constant nitrates concentration in the soil if specified
+    if N_fertilizations is not None and 'constant_Conc_Nitrates' in N_fertilizations.keys():
+        cnwheat_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True  # TODO: make (1, 'MS') more general
+        cnwheat_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * cnwheat_facade_.soils[(1, 'MS')].volume
+
+    # Update geometry
+    adel_wheat.update_geometry(g)
+    if show_3Dplant:
+        adel_wheat.plot(g)
+
+    # ---------------------------------------------
+    # -----      RUN OF THE SIMULATION      -------
+    # ---------------------------------------------
+
+    if run_simu:
+
+        try:
+            for t_caribu in range(START_TIME, SIMULATION_LENGTH, CARIBU_TIMESTEP):
+                # run Caribu
+                PARi = meteo.loc[t_caribu, ['PARi_MA4']].iloc[0]
+                DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
+                hour = meteo.loc[t_caribu, ['hour']].iloc[0]
+                caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
+
+                for t_senescwheat in range(t_caribu, t_caribu + CARIBU_TIMESTEP, SENESCWHEAT_TIMESTEP):
+                    # run SenescWheat
+                    senescwheat_facade_.run()
+
+                    # Test for dead plant # TODO: adapt in case of multiple plants
+                    if np.nansum(shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0:
+                        # append the inputs and outputs at current step to global lists
+                        all_simulation_steps.append(t_senescwheat)
+                        axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
+                        organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
+                        hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
+                        elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                        soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+                        break
+
+                    # Run the rest of the model if the plant is alive
+                    for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):
+                        # get the meteo of the current step
+                        Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature_MA2', 'ambient_CO2_MA2', 'humidity_MA2', 'Wind_MA2']]
+
+                        # run FarquharWheat
+                        farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
+
+                        for t_elongwheat in range(t_farquharwheat, t_farquharwheat + FARQUHARWHEAT_TIMESTEP, ELONGWHEAT_TIMESTEP):
+                            # run ElongWheat
+                            Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
+                            elongwheat_facade_.run(Tair, Tsoil, option_static=option_static)
+
+                            # Update geometry
+                            adel_wheat.update_geometry(g)
+                            if show_3Dplant:
+                                adel_wheat.plot(g)
+
+                            for t_growthwheat in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP, GROWTHWHEAT_TIMESTEP):
+                                # run GrowthWheat
+                                growthwheat_facade_.run()
+
+                                for t_cnwheat in range(t_growthwheat, t_growthwheat + GROWTHWHEAT_TIMESTEP, CNWHEAT_TIMESTEP):
+                                    print('t cnwheat is {}'.format(t_cnwheat))
+                                    if t_cnwheat > 0:
+
+                                        # N fertilization if any
+                                        if N_fertilizations is not None and len(N_fertilizations) > 0:
+                                            if t_cnwheat in N_fertilizations.keys():
+                                                cnwheat_facade_.soils[(1, 'MS')].nitrates += N_fertilizations[t_cnwheat]
+
+                                        # run CNWheat
+                                        Tair = meteo.loc[t_elongwheat, 'air_temperature']
+                                        Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
+                                        cnwheat_facade_.run(Tair, Tsoil, tillers_replications)
+
+                                    # append outputs at current step to global lists
+                                    all_simulation_steps.append(t_cnwheat)
+                                    axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
+                                    organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
+                                    hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
+                                    elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                                    soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+
+                else:
+                    # Continue if SenescWheat loop wasn't broken because of dead plant.
+                    continue
+                # SenescWheat loop was broken, break the Caribu loop.
+                break
+
+        finally:
+            # convert list of outputs into dataframs
+            outputs_df_dict = {}
+            for outputs_df_list, outputs_filename, index_columns in ((axes_all_data_list, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
+                                                      (organs_all_data_list, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
+                                                      (hiddenzones_all_data_list, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
+                                                      (elements_all_data_list, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
+                                                      (soils_all_data_list, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
+                outputs_filepath = os.path.join(OUTPUTS_DIRPATH, outputs_filename)
+                outputs_df = pd.concat(outputs_df_list, keys=all_simulation_steps, sort=False)
+                outputs_df.reset_index(0, inplace=True)
+                outputs_df.rename({'level_0': 't'}, axis=1, inplace=True)
+                outputs_df = outputs_df.reindex(index_columns + outputs_df.columns.difference(index_columns).tolist(), axis=1, copy=False)
+                if run_from_outputs:
+                    outputs_df = pd.concat([previous_outputs_dataframes[outputs_filename], outputs_df], sort=False)
+                save_df_to_csv(outputs_df, outputs_filepath, OUTPUTS_PRECISION)
+                outputs_file_basename = outputs_filename.split('.')[0]
+                outputs_df_dict[outputs_file_basename] = outputs_df
+
+    # ---------------------------------------------
+    # -----      POST-PROCESSING      -------
+    # ---------------------------------------------
 
     if run_postprocessing:
-        states_df_dict = {}
-        for states_filepath in (AXES_STATES_FILEPATH,
-                                ORGANS_STATES_FILEPATH,
-                                HIDDENZONES_STATES_FILEPATH,
-                                ELEMENTS_STATES_FILEPATH,
-                                SOILS_STATES_FILEPATH):
-            # assert states_filepaths were not opened during simulation run meaning that other filenames were saved
-            path, filename = os.path.split(states_filepath)
-            filename = os.path.splitext(filename)[0]
-            newfilename = 'ACTUAL_{}.csv'.format(filename)
-            newpath = os.path.join(path, newfilename)
-            assert not os.path.isfile(newpath), \
-                "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(newfilename, states_filepath)
+        # Retrieve outputs dataframes from precedent simulation run
+        if not run_simu:
+            outputs_df_dict = {}
 
-            # Retrieve outputs dataframes from precedent simulation run
-            states_df = pd.read_csv(states_filepath)
-            states_file_basename = os.path.basename(states_filepath).split('.')[0]
-            states_df_dict[states_file_basename] = states_df
-        time_grid = states_df_dict.values()[0].t
-        delta_t = (time_grid.unique()[1] - time_grid.unique()[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
+            for outputs_filename in (AXES_OUTPUTS_FILENAME,
+                                     ORGANS_OUTPUTS_FILENAME,
+                                     HIDDENZONES_OUTPUTS_FILENAME,
+                                     ELEMENTS_OUTPUTS_FILENAME,
+                                     SOILS_OUTPUTS_FILENAME):
+                outputs_filepath = os.path.join(OUTPUTS_DIRPATH, outputs_filename)
+                outputs_df = pd.read_csv(outputs_filepath)
+                outputs_file_basename = outputs_filename.split('.')[0]
+                outputs_df_dict[outputs_file_basename] = outputs_df
+
+                # Assert states_filepaths were not opened during simulation run meaning that other filenames were saved
+                tmp_filename = 'ACTUAL_{}.csv'.format(outputs_file_basename)
+                tmp_path = os.path.join(OUTPUTS_DIRPATH, tmp_filename)
+                assert not os.path.isfile(tmp_path), \
+                    "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(tmp_filename, outputs_file_basename)
+
+            time_grid = outputs_df_dict.values()[0].t
+            delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
+
+        else:
+            delta_t = CNWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR
 
         # run the postprocessing
-        axes_postprocessing_file_basename = os.path.basename(AXES_POSTPROCESSING_FILEPATH).split('.')[0]
-        hiddenzones_postprocessing_file_basename = os.path.basename(HIDDENZONES_POSTPROCESSING_FILEPATH).split('.')[0]
-        organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
-        elements_postprocessing_file_basename = os.path.basename(ELEMENTS_POSTPROCESSING_FILEPATH).split('.')[0]
-        soils_postprocessing_file_basename = os.path.basename(SOILS_POSTPROCESSING_FILEPATH).split('.')[0]
+        axes_postprocessing_file_basename = AXES_POSTPROCESSING_FILENAME.split('.')[0]
+        hiddenzones_postprocessing_file_basename = HIDDENZONES_POSTPROCESSING_FILENAME.split('.')[0]
+        organs_postprocessing_file_basename = ORGANS_POSTPROCESSING_FILENAME.split('.')[0]
+        elements_postprocessing_file_basename = ELEMENTS_POSTPROCESSING_FILENAME.split('.')[0]
+        soils_postprocessing_file_basename = SOILS_POSTPROCESSING_FILENAME.split('.')[0]
+
         postprocessing_df_dict = {}
         (postprocessing_df_dict[axes_postprocessing_file_basename],
          postprocessing_df_dict[hiddenzones_postprocessing_file_basename],
          postprocessing_df_dict[organs_postprocessing_file_basename],
          postprocessing_df_dict[elements_postprocessing_file_basename],
          postprocessing_df_dict[soils_postprocessing_file_basename]) \
-            = cnwheat_facade.CNWheatFacade.postprocessing(axes_outputs_df=states_df_dict[os.path.basename(AXES_STATES_FILEPATH).split('.')[0]],
-                                                          hiddenzone_outputs_df=states_df_dict[os.path.basename(HIDDENZONES_STATES_FILEPATH).split('.')[0]],
-                                                          organs_outputs_df=states_df_dict[os.path.basename(ORGANS_STATES_FILEPATH).split('.')[0]],
-                                                          elements_outputs_df=states_df_dict[os.path.basename(ELEMENTS_STATES_FILEPATH).split('.')[0]],
-                                                          soils_outputs_df=states_df_dict[os.path.basename(SOILS_STATES_FILEPATH).split('.')[0]],
+            = cnwheat_facade.CNWheatFacade.postprocessing(axes_outputs_df=outputs_df_dict[AXES_OUTPUTS_FILENAME.split('.')[0]],
+                                                          hiddenzone_outputs_df=outputs_df_dict[HIDDENZONES_OUTPUTS_FILENAME.split('.')[0]],
+                                                          organs_outputs_df=outputs_df_dict[ORGANS_OUTPUTS_FILENAME.split('.')[0]],
+                                                          elements_outputs_df=outputs_df_dict[ELEMENTS_OUTPUTS_FILENAME.split('.')[0]],
+                                                          soils_outputs_df=outputs_df_dict[SOILS_OUTPUTS_FILENAME.split('.')[0]],
                                                           delta_t=delta_t)
 
-        # save the postprocessing to disk
-        for postprocessing_file_basename, postprocessing_filepath in ((axes_postprocessing_file_basename, AXES_POSTPROCESSING_FILEPATH),
-                                                                      (hiddenzones_postprocessing_file_basename, HIDDENZONES_POSTPROCESSING_FILEPATH),
-                                                                      (organs_postprocessing_file_basename, ORGANS_POSTPROCESSING_FILEPATH),
-                                                                      (elements_postprocessing_file_basename, ELEMENTS_POSTPROCESSING_FILEPATH),
-                                                                      (soils_postprocessing_file_basename, SOILS_POSTPROCESSING_FILEPATH)):
-            postprocessing_df_dict[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION + 5))
+        for postprocessing_file_basename, postprocessing_filename in ((axes_postprocessing_file_basename, AXES_POSTPROCESSING_FILENAME),
+                                                                      (hiddenzones_postprocessing_file_basename, HIDDENZONES_POSTPROCESSING_FILENAME),
+                                                                      (organs_postprocessing_file_basename, ORGANS_POSTPROCESSING_FILENAME),
+                                                                      (elements_postprocessing_file_basename, ELEMENTS_POSTPROCESSING_FILENAME),
+                                                                      (soils_postprocessing_file_basename, SOILS_POSTPROCESSING_FILENAME)):
+            postprocessing_filepath = os.path.join(POSTPROCESSING_DIRPATH, postprocessing_filename)
+            postprocessing_df_dict[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+
+    # ---------------------------------------------
+    # -----            GRAPHS               -------
+    # ---------------------------------------------
 
     if generate_graphs:
-        plt.ioff()
-        # Retrieve last computed post-processing dataframes
-        df_SAM = pd.read_csv(AXES_STATES_FILEPATH)
-        axes_postprocessing_file_basename = os.path.basename(AXES_POSTPROCESSING_FILEPATH).split('.')[0]
-        organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
-        hiddenzones_postprocessing_file_basename = os.path.basename(HIDDENZONES_POSTPROCESSING_FILEPATH).split('.')[0]
-        elements_postprocessing_file_basename = os.path.basename(ELEMENTS_POSTPROCESSING_FILEPATH).split('.')[0]
-        soils_postprocessing_file_basename = os.path.basename(SOILS_POSTPROCESSING_FILEPATH).split('.')[0]
-        postprocessing_df_dict = {}
-        for (postprocessing_filepath, postprocessing_file_basename) in ((AXES_POSTPROCESSING_FILEPATH, axes_postprocessing_file_basename),
-                                                                        (ORGANS_POSTPROCESSING_FILEPATH, organs_postprocessing_file_basename),
-                                                                        (HIDDENZONES_POSTPROCESSING_FILEPATH, hiddenzones_postprocessing_file_basename),
-                                                                        (ELEMENTS_POSTPROCESSING_FILEPATH, elements_postprocessing_file_basename),
-                                                                        (SOILS_POSTPROCESSING_FILEPATH, soils_postprocessing_file_basename)):
-            postprocessing_df = pd.read_csv(postprocessing_filepath)
-            postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
+        if not run_postprocessing:
+            postprocessing_df_dict = {}
 
-        # Generate graphs from postprocessing files
-        df_hz = postprocessing_df_dict[hiddenzones_postprocessing_file_basename]
+            for postprocessing_filename in (AXES_POSTPROCESSING_FILENAME,
+                                            ORGANS_POSTPROCESSING_FILENAME,
+                                            HIDDENZONES_POSTPROCESSING_FILENAME,
+                                            ELEMENTS_POSTPROCESSING_FILENAME,
+                                            SOILS_POSTPROCESSING_FILENAME):
+                postprocessing_filepath = os.path.join(POSTPROCESSING_DIRPATH, postprocessing_filename)
+                postprocessing_df = pd.read_csv(postprocessing_filepath)
+                postprocessing_file_basename = postprocessing_filename.split('.')[0]
+                postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
+
+        # Retrieve last computed post-processing dataframes
+        axes_postprocessing_file_basename = AXES_POSTPROCESSING_FILENAME.split('.')[0]
+        organs_postprocessing_file_basename = ORGANS_POSTPROCESSING_FILENAME.split('.')[0]
+        hiddenzones_postprocessing_file_basename = HIDDENZONES_POSTPROCESSING_FILENAME.split('.')[0]
+        elements_postprocessing_file_basename = ELEMENTS_POSTPROCESSING_FILENAME.split('.')[0]
+        soils_postprocessing_file_basename = SOILS_POSTPROCESSING_FILENAME.split('.')[0]
+
+        # --- Generate graphs from postprocessing files
+        plt.ioff()
         df_elt = postprocessing_df_dict[elements_postprocessing_file_basename]
+        df_SAM = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, AXES_OUTPUTS_FILENAME))
+
         cnwheat_facade.CNWheatFacade.graphs(axes_postprocessing_df=postprocessing_df_dict[axes_postprocessing_file_basename],
-                                            hiddenzones_postprocessing_df=df_hz[df_hz['axis'] == 'MS'],  # postprocessing_df_dict[hiddenzones_postprocessing_file_basename],
+                                            hiddenzones_postprocessing_df=postprocessing_df_dict[hiddenzones_postprocessing_file_basename],
                                             organs_postprocessing_df=postprocessing_df_dict[organs_postprocessing_file_basename],
-                                            elements_postprocessing_df=df_elt[df_elt['axis'] == 'MS'],  # postprocessing_df_dict[elements_postprocessing_file_basename],
+                                            elements_postprocessing_df=postprocessing_df_dict[elements_postprocessing_file_basename],
                                             soils_postprocessing_df=postprocessing_df_dict[soils_postprocessing_file_basename],
                                             graphs_dirpath=GRAPHS_DIRPATH)
 
-        # Additional graphs
+        # --- Additional graphs
         from cnwheat import tools as cnwheat_tools
         colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey', 'lime']
         colors = colors + colors
@@ -630,7 +634,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         # 1) Comparison Dimensions with Ljutovac 2002
         data_obs = pd.read_csv(r'inputs\Ljutovac2002.csv')
         bchmk = data_obs
-        res = pd.read_csv(HIDDENZONES_STATES_FILEPATH)
+        res = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
         res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.leaf_Lmax)].copy()
         res_IN = res[~ np.isnan(res.internode_Lmax)]
         last_value_idx = res.groupby(['metamer'])['t'].transform(max) == res['t']
@@ -743,10 +747,10 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         ## Simulated RER
 
         # import simulation outputs
-        data_RER = pd.read_csv(HIDDENZONES_STATES_FILEPATH)
+        data_RER = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
         data_RER = data_RER[(data_RER.axis == 'MS') & (data_RER.metamer >= 4)].copy()
         data_RER.sort_values(['t', 'metamer'], inplace=True)
-        data_teq = pd.read_csv(AXES_STATES_FILEPATH)
+        data_teq = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, AXES_OUTPUTS_FILENAME))
         data_teq = data_teq[data_teq.axis == 'MS'].copy()
 
         ## Time previous leaf emergence
@@ -951,7 +955,7 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SumTT.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
         # 7) Residual N : ratio_N_mstruct_max
-        df_elt_outputs = pd.read_csv(ELEMENTS_STATES_FILEPATH)
+        df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.axis == 'MS']
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.mstruct != 0]
         df_elt_outputs['N_content_total'] = df_elt_outputs['N_content_total'] * 100
@@ -972,8 +976,8 @@ def main(stop_time, forced_start_time=0, run_simu=True, run_postprocessing=True,
                                                   explicit_label=False)
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=True,
-         show_3Dplant = False,
+    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+         show_3Dplant = True,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
          PLANT_DENSITY={1:250}, update_parameters_all_models=None,
