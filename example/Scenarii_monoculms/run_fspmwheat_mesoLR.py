@@ -13,7 +13,7 @@ import tools
 def run_fspmwheat(scenario_id, scenarii_file, simulation_length, outputs_dir_path):
 
     # Path of the directory which contains the inputs of the model
-    INPUTS_DIRPATH = r'fspmwheat\example\Scenarii_monoculms\inputs'
+    INPUTS_DIRPATH = r'fspmwheat/example/Scenarii_monoculms/inputs'
 
     # Scenario to be run
     if scenariifile:  # Scenarii csv file provided by user

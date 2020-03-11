@@ -134,12 +134,12 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
         previous_outputs_dataframes = {}
         for initial_state_filename, outputs_filename, index_columns in ((AXES_INITIAL_STATE_FILENAME, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
-                                                      (ORGANS_INITIAL_STATE_FILENAME, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
-                                                      (HIDDENZONES_INITIAL_STATE_FILENAME, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
-                                                      (ELEMENTS_INITIAL_STATE_FILENAME, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
-                                                      (SOILS_INITIAL_STATE_FILENAME, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
+                                                                        (ORGANS_INITIAL_STATE_FILENAME, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
+                                                                        (HIDDENZONES_INITIAL_STATE_FILENAME, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
+                                                                        (ELEMENTS_INITIAL_STATE_FILENAME, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
+                                                                        (SOILS_INITIAL_STATE_FILENAME, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
 
-            previous_outputs_dataframe = pd.read_csv(os.path.join(OUTPUTS_DIRPATH,outputs_filename))
+            previous_outputs_dataframe = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, outputs_filename))
             # Convert NaN to None
             previous_outputs_dataframes[outputs_filename] = previous_outputs_dataframe.where(previous_outputs_dataframe.notnull(), None)
 
@@ -153,7 +153,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
             if initial_state_filename == ELEMENTS_INITIAL_STATE_FILENAME:
                 elements_previous_outputs = previous_outputs_dataframes[outputs_filename]
-                new_initial_state = elements_previous_outputs[~elements_previous_outputs.is_over.isna()] #TODO : verifier ce que ça donne avec des None
+                new_initial_state = elements_previous_outputs[~elements_previous_outputs.is_over.isna()]  # TODO : verifier ce que ça donne avec des None
             else:
                 new_initial_state = previous_outputs_dataframes[outputs_filename]
             idx = new_initial_state.groupby([col for col in index_columns if col != 't'])['t'].transform(max) == new_initial_state['t']
@@ -480,10 +480,10 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
             # convert list of outputs into dataframs
             outputs_df_dict = {}
             for outputs_df_list, outputs_filename, index_columns in ((axes_all_data_list, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
-                                                      (organs_all_data_list, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
-                                                      (hiddenzones_all_data_list, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
-                                                      (elements_all_data_list, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
-                                                      (soils_all_data_list, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
+                                                                     (organs_all_data_list, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
+                                                                     (hiddenzones_all_data_list, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
+                                                                     (elements_all_data_list, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
+                                                                     (soils_all_data_list, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
                 outputs_filepath = os.path.join(OUTPUTS_DIRPATH, outputs_filename)
                 outputs_df = pd.concat(outputs_df_list, keys=all_simulation_steps, sort=False)
                 outputs_df.reset_index(0, inplace=True)
