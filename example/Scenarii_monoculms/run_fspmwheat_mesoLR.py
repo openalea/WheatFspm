@@ -63,7 +63,7 @@ def run_fspmwheat(scenario_id, scenarii_file, simulation_length, outputs_dir_pat
     # Run main fspmwheat
     try:
         main.main(simulation_length, forced_start_time=0, run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS,
-                  run_from_outputs=False, option_static=False,
+                  run_from_outputs=False, option_static=False, show_3Dplant=False,
                   tillers_replications=None, heterogeneous_canopy=True,
                   N_fertilizations={'constant_Conc_Nitrates': scenario.get('constant_Conc_Nitrates')},
                   PLANT_DENSITY={1: scenario.get('Plant_Density', 250.)},
