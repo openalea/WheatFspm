@@ -40,10 +40,10 @@ def graph_RER(scenario):
     ## ------ Simulated RER
 
     # import simulation outputs
-    data_RER = pd.read_csv(os.path.join(scenario_name, 'outputs', 'hiddenzones_states.csv'))
+    data_RER = pd.read_csv(os.path.join(scenario_name, 'outputs', 'hiddenzones_outputs.csv'))
     data_RER = data_RER[(data_RER.axis == 'MS') & (data_RER.metamer >= 4)].copy()
     data_RER.sort_values(['t','metamer'], inplace=True)
-    data_teq = pd.read_csv(os.path.join(scenario_name, 'outputs', 'axes_states.csv'))
+    data_teq = pd.read_csv(os.path.join(scenario_name, 'outputs', 'axes_outputs.csv'))
     data_teq = data_teq[data_teq.axis == 'MS'].copy()
 
     ## Time previous leaf emergence
@@ -230,7 +230,7 @@ def graph_Uptake_N(scenario):
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
 
     # --- Import simulations outsptus
-    df_org = pd.read_csv(os.path.join(scenario_name, 'outputs', 'organs_states.csv'))
+    df_org = pd.read_csv(os.path.join(scenario_name, 'outputs', 'organs_outputs.csv'))
     df_roots = df_org[df_org['organ'] == 'roots'].copy()
     df_roots = df_roots.reset_index(drop=True)
 
@@ -250,7 +250,7 @@ def graph_phi_s_Devienne1994a(scenario):
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
 
     # --- Import simulations outsptus
-    df_org = pd.read_csv(os.path.join(scenario_name, 'outputs', 'organs_states.csv'))
+    df_org = pd.read_csv(os.path.join(scenario_name, 'outputs', 'organs_outputs.csv'))
     df_roots = df_org[df_org['organ'] == 'roots'].copy()
     df_roots = df_roots.reset_index(drop=True)
 
@@ -261,6 +261,24 @@ def graph_phi_s_Devienne1994a(scenario):
     ax.set_xlabel('Time (h)')
     ax.set_ylabel(u'NO3- root reduction + NO3- export xylem (µmol N g$^{-1}$ mstruct s$^{-1}$)')
     plt.savefig(os.path.join(scenario_graphs_dirpath, 'phi_s.PNG'), format='PNG', bbox_inches='tight')
+    plt.close()
+
+def graph_N_dilution(scenario):
+    """N shoot in function of above-ground biomass"""
+
+    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+
+    # --- Import simulations postprocessing
+    df_axe = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'axes_postprocessing.csv'))
+
+    fig, ax = plt.subplots()
+    ax.plot( df_axe.sum_dry_mass_shoot, df_axe.N_content_shoot)
+    ax.set_xlabel(u'Shoot biomass (g)')
+    ax.set_ylabel(u'N shoot (% DM)')
+    ax.set_ylim(bottom=0)
+    ax.set_xlim(left=0)
+    plt.savefig(os.path.join(scenario_graphs_dirpath, 'N_dilution.PNG'), format='PNG', bbox_inches='tight')
     plt.close()
 
 def graph_summary(scenario, graph_list=None):
@@ -312,6 +330,7 @@ if __name__ == '__main__':
         # graph_phi_s_Devienne1994a(int(scenario))
         # graph_Uptake_N(int(scenario))
         # graph_Conc_Nitrates(int(scenario))
+        graph_N_dilution(int(scenario))
         graph_RER(int(scenario))
         graph_C_usages(int(scenario))
         graph_summary(int(scenario), graph_list=['LAI','sum_dry_mass_axis','shoot_roots_ratio_axis','N_content_shoot_axis','Conc_Amino_acids_phloem','Conc_Sucrose_phloem', 'leaf_Lmax',

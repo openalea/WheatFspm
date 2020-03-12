@@ -493,7 +493,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                     outputs_df = pd.concat([previous_outputs_dataframes[outputs_filename], outputs_df], sort=False)
                 save_df_to_csv(outputs_df, outputs_filepath, OUTPUTS_PRECISION)
                 outputs_file_basename = outputs_filename.split('.')[0]
-                outputs_df_dict[outputs_file_basename] = outputs_df
+                outputs_df_dict[outputs_file_basename] = outputs_df.where(outputs_df.notnull(), pd.np.nan ).reset_index()
 
     # ---------------------------------------------
     # -----      POST-PROCESSING      -------
@@ -898,7 +898,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
                                C_usages.C_produced
 
-        # ----- Graph
+        #  Graph
         fig, ax = plt.subplots()
         ax.plot(C_usages.t, C_usages.Structure_shoot / C_usages.C_produced * 100,
                 label=u'Structural mass - Shoot', color='g')
@@ -917,3 +917,15 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_usages_cumulated.PNG'), format='PNG', bbox_inches='tight')
         plt.close()
+
+        # 7) N shoot in function of above-ground biomass
+        fig, ax = plt.subplots()
+        ax.plot( df_axe.sum_dry_mass_shoot, df_axe.N_content_shoot)
+        ax.set_xlabel(u'Shoot biomass (g)')
+        ax.set_ylabel(u'N shoot (% DM)')
+        ax.set_ylim(bottom=0)
+        ax.set_xlim(left=0)
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'N_dilution.PNG'), format='PNG', bbox_inches='tight')
+        plt.close()
+
+

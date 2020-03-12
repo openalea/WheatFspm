@@ -92,7 +92,7 @@ def table_C_usages(scenario):
 def calculate_performance_indices(scenario):
 
     """
-    Average RUE (g DM. MJ-1 PAR) and photosynthetic yield for the whole cycle.
+    Average RUE and photosynthetic yield for the whole cycle.
 
     :param int scenarii: Scenario number
     """
@@ -103,7 +103,10 @@ def calculate_performance_indices(scenario):
     df_elt = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'elements_postprocessing.csv'))
     df_axe = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'axes_postprocessing.csv'))
 
-    # --- RUE
+    # --- Import meteo file for incident PAR
+    df_meteo = pd.read_csv(os.path.join('inputs', scenarii_df.at[scenario,'METEO_FILENAME'] ))
+
+    # --- RUE (g DM. MJ-1 PARa)
     df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'].fillna(1.) * 3600 / 4.6 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
     df_elt['RGa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'].fillna(1.) * 3600 / 2.02 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
     PARa = df_elt.groupby(['t'])['PARa_MJ'].agg('sum')
@@ -111,6 +114,35 @@ def calculate_performance_indices(scenario):
 
     RUE_shoot = np.polyfit(PARa_cum, df_axe.sum_dry_mass_shoot, 1)[0]
     RUE_plant = np.polyfit(PARa_cum, df_axe.sum_dry_mass, 1)[0]
+
+    # --- RUE (g DM. MJ-1 RGint estimated from LAI using Beer-Lambert's law with extinction coefficient of 0.4)
+    plant_density = 250
+    if 'Plant_Density' in scenarii_df.columns:
+        plant_density = scenarii_df.at[scenario,'Plant_Density']
+
+    # Beer-Lambert
+    df_LAI = df_elt[(df_elt.element == 'LeafElement1')].groupby(['t']).agg({'green_area': 'sum'})
+    df_LAI['LAI'] = df_LAI.green_area * plant_density
+    df_LAI['t'] = df_LAI.index
+
+    toto = df_meteo[['t', 'PARi_MA4']].merge(df_LAI[['t', 'LAI']], on='t', how='inner')
+    toto['PARi_caribu'] = toto.PARi_MA4
+    ts_caribu = range(0, toto.shape[0], 4)
+    save = toto.at[0, 'PARi_MA4']
+    for i in range(0, toto.shape[0]):
+        if i in ts_caribu:
+            save = toto.at[i, 'PARi_MA4']
+        toto.at[i, 'PARi_caribu'] = save
+
+    toto['PARint_BL'] = toto.PARi_caribu * (1 - np.exp(-0.4 * toto.LAI))
+    toto['RGint_BL_MJ'] = toto['PARint_BL'] * 3600 / 2.02 * 10 ** -6
+    RGint_BL_cum = np.cumsum(toto.RGint_BL_MJ)
+
+    df_axe['sum_dry_mass_shoot_couvert'] = df_axe.sum_dry_mass_shoot * plant_density
+    df_axe['sum_dry_mass_couvert'] = df_axe.sum_dry_mass * plant_density
+
+    RUE_shoot_couvert = np.polyfit(RGint_BL_cum, df_axe.sum_dry_mass_shoot_couvert, 1)[0]
+    RUE_plant_couvert = np.polyfit(RGint_BL_cum, df_axe.sum_dry_mass_couvert, 1)[0]
 
     # ---  Photosynthetic efficiency of the plant
     df_elt['Photosynthesis_tillers'] = df_elt.Ag * df_elt.green_area * df_elt.nb_replications.fillna(1.)
@@ -137,6 +169,8 @@ def calculate_performance_indices(scenario):
     # ---  Write results into a table
     res_df = pd.DataFrame.from_dict({'RUE_plant_MJ_PAR': [RUE_plant],
                                      'RUE_shoot_MJ_PAR': [RUE_shoot],
+                                     'RUE_plant_MJ_RGint': [RUE_plant_couvert],
+                                     'RUE_shoot_MJ_RGint': [RUE_shoot_couvert],
                                      'Photosynthetic_efficiency': [avg_photo_y],
                                      'C_usages_Respi_roots': C_usages_div.loc[max(C_usages_div.index),'Respi_roots'],
                                      'C_usages_Respi_shoot': C_usages_div.loc[max(C_usages_div.index),'Respi_shoot'],

@@ -490,7 +490,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                     outputs_df = pd.concat([previous_outputs_dataframes[outputs_filename], outputs_df], sort=False)
                 save_df_to_csv(outputs_df, outputs_filepath, OUTPUTS_PRECISION)
                 outputs_file_basename = outputs_filename.split('.')[0]
-                outputs_df_dict[outputs_file_basename] = outputs_df
+                outputs_df_dict[outputs_file_basename] = outputs_df.where(outputs_df.notnull(), pd.np.nan ).reset_index()
 
     # ---------------------------------------------
     # -----      POST-PROCESSING      -------

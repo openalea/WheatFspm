@@ -1,11 +1,11 @@
-Scenario,Scenario_label,Plant_Density,constant_Conc_Nitrates,PAR,METEO_FILENAME,Comments,elongwheat:delta_TT_GA,elongwheat:max_nb_leaves,senescwheat:AGE_EFFECT_SENESCENCE,elongwheat:SL_ratio_a,elongwheat:SL_ratio_b,elongwheat:SL_ratio_c,elongwheat:SL_ratio_d,growthwheat:VMAX_ROOTS_GROWTH_PREFLO
-1,N0.02_PAR250,90,20000,250,meteo_PAR250.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-2,N0.02_PAR500,90,20000,500,meteo_PAR500.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-3,N0.02_PAR1000,90,20000,1000,meteo_PAR1000.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-4,N0.1_PAR250,90,100000,250,meteo_PAR250.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-5,N0.1_PAR500,90,100000,500,meteo_PAR500.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-6,N0.1_PAR1000,90,100000,1000,meteo_PAR1000.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-7,N0.5_PAR250,90,500000,250,meteo_PAR250.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-8,N0.5_PAR500,90,500000,500,meteo_PAR500.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-9,N0.5_PAR1000,90,500000,1000,meteo_PAR1000.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-99,Devienne1994a,90,400000,250,meteo_Devienne_1994a.csv,pas info sur densité,10000000000,50,10000,0,0,0.01763,0.25,
+Scenario,Scenario_label,Plant_Density,constant_Conc_Nitrates,PAR,METEO_FILENAME,Comments,elongwheat:delta_TT_GA,elongwheat:max_nb_leaves,senescwheat:AGE_EFFECT_SENESCENCE,elongwheat:SL_ratio_a,elongwheat:SL_ratio_b,elongwheat:SL_ratio_c,elongwheat:SL_ratio_d,growthwheat:VMAX_ROOTS_GROWTH_PREFLO,elongwheat:RERmax_dict_IN:3,elongwheat:RERmax_dict_IN:4,elongwheat:RERmax_dict_IN:5,elongwheat:RERmax_dict_IN:6,elongwheat:RERmax_dict_IN:7,elongwheat:RERmax_dict_IN:8,elongwheat:RERmax_dict_IN:9,elongwheat:RERmax_dict_IN:10,elongwheat:RERmax_dict_IN:11,elongwheat:RERmax_dict_IN:12
+1,N0.02_PAR250,90,20000,250,meteo_PAR250.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625,,,,,,,,,,
+2,N0.02_PAR500,90,20000,500,meteo_PAR500.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625,,,,,,,,,,
+3,N0.02_PAR1000,90,20000,1000,meteo_PAR1000.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625,,,,,,,,,,
+4,N0.1_PAR250,90,100000,250,meteo_PAR250.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625,,,,,,,,,,
+5,N0.1_PAR500,90,100000,500,meteo_PAR500.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625,,,,,,,,,,
+6,N0.1_PAR1000,90,100000,1000,meteo_PAR1000.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625,,,,,,,,,,
+7,N0.5_PAR250,90,500000,250,meteo_PAR250.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625,,,,,,,,,,
+8,N0.5_PAR500,90,500000,500,meteo_PAR500.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625,,,,,,,,,,
+9,N0.5_PAR1000,90,500000,1000,meteo_PAR1000.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625,,,,,,,,,,
+99,Devienne1994a,90,400000,250,meteo_Devienne_1994a.csv,pas info sur densité,10000000000,50,10000,0,0,0.01763,0.25,,2.40E-06,2.40E-06,2.40E-06,2.40E-06,2.16E-06,1.80E-06,1.91E-06,1.90E-06,1.79E-06,1.50E-06

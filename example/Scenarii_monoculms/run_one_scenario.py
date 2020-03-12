@@ -13,7 +13,6 @@ scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col
 scenarii_df['Scenario'] = scenarii_df.index
 scenarii = scenarii_df.Scenario
 
-
 def run_one_scenario(param):
     if type(param) != list:
         scenario = param
@@ -47,7 +46,7 @@ def run_one_scenario(param):
 
     # Run main fspmwheat
     try:
-        main.main(5, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+        main.main(3000, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
                   option_static=False, show_3Dplant=False,
                   tillers_replications=None, heterogeneous_canopy=True,
                   N_fertilizations={'constant_Conc_Nitrates': scenario_dict.get('constant_Conc_Nitrates')},
@@ -69,4 +68,4 @@ def run_one_scenario(param):
 
 
 if __name__ == '__main__':
-    run_one_scenario(5)
+    run_one_scenario(sys.argv)
