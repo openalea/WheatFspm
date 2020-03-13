@@ -13,19 +13,8 @@ import matplotlib.image as mpimg
 from elongwheat import parameters as elongwheat_parameters
 import tools
 
-## Import scenarii list and description
-scenarii_df = pd.read_csv( os.path.join('inputs','scenarii_list.csv'), index_col='Scenario')
-scenarii_df['Scenario'] = scenarii_df.index
-if 'Scenario_label' not in scenarii_df.keys():
-    scenarii_df['Scenario_label'] =  ''
-else:
-    scenarii_df['Scenario_label'] = scenarii_df['Scenario_label'].fillna('')
-scenarii = scenarii_df.Scenario
-
-## ------- Def functions to table
 
 def table_C_usages(scenario):
-
     scenario_name = 'Scenario_{}'.format(scenario)
     scenario_postprocessing_dirpath = os.path.join(scenario_name, 'postprocessing')
 
@@ -39,13 +28,13 @@ def table_C_usages(scenario):
     df_phloem = df_org[df_org['organ'] == 'phloem'].copy()
 
     # --- C usages relatif to Net Photosynthesis
-    AMINO_ACIDS_C_RATIO = 4.15              #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    AMINO_ACIDS_N_RATIO = 1.25              #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_C_RATIO = 4.15  #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_N_RATIO = 1.25  #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
 
     # Photosynthesis
     df_elt['Photosynthesis_tillers'] = df_elt['Photosynthesis'].fillna(0) * df_elt['nb_replications'].fillna(1.)
     Tillers_Photosynthesis_Ag = df_elt.groupby(['t'], as_index=False).agg({'Photosynthesis_tillers': 'sum'})
-    C_usages = pd.DataFrame( {'t' : Tillers_Photosynthesis_Ag['t']})
+    C_usages = pd.DataFrame({'t': Tillers_Photosynthesis_Ag['t']})
     C_usages['C_produced'] = np.cumsum(Tillers_Photosynthesis_Ag.Photosynthesis_tillers)
 
     # Respiration
@@ -56,7 +45,7 @@ def table_C_usages(scenario):
     C_usages['exudation'] = np.cumsum(df_axe.C_exudated.fillna(0))
 
     # Structural growth
-    C_consumption_mstruct_roots = df_roots.sucrose_consumption_mstruct.fillna(0) + df_roots.AA_consumption_mstruct.fillna(0)* AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
+    C_consumption_mstruct_roots = df_roots.sucrose_consumption_mstruct.fillna(0) + df_roots.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
     C_usages['Structure_roots'] = np.cumsum(C_consumption_mstruct_roots.reset_index(drop=True))
 
     df_hz['C_consumption_mstruct'] = df_hz.sucrose_consumption_mstruct.fillna(0) + df_hz.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
@@ -65,19 +54,20 @@ def table_C_usages(scenario):
     C_usages['Structure_shoot'] = np.cumsum(C_consumption_mstruct_shoot.reset_index(drop=True))
 
     # Non structural C
-    df_phloem['C_NS'] = df_phloem.sucrose.fillna(0) + df_phloem.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
+    df_phloem['C_NS'] = df_phloem.sucrose.fillna(0) + df_phloem.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
     C_NS_phloem_init = df_phloem.C_NS - df_phloem.C_NS.reset_index(drop=True)[0]
     C_usages['NS_phloem'] = C_NS_phloem_init.reset_index(drop=True)
 
-    df_elt['C_NS'] = df_elt.sucrose.fillna(0) + df_elt.fructan.fillna(0) + df_elt.starch.fillna(0) + (df_elt.amino_acids.fillna(0) + df_elt.proteins.fillna(0))* AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
+    df_elt['C_NS'] = df_elt.sucrose.fillna(0) + df_elt.fructan.fillna(0) + df_elt.starch.fillna(0) + (
+                df_elt.amino_acids.fillna(0) + df_elt.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
     df_elt['C_NS_tillers'] = df_elt['C_NS'] * df_elt['nb_replications'].fillna(1.)
     C_elt = df_elt.groupby(['t']).agg({'C_NS_tillers': 'sum'})
 
-    df_hz['C_NS'] = df_hz.sucrose.fillna(0) + df_hz.fructan.fillna(0) + (df_hz.amino_acids.fillna(0) + df_hz.proteins.fillna(0))* AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
+    df_hz['C_NS'] = df_hz.sucrose.fillna(0) + df_hz.fructan.fillna(0) + (df_hz.amino_acids.fillna(0) + df_hz.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
     df_hz['C_NS_tillers'] = df_hz['C_NS'] * df_hz['nb_replications'].fillna(1.)
     C_hz = df_hz.groupby(['t']).agg({'C_NS_tillers': 'sum'})
 
-    df_roots['C_NS'] = df_roots.sucrose.fillna(0) + df_roots.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO/AMINO_ACIDS_N_RATIO
+    df_roots['C_NS'] = df_roots.sucrose.fillna(0) + df_roots.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
 
     C_NS_autre = df_roots.C_NS.reset_index(drop=True) + C_elt.C_NS_tillers.reset_index(drop=True) + C_hz.C_NS_tillers.reset_index(drop=True)
     C_NS_autre_init = C_NS_autre - C_NS_autre.reset_index(drop=True)[0]
@@ -87,10 +77,10 @@ def table_C_usages(scenario):
     C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
                            C_usages.C_produced
 
-    C_usages.to_csv(os.path.join(scenario_postprocessing_dirpath,'C_usages.csv'), index = False)
+    C_usages.to_csv(os.path.join(scenario_postprocessing_dirpath, 'C_usages.csv'), index=False)
+
 
 def calculate_performance_indices(scenario):
-
     """
     Average RUE and photosynthetic yield for the whole cycle.
 
@@ -104,11 +94,13 @@ def calculate_performance_indices(scenario):
     df_axe = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'axes_postprocessing.csv'))
 
     # --- Import meteo file for incident PAR
-    df_meteo = pd.read_csv(os.path.join('inputs', scenarii_df.at[scenario,'METEO_FILENAME'] ))
+    df_meteo = pd.read_csv(os.path.join('inputs', scenarii_df.at[scenario, 'METEO_FILENAME']))
 
     # --- RUE (g DM. MJ-1 PARa)
-    df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'].fillna(1.) * 3600 / 4.6 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
-    df_elt['RGa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'].fillna(1.) * 3600 / 2.02 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
+    df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'].fillna(
+        1.) * 3600 / 4.6 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
+    df_elt['RGa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'].fillna(
+        1.) * 3600 / 2.02 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
     PARa = df_elt.groupby(['t'])['PARa_MJ'].agg('sum')
     PARa_cum = np.cumsum(PARa)
 
@@ -118,7 +110,7 @@ def calculate_performance_indices(scenario):
     # --- RUE (g DM. MJ-1 RGint estimated from LAI using Beer-Lambert's law with extinction coefficient of 0.4)
     plant_density = 250
     if 'Plant_Density' in scenarii_df.columns:
-        plant_density = scenarii_df.at[scenario,'Plant_Density']
+        plant_density = scenarii_df.at[scenario, 'Plant_Density']
 
     # Beer-Lambert
     df_LAI = df_elt[(df_elt.element == 'LeafElement1')].groupby(['t']).agg({'green_area': 'sum'})
@@ -172,17 +164,25 @@ def calculate_performance_indices(scenario):
                                      'RUE_plant_MJ_RGint': [RUE_plant_couvert],
                                      'RUE_shoot_MJ_RGint': [RUE_shoot_couvert],
                                      'Photosynthetic_efficiency': [avg_photo_y],
-                                     'C_usages_Respi_roots': C_usages_div.loc[max(C_usages_div.index),'Respi_roots'],
-                                     'C_usages_Respi_shoot': C_usages_div.loc[max(C_usages_div.index),'Respi_shoot'],
+                                     'C_usages_Respi_roots': C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
+                                     'C_usages_Respi_shoot': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'],
                                      'C_usages_Respi': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'] + C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
-                                     'C_usages_exudation': C_usages_div.loc[max(C_usages_div.index), 'exudation'] })
+                                     'C_usages_exudation': C_usages_div.loc[max(C_usages_div.index), 'exudation']})
 
     res_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'performance_indices.csv'), index=False)
+
 
 if __name__ == '__main__':
 
     ## ------- Run the above functions for all the scenarii
-
+    ## Import scenarii list and description
+    scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col='Scenario')
+    scenarii_df['Scenario'] = scenarii_df.index
+    if 'Scenario_label' not in scenarii_df.keys():
+        scenarii_df['Scenario_label'] = ''
+    else:
+        scenarii_df['Scenario_label'] = scenarii_df['Scenario_label'].fillna('')
+    scenarii = scenarii_df.Scenario
     for scenario in scenarii:
         table_C_usages(int(scenario))
         calculate_performance_indices(int(scenario))

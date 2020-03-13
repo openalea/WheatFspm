@@ -10,29 +10,29 @@ import tools
 # import additional_postprocessing
 
 
-def run_fspmwheat(scenario_id, scenarii_file, simulation_length, outputs_dir_path):
+def run_fspmwheat(inputs_dir_path=None, outputs_dir_path=None, scenario_id=1):
 
     # Path of the directory which contains the inputs of the model
-    INPUTS_DIRPATH = r'/fspmwheat/example/Scenarii_monoculms/inputs'
+    if inputs_dir_path:
+        INPUTS_DIRPATH = inputs_dir_path
+    else:
+        INPUTS_DIRPATH = 'inputs'
 
     # Scenario to be run
-    if scenariifile:  # Scenarii csv file provided by user
-        scenarii_df = pd.read_csv(scenarii_file, index_col='Scenario')
-    else:  # Use default scenarii csv file
-        scenarii_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, 'scenarii_list.csv'), index_col='Scenario')
-
+    scenarii_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, 'scenarii_list.csv'), index_col='Scenario')
     scenario = scenarii_df.loc[scenario_id].to_dict()
     scenario_name = 'Scenario_{}'.format(scenario['Scenario_label'])
 
     # Create dict of parameters for the scenario
     update_parameters = tools.buildDic(scenario)
 
-    # Create the directory of the Scenario where results will be stored
+    # Path of the directory which contains the outputs of the model
     if outputs_dir_path:
         scenario_dirpath = os.path.join(outputs_dir_path, scenario_name)
     else:
         scenario_dirpath = scenario_name
 
+    # Create the directory of the Scenario where results will be stored
     if not os.path.exists(scenario_dirpath):
         os.mkdir(scenario_dirpath)
 
@@ -54,15 +54,17 @@ def run_fspmwheat(scenario_id, scenarii_file, simulation_length, outputs_dir_pat
     # Do run the simulation?
     RUN_SIMU = True
 
+    SIMULATION_LENGTH = scenario['Simulation_Length']
+
     # Do run the postprocessing?
-    RUN_POSTPROCESSING = False  #: TODO separate postprocessings coming from other models
+    RUN_POSTPROCESSING = True  #: TODO separate postprocessings coming from other models
 
     # Do generate the graphs?
     GENERATE_GRAPHS = False  #: TODO separate postprocessings coming from other models
 
     # Run main fspmwheat
     try:
-        main.main(simulation_length, forced_start_time=0, run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS,
+        main.main(simulation_length=SIMULATION_LENGTH, forced_start_time=0, run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS,
                   run_from_outputs=False, option_static=False, show_3Dplant=False,
                   tillers_replications=None, heterogeneous_canopy=True,
                   N_fertilizations={'constant_Conc_Nitrates': scenario.get('constant_Conc_Nitrates')},
@@ -81,25 +83,22 @@ def run_fspmwheat(scenario_id, scenarii_file, simulation_length, outputs_dir_pat
 
 
 if __name__ == '__main__':
-    scenariifile = None
-    simlength = 3000
+    inputs = None
     outputs = None
-    array_id = int(os.environ['SLURM_ARRAY_TASK_ID'])
+    scenario = 1
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:s:l:o:d", ["id", "scenariifile=", "simlength=", "outputs="])
+        opts, args = getopt.getopt(sys.argv[1:], "i:o:s:d", ["inputs=", "outputs=", "scenario="])
     except getopt.GetoptError as err:
         print(str(err))
         sys.exit(2)
 
     for opt, arg in opts:
-        if opt in ("-s", "--scenariifile"):
-            scenariifile = arg
-        elif opt in ("-l", "--simlength"):
-            simlength = int(arg)
+        if opt in ("-i", "--inputs"):
+            inputs = arg
         elif opt in ("-o", "--outputs"):
             outputs = arg
-        elif opt in ("-i", "--id"):
-            array_id = arg
+        elif opt in ("-s", "--scenario"):
+            scenario = arg
 
-    run_fspmwheat(scenario_id=array_id, scenarii_file=scenariifile, simulation_length=simlength, outputs_dir_path=outputs)
+    run_fspmwheat(inputs_dir_path=inputs, outputs_dir_path=outputs, scenario_id=scenario)
