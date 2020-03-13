@@ -99,6 +99,6 @@ if __name__ == '__main__':
         elif opt in ("-o", "--outputs"):
             outputs = arg
         elif opt in ("-s", "--scenario"):
-            scenario = arg
+            scenario = int(arg)
 
     run_fspmwheat(inputs_dir_path=inputs, outputs_dir_path=outputs, scenario_id=scenario)
