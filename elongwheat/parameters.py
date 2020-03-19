@@ -101,8 +101,7 @@ ratio_DZ_l_end = 0.7        #: normalized log of leaf length at which the the le
 # --- Internodes
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_dict_IN = {3: 2.4E-06, 4: 2.4E-06, 5: 2.4E-06, 6: 2.4E-06, 7: 2.16E-06, 8: 1.8E-06, 9: 1.91E-06, 10: 1.9E-06, 11: 1.76E-06}  #: s-1 at 12°C FIT jan 20
-# {3: 2.48E-06, 4: 2.48E-06, 5: 2.48E-06, 6: 2.48E-06, 7: 3.1E-06, 8: 1.9E-06, 9: 2E-06, 10: 2.05E-06, 11: 1.92E-06}  #: s-1 at 12°C FIT dec 18
+RERmax_dict_IN = {3: 2.4E-06, 4: 2.4E-06, 5: 2.4E-06, 6: 2.4E-06, 7: 2.16E-06, 8: 1.8E-06, 9: 1.91E-06, 10: 1.9E-06, 11: 1.76E-06, 12:1.5E-06}  #: s-1 at 12°C FIT jan 20
 # { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.48E-06 , 8 : 2.48E-06 , 9 : 2.48E-06 , 10 : 1.9E-06 , 11 : 1.6E-06 }#: s-1 at 12°C
 # estimate from Ljutovac 2002 over the period until leaf ligulation i.e. wider than in the model.
 # Because i) not enought data if we consider only up to previous leaf ligulation, ii) same exponential like period
