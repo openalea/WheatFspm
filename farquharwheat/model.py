@@ -28,6 +28,8 @@ from math import sqrt, log,  exp
 
 class Model(object):
 
+    #TODO: create a separated parameters.py file
+
     O = 21000       #: Photosynthetic parameter: Intercellular O2 concentration, µmol mol(air)-1 or Pa, from Bernacchi et al. (2001)
     KC25 = 404      #: Photosynthetic parameter: Affinity constant of RuBisCO for C, µmol mol-1 or Pa, from Bernacchi et al. (2001) (estimation in Braune et al. (2009) not enough accurate)
     KO25 = 278.4E3  #: Photosynthetic parameter: Affinity constant of RuBisCO for O, µmol mol-1 or Pa, from Bernacchi et al. (2001) (estimation in Braune et al. (2009) not enough accurate)
@@ -48,7 +50,7 @@ class Model(object):
     #:     * delta1 and delta2: parameters of m (scaling factor of gs) dependance to surfacic_nitrogen (m2 g-1 and dimensionless, respectively)
 
     PARAM_N = {'S_surfacic_nitrogen': {'Vc_max25': 84.965, 'Jmax25': 117.6, 'alpha': 0.0413, 'TPU25': 9.25, 'Rdark25': 0.493},
-               'surfacic_nitrogen_min': {'Vc_max25': 0.17, 'Jmax25': 0.17, 'TPU25': 0.229, 'Rdark25': 0.118}, 'beta': 0.2101, 'delta1': 14.7, 'delta2': -0.548}
+               'surfacic_nitrogen_min': {'Vc_max25': 0., 'Jmax25': 0., 'TPU25': 0., 'Rdark25': 0.}, 'beta': 0.2101+0.0083, 'delta1': 14.7, 'delta2': -0.548}
     NA_0 = 2                #: Initial value of surfacic_nitrogen (g m-2), used if no surfacic_nitrogen is provided by user
 
     GSMIN = 0.05            #: Stomatal conductance parameter: Minimum gsw, measured in the dark (mol m-2 s-1). Braune et al. (2009).
@@ -157,13 +159,13 @@ class Model(object):
         return Ts, Tr
 
     @classmethod
-    def _stomatal_conductance(cls, Ag, An, surfacic_nitrogen, ambient_CO2, RH):
+    def _stomatal_conductance(cls, Ag, An, surfacic_nonstructural_nitrogen, ambient_CO2, RH):
         """
         Ball, Woodrow, and Berry model of stomatal conductance (1987)
 
         :param float Ag: gross assimilation rate (µmol m-2 s-1)
         :param float An: net assimilation rate (µmol m-2 s-1)
-        :param float surfacic_nitrogen: surfacic nitrogen content(g m-2)
+        :param float surfacic_nonstructural_nitrogen: surfacic non-structural nitrogen content(g m-2)
         :param float ambient_CO2: Air CO2 (µmol mol-1)
         :param float RH: Relative humidity (decimal fraction)
 
@@ -172,7 +174,8 @@ class Model(object):
         """
 
         Cs = ambient_CO2 - An * (1.37/cls.GB)  #: CO2 concentration at organ surface (µmol mol-1 or Pa). From Prieto et al. (2012). GB in mol m-2 s-1
-        m = cls.PARAM_N['delta1'] * surfacic_nitrogen**cls.PARAM_N['delta2']  #: Scaling factor dependance to surfacic_nitrogen (dimensionless). This focntion is maintained although I'm not conviced that it should be taken into account
+        m = cls.PARAM_N['delta1'] * surfacic_nonstructural_nitrogen**cls.PARAM_N['delta2']  #: Scaling factor dependance to surfacic_nitrogen (dimensionless). This focntion is maintained
+        # although I'm not conviced that it should be taken into account
         gsw = (cls.GSMIN + m*((Ag*RH)/Cs))     #: Stomatal conductance to water vapour (mol m-2 s-1), from Braune et al. (2009), Muller et al. (2005): using Ag rather than An. Would be better with a function of VPD and with (Ci-GAMMA) instead of Cs.
         return gsw
 
@@ -223,13 +226,13 @@ class Model(object):
         return p
 
     @classmethod
-    def calculate_photosynthesis(cls, PAR, surfacic_nitrogen, Ts, Ci):
+    def calculate_photosynthesis(cls, PAR, surfacic_nonstructural_nitrogen, Ts, Ci):
         """
         Computes photosynthesis rate following Farquhar's model with regulation by organ temperature and nitrogen content.
         In this version, most of parameters are derived from Braune et al. (2009) on barley and Evers et al. (2010) for N dependencies.
 
         :param float PAR: PAR absorbed (µmol m-2 s-1)
-        :param float surfacic_nitrogen: surfacic nitrogen content(g m-2)
+        :param float surfacic_nonstructural_nitrogen: surfacic non-structural nitrogen content(g m-2)
         :param float Ts: organ temperature (degree C)
         :param float Ci: internal CO2 (µmol mol-1), Ci = 0.7*CO2air for the first iteration
 
@@ -245,15 +248,15 @@ class Model(object):
         #: RuBisCO-limited carboxylation rate
         Sna_Vcmax25 = cls.PARAM_N['S_surfacic_nitrogen']['Vc_max25']
         surfacic_nitrogen_min_Vcmax25 = cls.PARAM_N['surfacic_nitrogen_min']['Vc_max25']
-        Vc_max25 = Sna_Vcmax25 * (surfacic_nitrogen - surfacic_nitrogen_min_Vcmax25)                   #: Relation between Vc_max25 and surfacic_nitrogen (µmol m-2 s-1)
+        Vc_max25 = Sna_Vcmax25 * (surfacic_nonstructural_nitrogen - surfacic_nitrogen_min_Vcmax25)                                      #: Relation between Vc_max25 and surfacic_nonstructural_nitrogen (µmol m-2 s-1)
         Vc_max = cls._f_temperature('Vc_max', Vc_max25, Ts)                                            #: Relation between Vc_max and temperature (µmol m-2 s-1)
         Ac = (Vc_max * (Ci-Gamma)) / (Ci + Kc * (1 + cls.O/Ko))                                        #: Rate of assimilation under Vc_max limitation (µmol m-2 s-1)
 
         #: RuBP regeneration-limited carboxylation rate via electron transport
-        ALPHA = cls.PARAM_N['S_surfacic_nitrogen']['alpha'] * surfacic_nitrogen + cls.PARAM_N['beta']  #: Relation between ALPHA and surfacic_nitrogen (mol e- mol-1 photon)
+        ALPHA = cls.PARAM_N['S_surfacic_nitrogen']['alpha'] * surfacic_nonstructural_nitrogen + cls.PARAM_N['beta']  #: Relation between ALPHA and surfacic_nitrogen (mol e- mol-1 photon)
         Sna_Jmax25 = cls.PARAM_N['S_surfacic_nitrogen']['Jmax25']
         surfacic_nitrogen_min_Jmax25 = cls.PARAM_N['surfacic_nitrogen_min']['Jmax25']
-        Jmax25 = Sna_Jmax25 * (surfacic_nitrogen - surfacic_nitrogen_min_Jmax25)                       #: Relation between Jmax25 and surfacic_nitrogen (µmol m-2 s-1)
+        Jmax25 = Sna_Jmax25 * (surfacic_nonstructural_nitrogen - surfacic_nitrogen_min_Jmax25)                       #: Relation between Jmax25 and surfacic_nitrogen (µmol m-2 s-1)
         Jmax = cls._f_temperature('Jmax', Jmax25, Ts)                                                  #: Relation between Jmax and temperature (µmol m-2 s-1)
 
         J = ((Jmax+ALPHA*PAR) - sqrt((Jmax+ALPHA*PAR)**2 - 4*cls.THETA*ALPHA*PAR*Jmax))/(2*cls.THETA)  #: Electron transport rate (Muller et al. (2005), Evers et al. (2010)) (µmol m-2 s-1)
@@ -262,7 +265,7 @@ class Model(object):
         #: Triose phosphate utilisation-limited carboxylation rate
         Sna_TPU25 = cls.PARAM_N['S_surfacic_nitrogen']['TPU25']
         surfacic_nitrogen_min_TPU25 = cls.PARAM_N['surfacic_nitrogen_min']['TPU25']
-        TPU25 = Sna_TPU25 * (surfacic_nitrogen - surfacic_nitrogen_min_TPU25)                          #: Relation between TPU25 and surfacic_nitrogen (µmol m-2 s-1)
+        TPU25 = Sna_TPU25 * (surfacic_nonstructural_nitrogen - surfacic_nitrogen_min_TPU25)                          #: Relation between TPU25 and surfacic_nitrogen (µmol m-2 s-1)
         TPU = cls._f_temperature('TPU', TPU25, Ts)                                                     #: Relation between TPU and temperature (µmol m-2 s-1)
         Vomax = (Vc_max*Ko*Gamma)/(0.5*Kc*cls.O)                                                       #: Maximum rate of Vo (µmol m-2 s-1) (µmol m-2 s-1)
         Vo = (Vomax * cls.O) / (cls.O + Ko*(1+Ci/Kc))                                                  #: Rate of oxygenation of RuBP (µmol m-2 s-1)
@@ -274,7 +277,7 @@ class Model(object):
         Ag = min(Ac, Aj, Ap)
 
         #: Mitochondrial respiration rate of organ in light Rd (processes other than photorespiration)
-        Rdark25 = cls.PARAM_N['S_surfacic_nitrogen']['Rdark25'] * (surfacic_nitrogen - cls.PARAM_N['surfacic_nitrogen_min']['Rdark25'])  #: Relation between Rdark25 (respiration in obscurity at 25 degree C) and surfacic_nitrogen (µmol m-2 s-1)
+        Rdark25 = cls.PARAM_N['S_surfacic_nitrogen']['Rdark25'] * (surfacic_nonstructural_nitrogen - cls.PARAM_N['surfacic_nitrogen_min']['Rdark25'])  #: Relation between Rdark25 (respiration in obscurity at 25 degree C) and surfacic_nitrogen (µmol m-2 s-1)
         Rdark = cls._f_temperature('Rdark', Rdark25, Ts)                                      #: Relation between Rdark and temperature (µmol m-2 s-1)
         Rd = Rdark * (0.33 + (1-0.33) * 0.5 ** (PAR/15))                                      # Found in Muller et al. (2005), eq. 19 (µmol m-2 s-1)
 
@@ -303,13 +306,42 @@ class Model(object):
         return mass_N_tot / green_area
 
     @classmethod
-    def run(cls, surfacic_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name, height_canopy):
+    def calculate_surfacic_nonstructural_nitrogen(cls, nitrates, amino_acids, proteins, green_area):
+        """Surfacic content of non-structural nitrogen
+
+        :param float nitrates: amount of nitrates (µmol N)
+        :param float amino_acids: amount of amino_acids (µmol N)
+        :param float proteins: amount of proteins (µmol N)
+        :param float green_area: green area (m-2)
+
+        :return: Surfacic non-structural nitrogen (g m-2)
+        :rtype: float
+        """
+        mass_N_tot = (nitrates + amino_acids + proteins)*1E-6 * cls.N_MOLAR_MASS
+        return mass_N_tot / green_area
+
+    @classmethod
+    def calculate_surfacic_photosynthetic_proteins(cls,  proteins, green_area):
+        """Surfacic content of photosynthetic proteins
+
+        :param float proteins: amount of proteins (µmol N)
+        :param float green_area: green area (m-2)
+
+        :return: Surfacic non-structural nitrogen (g m-2)
+        :rtype: float
+        """
+        mass_N_prot = proteins * 1E-6 * cls.N_MOLAR_MASS
+        return mass_N_prot / green_area
+
+    @classmethod
+    def run(cls, surfacic_nonstructural_nitrogen, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name, height_canopy):
         """
         Computes the photosynthesis of a photosynthetic element. The photosynthesis is computed by using the biochemical FCB model (Farquhar et al., 1980) coupled to the semiempirical
         BWB model of stomatal conductance (Ball, 1987).
 
-        :param float surfacic_nitrogen: total surfacic nitrogen content of organs (g m-2), obtained by the sum of nitrogen, amino acids, proteins and structural N.
+        :param float surfacic_nonstructural_nitrogen: surfacic non-structural nitrogen content of organs (g m-2), obtained by the sum of nitrogen, amino acids and proteins.
                Properly speaking, photosynthesis should be related to proteins (RubisCO), but parameters of most Farquhar models are calibrated on total N measurements (DUMAS method).
+               We use only non-structural nitrogen to overcome issues in the case of extrem scenarios (high SLN for thick leaves under low nitrogen conditions).
                If None, surfacic_nitrogen = :attr:`NA_0`
         :param float width: width of the organ (or diameter for stem organ) (m),
                characteristic dimension to be considered for heat transfer through forced convection (by wind).
@@ -327,8 +359,8 @@ class Model(object):
         :rtype: (float, float, float, float, float, float)
         """
 
-        if surfacic_nitrogen is None:
-            surfacic_nitrogen = cls.NA_0
+        if surfacic_nonstructural_nitrogen is None:
+            surfacic_nonstructural_nitrogen = cls.NA_0
 
         # Iterations to find organ temperature and Ci #
         Ci, Ts = 0.7*ambient_CO2, Ta  # Initial values
@@ -336,9 +368,9 @@ class Model(object):
 
         while True:
             prec_Ci, prec_Ts = Ci, Ts
-            Ag, An, Rd = cls.calculate_photosynthesis(PAR, surfacic_nitrogen, Ts, Ci)
+            Ag, An, Rd = cls.calculate_photosynthesis(PAR, surfacic_nonstructural_nitrogen, Ts, Ci)
             # Stomatal conductance to water
-            gsw = cls._stomatal_conductance(Ag, An, surfacic_nitrogen, ambient_CO2, RH)
+            gsw = cls._stomatal_conductance(Ag, An, surfacic_nonstructural_nitrogen, ambient_CO2, RH)
 
             # New value of Ci
             Ci = cls._calculate_Ci(ambient_CO2, An, gsw)

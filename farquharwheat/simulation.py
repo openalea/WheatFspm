@@ -96,14 +96,13 @@ class Simulation(object):
             else:
                 PARa = element_inputs['PARa']  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
 
-                surfacic_nitrogen = model.Model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
-                                                                            element_inputs['amino_acids'],
-                                                                            element_inputs['proteins'],
-                                                                            element_inputs['Nstruct'],
+                surfacic_photosynthetic_proteins = model.Model.calculate_surfacic_photosynthetic_proteins(element_inputs['proteins'],
                                                                             element_inputs['green_area'])
 
+                estimate_SLN_nonstruct = surfacic_photosynthetic_proteins * 1.06 #TODO: create a separated parameters.py file
+
                 height_canopy = self.inputs['axes'][axis_id]['height_canopy']
-                Ag, An, Rd, Tr, Ts, gs = model.Model.run(surfacic_nitrogen,
+                Ag, An, Rd, Tr, Ts, gs = model.Model.run(estimate_SLN_nonstruct,
                                                          element_inputs['width'],
                                                          element_inputs['height'],
                                                          PARa, Ta, ambient_CO2, RH, Ur, organ_label, height_canopy)
