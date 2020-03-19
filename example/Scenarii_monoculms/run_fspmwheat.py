@@ -7,10 +7,10 @@ import pandas as pd
 
 import main
 import tools
-# import additional_postprocessing
+from fspmwheat import fspmwheat_postprocessing
 
 
-def run_fspmwheat(inputs_dir_path=None, outputs_dir_path=None, scenario_id=1):
+def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
 
     # Path of the directory which contains the inputs of the model
     if inputs_dir_path:
@@ -21,7 +21,7 @@ def run_fspmwheat(inputs_dir_path=None, outputs_dir_path=None, scenario_id=1):
     # Scenario to be run
     scenarii_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, 'scenarii_list.csv'), index_col='Scenario')
     scenario = scenarii_df.loc[scenario_id].to_dict()
-    scenario_name = 'Scenario_{}'.format(scenario['Scenario_label'])
+    scenario_name = 'Scenario_{}'.format(scenario_id)
 
     # Create dict of parameters for the scenario
     update_parameters = tools.buildDic(scenario)
@@ -36,7 +36,7 @@ def run_fspmwheat(inputs_dir_path=None, outputs_dir_path=None, scenario_id=1):
     if not os.path.exists(scenario_dirpath):
         os.mkdir(scenario_dirpath)
 
-    # Create directory paths for graphs, outputs and postprocessings of this scneario
+    # Create directory paths for graphs, outputs and postprocessings of this scenario
     scenario_graphs_dirpath = os.path.join(scenario_dirpath, 'graphs')
     if not os.path.exists(scenario_graphs_dirpath):
         os.mkdir(scenario_graphs_dirpath)
@@ -52,20 +52,24 @@ def run_fspmwheat(inputs_dir_path=None, outputs_dir_path=None, scenario_id=1):
     # -- SIMULATION PARAMETERS --
 
     # Do run the simulation?
-    RUN_SIMU = True
+    RUN_SIMU = scenario.get('Run_Simulation', True)
 
-    SIMULATION_LENGTH = scenario['Simulation_Length']
+    SIMULATION_LENGTH = scenario.get('Simulation_Length', 3000)
+
+    # Do run the simulation from the output files ?
+    RUN_FROM_OUTPUTS = scenario.get('Run_From_Outputs', False)
 
     # Do run the postprocessing?
-    RUN_POSTPROCESSING = True  #: TODO separate postprocessings coming from other models
+    RUN_POSTPROCESSING = scenario.get('Run_Postprocessing', True)  #: TODO separate postprocessings coming from other models
 
     # Do generate the graphs?
-    GENERATE_GRAPHS = False  #: TODO separate postprocessings coming from other models
+    GENERATE_GRAPHS = scenario.get('Generate_Graphs', False)  #: TODO separate postprocessings coming from other models
 
     # Run main fspmwheat
     try:
-        main.main(simulation_length=SIMULATION_LENGTH, forced_start_time=0, run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS,
-                  run_from_outputs=False, option_static=False, show_3Dplant=False,
+        main.main(simulation_length=SIMULATION_LENGTH, forced_start_time=0, run_simu=RUN_SIMU,
+                  run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS,
+                  run_from_outputs=RUN_FROM_OUTPUTS, option_static=False, show_3Dplant=False,
                   tillers_replications=None, heterogeneous_canopy=True,
                   N_fertilizations={'constant_Conc_Nitrates': scenario.get('constant_Conc_Nitrates')},
                   PLANT_DENSITY={1: scenario.get('Plant_Density', 250.)},
@@ -75,12 +79,12 @@ def run_fspmwheat(inputs_dir_path=None, outputs_dir_path=None, scenario_id=1):
                   OUTPUTS_DIRPATH=scenario_outputs_dirpath,
                   POSTPROCESSING_DIRPATH=scenario_postprocessing_dirpath,
                   update_parameters_all_models=update_parameters)
-        # additional_postprocessing.table_C_usages(scenario_name)
-        # additional_postprocessing.calculate_performance_indices(scenario_name)
+        if RUN_POSTPROCESSING:
+            fspmwheat_postprocessing.table_C_usages(scenario_postprocessing_dirpath)
+            fspmwheat_postprocessing.calculate_performance_indices(scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')), scenario.get('Plant_Density', 250.))
 
     except Exception as e:
         print(e)
-
 
 if __name__ == '__main__':
     inputs = None

@@ -4,32 +4,26 @@ import pandas as pd
 import numpy as np
 import os
 
-import statsmodels.api as sm
+from cnwheat import model as cnwheat_model
 
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
-import matplotlib.image as mpimg
+def table_C_usages(scenario_postprocessing_dirpath):
+    """ Calculate C usage from postprocessings and save it to a CSV file
 
-from elongwheat import parameters as elongwheat_parameters
-import tools
+    :param str scenario_postprocessing_dirpath: the path to the CSV file describing all scenarii
 
-
-def table_C_usages(scenario):
-    scenario_name = 'Scenario_{}'.format(scenario)
-    scenario_postprocessing_dirpath = os.path.join(scenario_name, 'postprocessing')
-
+    """
     # --- Import simulations prostprocessings
-    df_axe = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'axes_postprocessing.csv'))
-    df_elt = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'elements_postprocessing.csv'))
-    df_org = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'organs_postprocessing.csv'))
-    df_hz = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'hiddenzones_postprocessing.csv'))
+    df_axe = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'axes_postprocessing.csv'))
+    df_elt = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'elements_postprocessing.csv'))
+    df_org = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'organs_postprocessing.csv'))
+    df_hz = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'hiddenzones_postprocessing.csv'))
 
     df_roots = df_org[df_org['organ'] == 'roots'].copy()
     df_phloem = df_org[df_org['organ'] == 'phloem'].copy()
 
     # --- C usages relatif to Net Photosynthesis
-    AMINO_ACIDS_C_RATIO = 4.15  #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
-    AMINO_ACIDS_N_RATIO = 1.25  #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_C_RATIO = cnwheat_model.EcophysiologicalConstants.AMINO_ACIDS_C_RATIO  #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
+    AMINO_ACIDS_N_RATIO = cnwheat_model.EcophysiologicalConstants.AMINO_ACIDS_N_RATIO  #: Mean number of mol of N in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
 
     # Photosynthesis
     df_elt['Photosynthesis_tillers'] = df_elt['Photosynthesis'].fillna(0) * df_elt['nb_replications'].fillna(1.)
@@ -59,7 +53,7 @@ def table_C_usages(scenario):
     C_usages['NS_phloem'] = C_NS_phloem_init.reset_index(drop=True)
 
     df_elt['C_NS'] = df_elt.sucrose.fillna(0) + df_elt.fructan.fillna(0) + df_elt.starch.fillna(0) + (
-                df_elt.amino_acids.fillna(0) + df_elt.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+            df_elt.amino_acids.fillna(0) + df_elt.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
     df_elt['C_NS_tillers'] = df_elt['C_NS'] * df_elt['nb_replications'].fillna(1.)
     C_elt = df_elt.groupby(['t']).agg({'C_NS_tillers': 'sum'})
 
@@ -74,33 +68,33 @@ def table_C_usages(scenario):
     C_usages['NS_other'] = C_NS_autre_init.reset_index(drop=True)
 
     # Total
-    C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
+    C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) /\
                            C_usages.C_produced
 
     C_usages.to_csv(os.path.join(scenario_postprocessing_dirpath, 'C_usages.csv'), index=False)
 
 
-def calculate_performance_indices(scenario):
+def calculate_performance_indices(scenario_postprocessing_dirpath, meteo_dirpath, plant_density):
     """
     Average RUE and photosynthetic yield for the whole cycle.
 
-    :param int scenarii: Scenario number
+    :param str scenario_postprocessing_dirpath: the path to the CSV file describing all scenarii
+    :param str meteo_dirpath: the path to the CSV meteo file
+    :param int plant_density: the plant density (plant m-2)
     """
-    scenario_name = 'Scenario_{}'.format(scenario)
-    scenario_postprocessing_dirpath = os.path.join(scenario_name, 'postprocessing')
 
     # --- Import simulations prostprocessings
     df_elt = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'elements_postprocessing.csv'))
     df_axe = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'axes_postprocessing.csv'))
 
     # --- Import meteo file for incident PAR
-    df_meteo = pd.read_csv(os.path.join('inputs', scenarii_df.at[scenario, 'METEO_FILENAME']))
+    df_meteo = pd.read_csv(meteo_dirpath)
 
     # --- RUE (g DM. MJ-1 PARa)
     df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'].fillna(
-        1.) * 3600 / 4.6 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
+        1.) * 3600 / 4.6 * 10 ** -6  # Si tallage, il faut alors utiliser les calculcs green_area et PARa des talles.
     df_elt['RGa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'].fillna(
-        1.) * 3600 / 2.02 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
+        1.) * 3600 / 2.02 * 10 ** -6  # Si tallage, il faut alors utiliser les calculcs green_area et PARa des talles.
     PARa = df_elt.groupby(['t'])['PARa_MJ'].agg('sum')
     PARa_cum = np.cumsum(PARa)
 
@@ -108,9 +102,6 @@ def calculate_performance_indices(scenario):
     RUE_plant = np.polyfit(PARa_cum, df_axe.sum_dry_mass, 1)[0]
 
     # --- RUE (g DM. MJ-1 RGint estimated from LAI using Beer-Lambert's law with extinction coefficient of 0.4)
-    plant_density = 250
-    if 'Plant_Density' in scenarii_df.columns:
-        plant_density = scenarii_df.at[scenario, 'Plant_Density']
 
     # Beer-Lambert
     df_LAI = df_elt[(df_elt.element == 'LeafElement1')].groupby(['t']).agg({'green_area': 'sum'})
@@ -150,11 +141,8 @@ def calculate_performance_indices(scenario):
 
     avg_photo_y = np.polyfit(PARa2_cum, Photosynthesis_cum, 1)[0]
 
-    ## --- Photosynthetic C allocated to Respiration and to Exudation
+    # --- Photosynthetic C allocated to Respiration and to Exudation
     C_usages_path = os.path.join(scenario_postprocessing_dirpath, 'C_usages.csv')
-    if not os.path.exists(C_usages_path):
-        table_C_usages(int(scenario))
-
     C_usages = pd.read_csv(C_usages_path)
     C_usages_div = C_usages.div(C_usages.C_produced, axis=0)
 
@@ -172,17 +160,19 @@ def calculate_performance_indices(scenario):
     res_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'performance_indices.csv'), index=False)
 
 
-if __name__ == '__main__':
-
-    ## ------- Run the above functions for all the scenarii
-    ## Import scenarii list and description
-    scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col='Scenario')
-    scenarii_df['Scenario'] = scenarii_df.index
-    if 'Scenario_label' not in scenarii_df.keys():
-        scenarii_df['Scenario_label'] = ''
-    else:
-        scenarii_df['Scenario_label'] = scenarii_df['Scenario_label'].fillna('')
-    scenarii = scenarii_df.Scenario
-    for scenario in scenarii:
-        table_C_usages(int(scenario))
-        calculate_performance_indices(int(scenario))
+# def all_scenraii_postprocessings(scenarii_list_dirpath):
+#     # ------- Run the above functions for all the scenarii
+#     # Import scenarii list and description
+#     scenarii_df = pd.read_csv(scenarii_list_dirpath, index_col='Scenario')
+#     scenarii_df['Scenario'] = scenarii_df.index
+#
+#     if 'Scenario_label' not in scenarii_df.keys():
+#         scenarii_df['Scenario_label'] = ''
+#     else:
+#         scenarii_df['Scenario_label'] = scenarii_df['Scenario_label'].fillna('')
+#     scenarii = scenarii_df.Scenario
+#
+#
+#     for scenario in scenarii:
+#         table_C_usages(int(scenario))
+#         calculate_performance_indices(int(scenario))

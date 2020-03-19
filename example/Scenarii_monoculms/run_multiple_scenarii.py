@@ -3,7 +3,7 @@ import time
 import pandas as pd
 import os
 
-import run_one_scenario
+import run_fspmwheat
 import rearrange_graphs
 import rearrange_postprocessing
 
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     num_processes = mp.cpu_count()
     p = mp.Pool(num_processes)
 
-    mp_solutions = p.map( run_one_scenario.run_one_scenario, list(scenarii) )
+    mp_solutions = p.map( run_fspmwheat.run_fspmwheat, list(scenarii) )
     p.terminate()
     p.join()
 

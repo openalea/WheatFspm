@@ -70,8 +70,8 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
          tillers_replications=None, heterogeneous_canopy=True, N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
     """
-    update_parameters_all_models = {'cnwheat': {'organ1': {'param1': 'val1', 'param2': 'val2'},
-                                                'organ2': {'param1': 'val1', 'param2': 'val2'}
+    update_parameters_all_models = {'cnwheat': {'roots': {'param1': 'val1', 'param2': 'val2'},
+                                                'PhotosyntheticOrgan': {'param1': 'val1', 'param2': 'val2'}
                                                 },
                                     'elongwheat': {'param1': 'val1', 'param2': 'val2'}
                                     }
