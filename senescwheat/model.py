@@ -211,35 +211,29 @@ class SenescenceModel(object):
         return remob_proteins, delta_amino_acids, delta_Nresidual
 
     @classmethod
-    def calculate_roots_senescence(cls, mstruct, Nstruct, postflowering_stages):
+    def calculate_roots_senescence(cls, mstruct, Nstruct):
         """Root senescence
 
         :param float mstruct: structural mass (g)
         :param float Nstruct: structural N (g)
-        :param bool postflowering_stages: Option : True to run a simulation with postflo parameter
 
         :return: Rate of mstruct loss by root senescence (g mstruct s-1), rate of Nstruct loss by root senescence (g Nstruct s-1)
         :rtype: tuple [float, float]
         """
-        if postflowering_stages:
-            rate_senescence = parameters.SENESCENCE_ROOTS_POSTFLOWERING
-        else:
-            rate_senescence = parameters.SENESCENCE_ROOTS_PREFLOWERING
-        return mstruct * rate_senescence, Nstruct * rate_senescence
+        return mstruct * parameters.SENESCENCE_ROOTS, Nstruct * parameters.SENESCENCE_ROOTS
 
     @classmethod
-    def calculate_relative_delta_mstruct_roots(cls, rate_mstruct_death, root_mstruct, delta_t):
+    def calculate_relative_delta_mstruct_roots(cls, rate_mstruct_death, root_mstruct, delta_teq):
         """Relative delta of root structural dry matter (g) over delta_t
 
         :param float rate_mstruct_death: Rate of mstruct loss by root senescence (g mstruct s-1)
         :param float root_mstruct: actual mstruct of roots (g)
-        :param float delta_t: value of the timestep (s)
-
+        :param float delta_teq: Temperature-consensated time = time duration at a reference temperature (s)
 
         :return: relative_delta_mstruct (dimensionless)
         :rtype: float
         """
-        return (rate_mstruct_death * delta_t) / root_mstruct
+        return (rate_mstruct_death * delta_teq) / root_mstruct
 
     @classmethod
     def calculate_delta_mstruct_root(cls, rate_mstruct_death, rate_Nstruct_death,  delta_teq):

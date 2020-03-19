@@ -90,7 +90,7 @@ class Simulation(object):
             delta_teq = all_axes_inputs[roots_inputs_id]['delta_teq_roots']
 
             # loss of mstruct and Nstruct
-            rate_mstruct_death, rate_Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'], postflowering_stages)
+            rate_mstruct_death, rate_Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'])
             relative_delta_mstruct = model.SenescenceModel.calculate_relative_delta_mstruct_roots(rate_mstruct_death, roots_inputs_dict['mstruct'], delta_teq)
             delta_mstruct, delta_Nstruct = model.SenescenceModel.calculate_delta_mstruct_root(rate_mstruct_death, rate_Nstruct_death, delta_teq)
             # loss of cytokinins (losses of nitrates, amino acids and sucrose are neglected)
