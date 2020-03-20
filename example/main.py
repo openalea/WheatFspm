@@ -4,7 +4,7 @@ import pandas as pd
 
 from farquharwheat import simulation, converter
 
-'''
+"""
     main
     ~~~~
 
@@ -19,17 +19,7 @@ from farquharwheat import simulation, converter
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: see LICENSE for details.
 
-'''
-
-'''
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-'''
-
+"""
 
 INPUTS_ELEMENT_FILENAME = 'elements_inputs.csv'
 INPUTS_AXIS_FILENAME = 'axes_inputs.csv'

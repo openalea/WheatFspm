@@ -15,20 +15,13 @@ import model
 
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
+
+class SimulationError(Exception):
+    pass
 
 
-class SimulationError(Exception): pass
-
-
-class SimulationInputsError(SimulationError): pass
+class SimulationInputsError(SimulationError):
+    pass
 
 
 class Simulation(object):
@@ -97,9 +90,9 @@ class Simulation(object):
                 PARa = element_inputs['PARa']  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
 
                 surfacic_photosynthetic_proteins = model.Model.calculate_surfacic_photosynthetic_proteins(element_inputs['proteins'],
-                                                                            element_inputs['green_area'])
+                                                                                                          element_inputs['green_area'])
 
-                estimate_SLN_nonstruct = surfacic_photosynthetic_proteins * 1.06 #TODO: create a separated parameters.py file
+                estimate_SLN_nonstruct = surfacic_photosynthetic_proteins * 1.06  # TODO: create a separated parameters.py file
 
                 height_canopy = self.inputs['axes'][axis_id]['height_canopy']
                 Ag, An, Rd, Tr, Ts, gs = model.Model.run(estimate_SLN_nonstruct,
