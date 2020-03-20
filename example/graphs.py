@@ -17,10 +17,6 @@ HIDDENZONE_OUTPUTS_FILENAME = 'all_hiddenzone_outputs.csv'
 ELEMENT_OUTPUTS_FILENAME = 'all_element_outputs.csv'
 SAM_OUTPUTS_FILENAME = 'all_SAM_outputs.csv'
 
-# general output dataframes
-all_hiddenzone_outputs_df = pd.DataFrame()
-all_element_outputs_df = pd.DataFrame()
-
 # Charts
 
 x_name = 't_step'

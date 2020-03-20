@@ -13,16 +13,6 @@ from __future__ import division  # use "//" to do integer division
 
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
-
 # -------------------------------------------------------------------------------------------------------------------
 # --- SAM
 # -------------------------------------------------------------------------------------------------------------------
@@ -45,20 +35,20 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # Exponential elongation
 RERmax_Ljutovac_fit = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000151, 10: 0.00000134, 11: 0.00000129} # Optimal RERmax (s-1 at 12°C) allowing to simulate leaf dimensions of Ljutovac (2002)
 # { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # Observed RER on data of Ljutovac 2002 RER (s-1 at 12°C)
-RERmax = {5: 3.35e-06, 6: 2.25e-06, 7: 2.12e-06, 8: 2.01e-06, 9: 1.93e-06, 10: 1.65e-06, 11: 1.56e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
+RERmax = {5: 3.35e-06, 6: 2.25e-06, 7: 2.12e-06, 8: 1.97e-06, 9: 1.92e-06, 10: 1.65e-06, 11: 1.56e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
 RER_Kc = 100  #: affinity coefficient of RER to C (µmol g-1)
 RER_Kn = 15   #: affinity coefficient of RER to N (µmol g-1)
 
 # Automate elongation
-te = 300 * 3600 * 24 / 12    #: end of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
-tm = 204.6 * 3600 * 24 / 12  #: time at which leaf elongation rate is maximal in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
-tb = -114.3 * 3600 * 24 / 12 #: beginning of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
+te = 300 * 3600 * 24 / 12     #: end of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
+tm = 204.6 * 3600 * 24 / 12   #: time at which leaf elongation rate is maximal in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
+tb = -114.3 * 3600 * 24 / 12  #: beginning of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
 # NB : Previous fit on adapted data from Fournier 2005 in phyllochronic time te = 271, tm=176, tb=-25
-leaf_Lmax_MAX = 0.7                #: Maximum leaf_Lmax (m)
+leaf_Lmax_MAX = 0.7           #: Maximum leaf_Lmax (m)
 
-leaf_pseudo_age_Vmax = 1.2   #: Maximal regulation of leaf length after emergence by CN status (dimensionless)
-leaf_pseudo_age_Kc = 150     #: affinity coefficient to C (µmol g-1)
-leaf_pseudo_age_Kn = 4       #: affinity coefficient to N (µmol g-1)
+leaf_pseudo_age_Vmax = 1.2    #: Maximal regulation of leaf length after emergence by CN status (dimensionless)
+leaf_pseudo_age_Kc = 150      #: affinity coefficient to C (µmol g-1)
+leaf_pseudo_age_Kn = 4        #: affinity coefficient to N (µmol g-1)
 
 # Leaf maximal width  TODO doc
 leaf_Wmax_dict = {3: 0.0040, 4: 0.0045, 5: 0.0056, 6: 0.0075, 7: 0.010, 8: 0.012, 9: 0.013, 10: 0.014, 11: 0.018}  #: m (Ljutovac 2002)
@@ -87,7 +77,7 @@ leaf_LSSW_MAX = 0.8
 # Sheath: lamina ratio. Parameters of a polynomial function, from Dornbush 2011
 SL_ratio_a = -0.0021
 SL_ratio_b = 0.037
-SL_ratio_c = 0.1527
+SL_ratio_c = - 0.1527
 SL_ratio_d = 0.4962
 
 # Ratio of leaf length composed by the division zone.
@@ -101,8 +91,7 @@ ratio_DZ_l_end = 0.7        #: normalized log of leaf length at which the the le
 # --- Internodes
 # -------------------------------------------------------------------------------------------------------------------
 # Exponential elongation
-RERmax_dict_IN = {3: 2.4E-06, 4: 2.4E-06, 5: 2.4E-06, 6: 2.4E-06, 7: 2.16E-06, 8: 1.8E-06, 9: 1.91E-06, 10: 1.9E-06, 11: 1.76E-06}  #: s-1 at 12°C FIT jan 20
-# {3: 2.48E-06, 4: 2.48E-06, 5: 2.48E-06, 6: 2.48E-06, 7: 3.1E-06, 8: 1.9E-06, 9: 2E-06, 10: 2.05E-06, 11: 1.92E-06}  #: s-1 at 12°C FIT dec 18
+RERmax_dict_IN = {3: 2.4E-06, 4: 2.4E-06, 5: 2.4E-06, 6: 2.4E-06, 7: 2.16E-06, 8: 1.8E-06, 9: 1.91E-06, 10: 1.9E-06, 11: 1.76E-06, 12: 1.5E-06}  #: s-1 at 12°C FIT jan 20
 # { 3 : 2.48E-06 ,4 : 2.48E-06 ,5 : 2.48E-06 , 6 : 2.48E-06 , 7 : 2.48E-06 , 8 : 2.48E-06 , 9 : 2.48E-06 , 10 : 1.9E-06 , 11 : 1.6E-06 }#: s-1 at 12°C
 # estimate from Ljutovac 2002 over the period until leaf ligulation i.e. wider than in the model.
 # Because i) not enought data if we consider only up to previous leaf ligulation, ii) same exponential like period
@@ -187,15 +176,20 @@ class ElementInit(object):
         self.is_growing = True
         self.is_over = False
         self.length = 0               #: m
-        self.senesced_length = 0      #: m
+        self.Wmax = None                  # :m maximum lamina width (could store sheath and internode diameter as well)
+        self.senesced_length_element = 0  #: m
+        self.green_area = 0  #: m2
         self.age = 0                  #: Thermal Time
         self.max_proteins = 0         #: µmol N
         self.Nresidual = 0            #: g
         self.sucrose = 0              #: µmol C
         self.amino_acids = 0          #: µmol N
+        self.nitrates = 0             #: µmol N
         self.fructan = 0              #: µmol C
+        self.starch = 0              #: µmol C
         self.proteins = 0             #: µmol N
         self.mstruct = 0              #: g
+        self.senesced_mstruct = 0  #: g
         self.max_mstruct = 0          #: g
         self.Nstruct = 0              #: g
         self.cytokinins = 0           #: g

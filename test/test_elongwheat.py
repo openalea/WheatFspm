@@ -23,23 +23,13 @@ from elongwheat import simulation, converter
 
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
-
 # inputs directory path
 INPUTS_DIRPATH = 'inputs'
 
 # the file names of the inputs
 HIDDENZONES_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
 ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
-SAMS_INPUTS_FILENAME = 'SAMs_inputs.csv'
+AXES_INPUTS_FILENAME = 'axes_inputs.csv'
 
 # outputs directory path
 OUTPUTS_DIRPATH = 'outputs'
@@ -47,12 +37,12 @@ OUTPUTS_DIRPATH = 'outputs'
 # desired outputs filenames
 DESIRED_HIDDENZONES_OUTPUTS_FILENAME = 'desired_hiddenzones_outputs.csv'
 DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
-DESIRED_SAMS_OUTPUTS_FILENAME = 'desired_SAMs_outputs.csv'
+DESIRED_AXES_OUTPUTS_FILENAME = 'desired_axes_outputs.csv'
 
 # actual outputs filenames
 ACTUAL_HIDDENZONES_OUTPUTS_FILENAME = 'actual_hiddenzones_outputs.csv'
 ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
-ACTUAL_SAMS_OUTPUTS_FILENAME = 'actual_SAMs_outputs.csv'
+ACTUAL_AXES_OUTPUTS_FILENAME = 'actual_axes_outputs.csv'
 
 
 PRECISION = 6
@@ -68,6 +58,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
     if actual_data_filename is not None:
         actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
+        actual_data_df.fillna(value=pd.np.nan, inplace=True)
 
     if overwrite_desired_data:
         desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
@@ -93,10 +84,15 @@ def test_run(overwrite_desired_data=False):
     # read inputs from Pandas dataframe
     hiddenzone_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, HIDDENZONES_INPUTS_FILENAME))
     element_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, ELEMENTS_INPUTS_FILENAME))
-    SAM_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, SAMS_INPUTS_FILENAME))
+    axis_inputs_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, AXES_INPUTS_FILENAME))
+
+    # Convert NaN to None
+    hiddenzone_inputs_df = hiddenzone_inputs_df.where(hiddenzone_inputs_df.notnull(), None).copy(deep=True)
+    element_inputs_df = element_inputs_df.where(element_inputs_df.notnull(), None).copy(deep=True)
+    axis_inputs_df = axis_inputs_df.where(axis_inputs_df.notnull(), None).copy(deep=True)
 
     # convert the dataframe to simulation inputs format
-    inputs = converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, SAM_inputs_df)
+    inputs = converter.from_dataframes(hiddenzone_inputs_df, element_inputs_df, axis_inputs_df)
 
     # initialize the simulation with the inputs
     simulation_.initialize(inputs)
@@ -104,7 +100,7 @@ def test_run(overwrite_desired_data=False):
     # create empty lists of dataframes to store the outputs at each step
     hiddenzones_outputs_df_list = []
     elements_outputs_df_list = []
-    SAMs_outputs_df_list = []
+    axes_outputs_df_list = []
 
     # define the time grid to run the model on
     start_time = 0
@@ -117,12 +113,12 @@ def test_run(overwrite_desired_data=False):
         simulation_.run(Tair=25, Tsoil=20, optimal_growth_option=True)
 
         # convert outputs to dataframes
-        hiddenzones_outputs_df, elements_outputs_df, SAMs_outputs_df = converter.to_dataframes(simulation_.outputs)
+        hiddenzones_outputs_df, elements_outputs_df, axes_outputs_df = converter.to_dataframes(simulation_.outputs)
 
         # append the outputs at current t to the lists of dataframes
         for df, list_ in ((hiddenzones_outputs_df, hiddenzones_outputs_df_list),
                           (elements_outputs_df, elements_outputs_df_list),
-                          (SAMs_outputs_df, SAMs_outputs_df_list)):
+                          (axes_outputs_df, axes_outputs_df_list)):
             df.insert(0, 't', t)
             list_.append(df)
 
@@ -132,7 +128,7 @@ def test_run(overwrite_desired_data=False):
          actual_outputs_filename) \
             in ((hiddenzones_outputs_df_list, DESIRED_HIDDENZONES_OUTPUTS_FILENAME, ACTUAL_HIDDENZONES_OUTPUTS_FILENAME),
                 (elements_outputs_df_list, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME),
-                (SAMs_outputs_df_list, DESIRED_SAMS_OUTPUTS_FILENAME, ACTUAL_SAMS_OUTPUTS_FILENAME)):
+                (axes_outputs_df_list, DESIRED_AXES_OUTPUTS_FILENAME, ACTUAL_AXES_OUTPUTS_FILENAME)):
         outputs_df = pd.concat(outputs_df_list, ignore_index=True)
         print('Compare {} to {}'.format(actual_outputs_filename, desired_outputs_filename))
         compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, desired_outputs_filename, actual_outputs_filename, overwrite_desired_data)
