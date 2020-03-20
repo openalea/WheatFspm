@@ -2,7 +2,6 @@
 
 from __future__ import division  # use "//" to do integer division
 import parameters
-import numpy as np
 
 """
     growthwheat.model
@@ -13,15 +12,6 @@ import numpy as np
     :copyright: Copyright 2014-2015 INRA-ECOSYS, see AUTHORS.
     :license: see LICENSE for details.
 
-"""
-
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
 """
 
 
@@ -85,7 +75,7 @@ def calculate_delta_leaf_enclosed_mstruct_postE(delta_leaf_pseudo_age, leaf_pseu
     else:
         delta_enclosed_mstruct = 0
 
-    return delta_enclosed_mstruct
+    return max(0., delta_enclosed_mstruct)
 
 
 def calculate_delta_internode_enclosed_mstruct(internode_L, delta_internode_L, ratio_mstruct_DM):
@@ -120,7 +110,7 @@ def calculate_delta_internode_enclosed_mstruct_postL(delta_internode_pseudo_age,
     :return: delta_internode_enclosed_mstruct (g)
     :rtype: float
     """
-    if np.isnan(internode_Lmax):
+    if not internode_Lmax:
         enclosed_mstruct_max = internode_L * LSIW
     else:
         enclosed_mstruct_max = min(internode_pseudostem_L, internode_Lmax) * LSIW
@@ -130,7 +120,7 @@ def calculate_delta_internode_enclosed_mstruct_postL(delta_internode_pseudo_age,
     else:
         delta_enclosed_mstruct = 0
 
-    return delta_enclosed_mstruct
+    return max(0., delta_enclosed_mstruct)
 
 
 def calculate_delta_emerged_tissue_mstruct(SW, previous_mstruct, metric):
@@ -145,7 +135,7 @@ def calculate_delta_emerged_tissue_mstruct(SW, previous_mstruct, metric):
     """
     updated_mstruct = SW * metric
     delta_mstruct = updated_mstruct - previous_mstruct
-    return delta_mstruct
+    return max(0., delta_mstruct)
 
 
 def calculate_delta_Nstruct(delta_mstruct):
@@ -183,17 +173,18 @@ def calculate_init_cytokinins_emerged_tissue(delta_mstruct):
     return delta_mstruct * parameters.INIT_CYTOKININS_EMERGED_TISSUE  # TODO: Set according to protein concentration ?
 
 
-def calculate_s_Nstruct_amino_acids(delta_hiddenzone_Nstruct, delta_lamina_Nstruct, delta_sheath_Nstruct):
+def calculate_s_Nstruct_amino_acids(delta_hiddenzone_Nstruct, delta_lamina_Nstruct, delta_sheath_Nstruct, delta_internode_Nstruct):
     """Consumption of amino acids for the calculated mstruct growth (µmol N consumed by mstruct growth)
 
     :param float delta_hiddenzone_Nstruct: Nstruct growth of the hidden zone (g)
     :param float delta_lamina_Nstruct: Nstruct growth of the lamina (g)
     :param float delta_sheath_Nstruct: Nstruct growth of the sheath (g)
+    :param float delta_internode_Nstruct: Nstruct growth of the internode (g)
 
     :return: Amino acid consumption (µmol N)
     :rtype: float
     """
-    return (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct) / parameters.N_MOLAR_MASS * 1E6
+    return (delta_hiddenzone_Nstruct + delta_lamina_Nstruct + delta_sheath_Nstruct + delta_internode_Nstruct) / parameters.N_MOLAR_MASS * 1E6
 
 
 def calculate_s_mstruct_sucrose(delta_hiddenzone_mstruct, delta_lamina_mstruct, delta_sheath_mstruct, s_Nstruct_amino_acids_N):
@@ -214,6 +205,7 @@ def calculate_s_mstruct_sucrose(delta_hiddenzone_mstruct, delta_lamina_mstruct, 
 
     return s_mstruct_sucrose_C
 
+
 def calculate_sheath_mstruct(sheath_L, LSSW):
     """ mstruct of the sheath.
       Final mstruct of the enclosed leaf matches sheath mstruct calculation when it is mature.
@@ -225,6 +217,7 @@ def calculate_sheath_mstruct(sheath_L, LSSW):
       :rtype: float
       """
     return sheath_L * LSSW
+
 
 # Roots
 def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_teq, postflowering_stages):
@@ -245,7 +238,7 @@ def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_teq, pos
         Vmax = parameters.VMAX_ROOTS_GROWTH_POSTFLO
     else:
         Vmax = parameters.VMAX_ROOTS_GROWTH_PREFLO
-    N = 1.8
+    N = parameters.N_ROOTS_GROWTH
 
     mstruct_C_growth = ((conc_sucrose ** N) * Vmax) / ((conc_sucrose ** N) + (parameters.K_ROOTS_GROWTH ** N)) * delta_teq * mstruct  #: root growth in C (µmol of C)
     mstruct_growth = (mstruct_C_growth * 1E-6 * parameters.C_MOLAR_MASS) / parameters.RATIO_C_MSTRUCT_ROOTS  #: root growth (g of structural dry mass)
@@ -270,3 +263,16 @@ def calculate_roots_s_mstruct_sucrose(delta_roots_mstruct, s_Nstruct_amino_acids
     s_mstruct_sucrose_C = s_mstruct_C - s_mstruct_amino_acids_C  #: µmol of coming from sucrose
 
     return s_mstruct_sucrose_C
+
+
+def calculate_mineral_plant(mstruct, senesced_mstruct):
+    """ Mineral mass.
+
+    :param float mstruct: structural mass of the plant (g)
+    :param float senesced_mstruct: senesced structural mass of the plant (g)
+
+    :return: Mineral mass of the plant (g)
+    :rtype: float
+    """
+    mineral_plant = (mstruct * parameters.MINERAL_LIVING_TISSUE) + (senesced_mstruct * parameters.MINERAL_SENESCED_TISSUE)
+    return mineral_plant

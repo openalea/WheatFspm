@@ -13,14 +13,6 @@ from __future__ import division  # use "//" to do integer division
 
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
 C_MOLAR_MASS = 12                     #: Carbon molar mass (g mol-1)
 N_MOLAR_MASS = 14                     #: Nitrogen molar mass (g mol-1)
 
@@ -54,8 +46,12 @@ internode_rapid_growth_t = 288000  # Pseudo age at which the internode starts th
 VMAX_ROOTS_GROWTH_POSTFLO = 0.015 * CONVERSION_FACTOR_20_TO_12  #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) post flo at 12°C
 VMAX_ROOTS_GROWTH_PREFLO = 0.0855 * CONVERSION_FACTOR_20_TO_12  #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) pre flo at 12°C
 K_ROOTS_GROWTH = 1250                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS) post flo
+N_ROOTS_GROWTH = 1.8
 RATIO_C_MSTRUCT_ROOTS = 0.444         #: Mean contribution of carbon to root structural dry mass (g C g-1 Mstruct) : same as shoot
 RATIO_N_MSTRUCT_ROOTS_ = 0.005        #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct) : same as shoot
+
+MINERAL_LIVING_TISSUE = 0.05  #: Mineral content of the structural mass (g g-1 mstruct) (Thornley and Cannell, 2000)
+MINERAL_SENESCED_TISSUE = 0.05/2  #: Mineral content of the structural mass of a senescent tissue (g g-1 mstruct) (Thornley and Cannell, 2000)
 
 
 class OrganInit:
@@ -64,12 +60,14 @@ class OrganInit:
     """
     def __init__(self):
         self.is_growing = True
-        self.senesced_length = 0      #: m
+        self.senesced_length_element = 0      #: m
+        self.senesced_mstruct = 0     #: g
         self.green_area = 0           #: m2
         self.sucrose = 0              #: µmol C
         self.amino_acids = 0          #: µmol N
         self.fructan = 0              #: µmol C
         self.proteins = 0             #: µmol N
+        self.nitrates = 0             #: µmol N
         self.mstruct = 0              #: g
         self.Nstruct = 0              #: g
         self.Nresidual = 0            #: g
