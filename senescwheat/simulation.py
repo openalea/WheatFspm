@@ -16,15 +16,6 @@ import parameters
 
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
 
 class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
@@ -108,7 +99,7 @@ class Simulation(object):
         for element_inputs_id, element_inputs_dict in all_elements_inputs.items():
 
             axe_label = element_inputs_id[1]
-            if axe_label != 'MS':  # Calculation only for the main stem
+            if axe_label != 'MS':  # TODO: Calculation only for the main stem
                 continue
 
             # Temperature-compensated time (delta_teq)
@@ -118,7 +109,7 @@ class Simulation(object):
             # Senescence
             element_outputs_dict = element_inputs_dict.copy()
 
-            if model.SenescenceModel.calculate_if_element_is_over(element_inputs_dict['green_area'], element_inputs_dict['is_growing'],element_inputs_dict['mstruct']):
+            if model.SenescenceModel.calculate_if_element_is_over(element_inputs_dict['green_area'], element_inputs_dict['is_growing'], element_inputs_dict['mstruct']):
                 element_outputs_dict['green_area'] = 0.0
                 element_outputs_dict['senesced_length_element'] = element_inputs_dict['length']
                 element_outputs_dict['mstruct'] = 0
@@ -185,7 +176,7 @@ class Simulation(object):
                 element_outputs_dict = {'green_area': new_green_area,
                                         'senesced_length_element': new_senesced_length,
                                         'mstruct': new_mstruct,
-                                        'senesced_mstruct':element_inputs_dict['senesced_mstruct'] + delta_mstruct,
+                                        'senesced_mstruct': element_inputs_dict['senesced_mstruct'] + delta_mstruct,
                                         'Nstruct': new_Nstruct,
                                         'starch': element_inputs_dict['starch'] - remob_starch,
                                         'sucrose': element_inputs_dict['sucrose'] + remob_starch + remob_fructan,

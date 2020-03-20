@@ -23,14 +23,6 @@ from senescwheat import simulation, converter
 
 '''
 
-'''
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-'''
 
 # inputs paths
 INPUTS_DIRPATH = 'inputs'

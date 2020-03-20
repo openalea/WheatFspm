@@ -14,15 +14,6 @@ import parameters
 
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
 
 class SenescenceModel(object):
 
@@ -147,7 +138,7 @@ class SenescenceModel(object):
         :return: delta_mstruct (g), delta_Nstruct (g)
         :rtype: tuple [float, float]
         """
-        delta_mstruct =  prev_mstruct * relative_delta_green_area
+        delta_mstruct = prev_mstruct * relative_delta_green_area
         delta_Nstruct = prev_Nstruct * relative_delta_green_area
         return delta_mstruct, delta_Nstruct
 
@@ -175,7 +166,7 @@ class SenescenceModel(object):
         :rtype: bool
         """
         is_over = False
-        if (green_area < parameters.MIN_GREEN_AREA or mstruct == 0) and not is_growing :
+        if (green_area < parameters.MIN_GREEN_AREA or mstruct == 0) and not is_growing:
             is_over = True
         return is_over
 
@@ -236,7 +227,7 @@ class SenescenceModel(object):
         return (rate_mstruct_death * delta_teq) / root_mstruct
 
     @classmethod
-    def calculate_delta_mstruct_root(cls, rate_mstruct_death, rate_Nstruct_death,  delta_teq):
+    def calculate_delta_mstruct_root(cls, rate_mstruct_death, rate_Nstruct_death, delta_teq):
         """delta of structural mass due to senescence of roots
 
         :param float rate_mstruct_death: relative delta of root structural mass over delta_t (g s-1)
@@ -250,4 +241,3 @@ class SenescenceModel(object):
         delta_Nstruct = rate_Nstruct_death * delta_teq
 
         return delta_mstruct, delta_Nstruct
-
