@@ -12,16 +12,7 @@
     Investment for the Future programme managed by the Research National Agency 
     (BreedWheat project ANR-10-BTBR-03).
     
-    .. seealso:: Barillot et al. 2016.
+    .. see also:: Barillot et al. 2016.
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
-__version__  = '0.0.1'
+__version__ = '1.0'
