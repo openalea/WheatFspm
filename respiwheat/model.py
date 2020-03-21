@@ -195,10 +195,11 @@ class RespirationModel(object):
 
         if sucrose <= 0. or mstruct <= 0.:
             R_residual = 0.
+            R_maintenance = 0.
         else:
             conc_sucrose = sucrose / mstruct
             R_residual = ((cls.KM_MAX * conc_sucrose) / (cls.KM + conc_sucrose)) * Ntot * Q10 ** ((Ts - T_ref) / 10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
 
-        rm = 0.004208754
-        R_maintenance = rm * mstruct * Q10 ** ((Ts - T_ref) / 10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
+            rm = 0.004208754
+            R_maintenance = rm * mstruct * Q10 ** ((Ts - T_ref) / 10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
         return R_residual, R_maintenance
