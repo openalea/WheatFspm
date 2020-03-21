@@ -27,15 +27,6 @@ import tools
     .. seealso:: Barillot et al. 2016.
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
 
 class SimulationError(Exception):
     """
@@ -75,25 +66,21 @@ class Simulation(object):
     User should use method :meth:`initialize` to initialize the model, and method
     :meth:`run` to run the model.
 
-    :Parameters:
-
-        - respiration_model (:mod:`*`) - the model of respiration to use.
-
+    :param class respiration_model: the model of respiration to use.
           This model must define a class implementing these functions:
-
             * R_Nnit_upt(U_Nnit, sucrose): Nitrate uptake respiration.
                 * Parameters:
-                    - `U_Nnit` (:class:`float`) - uptake of N nitrates (:math:`\mu mol` N)
-                    - `sucrose` (:class:`float`) -  amount of C sucrose in organ (:math:`\mu mol` C)
-                * Returns: _R_Nnit_upt (:math:`\mu mol` C respired)
+                    - `U_Nnit` (:class:`float`) - uptake of N nitrates (µmol` N)
+                    - `sucrose` (:class:`float`) -  amount of C sucrose in organ (µmol` C)
+                * Returns: _R_Nnit_upt (µmol` C respired)
                 * Returns Type: :class:`float`
 
             * R_phloem(sucrose_loading, sucrose, mstruct): Phloem loading respiration
                 * Parameters:
-                    - `sucrose_loading` (:class:`float`) -  Loading flux from the C substrate pool to phloem (:math:`\mu mol` C g-1 mstruct)
-                    - `sucrose` (:class:`float`) -  amount of C sucrose in organ (:math:`\mu mol` C)
+                    - `sucrose_loading` (:class:`float`) -  Loading flux from the C substrate pool to phloem (µmol` C g-1 mstruct)
+                    - `sucrose` (:class:`float`) -  amount of C sucrose in organ (µmol` C)
                     - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
-                * Returns: _R_phloem (:math:`\mu mol` C respired)
+                * Returns: _R_phloem (µmol` C respired)
                 * Returns Type: :class:`float`
 
             * R_Nnit_red(s_amino_acids, sucrose, mstruct, root=False): Nitrate reduction-linked respiration
@@ -101,35 +88,42 @@ class Simulation(object):
               and reducing power obtained directly from photosynthesis (rather than C substrate)
 
                 * Parameters:
-                    - `s_amino_acids` (:class:`float`) - consumption of N for the synthesis of amino acids (:math:`\mu mol` N g-1 mstruct)
+                    - `s_amino_acids` (:class:`float`) - consumption of N for the synthesis of amino acids (µmol` N g-1 mstruct)
                       (in the present version, this is used to approximate nitrate reduction needed in the original model of Thornley and Cannell, 2000)
-                    - `sucrose` (:class:`float`) -  amount of C sucrose in organ (:math:`\mu mol` C)
+                    - `sucrose` (:class:`float`) -  amount of C sucrose in organ (µmol` C)
                     - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
                     - `root` (:class:`bool`) - specifies if the nitrate reduction-linked respiration is computed for shoot (False) or root (True) tissues.
-                * Returns: _R_Nnit_upt (:math:`\mu mol` C respired)
+                * Returns: _R_Nnit_upt (µmol` C respired)
                 * Returns Type: :class:`float`
 
             * R_residual(sucrose, mstruct, Ntot, delta_t, Ts): Residual maintenance respiration (cost from protein turn-over, cell ion gradients, futile cycles...)
                 * Parameters:
-                    - `sucrose` (:class:`float`) - amount of C sucrose (:math:`\mu mol` C)
+                    - `sucrose` (:class:`float`) - amount of C sucrose (µmol` C)
                     - `mstruct` (:class:`float`) - structural dry mass of organ (g)
-                    - `Ntot` (:class:`float`) - total N in organ (:math:`\mu mol` N)
+                    - `Ntot` (:class:`float`) - total N in organ (µmol` N)
                     - `delta_t` (:class:`float`) - timestep (s)
                     - `Ts` (:class:`float`) - organ temperature (°C)
-                * Returns: _R_residual (:math:`\mu mol` C respired)
+                * Returns: _R_residual (µmol` C respired)
                 * Returns Type: :class:`float`
 
             * R_grain_growth(mstruct_growth, starch_filling, mstruct): Grain growth respiration
                 * Parameters:
-                    - `mstruct_growth` (:class:`float`) - gross growth of grain structure (:math:`\mu mol` C added in grain structure)
-                    - `starch_filling` (:class:`float`) - gross growth of grain starch (:math:`\mu mol` C added in grain starch g-1 mstruct)
+                    - `mstruct_growth` (:class:`float`) - gross growth of grain structure (µmol` C added in grain structure)
+                    - `starch_filling` (:class:`float`) - gross growth of grain starch (µmol` C added in grain starch g-1 mstruct)
                     - `mstruct` (:class:`float`) -  structural dry mass of organ (g)
-                * Returns: R_grain_growth (:math:`\mu mol` C respired)
+                * Returns: R_grain_growth (µmol` C respired)
                 * Returns Type: :class:`float`
 
-        - delta_t (:class:`int`) - the delta t of the simulation (in seconds) ; default is `1`.
-
-        - culm_density (:class:`dict`) - culm density (culm m-2) ; default is `{1:410}`.
+    :param int delta_t: the delta t of the simulation (in seconds) ; default is `1`.
+    :param dict [int, int] culm_density: culm density (culm m-2).
+    :param bool interpolate_forcings: if True: interpolate senescence and photosynthesis forcings from values of `senescence_forcings_delta_t`and `senescence_forcings_delta_t`.
+           Default is `False` (do not interpolate the forcings).
+    :param int senescence_forcings_delta_t: the delta t of the senescence forcings (in seconds) ; default is `None`.
+           If the user sets `interpolate_forcings` to `True`, then he/she must also set `senescence_forcings_delta_t` to an integer value greater or equal to `delta_t`.
+           For example, if `interpolate_forcings` is `True` and `delta_t==3600`, then `senescence_forcings_delta_t` must be greater or equal to `3600`, that is for example `7200`.
+     :param int photosynthesis_forcings_delta_t: the delta t of the photosynthesis forcings (in seconds) ; default is `None`.
+           If the user sets `interpolate_forcings` to `True`, then he/she must also set `photosynthesis_forcings_delta_t` to an integer value greater or equal to `delta_t`.
+           For example, if `interpolate_forcings` is `True` and `delta_t==3600`, then `photosynthesis_forcings_delta_t` must be greater or equal to `3600`, that is for example `7200`.
 
         - interpolate_forcings (:class:`bool`) - if True: interpolate senescence and photosynthesis forcings from values of `senescence_forcings_delta_t`
           and `senescence_forcings_delta_t`. Default is `False` (do not interpolate the forcings).
@@ -149,10 +143,10 @@ class Simulation(object):
     #: :class:`model.Organ`, :class:`model.HiddenZone`, :class:`model.PhotosyntheticOrganElement`,
     #: and :class:`model.Soil`.
     MODEL_COMPARTMENTS_NAMES = {model.Plant: [],
-                                model.Axis: [],
+                                model.Axis: ['C_exudated', 'sum_respi_shoot', 'sum_respi_roots'],
                                 model.Phytomer: [],
                                 model.Organ: ['age_from_flowering', 'amino_acids', 'cytokinins',
-                                              'nitrates', 'proteins', 'starch', 'structure', 'sucrose'],
+                                              'nitrates', 'nitrates_vacuole', 'proteins', 'starch', 'structure', 'sucrose'],
                                 model.HiddenZone: ['amino_acids', 'fructan', 'proteins', 'sucrose'],
                                 model.PhotosyntheticOrganElement: ['amino_acids', 'cytokinins', 'fructan',
                                                                    'nitrates', 'proteins', 'starch', 'sucrose', 'triosesP'],
@@ -161,11 +155,11 @@ class Simulation(object):
     #: the time index
     T_INDEX = ['t']
 
-    ############################################################################
-    ########### DEFINITION OF THE PARAMETERS AND COMPUTED VARIABLES ############
-    ############################################################################
+    # ---------------------------------------------------------------------------
+    # ---------- DEFINITION OF THE PARAMETERS AND COMPUTED VARIABLES ------------
+    # ---------------------------------------------------------------------------
 
-    ########### PLANT scale ############
+    # ---------- PLANT scale ----------
 
     #: the index to locate the plants in the modeled system
     PLANTS_INDEXES = ['plant']
@@ -186,14 +180,14 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at plant scale
     PLANTS_RUN_VARIABLES = PLANTS_STATE + PLANTS_INTERMEDIATE_VARIABLES + PLANTS_FLUXES + PLANTS_INTEGRATIVE_VARIABLES
 
-    ########### AXIS scale ############
+    # ---------- AXIS scale ----------
 
     #: the indexes to locate the axes in the modeled system
     AXES_INDEXES = ['plant', 'axis']
     #: concatenation of :attr:`T_INDEX` and :attr:`AXES_INDEXES`
     AXES_T_INDEXES = T_INDEX + AXES_INDEXES
     #: the parameters which define the state of the modeled system at axis scale
-    AXES_STATE_PARAMETERS = ['mstruct']
+    AXES_STATE_PARAMETERS = ['mstruct', 'senesced_mstruct']
     #: the variables which define the state of the modeled system at axis scale,
     #: formed be the concatenation of :attr:`AXES_STATE_PARAMETERS` and the names
     #: of the compartments associated to each axis (see :attr:`MODEL_COMPARTMENTS_NAMES`)
@@ -207,7 +201,7 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at axis scale
     AXES_RUN_VARIABLES = AXES_STATE + AXES_INTERMEDIATE_VARIABLES + AXES_FLUXES + AXES_INTEGRATIVE_VARIABLES
 
-    ########### PHYTOMER scale ############
+    # ---------- PHYTOMER scale ----------
 
     #: the indexes to locate the phytomers in the modeled system
     PHYTOMERS_INDEXES = ['plant', 'axis', 'metamer']
@@ -228,14 +222,14 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at phytomer scale
     PHYTOMERS_RUN_VARIABLES = PHYTOMERS_STATE + PHYTOMERS_INTERMEDIATE_VARIABLES + PHYTOMERS_FLUXES + PHYTOMERS_INTEGRATIVE_VARIABLES
 
-    ########### ORGAN scale ############
+    # ---------- ORGAN scale ----------
 
     #: the indexes to locate the organs in the modeled system
     ORGANS_INDEXES = ['plant', 'axis', 'organ']
     #: concatenation of :attr:`T_INDEX` and :attr:`ORGANS_INDEXES`
     ORGANS_T_INDEXES = T_INDEX + ORGANS_INDEXES
     #: the parameters which define the state of the modeled system at organ scale
-    ORGANS_STATE_PARAMETERS = ['mstruct', 'Nstruct']
+    ORGANS_STATE_PARAMETERS = ['mstruct', 'Nstruct', 'senesced_mstruct']
     #: the variables which define the state of the modeled system at organ scale,
     #: formed be the concatenation of :attr:`ORGANS_STATE_PARAMETERS` and the names
     #: of the compartments associated to each organ (see :attr:`MODEL_COMPARTMENTS_NAMES`)
@@ -251,14 +245,14 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at organ scale
     ORGANS_RUN_VARIABLES = ORGANS_STATE + ORGANS_INTERMEDIATE_VARIABLES + ORGANS_FLUXES + ORGANS_INTEGRATIVE_VARIABLES
 
-    ########### HIDDENZONE scale ############
+    # ---------- HIDDENZONE scale ----------
 
     #: the indexes to locate the hidden zones in the modeled system
     HIDDENZONE_INDEXES = ['plant', 'axis', 'metamer']
     #: concatenation of :attr:`T_INDEX` and :attr:`HIDDENZONE_INDEXES`
     HIDDENZONE_T_INDEXES = T_INDEX + HIDDENZONE_INDEXES
     #: the parameters which define the state of the modeled system at hidden zone scale
-    HIDDENZONE_STATE_PARAMETERS = ['Nstruct', 'mstruct']
+    HIDDENZONE_STATE_PARAMETERS = ['Nstruct', 'mstruct', 'ratio_DZ']
     #: the variables which define the state of the modeled system at hidden zone scale,
     #: formed be the concatenation of :attr:`HIDDENZONE_STATE_PARAMETERS` and the names
     #: of the compartments associated to each hidden zone (see :attr:`MODEL_COMPARTMENTS_NAMES`)
@@ -272,14 +266,14 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at plnat scale
     HIDDENZONE_RUN_VARIABLES = HIDDENZONE_STATE + HIDDENZONE_INTERMEDIATE_VARIABLES + HIDDENZONE_FLUXES + HIDDENZONE_INTEGRATIVE_VARIABLES
 
-    ########### ELEMENT scale ############
+    # ---------- ELEMENT scale ----------
 
     #: the indexes to locate the elements in the modeled system
     ELEMENTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
     #: concatenation of :attr:`T_INDEX` and :attr:`ELEMENTS_INDEXES`
     ELEMENTS_T_INDEXES = T_INDEX + ELEMENTS_INDEXES
     #: the parameters which define the state of the modeled system at element scale
-    ELEMENTS_STATE_PARAMETERS = ['Ag', 'Nstruct', 'Tr', 'Ts', 'green_area', 'is_growing', 'mstruct']
+    ELEMENTS_STATE_PARAMETERS = ['Ag', 'Nstruct', 'Tr', 'Ts', 'green_area', 'is_growing', 'mstruct', 'senesced_mstruct']
     #: the variables which define the state of the modeled system at element scale,
     #: formed be the concatenation of :attr:`ELEMENTS_STATE_PARAMETERS` and the names
     #: of the compartments associated to each element (see :attr:`MODEL_COMPARTMENTS_NAMES`)
@@ -295,7 +289,7 @@ class Simulation(object):
     #: all the variables computed during a run step of the simulation at element scale
     ELEMENTS_RUN_VARIABLES = ELEMENTS_STATE + ELEMENTS_INTERMEDIATE_VARIABLES + ELEMENTS_FLUXES + ELEMENTS_INTEGRATIVE_VARIABLES
 
-    ########### SOIL scale ############
+    # ---------- SOIL scale ----------
 
     #: the indexes to locate the soils in the modeled system
     SOILS_INDEXES = ['plant', 'axis']
@@ -350,7 +344,7 @@ class Simulation(object):
                                      model.PhotosyntheticOrganElement: 'cnwheat.derivatives.elements',
                                      model.Soil: 'cnwheat.derivatives.soils'}}
 
-    def __init__(self, respiration_model, delta_t=1, culm_density={1: 410}, interpolate_forcings=False, senescence_forcings_delta_t=None, photosynthesis_forcings_delta_t=None):
+    def __init__(self, respiration_model, delta_t=1, culm_density=None, interpolate_forcings=False, senescence_forcings_delta_t=None, photosynthesis_forcings_delta_t=None):
 
         self.respiration_model = respiration_model  #: the model of respiration to use
 
@@ -413,7 +407,7 @@ class Simulation(object):
                 elements_derivatives_logger.debug(sep.join(Simulation.ELEMENTS_T_INDEXES + Simulation.ELEMENTS_STATE))
                 soils_derivatives_logger = logging.getLogger('cnwheat.derivatives.soils')
                 soils_derivatives_logger.debug(sep.join(Simulation.SOILS_T_INDEXES + Simulation.SOILS_STATE))
-        
+
         logger = logging.getLogger(__name__)
         if logger.isEnabledFor(logging.DEBUG):
             self.t_offset = 0.0  #: the absolute time offset elapsed from the beginning of the simulation
@@ -453,7 +447,6 @@ class Simulation(object):
     def initialize(self, population, soils, Tair=12, Tsoil=12):
         """
         Initialize:
-
             * :attr:`population`,
             * :attr:`soils`,
             * :attr:`initial_conditions_mapping`,
@@ -461,13 +454,10 @@ class Simulation(object):
 
         from `population` and `soils`.
 
-        :Parameters:
-
-            - `population` (:class:`model.Population`) - a population of plants.
-
-            - `soils` (:class:`dict`) - the soil associated to each axis.
-              `soils` must be a dictionary with the same structure as :attr:`soils`.
-
+        :param model.Population population: a population of plants.
+        :param dict soils: the soil associated to each axis. `soils` must be a dictionary with the same structure as :attr:`soils`
+        :param float Tair: air temperature (°C)
+        :param float Tsoil: soil temperature (°C)
         """
 
         logger = logging.getLogger(__name__)
@@ -571,18 +561,18 @@ class Simulation(object):
                                     element_id = (plant.index, axis.label, phytomer.index, organ.label, element.label)
                                     self.new_forcings_values[element_id] = {}
                                     for forcing_label in Simulation.ELEMENTS_FORCINGS:
-                                            self.new_forcings_values[element_id][forcing_label] = getattr(element, forcing_label)
-                                            if element_id in self.previous_forcings_values:
-                                                setattr(element, forcing_label, self.previous_forcings_values[element_id][forcing_label])
+                                        self.new_forcings_values[element_id][forcing_label] = getattr(element, forcing_label)
+                                        if element_id in self.previous_forcings_values:
+                                            setattr(element, forcing_label, self.previous_forcings_values[element_id][forcing_label])
 
-        # Update soil and air temperature using weater data
-        for soil_id, soil_inputs in self.soils.iteritems():
+        # Update soil and air temperature using weather data
+        for soil_id, soil_inputs in self.soils.items():
             self.soils[soil_id].Tsoil = Tsoil
         for plant in self.population.plants:
             plant.Tair = Tair
 
         # initialize initial conditions
-        def _init_initial_conditions(model_object, i):
+        def _init_initial_conditions(model_object, index):
             class_ = model_object.__class__
             if issubclass(class_, model.HiddenZone):
                 class_ = model.HiddenZone
@@ -594,10 +584,10 @@ class Simulation(object):
             self.initial_conditions_mapping[model_object] = {}
             for compartment_name in compartments_names:
                 if hasattr(model_object, compartment_name):
-                    self.initial_conditions_mapping[model_object][compartment_name] = i
+                    self.initial_conditions_mapping[model_object][compartment_name] = index
                     self.initial_conditions.append(0)
-                    i += 1
-            return i
+                    index += 1
+            return index
 
         i = 0
 
@@ -618,7 +608,8 @@ class Simulation(object):
                         if organ is None:
                             continue
                         i = _init_initial_conditions(organ, i)
-                        if organ is phytomer.hiddenzone: continue
+                        if organ is phytomer.hiddenzone:
+                            continue
                         for element in (organ.exposed_element, organ.enclosed_element):
                             if element is None:
                                 continue
@@ -632,10 +623,7 @@ class Simulation(object):
         """
         Compute CN exchanges which occurred in :attr:`population` and :attr:`soils` over :attr:`delta_t`.
 
-        :Parameters:
-
-            - `show_progressbar` (:class:`bool`) - True: show the progress bar of the solver ; False: do not show the progress bar (default).
-
+        :param bool show_progressbar: True: show the progress bar of the solver ; False: do not show the progress bar (default).
         """
         logger = logging.getLogger(__name__)
         logger.info('Run of CN-Wheat...')
@@ -654,7 +642,8 @@ class Simulation(object):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Run the solver with delta_t = %s", self.time_step)
 
-        #: Call :func:`scipy.integrate.solve_ivp` to integrate the system over self.time_grid.
+        # call :func:`scipy.integrate.solve_ivp` to integrate the system during 1 time step ;
+        # :func:`scipy.integrate.solve_ivp` computes the derivatives of each function by calling :meth:`_calculate_all_derivatives`
         sol = solve_ivp(fun=self._calculate_all_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
                         method='BDF', t_eval=np.array([self.time_step]), dense_output=False)
 
@@ -668,13 +657,13 @@ class Simulation(object):
             message = "Integration failed: {}".format(sol.message)
             logger.exception(message)
             raise SimulationRunError(message)
-        
+
         # Re-compute integrative variables
         self.population.calculate_aggregated_variables()
-        
+
         if logger.isEnabledFor(logging.DEBUG):
             self.t_offset += self.time_step
-            
+
         logger.info('Run of CN-Wheat DONE')
 
     def _update_initial_conditions(self):
@@ -701,7 +690,7 @@ class Simulation(object):
                     next_forcings_values[roots_id] = {}
                     for forcing_label in Simulation.ROOTS_FORCINGS:
                         if roots_id in self.previous_forcings_values and \
-                            self.previous_forcings_values[roots_id][forcing_label] != self.new_forcings_values[roots_id][forcing_label]:
+                                self.previous_forcings_values[roots_id][forcing_label] != self.new_forcings_values[roots_id][forcing_label]:
                             prev_forcing_value = self.previous_forcings_values[roots_id][forcing_label]
                             next_forcing_value = prev_forcing_value + (self.new_forcings_values[roots_id][forcing_label] - prev_forcing_value) / self.senescence_forcings_delta_t_ratio
                         else:
@@ -722,7 +711,7 @@ class Simulation(object):
                                                                                  (Simulation.ELEMENTS_SENESCENCE_FORCINGS, self.senescence_forcings_delta_t_ratio)):
                                     for forcing_label in forcing_labels:
                                         if element_id in self.previous_forcings_values and \
-                                            self.previous_forcings_values[element_id][forcing_label] != self.new_forcings_values[element_id][forcing_label]:
+                                                self.previous_forcings_values[element_id][forcing_label] != self.new_forcings_values[element_id][forcing_label]:
                                             prev_forcing_value = self.previous_forcings_values[element_id][forcing_label]
                                             next_forcing_value = prev_forcing_value + (self.new_forcings_values[element_id][forcing_label] - prev_forcing_value) / forcings_delta_t_ratio
                                         else:
@@ -815,30 +804,22 @@ class Simulation(object):
 
         Following calls to :meth:`_calculate_all_derivatives` use `t` in [**t_span** [0], **t_span** [1]]. 
 
-        :Parameters:
-
-            - `t` (:class:`float`) - The current t at which we want to compute the derivatives.
+        :param float t: The current t at which we want to compute the derivatives.
               Values of `t` are chosen automatically by :func:`scipy.integrate.solve_ivp`.
               At first call to :meth:`_calculate_all_derivatives` by :func:`scipy.integrate.solve_ivp`,
               `t` = **t_span** [0], where **t_span** is one of the arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
               For each following call to :meth:`_calculate_all_derivatives`, `t` belongs
               to the interval [**t_span** [0], **t_span** [1]].
-              
-            - `y` (:class:`list`) - The current values of y. 
+        :param list [float] y: The current values of y.
               At first call to :meth:`_calculate_all_derivatives` by :func:`scipy.integrate.solve_ivp`, `y` = **y0**
               where **y0** is one of the arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
               Then, values of `y` are chosen automatically by :func:`scipy.integrate.solve_ivp`.
 
-        :Returns:
-            The derivatives of `y` at `t`.
-
-        :Returns Type:
-            :class:`list`
-
-
+        :return: The derivatives of `y` at `t`.
+        :rtype: list [float]
         """
         logger = logging.getLogger(__name__)
-        
+
         if logger.isEnabledFor(logging.DEBUG):
             t_abs = t + self.t_offset
             logger.debug('t = {}'.format(t_abs))
@@ -884,6 +865,7 @@ class Simulation(object):
         soil.Conc_Nitrates_Soil = soil.calculate_Conc_Nitrates(soil.nitrates)
 
         soil.T_effect_Vmax = soil.calculate_temperature_effect_on_Vmax(soil.Tsoil)
+        soil.T_effect_conductivity = soil.calculate_temperature_effect_on_conductivity(soil.Tsoil)
 
         for plant in self.population.plants:
 
@@ -891,12 +873,18 @@ class Simulation(object):
             plant.T_effect_Vmax = plant.calculate_temperature_effect_on_Vmax(plant.Tair)
 
             for axis in plant.axes:
+                sum_respi_shoot = 0.0
+                axis.C_exudated = y[self.initial_conditions_mapping[axis]['C_exudated']]
+                axis.sum_respi_shoot = y[self.initial_conditions_mapping[axis]['sum_respi_shoot']]
+                axis.sum_respi_roots = y[self.initial_conditions_mapping[axis]['sum_respi_roots']]
+
                 # Phloem
                 phloem_contributors = []
                 axis.phloem.sucrose = y[self.initial_conditions_mapping[axis.phloem]['sucrose']]
                 axis.phloem.amino_acids = y[self.initial_conditions_mapping[axis.phloem]['amino_acids']]
                 # Roots
                 axis.roots.nitrates = y[self.initial_conditions_mapping[axis.roots]['nitrates']]
+                axis.roots.nitrates_vacuole = y[self.initial_conditions_mapping[axis.roots]['nitrates_vacuole']]
                 axis.roots.amino_acids = y[self.initial_conditions_mapping[axis.roots]['amino_acids']]
                 axis.roots.sucrose = y[self.initial_conditions_mapping[axis.roots]['sucrose']]
                 axis.roots.cytokinins = y[self.initial_conditions_mapping[axis.roots]['cytokinins']]
@@ -914,16 +902,12 @@ class Simulation(object):
                                     axis.Total_Transpiration += (element.Transpiration * element.nb_replications)
                                     total_green_area += (element.green_area * element.nb_replications)
 
-                if total_green_area == 0.0:
-                    total_surfacic_transpiration = 0.0
-                else:
-                    total_surfacic_transpiration = axis.Total_Transpiration / total_green_area  #: total transpiration rate of plant per unit area (mmol m-2 s-1)
-
                 # Compute the regulating factor of root exports by shoot transpiration
-                axis.roots.regul_transpiration = axis.roots.calculate_regul_transpiration(total_surfacic_transpiration, axis.Total_Transpiration)
+                axis.roots.regul_transpiration = axis.roots.calculate_regul_transpiration(axis.Total_Transpiration)
 
                 # compute the flows from/to the roots to/from photosynthetic organs
-                axis.roots.Uptake_Nitrates, axis.roots.HATS_LATS = axis.roots.calculate_Uptake_Nitrates(soil.Conc_Nitrates_Soil, axis.roots.nitrates, axis.roots.sucrose, soil.T_effect_Vmax)
+                axis.roots.Uptake_Nitrates, axis.roots.HATS_LATS = axis.roots.calculate_Uptake_Nitrates(soil.Conc_Nitrates_Soil, axis.roots.nitrates + axis.roots.nitrates_vacuole, axis.roots.sucrose,
+                                                                                                        soil.T_effect_Vmax)
                 soil_contributors.append((axis.roots.Uptake_Nitrates, plant.index))  #: TODO TEMP!!!
                 axis.roots.R_Nnit_upt = self.respiration_model.RespirationModel.R_Nnit_upt(axis.roots.Uptake_Nitrates, axis.roots.sucrose)
                 axis.roots.Export_Nitrates = axis.roots.calculate_Export_Nitrates(axis.roots.nitrates, axis.roots.regul_transpiration)
@@ -942,25 +926,6 @@ class Simulation(object):
                         hiddenzone.amino_acids = y[self.initial_conditions_mapping[hiddenzone]['amino_acids']]
                         hiddenzone.proteins = y[self.initial_conditions_mapping[hiddenzone]['proteins']]
                         phloem_contributors.append(hiddenzone)
-
-                        # Unloading of sucrose from phloem
-                        hiddenzone.Unloading_Sucrose = hiddenzone.calculate_Unloading_Sucrose(hiddenzone.sucrose, axis.phloem.sucrose, axis.mstruct, plant.T_effect_conductivity)
-
-                        # Unloading of AA from phloem
-                        hiddenzone.Unloading_Amino_Acids = hiddenzone.calculate_Unloading_Amino_Acids(hiddenzone.amino_acids, axis.phloem.amino_acids, axis.mstruct, plant.T_effect_conductivity)
-
-                        # Fructan synthesis
-                        Regul_Sfructanes = hiddenzone.calculate_Regul_S_Fructan(hiddenzone.Unloading_Sucrose)
-                        hiddenzone.S_Fructan = hiddenzone.calculate_S_Fructan(hiddenzone.sucrose, Regul_Sfructanes, plant.T_effect_Vmax)
-                        #
-                        # # Fructan degradation
-                        hiddenzone.D_Fructan = hiddenzone.calculate_D_Fructan(hiddenzone.sucrose, hiddenzone.fructan, plant.T_effect_Vmax)
-                        #
-                        # # Synthesis proteins
-                        hiddenzone.S_Proteins = hiddenzone.calculate_S_proteins(hiddenzone.amino_acids, plant.T_effect_Vmax)
-
-                        # Degradation proteins
-                        hiddenzone.D_Proteins = hiddenzone.calculate_D_Proteins(hiddenzone.proteins, plant.T_effect_Vmax)
 
                     hiddenzone_Loading_Sucrose_contribution = 0
                     hiddenzone_Loading_Amino_Acids_contribution = 0
@@ -985,7 +950,7 @@ class Simulation(object):
                             element.Photosynthesis = element.calculate_total_Photosynthesis(element.Ag, element.green_area)
 
                             # flows
-                            if element.is_growing:  #: Export of sucrose and amino acids towards the hidden zone. Several growing elements might export toward the HZ at the same time (leaf and internode)
+                            if element.is_growing:  #: Export of sucrose and amino acids towards the HZ. Several growing elements might export toward the HZ at the same time (leaf and internode)
                                 element.Loading_Sucrose = element.calculate_export_sucrose(element.sucrose, hiddenzone.sucrose, hiddenzone.mstruct, plant.T_effect_conductivity)
                                 hiddenzone_Loading_Sucrose_contribution += element.Loading_Sucrose
                                 element.Loading_Amino_Acids = element.calculate_Export_Amino_Acids(element.amino_acids, hiddenzone.amino_acids, hiddenzone.mstruct, plant.T_effect_conductivity)
@@ -1010,7 +975,7 @@ class Simulation(object):
                             element.R_Nnit_red, element.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(element.S_Amino_Acids, element.sucrose,
                                                                                                                            element.mstruct * element.__class__.PARAMETERS.ALPHA)
                             element.S_Proteins = element.calculate_S_proteins(element.amino_acids, plant.T_effect_Vmax)
-                            element.k_proteins, element.D_Proteins = element.calculate_D_Proteins(element.proteins, element.cytokinins, plant.T_effect_Vmax)
+                            element.D_Proteins = element.calculate_D_Proteins(element.proteins, element.cytokinins, plant.T_effect_Vmax)
                             element.cytokinins_import = element.calculate_cytokinins_import(axis.roots.Export_cytokinins, element.Transpiration, axis.Total_Transpiration)
                             element.D_cytokinins = element.calculate_D_cytokinins(element.cytokinins, plant.T_effect_Vmax)
 
@@ -1019,6 +984,7 @@ class Simulation(object):
                             element.R_residual, element.R_maintenance = self.respiration_model.RespirationModel.R_residual(element.sucrose, element.mstruct * element.__class__.PARAMETERS.ALPHA,
                                                                                                                            element.Total_Organic_Nitrogen, element.Ts)
                             element.sum_respi = element.R_phloem_loading + element.R_Nnit_red + element.R_residual
+                            sum_respi_shoot += element.sum_respi * element.nb_replications
                             sucrose_derivative = element.calculate_sucrose_derivative(element.S_Sucrose, element.D_Starch, element.Loading_Sucrose, element.S_Fructan,
                                                                                       element.D_Fructan, element.sum_respi)
                             triosesP_derivative = element.calculate_triosesP_derivative(element.Photosynthesis, element.S_Sucrose, element.S_Starch, element.S_Amino_Acids)
@@ -1039,9 +1005,36 @@ class Simulation(object):
                             y_derivatives[self.initial_conditions_mapping[element]['cytokinins']] = cytokinins_derivative
 
                     if phytomer.hiddenzone is not None:
+                        # Unloading of sucrose from phloem
+                        hiddenzone.Unloading_Sucrose = hiddenzone.calculate_Unloading_Sucrose(hiddenzone.sucrose, axis.phloem.sucrose, axis.mstruct, plant.T_effect_conductivity)
+
+                        # Unloading of AA from phloem
+                        hiddenzone.Unloading_Amino_Acids = hiddenzone.calculate_Unloading_Amino_Acids(hiddenzone.amino_acids, axis.phloem.amino_acids, axis.mstruct, plant.T_effect_conductivity)
+
+                        # Fructan synthesis
+                        Regul_Sfructanes = hiddenzone.calculate_Regul_S_Fructan(hiddenzone.Unloading_Sucrose)
+                        hiddenzone.S_Fructan = hiddenzone.calculate_S_Fructan(hiddenzone.sucrose, Regul_Sfructanes, plant.T_effect_Vmax)
+
+                        # Fructan degradation
+                        hiddenzone.D_Fructan = hiddenzone.calculate_D_Fructan(hiddenzone.sucrose, hiddenzone.fructan, plant.T_effect_Vmax)
+
+                        # Synthesis proteins
+                        hiddenzone.S_Proteins = hiddenzone.calculate_S_proteins(hiddenzone.amino_acids, plant.T_effect_Vmax)
+
+                        # Degradation proteins
+                        hiddenzone.D_Proteins = hiddenzone.calculate_D_Proteins(hiddenzone.proteins, plant.T_effect_Vmax)
+
+                        # Residual respiration
+                        hiddenzone.R_residual, hiddenzone.R_maintenance = self.respiration_model.RespirationModel.R_residual(hiddenzone.sucrose,
+                                                                                                                             hiddenzone.mstruct * hiddenzone.__class__.PARAMETERS.ALPHA,
+                                                                                                                             hiddenzone.Total_Organic_Nitrogen,
+                                                                                                                             plant.Tair)
+                        sum_respi_shoot += hiddenzone.R_residual * hiddenzone.nb_replications
+
                         # compute the derivatives of the hidden zone
                         y_derivatives[self.initial_conditions_mapping[hiddenzone]['sucrose']] = hiddenzone.calculate_sucrose_derivative(hiddenzone.Unloading_Sucrose, hiddenzone.S_Fructan,
-                                                                                                                                        hiddenzone.D_Fructan, hiddenzone_Loading_Sucrose_contribution)
+                                                                                                                                        hiddenzone.D_Fructan,
+                                                                                                                                        hiddenzone_Loading_Sucrose_contribution, hiddenzone.R_residual)
                         y_derivatives[self.initial_conditions_mapping[hiddenzone]['amino_acids']] = hiddenzone.calculate_amino_acids_derivative(hiddenzone.Unloading_Amino_Acids, hiddenzone.S_Proteins,
                                                                                                                                                 hiddenzone.D_Proteins,
                                                                                                                                                 hiddenzone_Loading_Amino_Acids_contribution)
@@ -1057,48 +1050,54 @@ class Simulation(object):
                     axis.grains.age_from_flowering = y[self.initial_conditions_mapping[axis.grains]['age_from_flowering']]
 
                     # intermediate variables
-                    axis.grains.RGR_Structure = axis.grains.calculate_RGR_Structure(axis.phloem.sucrose, axis.mstruct)
+                    T_effect_growth = axis.grains.calculate_temperature_effect_on_growth(plant.Tair)
+                    axis.grains.RGR_Structure = axis.grains.calculate_RGR_Structure(axis.phloem.sucrose, axis.mstruct, T_effect_growth)
                     axis.grains.structural_dry_mass = axis.grains.calculate_structural_dry_mass(axis.grains.structure)
 
                     # flows
                     axis.grains.S_grain_structure = axis.grains.calculate_S_grain_structure(axis.grains.structure, axis.grains.RGR_Structure)
-                    axis.grains.S_grain_starch = axis.grains.calculate_S_grain_starch(axis.phloem.sucrose, axis.mstruct)
+                    axis.grains.S_grain_starch = axis.grains.calculate_S_grain_starch(axis.phloem.sucrose, axis.mstruct, plant.T_effect_Vmax)
                     axis.grains.S_Proteins = axis.grains.calculate_S_proteins(axis.grains.S_grain_structure, axis.grains.S_grain_starch, axis.phloem.amino_acids, axis.phloem.sucrose,
                                                                               axis.grains.structural_dry_mass)
                     # compartments derivatives
                     axis.grains.R_grain_growth_struct, axis.grains.R_grain_growth_starch = self.respiration_model.RespirationModel.R_grain_growth(axis.grains.S_grain_structure,
                                                                                                                                                   axis.grains.S_grain_starch,
                                                                                                                                                   axis.grains.structural_dry_mass)
+                    sum_respi_shoot += axis.grains.R_grain_growth_struct + axis.grains.R_grain_growth_starch
                     structure_derivative = axis.grains.calculate_structure_derivative(axis.grains.S_grain_structure, axis.grains.R_grain_growth_struct)
                     starch_derivative = axis.grains.calculate_starch_derivative(axis.grains.S_grain_starch, axis.grains.structural_dry_mass, axis.grains.R_grain_growth_starch)
                     proteins_derivative = axis.grains.calculate_proteins_derivative(axis.grains.S_Proteins)
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['structure']] = structure_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['starch']] = starch_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['proteins']] = proteins_derivative
-                    y_derivatives[self.initial_conditions_mapping[axis.grains]['age_from_flowering']] += self.delta_t
+                    y_derivatives[self.initial_conditions_mapping[axis.grains]['age_from_flowering']] += (self.delta_t * T_effect_growth)
 
                 # compute the derivative of each compartment of roots
                 # flows
-                axis.roots.Unloading_Sucrose = axis.roots.calculate_Unloading_Sucrose(axis.phloem.sucrose, axis.mstruct, plant.T_effect_conductivity)
+                axis.roots.Unloading_Sucrose = axis.roots.calculate_Unloading_Sucrose(axis.roots.sucrose, axis.phloem.sucrose, axis.mstruct, plant.T_effect_conductivity)
                 axis.roots.Unloading_Amino_Acids = axis.roots.calculate_Unloading_Amino_Acids(axis.roots.Unloading_Sucrose, axis.phloem.sucrose, axis.phloem.amino_acids)
                 axis.roots.S_Amino_Acids = axis.roots.calculate_S_amino_acids(axis.roots.nitrates, axis.roots.sucrose, soil.T_effect_Vmax)
                 axis.roots.R_Nnit_red, axis.roots.S_Amino_Acids = self.respiration_model.RespirationModel.R_Nnit_red(axis.roots.S_Amino_Acids, axis.roots.sucrose,
                                                                                                                      axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, root=True)
-                axis.roots.C_exudation, axis.roots.N_exudation = axis.roots.calculate_exudation(axis.roots.Unloading_Sucrose, axis.roots.sucrose, axis.roots.amino_acids, axis.phloem.amino_acids,
-                                                                                                soil.T_effect_Vmax)
+                axis.roots.C_exudation, axis.roots.N_exudation = axis.roots.calculate_exudation(axis.roots.Unloading_Sucrose, axis.roots.sucrose, axis.roots.amino_acids, axis.phloem.amino_acids)
                 axis.roots.S_cytokinins = axis.roots.calculate_S_cytokinins(axis.roots.sucrose, axis.roots.nitrates, soil.T_effect_Vmax)
+                axis.roots.Loading_Nitrates_Vacuole = axis.roots.calculate_Loading_Nitrates_Vacuole(axis.roots.nitrates, soil.T_effect_Vmax)
+                axis.roots.Unloading_Nitrates_Vacuole = axis.roots.calculate_Unloading_Nitrates_Vacuole(axis.roots.nitrates_vacuole, soil.T_effect_Vmax)
 
                 # compartments derivatives
                 axis.roots.R_residual, _ = self.respiration_model.RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, axis.roots.Total_Organic_Nitrogen,
                                                                                               soil.Tsoil)
                 axis.roots.sum_respi = axis.roots.R_Nnit_upt + axis.roots.R_Nnit_red + axis.roots.R_residual
                 sucrose_derivative = axis.roots.calculate_sucrose_derivative(axis.roots.Unloading_Sucrose, axis.roots.S_Amino_Acids, axis.roots.C_exudation, axis.roots.sum_respi)
-                nitrates_derivative = axis.roots.calculate_nitrates_derivative(axis.roots.Uptake_Nitrates, axis.roots.Export_Nitrates, axis.roots.S_Amino_Acids)
+                nitrates_derivative = axis.roots.calculate_nitrates_derivative(axis.roots.Uptake_Nitrates, axis.roots.Export_Nitrates, axis.roots.S_Amino_Acids,axis.roots.Loading_Nitrates_Vacuole,
+                                                                               axis.roots.Unloading_Nitrates_Vacuole)
+                nitrates_vacuole_derivative = axis.roots.calculate_nitrates_vacuole_derivative(axis.roots.Loading_Nitrates_Vacuole, axis.roots.Unloading_Nitrates_Vacuole)
                 amino_acids_derivative = axis.roots.calculate_amino_acids_derivative(axis.roots.Unloading_Amino_Acids, axis.roots.S_Amino_Acids, axis.roots.Export_Amino_Acids, axis.roots.N_exudation)
                 cytokinins_derivative = axis.roots.calculate_cytokinins_derivative(axis.roots.S_cytokinins, axis.roots.Export_cytokinins)
 
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['sucrose']] = sucrose_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['nitrates']] = nitrates_derivative
+                y_derivatives[self.initial_conditions_mapping[axis.roots]['nitrates_vacuole']] = nitrates_vacuole_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['amino_acids']] = amino_acids_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['cytokinins']] = cytokinins_derivative
 
@@ -1108,9 +1107,15 @@ class Simulation(object):
                 y_derivatives[self.initial_conditions_mapping[axis.phloem]['sucrose']] = sucrose_phloem_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.phloem]['amino_acids']] = amino_acids_phloem_derivative
 
+                # compute the derivative of each compartment of axis
+                C_exudated = axis.calculate_C_exudated(axis.roots.C_exudation, axis.roots.N_exudation, axis.roots.mstruct)
+                y_derivatives[self.initial_conditions_mapping[axis]['C_exudated']] += C_exudated
+                y_derivatives[self.initial_conditions_mapping[axis]['sum_respi_roots']] += axis.roots.sum_respi
+                y_derivatives[self.initial_conditions_mapping[axis]['sum_respi_shoot']] += sum_respi_shoot
+
         # compute the derivative of each compartment of soil
         soil.mineralisation = soil.calculate_mineralisation(soil.T_effect_Vmax)
-        y_derivatives[self.initial_conditions_mapping[soil]['nitrates']] = soil.calculate_nitrates_derivative(soil.mineralisation, soil_contributors, self.culm_density)
+        y_derivatives[self.initial_conditions_mapping[soil]['nitrates']] = soil.calculate_nitrates_derivative(soil.mineralisation, soil_contributors, self.culm_density, soil.constant_Conc_Nitrates)
 
         if self.show_progressbar:
             self.progressbar.update(t)
@@ -1120,4 +1125,3 @@ class Simulation(object):
             self._log_compartments(t_abs, y_derivatives, Simulation.LOGGERS_NAMES['derivatives'])
 
         return y_derivatives
-

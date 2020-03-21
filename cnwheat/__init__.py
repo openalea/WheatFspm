@@ -26,15 +26,6 @@ import logging
     .. seealso:: Barillot et al. 2016.
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
 __version__ = '2.0'
 
 # Add a do-nothing handler to prevent an error message being output to sys.stderr in the absence of logging configuration

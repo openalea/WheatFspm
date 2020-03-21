@@ -35,15 +35,6 @@ import matplotlib.pyplot as plt
     .. seealso:: Barillot et al. 2016.
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
 OUTPUTS_INDEXES = ['t', 'plant', 'axis', 'metamer', 'organ', 'element']  #: All the possible indexes of CN-Wheat outputs
 
 
@@ -60,7 +51,7 @@ class DataWarning(UserWarning):
 warnings.simplefilter('always', DataWarning)
 
 
-def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=None, filters={}, plot_filepath=None, colors=[], linestyles=[], explicit_label=True, kwargs={}):
+def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', x_lim=None, title=None, filters={}, plot_filepath=None, colors=[], linestyles=[], explicit_label=True, kwargs={}):
     """Plot `outputs`, with x=`x_name` and y=`y_name`.
 
     The general algorithm is:
@@ -70,37 +61,24 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
         * plot each group as a new line,
         * save or display the plot.
 
-    :Parameters:
-
-        - `outputs` (:class:`pandas.DataFrame`) - The outputs of CN-Wheat.
-
-        - `x_name` (:class:`str`) - x axis of the plot.
-
-        - `y_name` (:class:`str`) - y axis of the plot.
-
-        - `x_label` (:class:`str`) - The x label of the plot. Default is ''.
-
-        - `y_label` (:class:`str`) - The y label of the plot. Default is ''.
-
-        - `title` (:class:`str`) - the title of the plot. If None (default), create
-          a title which is the concatenation of `y_name` and each scales which cardinality is one.
-
-        - `filters` (:class:`dict`) - A dictionary whose keys are the columns of
-          `outputs` for which we want to apply a specific filter.
+    :param pandas.DataFrame outputs: The outputs of CN-Wheat.
+    :param str x_name: x axis of the plot.
+    :param str y_name: y axis of the plot.
+    :param str x_label: The x label of the plot. Default is ''.
+    :param str or unicode y_label: The y label of the plot. Default is ''.
+    :param float x_lim: the x-axis limit.
+    :param str title: the title of the plot. If None (default), create a title which is the concatenation of `y_name` and each scales which cardinality is one.
+    :param dict filters: A dictionary whose keys are the columns of `outputs` for which we want to apply a specific filter.
           These columns can be one or more element of :const:`OUTPUTS_INDEXES`.
           The value associated to each key is a criteria that the rows of `outputs`
           must satisfy to be plotted. The values can be either one value or a list of values.
           If no value is given for any column, then all rows are plotted (default).
-
-        - `colors` (:class:`list`) - The colors for lines. If empty, let matplotlib default line colors.
-
-        - `linestyles` (:class:`list`) - The styles for lines. If empty, let matplotlib default line styles.
-
-        - `plot_filepath` (:class:`str`) - The file path to save the plot.
-          If `None`, do not save the plot but display it.
-
-        - `explicit_label` (:class:`bool`) - True: makes the line label from concatenation of each scale id (default).
-                                           - False: makes the line label from concatenation of scales containing several distinct elements.
+    :param list colors: The colors for lines. If empty, let matplotlib default line colors.
+    :param list linestyles: The styles for lines. If empty, let matplotlib default line styles.
+    :param str plot_filepath: The file path to save the plot. If `None`, do not save the plot but display it.
+    :param bool explicit_label: True: makes the line label from concatenation of each scale id (default).
+                              - False: makes the line label from concatenation of scales containing several distinct elements.
+    :param dict kwargs: key arguments to be passed to matplolib
 
     :Examples:
 
@@ -198,9 +176,15 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', title=N
         # plot the line
         ax.plot(outputs_group[x_name], outputs_group[y_name], **kwargs)
 
+    ax.set_ylim(bottom=0.)
+
+    if x_lim is not None:
+        ax.set_xlim(right=x_lim)
+
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+    if kwargs['label']:
+        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
     ax.set_title(title)
     plt.tight_layout()
 
@@ -218,27 +202,14 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
                   remove_old_logs=False):
     """Setup logging configuration.
 
-    :Parameters:
-
-        - `config_filepath` (:class:`str`) - the file path of the logging
-          configuration.
-
-        - `level` (:class:`int`) - the global level of the logging. Use either
+    :param str config_filepath: The file path of the logging configuration.
+    :param int level: The global level of the logging. Use either
           `logging.DEBUG`, `logging.INFO`, `logging.WARNING`, `logging.ERROR` or
           `logging.CRITICAL`.
-
-        - `log_model` (:class:`bool`) - if `True`, log the messages from :mod:`cnwheat.model`.
-          `False` otherwise.
-
-        - `log_compartments` (:class:`bool`) - if `True`, log the values of the compartments.
-          `False` otherwise.
-
-        - `log_derivatives` (:class:`bool`) - if `True`, log the values of the derivatives.
-          `False` otherwise.
-          
-        - `remove_old_logs` (:class:`bool`) - if `True`, remove all files in the logs directory 
-           documented in `config_filepath`. 
-
+    :param bool log_model: if `True`, log the messages from :mod:`cnwheat.model`. `False` otherwise.
+    :param bool log_compartments: if `True`, log the values of the compartments. `False` otherwise.
+    :param bool log_derivatives: if `True`, log the values of the derivatives. `False` otherwise.
+    :param bool remove_old_logs: if `True`, remove all files in the logs directory documented in `config_filepath`.
     """
     if os.path.exists(config_filepath):
         with open(config_filepath, 'r') as f:
@@ -259,7 +230,7 @@ def setup_logging(config_filepath='logging.json', level=logging.INFO,
     logging.getLogger('cnwheat.derivatives').disabled = not log_derivatives  # set to False to log the derivatives
 
 
-def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None, precision=4):
+def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filename, actual_data_filename=None, precision=4, overwrite_desired_data=False):
     """Compare 
     
             difference = actual_data_df - desired_data_df
@@ -274,18 +245,12 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
             
         If difference > tolerance, then raise an AssertionError.
     
-    :Parameters:
-
-        - `data_dirpath` (:class:`str`) - The path of the directory where to find the data to compare.
-
-        - `actual_data_df` (:class:`pandas.DataFrame`) - The computed data.
-
-        - `desired_data_filename` (:class:`str`) - The file name of the expected data.
-
-        - `actual_data_filename` (:class:`str`) - If not None, save the computed data to `actual_data_filename`, in directory `data_dirpath`. Default is None.
-        
-        - `precision` (:class:`int`) - The precision to use for the comparison. Default is `4`.
-
+    :param str data_dirpath: The path of the directory where to find the data to compare.
+    :param pandas.DataFrame actual_data_df: The computed data.
+    :param str desired_data_filename: The file name of the expected data.
+    :param str actual_data_filename: If not None, save the computed data to `actual_data_filename`, in directory `data_dirpath`. Default is None.
+    :param int precision: The precision to use for the comparison. Default is `4`.
+    :param bool overwrite_desired_data: If True the comparison between actual and desired data is not run. Instead, the desired data will be overwritten using actual data. To be used with caution.
     """
     
     relative_tolerance = 10**-precision
@@ -300,17 +265,23 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
         actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(precision))
 
-    # keep only numerical data (np.testing can compare only numerical data) 
-    for column in ('axis', 'organ', 'element', 'is_growing'):
-        if column in desired_data_df.columns:
-            del desired_data_df[column]
-            del actual_data_df[column]
+    if overwrite_desired_data:
+        warnings.warn('!!! Unit test is running with overwrite_desired_data !!!')
+        desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
+        actual_data_df.to_csv(desired_data_filepath, na_rep='NA', index=False)
 
-    # convert the actual outputs to floats
-    actual_data_df = actual_data_df.astype(np.float)
-    
-    # compare actual data to desired data
-    np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, relative_tolerance, absolute_tolerance)
+    else:
+        # keep only numerical data (np.testing can compare only numerical data)
+        for column in ('axis', 'organ', 'element', 'is_growing'):
+            if column in desired_data_df.columns:
+                del desired_data_df[column]
+                del actual_data_df[column]
+
+        # convert the actual outputs to floats
+        actual_data_df = actual_data_df.astype(np.float)
+
+        # compare actual data to desired data
+        np.testing.assert_allclose(actual_data_df.values, desired_data_df.values, relative_tolerance, absolute_tolerance)
 
 
 class ProgressBarError(Exception): pass

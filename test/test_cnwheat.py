@@ -40,15 +40,6 @@ from respiwheat import model as respiwheat_model
     .. seealso:: Barillot et al. 2016.
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
 # Number of seconds in 1 hour
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
@@ -92,7 +83,7 @@ def force_senescence_and_photosynthesis(t, population, senescence_roots_data_gro
                         element.__dict__.update(photosynthesis_elements_data_to_use)
 
 
-def test_simulation_run():
+def test_simulation_run(overwrite_desired_data=False):
     """Test the run of a simulation, without interpolation of the forcings."""
 
     TEST_DIR_PATH = 'simulation_run'
@@ -122,7 +113,7 @@ def test_simulation_run():
 
     # Simulation parameters
     START_TIME = 0
-    SIMULATION_LENGTH = 2
+    SIMULATION_LENGTH = 48
     TIME_STEP = 1
     CULM_DENSITY = {1: 410}
 
@@ -215,10 +206,10 @@ def test_simulation_run():
         outputs_df = pd.concat(outputs_df_list, ignore_index=True)
         outputs_df = outputs_df.loc[:, state_variables_names]  # compare only the values of the compartments
         cnwheat_tools.compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, desired_outputs_filename,
-                                                actual_outputs_filename, precision=PRECISION)
+                                                actual_outputs_filename, precision=PRECISION, overwrite_desired_data=overwrite_desired_data)
 
 
-def test_simulation_run_with_interpolation():
+def test_simulation_run_with_interpolation(overwrite_desired_data=False):
     """Test the run of a simulation, with interpolation of the forcings."""
 
     TEST_DIR_PATH = 'simulation_run_with_interpolation'
@@ -248,7 +239,7 @@ def test_simulation_run_with_interpolation():
 
     # Simulation parameters
     START_TIME = 0
-    SIMULATION_LENGTH = 2
+    SIMULATION_LENGTH = 5
     TIME_STEP = 1
     CULM_DENSITY = {1: 410}
 
@@ -345,10 +336,10 @@ def test_simulation_run_with_interpolation():
         outputs_df = pd.concat(outputs_df_list, ignore_index=True)
         outputs_df = outputs_df.loc[:, state_variables_names]  # compare only the values of the compartments
         cnwheat_tools.compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, desired_outputs_filename,
-                                                actual_outputs_filename, precision=PRECISION)
+                                                actual_outputs_filename, precision=PRECISION, overwrite_desired_data=overwrite_desired_data)
 
 
-def test_simulation_logging():
+def test_simulation_logging(overwrite_desired_data=False):
     """Test the logging of a simulation."""
 
     TEST_DIR_PATH = 'simulation_logging'
@@ -391,7 +382,7 @@ def test_simulation_logging():
 
     # Simulation parameters
     START_TIME = 0
-    SIMULATION_LENGTH = 2
+    SIMULATION_LENGTH = 5
     TIME_STEP = 1
     CULM_DENSITY = {1: 410}
 
@@ -486,7 +477,7 @@ def test_simulation_logging():
             actual_compartments_df = pd.read_csv(os.path.join(LOGS_DIRPATH, actual_compartments_filename))
         except pd.errors.EmptyDataError:
             continue  # This file is empty: ignore it.
-        cnwheat_tools.compare_actual_to_desired(LOGS_DIRPATH, actual_compartments_df, desired_compartments_filename, precision=PRECISION)
+        cnwheat_tools.compare_actual_to_desired(LOGS_DIRPATH, actual_compartments_df, desired_compartments_filename, precision=PRECISION, overwrite_desired_data=overwrite_desired_data)
     # Derivatives logs
     for (desired_derivatives_filename,
          actual_derivatives_filename) \
@@ -500,10 +491,10 @@ def test_simulation_logging():
         except pd.errors.EmptyDataError:
             continue  # This file is empty: ignore it.
         cnwheat_tools.compare_actual_to_desired(LOGS_DIRPATH, actual_derivatives_df, desired_derivatives_filename,
-                                                precision=PRECISION)
+                                                precision=PRECISION, overwrite_desired_data=overwrite_desired_data)
 
 
-def test_postprocessing():
+def test_postprocessing(overwrite_desired_data=False):
     """Test the postprocessing."""
 
     TEST_DIR_PATH = 'postprocessing'
@@ -597,7 +588,7 @@ def test_postprocessing():
         actual_postprocessing_df = postprocessing_df_dict[postprocessing_file_basename]
         actual_postprocessing_df = actual_postprocessing_df.loc[:, actual_postprocessing_df.columns.intersection(postprocessing_variables_names)]  # compare only the postprocessing values
         cnwheat_tools.compare_actual_to_desired(POSTPROCESSING_DIRPATH, actual_postprocessing_df, desired_postprocessing_filename,
-                                                actual_postprocessing_filename, precision=PRECISION)
+                                                actual_postprocessing_filename, precision=PRECISION, overwrite_desired_data=overwrite_desired_data)
 
 
 def test_graphs_generation():
@@ -607,7 +598,6 @@ def test_graphs_generation():
 
     # Inputs of the test
     POSTPROCESSING_DIRPATH = os.path.join(TEST_DIR_PATH, 'postprocessing')
-    AXES_POSTPROCESSING_FILENAME = 'axes_postprocessing.csv'
     ORGANS_POSTPROCESSING_FILENAME = 'organs_postprocessing.csv'
     HIDDENZONES_POSTPROCESSING_FILENAME = 'hiddenzones_postprocessing.csv'
     ELEMENTS_POSTPROCESSING_FILENAME = 'elements_postprocessing.csv'
@@ -642,8 +632,8 @@ def test_graphs_generation():
 
 
 if __name__ == '__main__':
-    test_simulation_run()
-    test_simulation_run_with_interpolation()
-    test_simulation_logging()
-    test_postprocessing()
+    test_simulation_run(overwrite_desired_data=False)
+    test_simulation_run_with_interpolation(overwrite_desired_data=False)
+    test_simulation_logging(overwrite_desired_data=False)
+    test_postprocessing(overwrite_desired_data=False)
     test_graphs_generation()

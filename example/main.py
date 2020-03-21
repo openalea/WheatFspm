@@ -1,8 +1,6 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import print_function
-from __future__ import print_function
-from __future__ import print_function
 import os
 import logging
 import datetime
@@ -32,40 +30,30 @@ from cnwheat import simulation as cnwheat_simulation, converter as cnwheat_conve
     .. seealso:: Barillot et al. 2016.
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
+# ---------------------------------------------
+# ----- CONFIGURATION OF THE SIMULATION -------
+# ---------------------------------------------
 
-###############################################
-####### CONFIGURATION OF THE SIMULATION #######
-###############################################
-
-
-### INPUTS CONFIGURATION ###
+# -- INPUTS CONFIGURATION --
 
 # Path of the directory which contains the inputs of the model
 INPUTS_DIRPATH = 'inputs'
 
-# Name of the CSV files which describe the initial state of the system
+# Name of the CSV files which describes the initial state of the system
 ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv'
 HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv'
 ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv'
 SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv'
 
-# Name of the CSV files which contain the photosynthesis and senescence forcings
+# Name of the CSV files which contains the photosynthesis and senescence forcings
 ELEMENTS_PHOTOSYNTHESIS_FORCINGS_FILENAME = 'elements_photosynthesis_forcings.csv'
 ROOTS_SENESCENCE_FORCINGS_FILENAME = 'roots_senescence_forcings.csv'
 ELEMENTS_SENESCENCE_FORCINGS_FILENAME = 'elements_senescence_forcings.csv'
 
-# the file names of the data used to force photosynthesis and senescence parameters
-PHOTOSYNTHESIS_ELEMENTS_DATA_FILENAME = 'photosynthesis_elements_data.csv'
-SENESCENCE_ROOTS_DATA_FILENAME = 'senescence_roots_data.csv'
-SENESCENCE_ELEMENTS_DATA_FILENAME = 'senescence_elements_data.csv'
+# Name of the CSV files which contains the meteo data
+METEO_INPUTS_FILENAME = 'meteo_test.csv'
+
+# -- OUTPUTS CONFIGURATION --
 
 ### OUTPUTS CONFIGURATION ###
 
@@ -79,7 +67,7 @@ HIDDENZONES_OUTPUTS_FILENAME = 'hiddenzones_outputs.csv'
 ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
 SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
 
-### POSTPROCESSING CONFIGURATION ###
+# -- POSTPROCESSING CONFIGURATION --
 
 # Path of the directory where to write the postprocessing of the model
 POSTPROCESSING_DIRPATH = 'postprocessing'
@@ -91,12 +79,12 @@ HIDDENZONES_POSTPROCESSING_FILENAME = 'hiddenzones_postprocessing.csv'
 ELEMENTS_POSTPROCESSING_FILENAME = 'elements_postprocessing.csv'
 SOILS_POSTPROCESSING_FILENAME = 'soils_postprocessing.csv'
 
-### GRAPHS CONFIGURATION ###
+# -- GRAPHS CONFIGURATION --
 
 # Path of the directory where to save the generated graphs
 GRAPHS_DIRPATH = 'graphs'
 
-### SIMULATION PARAMETERS ###
+# -- SIMULATION PARAMETERS --
 
 # Start time of the simulation
 START_TIME = 0
@@ -111,10 +99,10 @@ TIME_STEP = 4
 RUN_SIMU = True
 
 # Do run the postprocessing?
-RUN_POSTPROCESSING = True
+RUN_POSTPROCESSING = False  #: TODO separate postprocessings coming from other models
 
 # Do generate the graphs?
-GENERATE_GRAPHS = True
+GENERATE_GRAPHS = False  #: TODO separate postprocessings coming from other models
 
 # Do log the execution?
 LOG_EXECUTION = False
@@ -135,10 +123,9 @@ OUTPUTS_PRECISION = 6
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
 
-###############################################
-#######      RUN OF THE SIMULATION      #######
-###############################################
-
+# ---------------------------------------------
+# -----      RUN OF THE SIMULATION      -------
+# ---------------------------------------------
 
 def force_senescence_and_photosynthesis(t, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped):
     """Force the senescence and photosynthesis data of the population at `t` from input grouped dataframes"""
@@ -223,7 +210,7 @@ if RUN_SIMU:
     force_senescence_and_photosynthesis(0, population, senescence_roots_data_grouped, senescence_elements_data_grouped, photosynthesis_elements_data_grouped)
 
     # Define the time grid of the simulation
-    time_grid = xrange(START_TIME, SIMULATION_LENGTH + TIME_STEP, TIME_STEP)
+    time_grid = range(START_TIME, SIMULATION_LENGTH + TIME_STEP, TIME_STEP)
 
     # Reinitialize the simulation from forced population and soils
     meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_INPUTS_FILENAME), index_col='t')
