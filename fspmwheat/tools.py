@@ -21,15 +21,6 @@ from openalea.plantgl.all import Viewer, Vector3
 
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
 
 def combine_dataframes_inplace(model_dataframe, shared_column_indexes, shared_dataframe_to_update):
     """Combine `model_dataframe` and `shared_dataframe_to_update` in-place:

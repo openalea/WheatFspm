@@ -1,4 +1,23 @@
 # -*- coding: latin-1 -*-
+
+import os
+
+import numpy as np
+import pandas as pd
+import random
+
+from alinea.adel.adel_dynamic import AdelDyn
+from alinea.adel.echap_leaf import echap_leaves
+
+from fspmwheat import caribu_facade
+from fspmwheat import cnwheat_facade
+from fspmwheat import elongwheat_facade
+from fspmwheat import farquharwheat_facade
+from fspmwheat import growthwheat_facade
+from fspmwheat import senescwheat_facade
+
+from cnwheat import tools as cnwheat_tools
+
 """
     test_cnwheat
     ~~~~~~~~~~~~
@@ -19,173 +38,316 @@
     .. seealso:: Barillot et al. 2016.
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
+random.seed(1234)
+np.random.seed(1234)
 
-import os
+# Number of seconds in 1 hour
+HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
-import pandas as pd
+# the precision to use for quantitative comparison test
+PRECISION = 4
 
-from cnwheat import simulation, tools, converter, model
-
-INPUTS_DIRPATH = 'inputs'
-
-PLANTS_INPUTS_FILENAME = 'plants_inputs.csv'
-AXES_INPUTS_FILENAME = 'axes_inputs.csv'
-METAMERS_INPUTS_FILENAME = 'metamers_inputs.csv'
-ORGANS_INPUTS_FILENAME = 'organs_inputs.csv'
-HIDDENZONES_INPUTS_FILENAME = 'hiddenzones_inputs.csv'
-ELEMENTS_INPUTS_FILENAME = 'elements_inputs.csv'
-SOILS_INPUTS_FILENAME = 'soils_inputs.csv'
-
-PHOTOSYNTHESIS_ELEMENTS_DATA_FILENAME = 'photosynthesis_elements_data.csv'
-SENESCENCE_ROOTS_DATA_FILENAME = 'senescence_roots_data.csv'
-SENESCENCE_ELEMENTS_DATA_FILENAME = 'senescence_elements_data.csv'
-
-OUTPUTS_DIRPATH = 'outputs'
-
-DESIRED_PLANTS_OUTPUTS_FILENAME = 'desired_plants_outputs.csv'
-DESIRED_AXES_OUTPUTS_FILENAME = 'desired_axes_outputs.csv'
-DESIRED_METAMERS_OUTPUTS_FILENAME = 'desired_metamers_outputs.csv'
-DESIRED_ORGANS_OUTPUTS_FILENAME = 'desired_organs_outputs.csv'
-DESIRED_HIDDENZONES_OUTPUTS_FILENAME = 'desired_hiddenzones_outputs.csv'
-DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
-DESIRED_SOILS_OUTPUTS_FILENAME = 'desired_soils_outputs.csv'
-
-ACTUAL_PLANTS_OUTPUTS_FILENAME = 'actual_plants_outputs.csv'
-ACTUAL_AXES_OUTPUTS_FILENAME = 'actual_axes_outputs.csv'
-ACTUAL_METAMERS_OUTPUTS_FILENAME = 'actual_metamers_outputs.csv'
-ACTUAL_ORGANS_OUTPUTS_FILENAME = 'actual_organs_outputs.csv'
-ACTUAL_HIDDENZONES_OUTPUTS_FILENAME = 'actual_hiddenzones_outputs.csv'
-ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
-ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
+# Index
+AXES_INDEX_COLUMNS = ['t', 'plant', 'axis']
+ELEMENTS_INDEX_COLUMNS = ['t', 'plant', 'axis', 'metamer', 'organ', 'element']
+HIDDENZONES_INDEX_COLUMNS = ['t', 'plant', 'axis', 'metamer']
+ORGANS_INDEX_COLUMNS = ['t', 'plant', 'axis', 'organ']
+SOILS_INDEX_COLUMNS = ['t', 'plant', 'axis']
 
 
+def test_run(overwrite_desired_data=False):
+    # ---------------------------------------------
+    # ----- CONFIGURATION OF THE SIMULATION -------
+    # ---------------------------------------------
 
-def test_run():
+    # -- INPUTS CONFIGURATION --
 
-    # create the simulation
-    simulation_ = simulation.Simulation(delta_t=3600)
-    # read inputs from Pandas dataframes
+    # Path of the directory which contains the inputs of the model
+    INPUTS_DIRPATH = 'inputs'
+
+    # Name of the CSV files which describes the initial state of the system
+    AXES_INITIAL_STATE_FILENAME = 'axes_initial_state.csv'
+    ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv'
+    HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv'
+    ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv'
+    SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv'
+    METEO_FILENAME = 'meteo_Ljutovac2002.csv'
+
+    # Read the inputs from CSV files and create inputs dataframes
     inputs_dataframes = {}
-    for inputs_filename in (PLANTS_INPUTS_FILENAME, AXES_INPUTS_FILENAME, METAMERS_INPUTS_FILENAME, ORGANS_INPUTS_FILENAME, HIDDENZONES_INPUTS_FILENAME, ELEMENTS_INPUTS_FILENAME, SOILS_INPUTS_FILENAME):
-        inputs_dataframes[inputs_filename] = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
+    for inputs_filename in (AXES_INITIAL_STATE_FILENAME,
+                            ORGANS_INITIAL_STATE_FILENAME,
+                            HIDDENZONES_INITIAL_STATE_FILENAME,
+                            ELEMENTS_INITIAL_STATE_FILENAME,
+                            SOILS_INITIAL_STATE_FILENAME):
+        inputs_dataframe = pd.read_csv(os.path.join(INPUTS_DIRPATH, inputs_filename))
+        inputs_dataframes[inputs_filename] = inputs_dataframe.where(inputs_dataframe.notnull(), None)
 
-    # convert inputs to a population of plants and a dictionary of soils
-    population, soils = converter.from_dataframes(inputs_dataframes[ORGANS_INPUTS_FILENAME],
-                                                  inputs_dataframes[HIDDENZONES_INPUTS_FILENAME],
-                                                  inputs_dataframes[ELEMENTS_INPUTS_FILENAME],
-                                                  inputs_dataframes[SOILS_INPUTS_FILENAME])
+    # -- SIMULATION PARAMETERS --
+    START_TIME = 0
+    SIMULATION_LENGTH = 24
+    PLANT_DENSITY = {1: 410}
 
-    # initialize the simulation from the population and the soils
-    simulation_.initialize(population, soils)
-    # convert the population and the soils to Pandas dataframes
-    formatted_inputs_dataframes = {}
-    formatted_inputs_dataframes[AXES_INPUTS_FILENAME], \
-    formatted_inputs_dataframes[ORGANS_INPUTS_FILENAME], \
-    formatted_inputs_dataframes[HIDDENZONES_INPUTS_FILENAME], \
-    formatted_inputs_dataframes[ELEMENTS_INPUTS_FILENAME], \
-    formatted_inputs_dataframes[SOILS_INPUTS_FILENAME] = converter.to_dataframes(population, soils)
-##    # compare inputs
-##    for inputs_filename, inputs_df in formatted_inputs_dataframes.iteritems():
-##        tools.compare_actual_to_desired(INPUTS_DIRPATH, inputs_df, inputs_filename)
+    # define the time step in hours for each simulator
+    CARIBU_TIMESTEP = 4
+    SENESCWHEAT_TIMESTEP = 2
+    FARQUHARWHEAT_TIMESTEP = 2
+    ELONGWHEAT_TIMESTEP = 1
+    GROWTHWHEAT_TIMESTEP = 1
+    CNWHEAT_TIMESTEP = 1
 
-    # Get photosynthesis data
-    photosynthesis_elements_data_filepath = os.path.join(INPUTS_DIRPATH, PHOTOSYNTHESIS_ELEMENTS_DATA_FILENAME)
-    photosynthesis_elements_data_df = pd.read_csv(photosynthesis_elements_data_filepath)
-    photosynthesis_elements_data_grouped = photosynthesis_elements_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
+    # Name of the CSV files which contains the meteo data
+    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t')
 
-    # Get senescence and growth data
-    senescence_roots_data_filepath = os.path.join(INPUTS_DIRPATH, SENESCENCE_ROOTS_DATA_FILENAME)
-    senescence_roots_data_df = pd.read_csv(senescence_roots_data_filepath)
-    senescence_roots_data_grouped = senescence_roots_data_df.groupby(simulation.Simulation.AXES_OUTPUTS_INDEXES)
-    senescence_elements_data_filepath = os.path.join(INPUTS_DIRPATH, SENESCENCE_ELEMENTS_DATA_FILENAME)
-    senescence_elements_data_df = pd.read_csv(senescence_elements_data_filepath)
-    senescence_elements_data_grouped = senescence_elements_data_df.groupby(simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES)
+    # -- OUTPUTS CONFIGURATION --
+    # Path of the directory which contains the inputs of the model
+    OUTPUTS_DIRPATH = 'outputs'
 
-    start_time = 0
-    stop_time = 2
-    time_step = 4
+    # Name of the CSV files which will contain the outputs of the model
+    DESIRED_AXES_OUTPUTS_FILENAME = 'desired_axes_outputs.csv'
+    DESIRED_ORGANS_OUTPUTS_FILENAME = 'desired_organs_outputs.csv'
+    DESIRED_HIDDENZONES_OUTPUTS_FILENAME = 'desired_hiddenzones_outputs.csv'
+    DESIRED_ELEMENTS_OUTPUTS_FILENAME = 'desired_elements_outputs.csv'
+    DESIRED_SOILS_OUTPUTS_FILENAME = 'desired_soils_outputs.csv'
+    ACTUAL_AXES_OUTPUTS_FILENAME = 'actual_axes_outputs.csv'
+    ACTUAL_ORGANS_OUTPUTS_FILENAME = 'actual_organs_outputs.csv'
+    ACTUAL_HIDDENZONES_OUTPUTS_FILENAME = 'actual_hiddenzones_outputs.csv'
+    ACTUAL_ELEMENTS_OUTPUTS_FILENAME = 'actual_elements_outputs.csv'
+    ACTUAL_SOILS_OUTPUTS_FILENAME = 'actual_soils_outputs.csv'
 
-    all_plants_df_list = []
-    all_axes_df_list = []
-    all_metamers_df_list = []
-    all_organs_df_list = []
-    all_hiddenzones_df_list = []
-    all_elements_df_list = []
-    all_soils_df_list = []
+    # create empty dataframes to shared data between the models
+    shared_axes_inputs_outputs_df = pd.DataFrame()
+    shared_organs_inputs_outputs_df = pd.DataFrame()
+    shared_hiddenzones_inputs_outputs_df = pd.DataFrame()
+    shared_elements_inputs_outputs_df = pd.DataFrame()
+    shared_soils_inputs_outputs_df = pd.DataFrame()
 
-    for t in xrange(start_time, stop_time, time_step):
-        # force the senescence and photosynthesis of the population
-        for plant in simulation_.population.plants:
-            for axis in plant.axes:
-                # Root growth and senescence
-                group = senescence_roots_data_grouped.get_group((t, plant.index, axis.label))
-                senescence_data_to_use = group.loc[group.first_valid_index(), simulation.Simulation.ORGANS_STATE].dropna().to_dict()
-                axis.roots.__dict__.update(senescence_data_to_use)
-                for phytomer in axis.phytomers:
-                    for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
-                        if organ is None:
-                            continue
-                        for element in (organ.exposed_element, organ.enclosed_element):
-                            if element is None:
-                                continue
-                            # Element senescence
-                            group_senesc = senescence_elements_data_grouped.get_group((t, plant.index, axis.label, phytomer.index, organ.label, element.label))
-                            senescence_data_to_use = group_senesc.loc[group_senesc.first_valid_index(), simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
-                            element.__dict__.update(senescence_data_to_use)
-                            # Element photosynthesis
-                            group_photo = photosynthesis_elements_data_grouped.get_group((t, plant.index, axis.label, phytomer.index, organ.label, element.label))
-                            photosynthesis_elements_data_to_use = group_photo.loc[group_photo.first_valid_index(), simulation.Simulation.ELEMENTS_STATE].dropna().to_dict()
-                            element.__dict__.update(photosynthesis_elements_data_to_use)
+    # define lists of dataframes to store the inputs and the outputs of the models at each step.
+    axes_all_data_list = []
+    organs_all_data_list = []  # organs which belong to axes: roots, phloem, grains
+    hiddenzones_all_data_list = []
+    elements_all_data_list = []
+    soils_all_data_list = []
 
-        # run the model of CN exchanges ; the population is internally updated by the model
-        simulation_.run(start_time=t, stop_time=t+time_step, number_of_output_steps=time_step+1)
+    all_simulation_steps = []  # to store the steps of the simulation
 
-        # run post-processings
-        all_plants_df, all_axes_df, all_metamers_df, all_organs_df, all_hiddenzones_df, all_elements_df, all_soils_df = simulation_.postprocessings()
+    # -- ADEL and MTG CONFIGURATION --
 
-        all_plants_df_list.append(all_plants_df)
-        all_axes_df_list.append(all_axes_df)
-        all_metamers_df_list.append(all_metamers_df)
-        all_organs_df_list.append(all_organs_df)
-        all_hiddenzones_df_list.append(all_hiddenzones_df)
-        all_elements_df_list.append(all_elements_df)
-        all_soils_df_list.append(all_soils_df)
+    # read adelwheat inputs at t0
+    adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
+    g = adel_wheat.load(dir=INPUTS_DIRPATH)
 
-    global_plants_df = pd.concat(all_plants_df_list, ignore_index=True)
-    global_plants_df.drop_duplicates(subset=simulation.Simulation.PLANTS_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_plants_df, DESIRED_PLANTS_OUTPUTS_FILENAME, ACTUAL_PLANTS_OUTPUTS_FILENAME)
+    # ---------------------------------------------
+    # ----- CONFIGURATION OF THE FACADES -------
+    # ---------------------------------------------
 
-    global_axes_df = pd.concat(all_axes_df_list, ignore_index=True)
-    global_axes_df.drop_duplicates(subset=simulation.Simulation.AXES_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_axes_df, DESIRED_AXES_OUTPUTS_FILENAME, ACTUAL_AXES_OUTPUTS_FILENAME)
+    # -- ELONGWHEAT (created first because it is the only facade to add new metamers) --
+    # Initial states
+    elongwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
+        elongwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.HIDDENZONE_INPUTS if i in
+                                                                   inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+    elongwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        elongwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.ELEMENT_INPUTS if i in
+                                                                inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+    elongwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+        elongwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.AXIS_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
-    global_metamers_df = pd.concat(all_metamers_df_list, ignore_index=True)
-    global_metamers_df.drop_duplicates(subset=simulation.Simulation.PHYTOMERS_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_metamers_df, DESIRED_METAMERS_OUTPUTS_FILENAME, ACTUAL_METAMERS_OUTPUTS_FILENAME)
+    phytoT = os.path.join(INPUTS_DIRPATH, 'phytoT.csv')
 
-    global_organs_df = pd.concat(all_organs_df_list, ignore_index=True)
-    global_organs_df.drop_duplicates(subset=simulation.Simulation.ORGANS_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_organs_df, DESIRED_ORGANS_OUTPUTS_FILENAME, ACTUAL_ORGANS_OUTPUTS_FILENAME)
+    # Update some parameters
+    update_cnwheat_parameters = {'SL_ratio_d': 0.25}
 
-    global_hiddenzones_df = pd.concat(all_hiddenzones_df_list, ignore_index=True)
-    global_hiddenzones_df.drop_duplicates(subset=simulation.Simulation.HIDDENZONE_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_hiddenzones_df, DESIRED_HIDDENZONES_OUTPUTS_FILENAME, ACTUAL_HIDDENZONES_OUTPUTS_FILENAME)
+    # Facade initialisation
+    elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(g,
+                                                            ELONGWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                            elongwheat_axes_initial_state,
+                                                            elongwheat_hiddenzones_initial_state,
+                                                            elongwheat_elements_initial_state,
+                                                            shared_axes_inputs_outputs_df,
+                                                            shared_hiddenzones_inputs_outputs_df,
+                                                            shared_elements_inputs_outputs_df,
+                                                            adel_wheat, phytoT, update_cnwheat_parameters)
 
-    global_elements_df = pd.concat(all_elements_df_list, ignore_index=True)
-    global_elements_df.drop_duplicates(subset=simulation.Simulation.ELEMENTS_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_elements_df, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME)
+    # -- CARIBU --
+    caribu_facade_ = caribu_facade.CaribuFacade(g,
+                                                shared_elements_inputs_outputs_df,
+                                                adel_wheat)
 
-    global_soils_df = pd.concat(all_soils_df_list, ignore_index=True)
-    global_soils_df.drop_duplicates(subset=simulation.Simulation.SOILS_OUTPUTS_INDEXES, inplace=True)
-    tools.compare_actual_to_desired(OUTPUTS_DIRPATH, global_soils_df, DESIRED_SOILS_OUTPUTS_FILENAME, ACTUAL_SOILS_OUTPUTS_FILENAME)
+    # -- SENESCWHEAT --
+    # Initial states
+    senescwheat_roots_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
+        senescwheat_facade.converter.ROOTS_TOPOLOGY_COLUMNS +
+        [i for i in senescwheat_facade.converter.SENESCWHEAT_ROOTS_INPUTS if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    senescwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        senescwheat_facade.converter.ELEMENTS_TOPOLOGY_COLUMNS +
+        [i for i in senescwheat_facade.converter.SENESCWHEAT_ELEMENTS_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    senescwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+        senescwheat_facade.converter.AXES_TOPOLOGY_COLUMNS +
+        [i for i in senescwheat_facade.converter.SENESCWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    # Update some parameters
+    update_cnwheat_parameters = {'AGE_EFFECT_SENESCENCE': 10000}
+
+    # Facade initialisation
+    senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(g,
+                                                               SENESCWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                               senescwheat_roots_initial_state,
+                                                               senescwheat_axes_initial_state,
+                                                               senescwheat_elements_initial_state,
+                                                               shared_organs_inputs_outputs_df,
+                                                               shared_axes_inputs_outputs_df,
+                                                               shared_elements_inputs_outputs_df, update_cnwheat_parameters)
+
+    # -- FARQUHARWHEAT --
+    # Initial states
+    farquharwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        farquharwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS +
+        [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_ELEMENTS_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    farquharwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+        farquharwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
+        [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    # Facade initialisation
+    farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
+                                                                     farquharwheat_elements_initial_state,
+                                                                     farquharwheat_axes_initial_state,
+                                                                     shared_elements_inputs_outputs_df)
+
+    # -- GROWTHWHEAT --
+    # Initial states
+    growthwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
+        growthwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS +
+        [i for i in growthwheat_facade.simulation.HIDDENZONE_INPUTS if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    growthwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        growthwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS +
+        [i for i in growthwheat_facade.simulation.ELEMENT_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    growthwheat_root_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
+        growthwheat_facade.converter.ROOT_TOPOLOGY_COLUMNS +
+        [i for i in growthwheat_facade.simulation.ROOT_INPUTS if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    growthwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+        growthwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
+        [i for i in growthwheat_facade.simulation.AXIS_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    # Update some parameters
+    update_cnwheat_parameters = {'VMAX_ROOTS_GROWTH_PREFLO': 0.02885625}
+
+    # Facade initialisation
+    growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(g,
+                                                               GROWTHWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                               growthwheat_hiddenzones_initial_state,
+                                                               growthwheat_elements_initial_state,
+                                                               growthwheat_root_initial_state,
+                                                               growthwheat_axes_initial_state,
+                                                               shared_organs_inputs_outputs_df,
+                                                               shared_hiddenzones_inputs_outputs_df,
+                                                               shared_elements_inputs_outputs_df,
+                                                               shared_axes_inputs_outputs_df, update_cnwheat_parameters)
+
+    # -- CNWHEAT --
+    # Initial states
+    cnwheat_organs_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME][
+        [i for i in cnwheat_facade.cnwheat_converter.ORGANS_VARIABLES if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    cnwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
+        [i for i in cnwheat_facade.cnwheat_converter.HIDDENZONE_VARIABLES if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+
+    cnwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+        [i for i in cnwheat_facade.cnwheat_converter.ELEMENTS_VARIABLES if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    cnwheat_soils_initial_state = inputs_dataframes[SOILS_INITIAL_STATE_FILENAME][
+        [i for i in cnwheat_facade.cnwheat_converter.SOILS_VARIABLES if i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
+
+    # Update some parameters
+    update_cnwheat_parameters = {'roots': {'K_AMINO_ACIDS_EXPORT': 3E-5,
+                                           'K_NITRATE_EXPORT': 1E-6}}
+
+    # Facade initialisation
+    cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
+                                                   CNWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                   PLANT_DENSITY,
+                                                   cnwheat_organs_initial_state,
+                                                   cnwheat_hiddenzones_initial_state,
+                                                   cnwheat_elements_initial_state,
+                                                   cnwheat_soils_initial_state,
+                                                   shared_axes_inputs_outputs_df,
+                                                   shared_organs_inputs_outputs_df,
+                                                   shared_hiddenzones_inputs_outputs_df,
+                                                   shared_elements_inputs_outputs_df,
+                                                   shared_soils_inputs_outputs_df,
+                                                   update_cnwheat_parameters)
+
+    # ---------------------------------------------
+    # -----      RUN OF THE SIMULATION      -------
+    # ---------------------------------------------
+
+    for t_caribu in range(START_TIME, SIMULATION_LENGTH, CARIBU_TIMESTEP):
+        # run Caribu
+        PARi = meteo.loc[t_caribu, ['PARi_MA4']].iloc[0]
+        DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
+        hour = meteo.loc[t_caribu, ['hour']].iloc[0]
+        caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=True, plant_density=PLANT_DENSITY[1])
+
+        for t_senescwheat in range(t_caribu, t_caribu + CARIBU_TIMESTEP, SENESCWHEAT_TIMESTEP):
+            # run SenescWheat
+            senescwheat_facade_.run()
+
+            # Run the rest of the model if the plant is alive
+            for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):
+                # get the meteo of the current step
+                Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature_MA2', 'ambient_CO2_MA2', 'humidity_MA2', 'Wind_MA2']]
+
+                # run FarquharWheat
+                farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
+
+                for t_elongwheat in range(t_farquharwheat, t_farquharwheat + FARQUHARWHEAT_TIMESTEP, ELONGWHEAT_TIMESTEP):
+                    # run ElongWheat
+                    Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
+                    elongwheat_facade_.run(Tair, Tsoil, option_static=False)
+
+                    # Update geometry
+                    adel_wheat.update_geometry(g)
+
+                    for t_growthwheat in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP, GROWTHWHEAT_TIMESTEP):
+                        # run GrowthWheat
+                        growthwheat_facade_.run()
+
+                        for t_cnwheat in range(t_growthwheat, t_growthwheat + GROWTHWHEAT_TIMESTEP, CNWHEAT_TIMESTEP):
+                            if t_cnwheat > 0:
+
+                                # run CNWheat
+                                Tair = meteo.loc[t_elongwheat, 'air_temperature']
+                                Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
+                                cnwheat_facade_.run(Tair, Tsoil)
+
+                            # append outputs at current step to global lists
+                            all_simulation_steps.append(t_cnwheat)
+                            axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
+                            organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
+                            hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
+                            elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                            soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+
+    # compare actual to desired outputs at each scale level (an exception is raised if the test failed)
+    for (outputs_df_list,
+         desired_outputs_filename,
+         actual_outputs_filename,
+         state_variables_names) \
+            in ((axes_all_data_list, DESIRED_AXES_OUTPUTS_FILENAME, ACTUAL_AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
+                (organs_all_data_list, DESIRED_ORGANS_OUTPUTS_FILENAME, ACTUAL_ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
+                (hiddenzones_all_data_list, DESIRED_HIDDENZONES_OUTPUTS_FILENAME, ACTUAL_HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
+                (elements_all_data_list, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
+                (soils_all_data_list, DESIRED_SOILS_OUTPUTS_FILENAME, ACTUAL_SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
+        outputs_df = pd.concat(outputs_df_list, ignore_index=True)
+        outputs_df = outputs_df.loc[:, state_variables_names]  # compare only the values of the compartments
+        cnwheat_tools.compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, desired_outputs_filename,
+                                                actual_outputs_filename, precision=PRECISION, overwrite_desired_data=overwrite_desired_data)
+
 
 if __name__ == '__main__':
-    test_run()
+    test_run(overwrite_desired_data=False)

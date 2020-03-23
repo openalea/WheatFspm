@@ -1,8 +1,0 @@
-plant,axis,metamer,organ,element,nitrates,starch,amino_acids,proteins,Nstruct,mstruct,fructan,sucrose,green_area,cytokinins,triosesP,Ag,Tr,Ts,is_growing
-1,MS,12,blade,LeafElement1,0,0,34,343,0.000969,0.14,0,750,0.00346,15,0,0,0.185071,18.31083,False
-1,MS,12,internode,HiddenElement,0,0,7,69,0.000425,0.16,0,875,0.0004,0.5,0,0,0.18335,18.207057,False
-1,MS,12,internode,StemElement,0,0,1,14,0.000086,0.032,0,177,0.00008,0.5,0,0,0.184266,18.262386,False
-1,MS,12,sheath,StemElement,0,0,5,53,0.000597,0.123,0,672,0.0006,0.5,0,0,0.184375,18.268945,False
-1,MS,13,peduncle,HiddenElement,0,0,5,46,0.000509,0.106,0,582,0.0005,0.7,0,0,0.185537,18.338829,False
-1,MS,13,peduncle,StemElement,0,0,2,25,0.000275,0.058,0,315,0.00027,0.85,0,0,0.186806,18.414809,False
-1,MS,14,ear,StemElement,0,0,24,243,0.001013,0.21,0,726,0.0015,15,0,0,0.18207,18.129422,False

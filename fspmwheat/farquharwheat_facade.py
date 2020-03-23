@@ -1,12 +1,11 @@
 # -*- coding: latin-1 -*-
 
-from farquharwheat import converter, simulation
-
-import tools
+import numpy as np
 
 from alinea.astk.plantgl_utils import get_height  # for height calculation
 
-import numpy as np
+from farquharwheat import converter, simulation
+import tools
 
 """
     fspmwheat.farquharwheat_facade
@@ -21,15 +20,6 @@ import numpy as np
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
     : see LICENSE for details.
 
-"""
-
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
 """
 
 #: the name of the organs modeled by FarquharWheat
@@ -55,19 +45,19 @@ class FarquharWheatFacade(object):
 
     def __init__(self, shared_mtg,
                  model_elements_inputs_df,
-                 model_SAMs_inputs_df,
+                 model_axes_inputs_df,
                  shared_elements_inputs_outputs_df):
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
         :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
-        :param pandas.DataFrame model_SAMs_inputs_df: the inputs of the model at SAM scale.
+        :param pandas.DataFrame model_axes_inputs_df: the inputs of the model at axis scale.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
         """
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
         self._simulation = simulation.Simulation()  #: the simulator to use to run the model
 
-        all_farquharwheat_inputs_dict = converter.from_dataframe(model_elements_inputs_df, model_SAMs_inputs_df)
+        all_farquharwheat_inputs_dict = converter.from_dataframe(model_elements_inputs_df, model_axes_inputs_df)
         self._update_shared_MTG(all_farquharwheat_inputs_dict)
 
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
@@ -85,7 +75,7 @@ class FarquharWheatFacade(object):
         """
         self._initialize_model()
         self._simulation.run(Ta, ambient_CO2, RH, Ur)
-        self._update_shared_MTG({'elements': self._simulation.outputs, 'SAMs': ''})
+        self._update_shared_MTG({'elements': self._simulation.outputs, 'axes': ''})
         farquharwheat_elements_outputs_df = converter.to_dataframe(self._simulation.outputs)
         self._update_shared_dataframes(farquharwheat_elements_outputs_df)
 
@@ -94,7 +84,7 @@ class FarquharWheatFacade(object):
         Initialize the inputs of the model from the MTG shared between all models.
         """
         all_farquharwheat_elements_inputs_dict = {}
-        all_farquharwheat_SAM_inputs_dict = {}
+        all_farquharwheat_axes_inputs_dict = {}
 
         # traverse the MTG recursively from top ...
         for mtg_plant_vid in self._shared_mtg.components_iter(self._shared_mtg.root):
@@ -103,10 +93,10 @@ class FarquharWheatFacade(object):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
                 if mtg_axis_label != 'MS':
                     continue
-                SAM_id = (mtg_plant_index, mtg_axis_label)
-                farquharwheat_SAM_inputs_dict = {}
-                for farquharwheat_SAM_input_name in converter.FARQUHARWHEAT_SAMS_INPUTS:
-                    farquharwheat_SAM_inputs_dict[farquharwheat_SAM_input_name] = self._shared_mtg.get_vertex_property(mtg_axis_vid)['SAM'].get(farquharwheat_SAM_input_name)
+                axis_id = (mtg_plant_index, mtg_axis_label)
+                farquharwheat_axis_inputs_dict = {}
+                for farquharwheat_axis_input_name in converter.FARQUHARWHEAT_AXES_INPUTS:
+                    farquharwheat_axis_inputs_dict[farquharwheat_axis_input_name] = self._shared_mtg.get_vertex_property(mtg_axis_vid).get(farquharwheat_axis_input_name)
 
                 height_element_list = [0.]
 
@@ -115,7 +105,8 @@ class FarquharWheatFacade(object):
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
                         # mtg_organ_length = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_organ_vid).get('length', 0))
-                        if mtg_organ_label not in FARQUHARWHEAT_ORGANS_NAMES: continue  # or mtg_organ_length <= 0
+                        if mtg_organ_label not in FARQUHARWHEAT_ORGANS_NAMES:  # or mtg_organ_length <= 0
+                            continue
 
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
@@ -123,10 +114,11 @@ class FarquharWheatFacade(object):
                             mtg_element_length = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_element_vid).get('length', 0.))
                             mtg_element_green_area = np.nan_to_num(self._shared_mtg.get_vertex_property(mtg_element_vid).get('green_area', 0.))
 
-                            if mtg_element_label not in FARQUHARWHEAT_ELEMENTS_INPUTS or mtg_element_length <= 0 or mtg_element_green_area == 0: continue  # to excluse topElement,
-                            # baseElement and elements with null length
+                            if mtg_element_label not in FARQUHARWHEAT_ELEMENTS_INPUTS or mtg_element_length <= 0 or mtg_element_green_area == 0:
+                                continue  # to excluse topElement, baseElement and elements with null length
                             if mtg_element_label == 'HiddenElement' and (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True) or np.isnan(
-                                    self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True))): continue
+                                    self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True))):
+                                continue
 
                             element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
 
@@ -156,12 +148,12 @@ class FarquharWheatFacade(object):
 
                             all_farquharwheat_elements_inputs_dict[element_id] = farquharwheat_element_inputs_dict
 
-                farquharwheat_SAM_inputs_dict['height_canopy'] = np.nanmax(np.array(height_element_list, dtype=np.float64))
-                if np.isnan(farquharwheat_SAM_inputs_dict['height_canopy']):
-                    farquharwheat_SAM_inputs_dict['height_canopy'] = 0.78  # TODO : by default values in a parameters file
-                all_farquharwheat_SAM_inputs_dict[SAM_id] = farquharwheat_SAM_inputs_dict
+                farquharwheat_axis_inputs_dict['height_canopy'] = np.nanmax(np.array(height_element_list, dtype=np.float64))
+                if np.isnan(farquharwheat_axis_inputs_dict['height_canopy']):
+                    farquharwheat_axis_inputs_dict['height_canopy'] = 0.78  # TODO : by default values in a parameters file
+                all_farquharwheat_axes_inputs_dict[axis_id] = farquharwheat_axis_inputs_dict
 
-        self._simulation.initialize({'elements': all_farquharwheat_elements_inputs_dict, 'SAMs': all_farquharwheat_SAM_inputs_dict})
+        self._simulation.initialize({'elements': all_farquharwheat_elements_inputs_dict, 'axes': all_farquharwheat_axes_inputs_dict})
 
     def _update_shared_MTG(self, farquharwheat_data_dict):
         """
@@ -184,11 +176,13 @@ class FarquharWheatFacade(object):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        if mtg_organ_label not in FARQUHARWHEAT_ORGANS_NAMES: continue
+                        if mtg_organ_label not in FARQUHARWHEAT_ORGANS_NAMES:
+                            continue
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
                             element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
-                            if element_id not in farquharwheat_data_dict['elements']: continue
+                            if element_id not in farquharwheat_data_dict['elements']:
+                                continue
                             # update the element in the MTG
                             farquharwheat_element_data_dict = farquharwheat_data_dict['elements'][element_id]
                             for farquharwheat_element_data_name, farquharwheat_element_data_value in farquharwheat_element_data_dict.items():

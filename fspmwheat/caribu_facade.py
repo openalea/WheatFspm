@@ -24,16 +24,6 @@ import tools
     .. seealso:: Barillot et al. 2016.
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
-
 #: the columns which define the topology in the elements scale dataframe shared between all models
 SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
 
@@ -63,7 +53,8 @@ class CaribuFacade(object):
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
         self._geometrical_model = geometrical_model  #: the model which deals with geometry
 
-    def run(self, sun_sky_option='mix', energy=1, DOY=1, hourTU=12, latitude=48.85, diffuse_model='soc', azimuts=4, zenits=5, heterogeneous_canopy=False):
+    def run(self, sun_sky_option='mix', energy=1, DOY=1, hourTU=12, latitude=48.85, diffuse_model='soc', azimuts=4, zenits=5, heterogeneous_canopy=False,
+            plant_density=250., inter_row=0.15):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
@@ -76,9 +67,10 @@ class CaribuFacade(object):
         :param int azimuts: The number of azimutal positions.
         :param int zenits: The number of zenital positions.
         :param bool heterogeneous_canopy: Whether to create a duplicated heterogeneous canopy from the initial mtg.
-
+        :param float plant_density: Number of plant per m2 in the stand (plant m-2).
+        :param float inter_row: Inter-row spacing in the stand (m).
         """
-        c_scene_sky, c_scene_sun = self._initialize_model(energy, diffuse_model, azimuts, zenits, DOY, hourTU, latitude, heterogeneous_canopy)
+        c_scene_sky, c_scene_sun = self._initialize_model(energy, diffuse_model, azimuts, zenits, DOY, hourTU, latitude, heterogeneous_canopy, plant_density, inter_row)
 
         #: Diffuse light
         if sun_sky_option == 'sky':
@@ -115,7 +107,7 @@ class CaribuFacade(object):
         else:
             raise ValueError("Unknown sun_sky_option : can be either 'mix', 'sun' or 'sky'.")
 
-    def _initialize_model(self, energy, diffuse_model, azimuts, zenits, DOY, hourTU, latitude, heterogeneous_canopy):
+    def _initialize_model(self, energy, diffuse_model, azimuts, zenits, DOY, hourTU, latitude, heterogeneous_canopy, plant_density, inter_row):
         """
         Initialize the inputs of the model from the MTG shared
 
@@ -163,17 +155,18 @@ class CaribuFacade(object):
                 warnings.warn('Warning: unknown element type {}, vid={}'.format(self._shared_mtg.class_name(vid), vid))
 
         #: Generates CaribuScenes
-        if not heterogeneous_canopy:
+        if not heterogeneous_canopy: # TODO: adapt the domain to plant_density
             c_scene_sky = CaribuScene(scene=self._shared_mtg, light=sky, pattern=self._geometrical_model.domain, opt=opt)
             c_scene_sun = CaribuScene(scene=self._shared_mtg, light=sun, pattern=self._geometrical_model.domain, opt=opt)
         else:
-            duplicated_scene, domain = self._create_heterogeneous_canopy()
+            duplicated_scene, domain = self._create_heterogeneous_canopy(plant_density=plant_density, inter_row=inter_row)
             c_scene_sky = CaribuScene(scene=duplicated_scene, light=sky, pattern=domain, opt=opt)
             c_scene_sun = CaribuScene(scene=duplicated_scene, light=sun, pattern=domain, opt=opt)
 
         return c_scene_sky, c_scene_sun
 
-    def _create_heterogeneous_canopy(self, nplants=50, var_plant_position=0.03, var_leaf_inclination=0.157, var_leaf_azimut=1.57, var_stem_azimut=0.157):
+    def _create_heterogeneous_canopy(self, nplants=50, var_plant_position=0.03, var_leaf_inclination=0.157, var_leaf_azimut=1.57, var_stem_azimut=0.157,
+                                     plant_density=250, inter_row=0.15):
         """
         Duplicate a plant in order to obtain a heterogeneous canopy.
 
@@ -196,8 +189,8 @@ class CaribuFacade(object):
         initial_scene = self._geometrical_model.scene(self._shared_mtg)
 
         # Planter
-        stand = AgronomicStand(sowing_density=250, plant_density=250, inter_row=0.15, noise=var_plant_position)
-        _, domain, positions, _ = stand.smart_stand(nplants=nplants, at=250, convunit=1)
+        stand = AgronomicStand(sowing_density=plant_density, plant_density=plant_density, inter_row=inter_row, noise=var_plant_position)
+        _, domain, positions, _ = stand.smart_stand(nplants=nplants, at=inter_row, convunit=1)
 
         # Duplication and heterogeneity
         duplicated_scene = plantgl.Scene()
