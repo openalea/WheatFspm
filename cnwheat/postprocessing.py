@@ -40,7 +40,7 @@ PLANTS_T_INDEXES = cnwheat_simulation.Simulation.PLANTS_T_INDEXES
 #: plants post-processing variables
 PLANTS_POSTPROCESSING_VARIABLES = []
 #: concatenation of :attr:`PLANTS_T_INDEXES`, :attr:`PLANTS_RUN_VARIABLES <cnwheat.simulation.Simulation.PLANTS_RUN_VARIABLES>` and :attr:`PLANTS_POSTPROCESSING_VARIABLES`
-PLANTS_RUN_POSTPROCESSING_VARIABLES = PLANTS_T_INDEXES + cnwheat_simulation.Simulation.PLANTS_RUN_VARIABLES + PLANTS_POSTPROCESSING_VARIABLES
+PLANTS_RUN_POSTPROCESSING_VARIABLES = set(PLANTS_T_INDEXES + cnwheat_simulation.Simulation.PLANTS_RUN_VARIABLES + PLANTS_POSTPROCESSING_VARIABLES)
 
 #: the indexes to locate the axes in the modeled system
 AXES_INDEXES = cnwheat_simulation.Simulation.AXES_INDEXES
@@ -53,7 +53,7 @@ AXES_POSTPROCESSING_VARIABLES = ['C_N_ratio', 'C_N_ratio_shoot', 'N_content', 'N
                                  'C_respired_shoot', 'C_respired_roots']
 
 #: concatenation of :attr:`AXES_T_INDEXES`, :attr:`AXES_RUN_VARIABLES <cnwheat.simulation.Simulation.AXES_RUN_VARIABLES>` and :attr:`AXES_POSTPROCESSING_VARIABLES`
-AXES_RUN_POSTPROCESSING_VARIABLES = AXES_T_INDEXES + cnwheat_simulation.Simulation.AXES_RUN_VARIABLES + AXES_POSTPROCESSING_VARIABLES
+AXES_RUN_POSTPROCESSING_VARIABLES = set(AXES_T_INDEXES + cnwheat_simulation.Simulation.AXES_RUN_VARIABLES + AXES_POSTPROCESSING_VARIABLES)
 
 #: the indexes to locate the phytomers in the modeled system
 PHYTOMERS_INDEXES = cnwheat_simulation.Simulation.PHYTOMERS_INDEXES
@@ -62,7 +62,7 @@ PHYTOMERS_T_INDEXES = cnwheat_simulation.Simulation.PHYTOMERS_T_INDEXES
 #: phytomers post-processing variables
 PHYTOMERS_POSTPROCESSING_VARIABLES = []
 #: concatenation of :attr:`PHYTOMERS_T_INDEXES`, :attr:`PHYTOMERS_RUN_VARIABLES <cnwheat.simulation.Simulation.PHYTOMERS_RUN_VARIABLES>` and :attr:`PHYTOMERS_POSTPROCESSING_VARIABLES`
-PHYTOMERS_RUN_POSTPROCESSING_VARIABLES = PHYTOMERS_T_INDEXES + cnwheat_simulation.Simulation.PHYTOMERS_RUN_VARIABLES + PHYTOMERS_POSTPROCESSING_VARIABLES
+PHYTOMERS_RUN_POSTPROCESSING_VARIABLES = set(PHYTOMERS_T_INDEXES + cnwheat_simulation.Simulation.PHYTOMERS_RUN_VARIABLES + PHYTOMERS_POSTPROCESSING_VARIABLES)
 
 #: the indexes to locate the organs in the modeled system
 ORGANS_INDEXES = cnwheat_simulation.Simulation.ORGANS_INDEXES
@@ -72,7 +72,7 @@ ORGANS_T_INDEXES = cnwheat_simulation.Simulation.ORGANS_T_INDEXES
 ORGANS_POSTPROCESSING_VARIABLES = ['Conc_Amino_Acids', 'Conc_Nitrates', 'Conc_Sucrose', 'Conc_cytokinins', 'Dry_Mass', 'Proteins_N_Mass', 'R_maintenance', 'N_tot']
 ORGANS_RUN_VARIABLES_ADDITIONAL = ['sucrose_consumption_mstruct', 'AA_consumption_mstruct']
 #: concatenation of :attr:`ORGANS_T_INDEXES`, :attr:`ORGANS_RUN_VARIABLES <cnwheat.simulation.Simulation.ORGANS_RUN_VARIABLES>` and :attr:`ORGANS_POSTPROCESSING_VARIABLES`
-ORGANS_RUN_POSTPROCESSING_VARIABLES = ORGANS_T_INDEXES + cnwheat_simulation.Simulation.ORGANS_RUN_VARIABLES + ORGANS_POSTPROCESSING_VARIABLES + ORGANS_RUN_VARIABLES_ADDITIONAL
+ORGANS_RUN_POSTPROCESSING_VARIABLES = set(ORGANS_T_INDEXES + cnwheat_simulation.Simulation.ORGANS_RUN_VARIABLES + ORGANS_POSTPROCESSING_VARIABLES + ORGANS_RUN_VARIABLES_ADDITIONAL)
 
 #: the indexes to locate the hidden zones in the modeled system
 HIDDENZONE_INDEXES = cnwheat_simulation.Simulation.HIDDENZONE_INDEXES
@@ -83,7 +83,7 @@ HIDDENZONE_POSTPROCESSING_VARIABLES = ['Conc_Amino_Acids', 'Conc_Fructan', 'Conc
                                        'N_content']
 HIDDENZONE_RUN_VARIABLES_ADDITIONAL = ['leaf_L', 'delta_leaf_L', 'internode_L', 'leaf_pseudostem_length', 'leaf_is_emerged', 'Respi_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct']
 #: concatenation of :attr:`HIDDENZONE_T_INDEXES`, :attr:`HIDDENZONE_RUN_VARIABLES <cnwheat.simulation.Simulation.HIDDENZONE_RUN_VARIABLES>` and :attr:`HIDDENZONE_POSTPROCESSING_VARIABLES`
-HIDDENZONE_RUN_POSTPROCESSING_VARIABLES = HIDDENZONE_T_INDEXES + cnwheat_simulation.Simulation.HIDDENZONE_RUN_VARIABLES + HIDDENZONE_RUN_VARIABLES_ADDITIONAL + HIDDENZONE_POSTPROCESSING_VARIABLES
+HIDDENZONE_RUN_POSTPROCESSING_VARIABLES = set(HIDDENZONE_T_INDEXES + cnwheat_simulation.Simulation.HIDDENZONE_RUN_VARIABLES + HIDDENZONE_RUN_VARIABLES_ADDITIONAL + HIDDENZONE_POSTPROCESSING_VARIABLES)
 
 #: the indexes to locate the elements in the modeled system
 ELEMENTS_INDEXES = cnwheat_simulation.Simulation.ELEMENTS_INDEXES
@@ -95,7 +95,7 @@ ELEMENTS_POSTPROCESSING_VARIABLES = ['Conc_Amino_Acids', 'Conc_Fructan', 'Conc_N
                                      'SLN_nonstruct', 'sum_dry_mass', 'Photosynthetic_yield']
 ELEMENTS_RUN_VARIABLES_ADDITIONAL = ['length', 'PARa']
 #: concatenation of :attr:`ELEMENTS_T_INDEXES`, :attr:`ELEMENTS_RUN_VARIABLES <cnwheat.simulation.Simulation.ELEMENTS_RUN_VARIABLES>` and :attr:`ELEMENTS_POSTPROCESSING_VARIABLES`
-ELEMENTS_RUN_POSTPROCESSING_VARIABLES = ELEMENTS_T_INDEXES + cnwheat_simulation.Simulation.ELEMENTS_RUN_VARIABLES + ELEMENTS_RUN_VARIABLES_ADDITIONAL + ELEMENTS_POSTPROCESSING_VARIABLES
+ELEMENTS_RUN_POSTPROCESSING_VARIABLES = set(ELEMENTS_T_INDEXES + cnwheat_simulation.Simulation.ELEMENTS_RUN_VARIABLES + ELEMENTS_RUN_VARIABLES_ADDITIONAL + ELEMENTS_POSTPROCESSING_VARIABLES)
 
 #: the indexes to locate the soils in the modeled system
 SOILS_INDEXES = cnwheat_simulation.Simulation.SOILS_INDEXES
