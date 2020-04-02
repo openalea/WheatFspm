@@ -1,8 +1,10 @@
 # -*- coding: latin-1 -*-
 
+import datetime
 import logging
 import os
 import random
+import time
 import warnings
 
 import numpy as np
@@ -18,6 +20,7 @@ from fspmwheat import elongwheat_facade
 from fspmwheat import farquharwheat_facade
 from fspmwheat import growthwheat_facade
 from fspmwheat import senescwheat_facade
+from fspmwheat import fspmwheat_facade
 from elongwheat import parameters as elongwheat_parameters
 
 from alinea.adel.adel_dynamic import AdelDyn
@@ -66,9 +69,11 @@ LOGGING_CONFIG_FILEPATH = os.path.join('..', '..', 'logging.json')
 LOGGING_LEVEL = logging.INFO  # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 
-def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, option_static=False, show_3Dplant=True,
-         tillers_replications=None, heterogeneous_canopy=True, N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
-         INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
+def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
+         option_static=False, show_3Dplant=True, tillers_replications=None, heterogeneous_canopy=True,
+         N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
+         INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv',
+         OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
     """
     Run a simulation of fspmwheat with coupling to several models
 
@@ -78,6 +83,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     :param bool run_postprocessing: whether to run the postprocessing
     :param bool generate_graphs: whether to run the generate graphs
     :param bool run_from_outputs: whether to start a simulation from a specific time and initial states as found in previous outputs
+    :param str or list stored_times: Time steps when are stored the model outpus. Can be either 'all', a list or an empty list. Default to 'all'
     :param bool option_static: Whether the model should be run for a static plant architecture
     :param bool show_3Dplant: whether to plot the scene in pgl viewer
     :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value.
@@ -202,6 +208,14 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
     # -- OUTPUTS CONFIGURATION --
 
+    # Save the outputs with a full scan of the MTG at each time step (or at selected time steps)
+    UPDATE_SHARED_DF = False
+    if stored_times is None:
+        stored_times = 'all'
+    if not (stored_times == 'all' or type(stored_times) == list):
+        print 'stored_times should be either \'all\', a list or an empty list.'
+        raise
+
     # create empty dataframes to shared data between the models
     shared_axes_inputs_outputs_df = pd.DataFrame()
     shared_organs_inputs_outputs_df = pd.DataFrame()
@@ -266,12 +280,14 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                                             shared_hiddenzones_inputs_outputs_df,
                                                             shared_elements_inputs_outputs_df,
                                                             adel_wheat, phytoT_df,
-                                                            update_parameters_elongwheat)
+                                                            update_parameters_elongwheat,
+                                                            update_shared_df=UPDATE_SHARED_DF)
 
     # -- CARIBU --
     caribu_facade_ = caribu_facade.CaribuFacade(g,
                                                 shared_elements_inputs_outputs_df,
-                                                adel_wheat)
+                                                adel_wheat,
+                                                update_shared_df=UPDATE_SHARED_DF)
 
     # -- SENESCWHEAT --
     # Initial states    
@@ -302,7 +318,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                                                shared_organs_inputs_outputs_df,
                                                                shared_axes_inputs_outputs_df,
                                                                shared_elements_inputs_outputs_df,
-                                                               update_parameters_senescwheat)
+                                                               update_parameters_senescwheat,
+                                                               update_shared_df=UPDATE_SHARED_DF)
 
     # -- FARQUHARWHEAT --
     # Initial states    
@@ -318,7 +335,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
                                                                      farquharwheat_elements_initial_state,
                                                                      farquharwheat_axes_initial_state,
-                                                                     shared_elements_inputs_outputs_df)
+                                                                     shared_elements_inputs_outputs_df,
+                                                                     update_shared_df=UPDATE_SHARED_DF)
 
     # -- GROWTHWHEAT --
     # Initial states    
@@ -355,7 +373,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                                                shared_hiddenzones_inputs_outputs_df,
                                                                shared_elements_inputs_outputs_df,
                                                                shared_axes_inputs_outputs_df,
-                                                               update_parameters_growthwheat)
+                                                               update_parameters_growthwheat,
+                                                               update_shared_df=UPDATE_SHARED_DF)
 
     # -- CNWHEAT --
     # Initial states    
@@ -381,6 +400,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
                                                    CNWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                    PLANT_DENSITY,
+                                                   update_parameters_cnwheat,
                                                    cnwheat_organs_initial_state,
                                                    cnwheat_hiddenzones_initial_state,
                                                    cnwheat_elements_initial_state,
@@ -390,12 +410,16 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                                    shared_hiddenzones_inputs_outputs_df,
                                                    shared_elements_inputs_outputs_df,
                                                    shared_soils_inputs_outputs_df,
-                                                   update_parameters_cnwheat)
+                                                   update_shared_df=UPDATE_SHARED_DF)
 
     # Run cnwheat with constant nitrates concentration in the soil if specified
     if N_fertilizations is not None and 'constant_Conc_Nitrates' in N_fertilizations.keys():
         cnwheat_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True  # TODO: make (1, 'MS') more general
         cnwheat_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * cnwheat_facade_.soils[(1, 'MS')].volume
+
+    # -- FSPMWHEAT --
+    # Facade initialisation
+    fspmwheat_facade_ = fspmwheat_facade.FSPMWheatFacade(g)
 
     # Update geometry
     adel_wheat.update_geometry(g)
@@ -409,6 +433,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     if run_simu:
 
         try:
+            current_time_of_the_system = time.time()
             for t_caribu in range(START_TIME, SIMULATION_LENGTH, CARIBU_TIMESTEP):
                 # run Caribu
                 PARi = meteo.loc[t_caribu, ['PARi_MA4']].iloc[0]
@@ -421,7 +446,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                     senescwheat_facade_.run()
 
                     # Test for dead plant # TODO: adapt in case of multiple plants
-                    if np.nansum(shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0:
+                    if not shared_elements_inputs_outputs_df.empty and \
+                            np.nansum(shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0:
                         # append the inputs and outputs at current step to global lists
                         all_simulation_steps.append(t_senescwheat)
                         axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
@@ -468,18 +494,25 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                         cnwheat_facade_.run(Tair, Tsoil, tillers_replications)
 
                                     # append outputs at current step to global lists
-                                    all_simulation_steps.append(t_cnwheat)
-                                    axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                                    organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                                    hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
-                                    elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                                    soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+                                    if (stored_times == 'all') or (t_cnwheat in stored_times):
+                                        axes_outputs, elements_outputs, hiddenzones_outputs, \
+                                        organs_outputs, soils_outputs = fspmwheat_facade_.build_outputs_df_from_MTG()
+
+                                        all_simulation_steps.append(t_cnwheat)
+                                        axes_all_data_list.append(axes_outputs)
+                                        organs_all_data_list.append(organs_outputs)
+                                        hiddenzones_all_data_list.append(hiddenzones_outputs)
+                                        elements_all_data_list.append(elements_outputs)
+                                        soils_all_data_list.append(soils_outputs)
 
                 else:
                     # Continue if SenescWheat loop wasn't broken because of dead plant.
                     continue
                 # SenescWheat loop was broken, break the Caribu loop.
                 break
+
+            execution_time = int(time.time() - current_time_of_the_system)
+            print ('\n' 'Simulation run in {}'.format(str(datetime.timedelta(seconds=execution_time))))
 
         finally:
             # convert list of outputs into dataframes
@@ -498,7 +531,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                     outputs_df = pd.concat([previous_outputs_dataframes[outputs_filename], outputs_df], sort=False)
                 save_df_to_csv(outputs_df, outputs_filepath, OUTPUTS_PRECISION)
                 outputs_file_basename = outputs_filename.split('.')[0]
-                outputs_df_dict[outputs_file_basename] = outputs_df.where(outputs_df.notnull(), pd.np.nan).reset_index()
+                outputs_df_dict[outputs_file_basename] = outputs_df.reset_index()
 
     # ---------------------------------------------
     # -----      POST-PROCESSING      -------
@@ -987,7 +1020,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(1000, forced_start_time=0, run_simu=True, run_postprocessing=False, generate_graphs=False, run_from_outputs=False,
+    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=False, generate_graphs=False, run_from_outputs=False,
          show_3Dplant=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},

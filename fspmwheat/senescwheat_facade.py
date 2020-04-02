@@ -17,15 +17,6 @@ import tools
     :license: see LICENSE for details.
 """
 
-"""
-    Information about this versioned file:
-        $LastChangedBy$
-        $LastChangedDate$
-        $LastChangedRevision$
-        $URL$
-        $Id$
-"""
-
 #: the name of the photosynthetic organs modeled by SenescWheat
 PHOTOSYNTHETIC_ORGANS_NAMES = {'internode', 'blade', 'sheath', 'peduncle', 'ear'}
 
@@ -57,7 +48,8 @@ class SenescWheatFacade(object):
                  shared_organs_inputs_outputs_df,
                  shared_axes_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
-                 update_parameters=None):
+                 update_parameters=None,
+                 update_shared_df = True):
 
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
@@ -69,6 +61,7 @@ class SenescWheatFacade(object):
         :param pandas.DataFrame shared_axes_inputs_outputs_df: the dataframe of inputs and outputs at axis scale shared between all models.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at element scale shared between all models.
         :param dict update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
+        :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
@@ -81,20 +74,26 @@ class SenescWheatFacade(object):
         self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df  #: the dataframe at organs scale shared between all models
         self._shared_axes_inputs_outputs_df = shared_axes_inputs_outputs_df  #: the dataframe at axis scale shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
-        self._update_shared_dataframes(model_roots_inputs_df, model_axes_inputs_df, model_elements_inputs_df)
+        self._update_shared_df = update_shared_df
+        if self._update_shared_df:
+            self._update_shared_dataframes(model_roots_inputs_df, model_axes_inputs_df, model_elements_inputs_df)
 
-    def run(self, forced_max_protein_elements=None, postflowering_stages=False):
+    def run(self, forced_max_protein_elements=None, postflowering_stages=False, update_shared_df=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
+
         :param set forced_max_protein_elements: The elements ids with fixed max proteins.
         :param bool postflowering_stages: True to run a simulation with postflo parameter
+        :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
         """
 
         self._initialize_model()
         self._simulation.run(forced_max_protein_elements=forced_max_protein_elements, postflowering_stages=postflowering_stages)
         self._update_shared_MTG(self._simulation.outputs['roots'], self._simulation.outputs['axes'], self._simulation.outputs['elements'])
-        senescwheat_roots_outputs_df, senescwheat_axes_outputs_df, senescwheat_elements_outputs_df = converter.to_dataframes(self._simulation.outputs)
-        self._update_shared_dataframes(senescwheat_roots_outputs_df, senescwheat_axes_outputs_df, senescwheat_elements_outputs_df)
+
+        if update_shared_df or (update_shared_df is None and self._update_shared_df):
+            senescwheat_roots_outputs_df, senescwheat_axes_outputs_df, senescwheat_elements_outputs_df = converter.to_dataframes(self._simulation.outputs)
+            self._update_shared_dataframes(senescwheat_roots_outputs_df, senescwheat_axes_outputs_df, senescwheat_elements_outputs_df)
 
     def _initialize_model(self):
         """

@@ -46,12 +46,14 @@ class FarquharWheatFacade(object):
     def __init__(self, shared_mtg,
                  model_elements_inputs_df,
                  model_axes_inputs_df,
-                 shared_elements_inputs_outputs_df):
+                 shared_elements_inputs_outputs_df,
+                 update_shared_df = True):
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
         :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
         :param pandas.DataFrame model_axes_inputs_df: the inputs of the model at axis scale.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
+        :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
@@ -61,9 +63,11 @@ class FarquharWheatFacade(object):
         self._update_shared_MTG(all_farquharwheat_inputs_dict)
 
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
-        self._update_shared_dataframes(model_elements_inputs_df)
+        self._update_shared_df = update_shared_df
+        if self._update_shared_df:
+            self._update_shared_dataframes(model_elements_inputs_df)
 
-    def run(self, Ta, ambient_CO2, RH, Ur):
+    def run(self, Ta, ambient_CO2, RH, Ur, update_shared_df=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
@@ -71,13 +75,15 @@ class FarquharWheatFacade(object):
         :param float ambient_CO2: air CO2 at t (µmol mol-1)
         :param float RH: relative humidity at t (decimal fraction)
         :param float Ur: wind speed at the top of the canopy at t (m s-1)
-
+        :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
         """
         self._initialize_model()
         self._simulation.run(Ta, ambient_CO2, RH, Ur)
         self._update_shared_MTG({'elements': self._simulation.outputs, 'axes': ''})
-        farquharwheat_elements_outputs_df = converter.to_dataframe(self._simulation.outputs)
-        self._update_shared_dataframes(farquharwheat_elements_outputs_df)
+
+        if update_shared_df or (update_shared_df is None and self._update_shared_df):
+            farquharwheat_elements_outputs_df = converter.to_dataframe(self._simulation.outputs)
+            self._update_shared_dataframes(farquharwheat_elements_outputs_df)
 
     def _initialize_model(self):
         """
@@ -149,7 +155,7 @@ class FarquharWheatFacade(object):
                             all_farquharwheat_elements_inputs_dict[element_id] = farquharwheat_element_inputs_dict
 
                 farquharwheat_axis_inputs_dict['height_canopy'] = np.nanmax(np.array(height_element_list, dtype=np.float64))
-                if np.isnan(farquharwheat_axis_inputs_dict['height_canopy']):
+                if np.isnan(farquharwheat_axis_inputs_dict['height_canopy']) or (farquharwheat_axis_inputs_dict['height_canopy'] is None):
                     farquharwheat_axis_inputs_dict['height_canopy'] = 0.78  # TODO : by default values in a parameters file
                 all_farquharwheat_axes_inputs_dict[axis_id] = farquharwheat_axis_inputs_dict
 
@@ -186,10 +192,9 @@ class FarquharWheatFacade(object):
                             # update the element in the MTG
                             farquharwheat_element_data_dict = farquharwheat_data_dict['elements'][element_id]
                             for farquharwheat_element_data_name, farquharwheat_element_data_value in farquharwheat_element_data_dict.items():
+                                self._shared_mtg.property(farquharwheat_element_data_name)[mtg_element_vid] = farquharwheat_element_data_value
                                 if mtg_organ_label in ['sheath', 'internode', 'pedoncule', 'ear'] and farquharwheat_element_data_name == 'width':
                                     self._shared_mtg.property('diameter')[mtg_element_vid] = farquharwheat_element_data_value
-                                else:
-                                    self._shared_mtg.property(farquharwheat_element_data_name)[mtg_element_vid] = farquharwheat_element_data_value
 
     def _update_shared_dataframes(self, farquharwheat_elements_data_df):
         """

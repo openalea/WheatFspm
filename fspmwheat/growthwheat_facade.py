@@ -54,7 +54,8 @@ class GrowthWheatFacade(object):
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
                  shared_axes_inputs_outputs_df,
-                 update_parameters=None):
+                 update_parameters=None,
+                 update_shared_df = True):
 
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
@@ -68,6 +69,7 @@ class GrowthWheatFacade(object):
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
         :param pandas.DataFrame shared_axes_inputs_outputs_df: the dataframe of inputs and outputs at axis scale shared between all models.
         :param dict update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
+        :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
         if update_parameters is None:
             update_parameters = {}
@@ -84,18 +86,23 @@ class GrowthWheatFacade(object):
         self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df  #: the dataframe at hiddenzones scale shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
         self._shared_axes_inputs_outputs_df = shared_axes_inputs_outputs_df  #: the dataframe at axis scale shared between all models
-        self._update_shared_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df, model_axes_inputs_df)
+        self._update_shared_df = update_shared_df
+        if self._update_shared_df:
+            self._update_shared_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_roots_inputs_df, model_axes_inputs_df)
 
-    def run(self, postflowering_stages=False):
+    def run(self, postflowering_stages=False, update_shared_df=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
         :param bool postflowering_stages: if True the model will calculate root growth with the parameters calibrated for post flowering stages
+        :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
         """
         self._initialize_model()
         self._simulation.run(postflowering_stages)
         self._update_shared_MTG(self._simulation.outputs['hiddenzone'], self._simulation.outputs['elements'], self._simulation.outputs['roots'], self._simulation.outputs['axes'])
-        growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df, growthwheat_axes_outputs_df = converter.to_dataframes(self._simulation.outputs)
-        self._update_shared_dataframes(growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df, growthwheat_axes_outputs_df)
+
+        if update_shared_df or (update_shared_df is None and self._update_shared_df):
+            growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df, growthwheat_axes_outputs_df = converter.to_dataframes(self._simulation.outputs)
+            self._update_shared_dataframes(growthwheat_hiddenzones_outputs_df, growthwheat_elements_outputs_df, growthwheat_roots_outputs_df, growthwheat_axes_outputs_df)
 
     def _initialize_model(self):
         """

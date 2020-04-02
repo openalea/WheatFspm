@@ -43,18 +43,21 @@ class CaribuFacade(object):
     def __init__(self,
                  shared_mtg,
                  shared_elements_inputs_outputs_df,
-                 geometrical_model):
+                 geometrical_model,
+                 update_shared_df = True):
         """
         :param openalea.mtg.MTG shared_mtg: The MTG shared between all models.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: The dataframe of inputs and outputs at elements scale shared between all models.
         :param alinea.adel.adel_dynamic.AdelWheatDyn geometrical_model: The model which deals with geometry. This model must have an attribute "domain".
+        :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
         self._geometrical_model = geometrical_model  #: the model which deals with geometry
+        self._update_shared_df = update_shared_df
 
     def run(self, sun_sky_option='mix', energy=1, DOY=1, hourTU=12, latitude=48.85, diffuse_model='soc', azimuts=4, zenits=5, heterogeneous_canopy=False,
-            plant_density=250., inter_row=0.15):
+            plant_density=250., inter_row=0.15, update_shared_df=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
@@ -69,6 +72,7 @@ class CaribuFacade(object):
         :param bool heterogeneous_canopy: Whether to create a duplicated heterogeneous canopy from the initial mtg.
         :param float plant_density: Number of plant per m2 in the stand (plant m-2).
         :param float inter_row: Inter-row spacing in the stand (m).
+        :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
         """
         c_scene_sky, c_scene_sun = self._initialize_model(energy, diffuse_model, azimuts, zenits, DOY, hourTU, latitude, heterogeneous_canopy, plant_density, inter_row)
 
@@ -78,7 +82,8 @@ class CaribuFacade(object):
             PARa_sky = aggregated_sky['par']['Eabs']  #: Eabs is the relative surfacic absorbed energy per organ
             # Updates
             self.update_shared_MTG(PARa_sky)
-            self.update_shared_dataframes(PARa_sky)
+            if update_shared_df or (update_shared_df is None and self._update_shared_df):
+                self.update_shared_dataframes(PARa_sky)
 
         #: Direct light
         elif sun_sky_option == 'sun':
@@ -86,7 +91,8 @@ class CaribuFacade(object):
             PARa_sun = aggregated_sun['par']['Eabs']  #: Eabs is the relative surfacic absorbed energy per organ
             # Updates
             self.update_shared_MTG(PARa_sun)
-            self.update_shared_dataframes(PARa_sun)
+            if update_shared_df or (update_shared_df is None and self._update_shared_df):
+                self.update_shared_dataframes(PARa_sun)
 
         #: Mix sky-Sun
         elif sun_sky_option == 'mix':
@@ -103,6 +109,11 @@ class CaribuFacade(object):
             PARa = {}
             for element_id, PARa_value in PARa_sky.items():
                 PARa[element_id] = RdRs * PARa_value + (1-RdRs) * PARa_sun[element_id]
+
+            # Updates
+            self.update_shared_MTG(PARa)
+            if update_shared_df or (update_shared_df is None and self._update_shared_df):
+                self.update_shared_dataframes(PARa)
 
         else:
             raise ValueError("Unknown sun_sky_option : can be either 'mix', 'sun' or 'sky'.")
