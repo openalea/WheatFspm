@@ -35,7 +35,7 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # Exponential elongation
 RERmax_Ljutovac_fit = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000151, 10: 0.00000134, 11: 0.00000129} # Optimal RERmax (s-1 at 12°C) allowing to simulate leaf dimensions of Ljutovac (2002)
 # { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # Observed RER on data of Ljutovac 2002 RER (s-1 at 12°C)
-RERmax = {5: 3.35e-06, 6: 2.25e-06, 7: 2.12e-06, 8: 1.97e-06, 9: 1.92e-06, 10: 1.65e-06, 11: 1.56e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
+RERmax = {5: 3.35e-06, 6: 2.25e-06, 7: 2.12e-06, 8: 1.99e-06, 9: 1.92e-06, 10: 1.65e-06, 11: 1.56e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
 RER_Kc = 100  #: affinity coefficient of RER to C (µmol g-1)
 RER_Kn = 15   #: affinity coefficient of RER to N (µmol g-1)
 
@@ -55,8 +55,8 @@ leaf_Wmax_dict = {3: 0.0040, 4: 0.0045, 5: 0.0056, 6: 0.0075, 7: 0.010, 8: 0.012
 leaf_W_L_base = 0.05
 leaf_W_L_Regul_MIN = 0.5
 leaf_W_L_Regul_MAX = 2
-leaf_W_L_int_MIN = 0
-leaf_W_L_int_MAX = 5800
+leaf_W_L_int_MIN = 200
+leaf_W_L_int_MAX = 5000
 
 # Structural Specific Lamina Weight
 leaf_SSLW = {1: 22, 2: 22, 3: 22, 4: 22, 5: 22, 6: 22, 7: 22, 8: 24, 9: 25, 10: 28, 11: 31}  # SSLW (g m-2)
