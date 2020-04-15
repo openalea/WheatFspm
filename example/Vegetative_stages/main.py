@@ -116,8 +116,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
     # define the time step in hours for each simulator
     CARIBU_TIMESTEP = 4
-    SENESCWHEAT_TIMESTEP = 2
-    FARQUHARWHEAT_TIMESTEP = 2
+    SENESCWHEAT_TIMESTEP = 1
+    FARQUHARWHEAT_TIMESTEP = 1
     ELONGWHEAT_TIMESTEP = 1
     GROWTHWHEAT_TIMESTEP = 1
     CNWHEAT_TIMESTEP = 1
@@ -434,14 +434,19 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
         try:
             current_time_of_the_system = time.time()
-            for t_caribu in range(START_TIME, SIMULATION_LENGTH, CARIBU_TIMESTEP):
+            for t_caribu in range(START_TIME, SIMULATION_LENGTH, SENESCWHEAT_TIMESTEP):
                 # run Caribu
-                PARi = meteo.loc[t_caribu, ['PARi_MA4']].iloc[0]
+                PARi = meteo.loc[t_caribu, ['PARi']].iloc[0]
                 DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
                 hour = meteo.loc[t_caribu, ['hour']].iloc[0]
-                caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
+                if t_caribu % CARIBU_TIMESTEP == 0:
+                    run_caribu = True
+                else:
+                    run_caribu = False
 
-                for t_senescwheat in range(t_caribu, t_caribu + CARIBU_TIMESTEP, SENESCWHEAT_TIMESTEP):
+                caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
+
+                for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
                     senescwheat_facade_.run()
 
@@ -495,8 +500,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
                                     # append outputs at current step to global lists
                                     if (stored_times == 'all') or (t_cnwheat in stored_times):
-                                        axes_outputs, elements_outputs, hiddenzones_outputs, \
-                                        organs_outputs, soils_outputs = fspmwheat_facade_.build_outputs_df_from_MTG()
+                                        axes_outputs, elements_outputs, hiddenzones_outputs, organs_outputs, soils_outputs = fspmwheat_facade_.build_outputs_df_from_MTG()
 
                                         all_simulation_steps.append(t_cnwheat)
                                         axes_all_data_list.append(axes_outputs)

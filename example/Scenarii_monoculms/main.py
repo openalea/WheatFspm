@@ -65,7 +65,7 @@ def save_df_to_csv(df, outputs_filepath, precision):
         warnings.warn('File will be saved at {}'.format(newpath))
 
 
-def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times = None,
+def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
          option_static=False, show_3Dplant=True, tillers_replications=None, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
@@ -78,7 +78,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     :param bool run_postprocessing: whether to run the postprocessing
     :param bool generate_graphs: whether to run the generate graphs
     :param bool run_from_outputs: whether to start a simulation from a specific time and initial states as found in previous outputs
-	:param str or list stored_times: can be 'all', a list or an empty list
+    :param str or list stored_times: can be 'all', a list or an empty list
     :param bool option_static: Whether the model should be run for a static plant architecture
     :param bool show_3Dplant: whether to plot the scene in pgl viewer
     :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value.
@@ -111,8 +111,8 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
     # define the time step in hours for each simulator
     CARIBU_TIMESTEP = 4
-    SENESCWHEAT_TIMESTEP = 2
-    FARQUHARWHEAT_TIMESTEP = 2
+    SENESCWHEAT_TIMESTEP = 1
+    FARQUHARWHEAT_TIMESTEP = 1
     ELONGWHEAT_TIMESTEP = 1
     GROWTHWHEAT_TIMESTEP = 1
     CNWHEAT_TIMESTEP = 1
@@ -290,13 +290,13 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                             shared_elements_inputs_outputs_df,
                                                             adel_wheat, phytoT_df,
                                                             update_parameters_elongwheat,
-                                                            update_shared_df = UPDATE_SHARED_DF)
+                                                            update_shared_df=UPDATE_SHARED_DF)
 
     # -- CARIBU --
     caribu_facade_ = caribu_facade.CaribuFacade(g,
                                                 shared_elements_inputs_outputs_df,
                                                 adel_wheat,
-                                                update_shared_df = UPDATE_SHARED_DF)
+                                                update_shared_df=UPDATE_SHARED_DF)
 
     # -- SENESCWHEAT --
     # Initial states    
@@ -328,7 +328,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                                shared_axes_inputs_outputs_df,
                                                                shared_elements_inputs_outputs_df,
                                                                update_parameters_senescwheat,
-                                                               update_shared_df = UPDATE_SHARED_DF)
+                                                               update_shared_df=UPDATE_SHARED_DF)
 
     # -- FARQUHARWHEAT --
     # Initial states    
@@ -345,7 +345,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                                      farquharwheat_elements_initial_state,
                                                                      farquharwheat_axes_initial_state,
                                                                      shared_elements_inputs_outputs_df,
-                                                                     update_shared_df = UPDATE_SHARED_DF)
+                                                                     update_shared_df=UPDATE_SHARED_DF)
 
     # -- GROWTHWHEAT --
     # Initial states    
@@ -383,7 +383,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                                shared_elements_inputs_outputs_df,
                                                                shared_axes_inputs_outputs_df,
                                                                update_parameters_growthwheat,
-                                                               update_shared_df = UPDATE_SHARED_DF)
+                                                               update_shared_df=UPDATE_SHARED_DF)
 
     # -- CNWHEAT --
     # Initial states    
@@ -419,7 +419,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                    shared_hiddenzones_inputs_outputs_df,
                                                    shared_elements_inputs_outputs_df,
                                                    shared_soils_inputs_outputs_df,
-                                                   update_shared_df = UPDATE_SHARED_DF)
+                                                   update_shared_df=UPDATE_SHARED_DF)
 
     # Run cnwheat with constant nitrates concentration in the soil if specified
     if N_fertilizations is not None and 'constant_Conc_Nitrates' in N_fertilizations.keys():
@@ -442,20 +442,26 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     if run_simu:
 
         try:
-            for t_caribu in range(START_TIME, SIMULATION_LENGTH, CARIBU_TIMESTEP):
+            for t_caribu in range(START_TIME, SIMULATION_LENGTH, SENESCWHEAT_TIMESTEP):
                 # run Caribu
-                PARi = meteo.loc[t_caribu, ['PARi_MA4']].iloc[0]
+                PARi = meteo.loc[t_caribu, ['PARi']].iloc[0]
                 DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
                 hour = meteo.loc[t_caribu, ['hour']].iloc[0]
-                caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
 
-                for t_senescwheat in range(t_caribu, t_caribu + CARIBU_TIMESTEP, SENESCWHEAT_TIMESTEP):
+                if t_caribu % CARIBU_TIMESTEP == 0:
+                    run_caribu = True
+                else:
+                    run_caribu = False
+
+                caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
+
+                for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
                     senescwheat_facade_.run()
 
                     # Test for dead plant # TODO: adapt in case of multiple plants
                     if not shared_elements_inputs_outputs_df.empty and \
-                            np.nansum(shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement','LeafElement1']), 'green_area']) == 0:
+                            np.nansum(shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0:
                         # append the inputs and outputs at current step to global lists
                         all_simulation_steps.append(t_senescwheat)
                         axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
@@ -503,15 +509,14 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
                                     # append outputs at current step to global lists
                                     if (stored_times == 'all') or (t_cnwheat in stored_times):
-                                        axes_outputs, elements_outputs, hiddenzones_outputs, \
-                                        organs_outputs, soils_outputs = fspmwheat_facade_.build_outputs_df_from_MTG()
+                                        axes_outputs, elements_outputs, hiddenzones_outputs, organs_outputs, soils_outputs = fspmwheat_facade_.build_outputs_df_from_MTG()
 
                                         all_simulation_steps.append(t_cnwheat)
-                                        axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                                        organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                                        hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
-                                        elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                                        soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+                                        axes_all_data_list.append(axes_outputs)
+                                        organs_all_data_list.append(organs_outputs)
+                                        hiddenzones_all_data_list.append(hiddenzones_outputs)
+                                        elements_all_data_list.append(elements_outputs)
+                                        soils_all_data_list.append(soils_outputs)
 
                 else:
                     # Continue if SenescWheat loop wasn't broken because of dead plant.
@@ -795,7 +800,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
         df_axe = postprocessing_df_dict[axes_postprocessing_file_basename]
         df_axe['day'] = df_axe['t'] // 24 + 1
-        #Total_Photosynthesis = df_axe.groupby(['day'])['Tillers_Photosynthesis'].agg('sum')
+        # Total_Photosynthesis = df_axe.groupby(['day'])['Tillers_Photosynthesis'].agg('sum')
         sum_dry_mass_shoot = df_axe.groupby(['day'])['sum_dry_mass_shoot'].agg('max')
         sum_dry_mass = df_axe.groupby(['day'])['sum_dry_mass'].agg('max')
 
