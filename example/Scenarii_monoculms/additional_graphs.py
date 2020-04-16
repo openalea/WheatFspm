@@ -25,7 +25,7 @@ scenarii = scenarii_df.Scenario
 
 # ------- Def functions to make graphs
 def graph_RER(scenario):
-    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
 
     # ------ RERmax from parameters : from parameters file or from scenarii_list.csv
@@ -98,7 +98,7 @@ def graph_RER(scenario):
 
 
 def graph_C_usages(scenario):
-    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
 
     # --- Import simulations prostprocessings
@@ -182,7 +182,7 @@ def graph_C_usages(scenario):
 
 
 def graph_Conc_Nitrates(scenario):
-    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
 
     # --- Import simulations prostprocessings
@@ -227,7 +227,7 @@ def graph_Conc_Nitrates(scenario):
 
 
 def graph_Uptake_N(scenario):
-    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
 
     # --- Import simulations outsptus
@@ -248,7 +248,7 @@ def graph_Uptake_N(scenario):
 def graph_phi_s_Devienne1994a(scenario):
     """Sum of NO3- reduction flux and NO3- deposition into the sylem sap"""
 
-    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
 
     # --- Import simulations outsptus
@@ -269,7 +269,7 @@ def graph_phi_s_Devienne1994a(scenario):
 def graph_N_dilution(scenario):
     """N shoot in function of above-ground biomass"""
 
-    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
 
     # --- Import simulations postprocessing
@@ -289,7 +289,7 @@ def graph_summary(scenario, graph_list=None):
     if graph_list is None:
         graph_list = ['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
                       'green_area_blade']
-    scenario_name = 'Scenario_{}'.format(scenario)
+    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
     scenario_label = scenarii_df['Scenario_label'][scenario]
     scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
 

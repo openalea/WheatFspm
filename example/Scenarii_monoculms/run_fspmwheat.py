@@ -28,7 +28,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
     # Scenario to be run
     scenarii_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, 'scenarii_list.csv'), index_col='Scenario')
     scenario = scenarii_df.loc[scenario_id].to_dict()
-    scenario_name = 'Scenario_{}'.format(scenario_id)
+    scenario_name = 'Scenario_%.4d' % scenario_id #'Scenario_{}'.format(int(scenario_id))#
 
     # Create dict of parameters for the scenario
     update_parameters = tools.buildDic(scenario)

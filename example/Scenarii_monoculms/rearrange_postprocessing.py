@@ -48,7 +48,7 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
         #: For each scenario, extract the prostprocessings at t
         for scenario in scenarii:
 
-            scenario_name = 'Scenario_' + str(scenario)
+            scenario_name = 'Scenario_%.4d' % scenario # 'Scenario_' + str(scenario)
             scenario_postprocessing_dirpath = os.path.join(scenario_name, 'postprocessing')
             scenario_postprocessing_table_dirpath = os.path.join(scenario_postprocessing_dirpath, pp_table + '.csv')
 

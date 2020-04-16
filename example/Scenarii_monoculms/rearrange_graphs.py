@@ -54,7 +54,7 @@ def rearrange_graphs(graphs_titles=None, scenarii=None):
         #: For each scenario, copy and rename the graphs in the common directory
         for scenario in scenarii:
 
-            scenario_name = 'Scenario_' + str(scenario)
+            scenario_name = 'Scenario_%.4d' % scenario #'Scenario_' + str(scenario)
             # scenario_label = scenarii_df['Scenario_label'].get( scenario, '' ).replace(" ", "_")
 
             scenario_dir = os.path.join(scenario_name, 'graphs')
