@@ -1,24 +1,22 @@
 # -*- coding: latin-1 -*-
 
 import os
-import warnings
 import random
+import warnings
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
+from alinea.adel.Stand import AgronomicStand
+from alinea.adel.adel_dynamic import AdelDyn
+from alinea.adel.echap_leaf import echap_leaves
 from fspmwheat import caribu_facade
 from fspmwheat import cnwheat_facade
 from fspmwheat import elongwheat_facade
 from fspmwheat import farquharwheat_facade
+from fspmwheat import fspmwheat_facade
 from fspmwheat import growthwheat_facade
 from fspmwheat import senescwheat_facade
-from fspmwheat import fspmwheat_facade
-
-from alinea.adel.adel_dynamic import AdelDyn
-from alinea.adel.echap_leaf import echap_leaves
-from alinea.adel.Stand import AgronomicStand
 
 """
     main
@@ -447,8 +445,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                 PARi = meteo.loc[t_caribu, ['PARi']].iloc[0]
                 DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
                 hour = meteo.loc[t_caribu, ['hour']].iloc[0]
+                PARi_next_hours = meteo.loc[range(t_caribu, t_caribu + CARIBU_TIMESTEP), ['PARi']].sum().values[0]
 
-                if t_caribu % CARIBU_TIMESTEP == 0:
+                if (t_caribu % CARIBU_TIMESTEP == 0) and (PARi_next_hours > 0):
                     run_caribu = True
                 else:
                     run_caribu = False
