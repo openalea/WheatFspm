@@ -37,7 +37,7 @@ Documentation
 Contact
 =======
 
-For any question, please submitit to https://github.com/openalea-incubator/WheatFspm/issues.
+For any question, please submit to https://github.com/openalea-incubator/WheatFspm/issues.
 
 
 Versioning
