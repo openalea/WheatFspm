@@ -31,7 +31,7 @@ These researches lead to the publication of project report, and two articles:
   model of carbon and nitrogen metabolism in wheat culms after anthesis. II. Model evaluation. 
   Annals of Botany, 118(5), 1015‑1031. https://doi.org/10.1093/aob/mcw144
 
-For installation, testing and deployment: please see file :download:`README.md <../README.md>`. 
+For installation, testing and deployment: please see file :download:`README.md <../../README.md>`.
 
 
 Implementation and architecture
@@ -296,7 +296,7 @@ Execution time
 --------------
 
 With an Intel® Core™ i7-5600U CPU @ 2.60GHz × 4 and 7,7 Gio RAM, the 
-:download:`simulation example <../example/main.py>` runs in 13.82 s.
+:download:`simulation example <../../example/main.py>` runs in 13.82 s.
 This example corresponds to a :class:`population <cnwheat.model.Population>` of 
 one plant with one axis and four phytomers.  
 
