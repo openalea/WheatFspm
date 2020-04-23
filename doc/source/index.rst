@@ -12,7 +12,6 @@ Module description
 .. sidebar:: Summary
 
     :Version: |version|
-    :Release: |release|
     :Date: |today|
     :Author: See `Authors`_ section
     
