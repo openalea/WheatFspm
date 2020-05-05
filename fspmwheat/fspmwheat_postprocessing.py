@@ -109,16 +109,8 @@ def calculate_performance_indices(scenario_postprocessing_dirpath, meteo_dirpath
     df_LAI['LAI'] = df_LAI.green_area * plant_density
     df_LAI['t'] = df_LAI.index
 
-    toto = df_meteo[['t', 'PARi_MA4']].merge(df_LAI[['t', 'LAI']], on='t', how='inner')
-    toto['PARi_caribu'] = toto.PARi_MA4
-    ts_caribu = range(0, toto.shape[0], 4)
-    save = toto.at[0, 'PARi_MA4']
-    for i in range(0, toto.shape[0]):
-        if i in ts_caribu:
-            save = toto.at[i, 'PARi_MA4']
-        toto.at[i, 'PARi_caribu'] = save
-
-    toto['PARint_BL'] = toto.PARi_caribu * (1 - np.exp(-0.4 * toto.LAI))
+    toto = df_meteo[['t', 'PARi']].merge(df_LAI[['t', 'LAI']], on='t', how='inner')
+    toto['PARint_BL'] = toto.PARi * (1 - np.exp(-0.4 * toto.LAI))
     toto['RGint_BL_MJ'] = toto['PARint_BL'] * 3600 / 2.02 * 10 ** -6
     RGint_BL_cum = np.cumsum(toto.RGint_BL_MJ)
 
