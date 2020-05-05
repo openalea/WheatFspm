@@ -1,10 +1,10 @@
-Scenario,Generate_Graphs,Scenario_label,Plant_Density,constant_Conc_Nitrates,PAR,METEO_FILENAME,Comments,elongwheat:delta_TT_GA,elongwheat:max_nb_leaves,senescwheat:AGE_EFFECT_SENESCENCE,elongwheat:SL_ratio_a,elongwheat:SL_ratio_b,elongwheat:SL_ratio_c,elongwheat:SL_ratio_d,growthwheat:VMAX_ROOTS_GROWTH_PREFLO
-1,True,N0.02_PAR250,90,20000,250,meteo_PAR250.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-2,True,N0.02_PAR500,90,20000,500,meteo_PAR500.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-3,True,N0.02_PAR1000,90,20000,1000,meteo_PAR1000.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-4,True,N0.1_PAR250,90,100000,250,meteo_PAR250.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-5,True,N0.1_PAR500,90,100000,500,meteo_PAR500.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-6,True,N0.1_PAR1000,90,100000,1000,meteo_PAR1000.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-7,True,N0.5_PAR250,90,500000,250,meteo_PAR250.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-8,True,N0.5_PAR500,90,500000,500,meteo_PAR500.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
-9,True,N0.5_PAR1000,90,500000,1000,meteo_PAR1000.csv,0.75 * Vmax growth roots,10000000000,50,10000,0,0,0.01763,0.25,0.02885625
+Scenario,Simulation_Length,Run_Simulation,Run_From_Outputs,Run_Postprocessing,Generate_Graphs,Scenario_label,Plant_Density,fertilization_interval,fertilization_quantity,PAR,METEO_FILENAME,elongwheat:delta_TT_GA,elongwheat:max_nb_leaves,senescwheat:AGE_EFFECT_SENESCENCE,elongwheat:SL_ratio_a,elongwheat:SL_ratio_b,elongwheat:SL_ratio_c,elongwheat:SL_ratio_d,growthwheat:MSTRUCT_ROOTS_BEG_LINEAR_GROWTH,senescwheat:LAG_SENESCENCE_ROOTS
+1,3500,True,False,True,True,N0.75_PAR250,90,168,53572,250,meteo_PAR250.csv,10000000000,50,10000,0,0,0.01763,0.25,1.4,2880000
+2,3500,True,False,True,True,N0.75_PAR500,90,168,53572,500,meteo_PAR500.csv,10000000000,50,10000,0,0,0.01763,0.25,1.4,2880000
+3,3500,True,False,True,True,N0.75_PAR1000,90,168,53572,1000,meteo_PAR1000.csv,10000000000,50,10000,0,0,0.01763,0.25,1.4,2880000
+4,3500,True,False,True,True,N1.5_PAR250,90,168,107143,250,meteo_PAR250.csv,10000000000,50,10000,0,0,0.01763,0.25,1.4,2880000
+5,3500,True,False,True,True,N1.5_PAR500,90,168,107143,500,meteo_PAR500.csv,10000000000,50,10000,0,0,0.01763,0.25,1.4,2880000
+6,3500,True,False,True,True,N1.5_PAR1000,90,168,107143,1000,meteo_PAR1000.csv,10000000000,50,10000,0,0,0.01763,0.25,1.4,2880000
+7,3500,True,False,True,True,N3_PAR250,90,168,214286,250,meteo_PAR250.csv,10000000000,50,10000,0,0,0.01763,0.25,1.4,2880000
+8,3500,True,False,True,True,N3_PAR500,90,168,214286,500,meteo_PAR500.csv,10000000000,50,10000,0,0,0.01763,0.25,1.4,2880000
+9,3500,True,False,True,True,N3_PAR1000,90,168,214286,1000,meteo_PAR1000.csv,10000000000,50,10000,0,0,0.01763,0.25,1.4,2880000
