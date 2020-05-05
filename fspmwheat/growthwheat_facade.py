@@ -55,7 +55,7 @@ class GrowthWheatFacade(object):
                  shared_elements_inputs_outputs_df,
                  shared_axes_inputs_outputs_df,
                  update_parameters=None,
-                 update_shared_df = True):
+                 update_shared_df=True):
 
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
