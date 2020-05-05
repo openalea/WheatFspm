@@ -8,6 +8,7 @@ import pandas as pd
 import main
 import tools
 from fspmwheat import fspmwheat_postprocessing
+import additional_graphs
 
 
 def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
@@ -28,7 +29,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
     # Scenario to be run
     scenarii_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, 'scenarii_list.csv'), index_col='Scenario')
     scenario = scenarii_df.loc[scenario_id].to_dict()
-    scenario_name = 'Scenario_%.4d' % scenario_id #'Scenario_{}'.format(int(scenario_id))#
+    scenario_name = 'Scenario_%.4d' % scenario_id  # 'Scenario_{}'.format(int(scenario_id))#
 
     # Create dict of parameters for the scenario
     update_parameters = tools.buildDic(scenario)
@@ -72,19 +73,37 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
     # Do generate the graphs?
     GENERATE_GRAPHS = scenario.get('Generate_Graphs', False)  #: TODO separate postprocessings coming from other models
 
-    # Run main fspmwheat
+    # -- SIMULATION CONDITIONS
+
+    # Build N Fertilizations dict
+    N_FERTILIZATIONS = {}
+    if 'constant_Conc_Nitrates' in scenario.keys():
+        N_FERTILIZATIONS = {'constant_Conc_Nitrates': scenario.get('constant_Conc_Nitrates')}
+    # Setup N_fertilizations time if time interval is given:
+    if 'fertilization_interval' in scenario.keys():
+        fertilization_times = range(0, SIMULATION_LENGTH, scenario['fertilization_interval'])
+        N_FERTILIZATIONS = {t: scenario['fertilization_quantity'] for t in fertilization_times}
+
+    # Plant density
+    PLANT_DENSITY = {1: scenario.get('Plant_Density', 250.)}
+
+    # -- RUN main fspmwheat --
     try:
         main.main(simulation_length=SIMULATION_LENGTH, forced_start_time=0,
                   run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS, run_from_outputs=RUN_FROM_OUTPUTS,
                   show_3Dplant=False, heterogeneous_canopy=True,
-                  N_fertilizations={'constant_Conc_Nitrates': scenario.get('constant_Conc_Nitrates')},
-                  PLANT_DENSITY={1: scenario.get('Plant_Density', 250.)},
+                  N_fertilizations=N_FERTILIZATIONS,
+                  PLANT_DENSITY=PLANT_DENSITY,
                   INPUTS_DIRPATH=INPUTS_DIRPATH,
                   METEO_FILENAME=scenario.get('METEO_FILENAME'),
                   GRAPHS_DIRPATH=scenario_graphs_dirpath,
                   OUTPUTS_DIRPATH=scenario_outputs_dirpath,
                   POSTPROCESSING_DIRPATH=scenario_postprocessing_dirpath,
                   update_parameters_all_models=update_parameters)
+        if GENERATE_GRAPHS:
+            additional_graphs.graph_summary(scenario_id,
+                                            graph_list=['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
+                                                        'green_area_blade'])
         if RUN_POSTPROCESSING:
             fspmwheat_postprocessing.table_C_usages(scenario_postprocessing_dirpath)
             fspmwheat_postprocessing.calculate_performance_indices(scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')), scenario.get('Plant_Density', 250.))
