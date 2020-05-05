@@ -44,7 +44,7 @@ te = 300 * 3600 * 24 / 12     #: end of leaf elongation in automate growth (s at
 tm = 204.6 * 3600 * 24 / 12   #: time at which leaf elongation rate is maximal in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
 tb = -114.3 * 3600 * 24 / 12  #: beginning of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
 # NB : Previous fit on adapted data from Fournier 2005 in phyllochronic time te = 271, tm=176, tb=-25
-leaf_Lmax_MAX = 0.7           #: Maximum leaf_Lmax (m)
+leaf_Lmax_MAX = 0.6           #: Maximum leaf_Lmax (m)
 
 leaf_pseudo_age_Vmax = 1.2    #: Maximal regulation of leaf length after emergence by CN status (dimensionless)
 leaf_pseudo_age_Kc = 150      #: affinity coefficient to C (µmol g-1)
