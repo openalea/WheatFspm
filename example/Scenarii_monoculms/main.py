@@ -224,6 +224,13 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     soils_all_data_list = []
 
     all_simulation_steps = []  # to store the steps of the simulation
+    all_senescing_roots = pd.DataFrame(columns=['age_roots', 'rate_mstruct_roots_growth'])
+    if run_from_outputs:
+        # restore the history of senescence
+        roots_outputs = previous_outputs_dataframes[ORGANS_OUTPUTS_FILENAME][previous_outputs_dataframes[ORGANS_OUTPUTS_FILENAME].organ == 'roots']
+        all_senescing_roots_new = pd.DataFrame({'age_roots': roots_outputs.age.values,
+                                                'rate_mstruct_roots_growth': roots_outputs.rate_mstruct_growth.values})
+        all_senescing_roots = all_senescing_roots.append(all_senescing_roots_new, ignore_index=True, sort=False)
 
     # -- POSTPROCESSING CONFIGURATION --
 
@@ -456,7 +463,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
                 for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
-                    senescwheat_facade_.run()
+                    senescwheat_facade_.run(history_rate_mstruct_roots_senescence=all_senescing_roots)
 
                     # Test for dead plant # TODO: adapt in case of multiple plants
                     if not shared_elements_inputs_outputs_df.empty and \
@@ -494,13 +501,13 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
                                 for t_cnwheat in range(t_growthwheat, t_growthwheat + GROWTHWHEAT_TIMESTEP, CNWHEAT_TIMESTEP):
                                     print('t cnwheat is {}'.format(t_cnwheat))
+
+                                    # N fertilization if any
+                                    if N_fertilizations is not None and len(N_fertilizations) > 0:
+                                        if t_cnwheat in N_fertilizations.keys():
+                                            cnwheat_facade_.soils[(1, 'MS')].nitrates += N_fertilizations[t_cnwheat]
+
                                     if t_cnwheat > 0:
-
-                                        # N fertilization if any
-                                        if N_fertilizations is not None and len(N_fertilizations) > 0:
-                                            if t_cnwheat in N_fertilizations.keys():
-                                                cnwheat_facade_.soils[(1, 'MS')].nitrates += N_fertilizations[t_cnwheat]
-
                                         # run CNWheat
                                         Tair = meteo.loc[t_elongwheat, 'air_temperature']
                                         Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
@@ -516,6 +523,12 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                         hiddenzones_all_data_list.append(hiddenzones_outputs)
                                         elements_all_data_list.append(elements_outputs)
                                         soils_all_data_list.append(soils_outputs)
+
+                                    # store the history of senescence
+                                    roots_outputs = organs_outputs[organs_outputs.organ == 'roots']
+                                    all_senescing_roots_new = pd.DataFrame({'age_roots': [roots_outputs.age.values[0]],
+                                                                            'rate_mstruct_roots_growth': [roots_outputs.rate_mstruct_growth.values[0]]})
+                                    all_senescing_roots = all_senescing_roots.append(all_senescing_roots_new, ignore_index=True, sort=False)
 
                 else:
                     # Continue if SenescWheat loop wasn't broken because of dead plant.
