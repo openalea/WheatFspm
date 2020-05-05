@@ -53,10 +53,11 @@ class Simulation(object):
         self.inputs.clear()
         self.inputs.update(inputs)
 
-    def run(self, forced_max_protein_elements=None, opt_full_remob=False, postflowering_stages=False):
+    def run(self, history_rate_mstruct_roots_senescence, forced_max_protein_elements=None, opt_full_remob=False, postflowering_stages=False):
         """
         Compute Senesc-Wheat outputs from :attr:`inputs`, and update :attr:`outputs`.
 
+        :param DateFrame history_rate_mstruct_roots_senescence: Rate of roots mstruct synthesis X s  at 12°C ago. The root mstruct producted at X s will now senesce.
         :param set forced_max_protein_elements: The elements ids with fixed max proteins.
         :param bool postflowering_stages: True to run a simulation with postflo parameter
         :param bool opt_full_remob: whether all proteins should be remobilised
@@ -80,8 +81,18 @@ class Simulation(object):
             # Temperature-compensated time (delta_teq)
             delta_teq = all_axes_inputs[roots_inputs_id]['delta_teq_roots']
 
+            # Rate of mstruct senescence
+            rate_mstruct_roots_senescence = 0.
+            if not history_rate_mstruct_roots_senescence.empty and \
+                    max(history_rate_mstruct_roots_senescence.age_roots) >= parameters.LAG_SENESCENCE_ROOTS:
+                history_rate_mstruct_roots_senescence['age_roots_delta'] = history_rate_mstruct_roots_senescence.age_roots - \
+                                                                           (max(history_rate_mstruct_roots_senescence.age_roots) - parameters.LAG_SENESCENCE_ROOTS)
+                rate_mstruct_roots_senescence = history_rate_mstruct_roots_senescence.loc[abs(history_rate_mstruct_roots_senescence.age_roots_delta) ==
+                                                                                          min(abs(history_rate_mstruct_roots_senescence.age_roots_delta)),
+                                                                                          'rate_mstruct_roots_growth'].values[0]
+
             # loss of mstruct and Nstruct
-            rate_mstruct_death, rate_Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'])
+            rate_mstruct_death, rate_Nstruct_death = model.SenescenceModel.calculate_roots_senescence(roots_inputs_dict['mstruct'], roots_inputs_dict['Nstruct'], rate_mstruct_roots_senescence)
             relative_delta_mstruct = model.SenescenceModel.calculate_relative_delta_mstruct_roots(rate_mstruct_death, roots_inputs_dict['mstruct'], delta_teq)
             delta_mstruct, delta_Nstruct = model.SenescenceModel.calculate_delta_mstruct_root(rate_mstruct_death, rate_Nstruct_death, delta_teq)
             # loss of cytokinins (losses of nitrates, amino acids and sucrose are neglected)

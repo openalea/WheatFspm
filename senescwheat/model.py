@@ -202,16 +202,17 @@ class SenescenceModel(object):
         return remob_proteins, delta_amino_acids, delta_Nresidual
 
     @classmethod
-    def calculate_roots_senescence(cls, mstruct, Nstruct):
+    def calculate_roots_senescence(cls, mstruct, Nstruct, rate_mstruct_roots_senescence):
         """Root senescence
 
         :param float mstruct: structural mass (g)
         :param float Nstruct: structural N (g)
+        :param float rate_mstruct_roots_senescence: Rate of roots mstruct synthesis X s  at 12°C ago. The root mstruct producted at X s will now senesce.
 
         :return: Rate of mstruct loss by root senescence (g mstruct s-1), rate of Nstruct loss by root senescence (g Nstruct s-1)
         :rtype: tuple [float, float]
         """
-        return mstruct * parameters.SENESCENCE_ROOTS, Nstruct * parameters.SENESCENCE_ROOTS
+        return rate_mstruct_roots_senescence * parameters.RATIO_SENESCENCE_ROOTS_LAG, rate_mstruct_roots_senescence * (Nstruct/mstruct) * parameters.RATIO_SENESCENCE_ROOTS_LAG
 
     @classmethod
     def calculate_relative_delta_mstruct_roots(cls, rate_mstruct_death, root_mstruct, delta_teq):
@@ -232,7 +233,7 @@ class SenescenceModel(object):
 
         :param float rate_mstruct_death: relative delta of root structural mass over delta_t (g s-1)
         :param float rate_Nstruct_death: relative delta of root N structural mass over delta_t (g s-1)
-        :param float delta_teq: previous value of an organ structural N (s)
+        :param float delta_teq: Temperature-consensated time = time duration at a reference temperature (s)
 
         :return: delta_mstruct (g), delta_Nstruct (g)
         :rtype: tuple [float, float]
