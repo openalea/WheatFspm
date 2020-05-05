@@ -70,7 +70,7 @@ ORGANS_INDEXES = cnwheat_simulation.Simulation.ORGANS_INDEXES
 ORGANS_T_INDEXES = cnwheat_simulation.Simulation.ORGANS_T_INDEXES
 #: organs post-processing variables
 ORGANS_POSTPROCESSING_VARIABLES = ['Conc_Amino_Acids', 'Conc_Nitrates', 'Conc_Sucrose', 'Conc_cytokinins', 'Dry_Mass', 'Proteins_N_Mass', 'R_maintenance', 'N_tot']
-ORGANS_RUN_VARIABLES_ADDITIONAL = ['sucrose_consumption_mstruct', 'AA_consumption_mstruct']
+ORGANS_RUN_VARIABLES_ADDITIONAL = ['sucrose_consumption_mstruct', 'AA_consumption_mstruct', 'synthetized_mstruct']
 #: concatenation of :attr:`ORGANS_T_INDEXES`, :attr:`ORGANS_RUN_VARIABLES <cnwheat.simulation.Simulation.ORGANS_RUN_VARIABLES>` and :attr:`ORGANS_POSTPROCESSING_VARIABLES`
 ORGANS_RUN_POSTPROCESSING_VARIABLES = set(ORGANS_T_INDEXES + cnwheat_simulation.Simulation.ORGANS_RUN_VARIABLES + ORGANS_POSTPROCESSING_VARIABLES + ORGANS_RUN_VARIABLES_ADDITIONAL)
 
@@ -1154,7 +1154,8 @@ def generate_graphs(axes_df=None, hiddenzones_df=None, organs_df=None, elements_
                                   'mstruct': u'Structural mass (g)', 'C_exudation': u'Carbon lost by root exudation (µmol C g$^{-1}$ mstruct h$^{-1}$',
                                   'N_exudation': u'Nitrogen lost by root exudation (µmol N g$^{-1}$ mstruct h$^{-1}$', 'Conc_cytokinins': u'[cytokinins] (UA g$^{-1}$ mstruct)',
                                   'S_cytokinins': u'Rate of cytokinins synthesis (UA g$^{-1}$ mstruct)', 'Export_cytokinins': 'Export of cytokinins from roots (UA h$^{-1}$)',
-                                  'HATS_LATS': u'Potential uptake (µmol h$^{-1}$)', 'regul_transpiration': 'Regulating transpiration function'}
+                                  'HATS_LATS': u'Potential uptake (µmol h$^{-1}$)', 'regul_transpiration': u'Regulating transpiration function',
+                                  'senesced_mstruct': u'Cumulated senesced mstruct (g)', 'synthetized_mstruct': u'Cumulated synthetized mstruct (g)'}
 
         for org in (['roots'], ['grains'], ['phloem']):
             for variable_name, variable_label in graph_variables_organs.items():
