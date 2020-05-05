@@ -34,9 +34,12 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
     # read the description of the scenarii if necessary
     if merge_with_scenarii_list:
         if scenarii_list_columns is None:
-            scenarii_list_columns = ['Scenario', 'Scenario_label', 'Plant_Density', 'constant_Conc_Nitrates', 'PAR']
+            scenarii_list_columns = ['Scenario', 'Scenario_label', 'Plant_Density',
+                                     'constant_Conc_Nitrates', 'fertilization_quantity', 'fertilization_interval', 'PAR']
         scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col='Scenario')
         scenarii_df['Scenario'] = scenarii_df.index
+
+        scenarii_list_columns = [c for c in scenarii_list_columns if c in scenarii_df.columns]
 
     #: For each postprocessing table, extract the prostprocessings at t of the scenarii
     for pp_table in postprocessing_tables:
