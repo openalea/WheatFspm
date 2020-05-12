@@ -3,8 +3,121 @@
 import os
 import pandas as pd
 import numpy as np
+import statsmodels.api as sm
 
 from cnwheat import model as cnwheat_model
+
+
+def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):
+    """
+    Average RUE and photosynthetic yield for the whole cycle.
+
+    :param str scenario_outputs_dirpath: the path to the CSV outputs file of the scenario
+    :param str scenario_postprocessing_dirpath: the path to the CSV postprocessing file of the scenari
+    """
+
+    # --- Import simulations outputs/prostprocessings
+    df_axe = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'axes_outputs.csv'))
+    df_elt = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'elements_postprocessing.csv'))
+    df_hz = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'hiddenzones_outputs.csv'))
+
+    # --- Extract key values per leaf
+    res = df_hz.copy()
+    res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.leaf_Lmax)].copy()
+    res_IN = res[~ np.isnan(res.internode_Lmax)]
+    last_value_idx = res.groupby(['metamer'])['t'].transform(max) == res['t']
+    res = res[last_value_idx].copy()
+    res['lamina_Wmax'] = res.leaf_Wmax
+    res['lamina_W_Lg'] = res.leaf_Wmax / res.lamina_Lmax
+    last_value_idx = res_IN.groupby(['metamer'])['t'].transform(max) == res_IN['t']
+    res_IN = res_IN[last_value_idx].copy()
+    leaf_traits_df = res[['metamer', 'leaf_Lmax', 'leaf_Lmax_em', 'lamina_Lmax', 'sheath_Lmax', 'lamina_Wmax', 'lamina_W_Lg', 'SSLW', 'LSSW']].merge(res_IN[['metamer', 'internode_Lmax']],
+                                                                                                                                                     left_on='metamer',
+                                                                                                                                                     right_on='metamer',
+                                                                                                                                                     how='outer').copy()
+    # --- Simulated RER
+
+    # import simulation outputs
+    data_RER = df_hz.copy()
+    data_RER = data_RER[(data_RER.axis == 'MS') & (data_RER.metamer >= 4)].copy()
+    data_RER.sort_values(['t', 'metamer'], inplace=True)
+    data_teq = df_axe.copy()
+    data_teq = data_teq[data_teq.axis == 'MS'].copy()
+
+    # Time previous leaf emergence
+    tmp = data_RER[data_RER.leaf_is_emerged]
+    leaf_em = tmp.groupby('metamer', as_index=False)['t'].min()
+    leaf_em['t_em'] = leaf_em.t
+    leaf_em = leaf_em.merge(df_axe[['t', 'sum_TT']], on='t', how='left')
+    leaf_em['sumTT_em'] = leaf_em.sum_TT
+    leaf_traits_df = leaf_traits_df.merge(leaf_em[['metamer', 't_em', 'sumTT_em']], on='metamer', how='outer')
+    prev_leaf_em = leaf_em.copy()
+    prev_leaf_em.metamer = leaf_em.metamer + 1
+    prev_leaf_em['sumTT_em_prev'] = prev_leaf_em['sumTT_em']
+    phyllo = leaf_em.merge( prev_leaf_em[['metamer', 'sumTT_em_prev']], on='metamer', how='outer')
+    phyllo['phyllo_TT'] = phyllo.sumTT_em - phyllo.sumTT_em_prev
+    leaf_traits_df = leaf_traits_df.merge(phyllo[['metamer', 'phyllo_TT']], on='metamer', how='outer')
+
+    data_RER2 = pd.merge(data_RER, prev_leaf_em[['metamer', 't_em']], on='metamer')
+    data_RER2 = data_RER2[data_RER2.t <= data_RER2.t_em]
+
+    # SumTimeEq
+    data_teq['SumTimeEq'] = np.cumsum(data_teq.delta_teq)
+    data_RER3 = pd.merge(data_RER2, data_teq[['t', 'SumTimeEq']], on='t')
+
+    # logL
+    data_RER3['logL'] = np.log(data_RER3.leaf_L)
+
+    # Estimate RER
+    leaf_traits_df['RER'] = np.nan
+    for leaf in data_RER3.metamer.drop_duplicates():
+        Y = data_RER3.logL[data_RER3.metamer == leaf]
+        X = data_RER3.SumTimeEq[data_RER3.metamer == leaf]
+        X = sm.add_constant(X)
+        mod = sm.OLS(Y, X)
+        fit_RER = mod.fit()
+        leaf_traits_df.loc[leaf_traits_df.metamer == leaf, 'RER'] = fit_RER.params['SumTimeEq']
+
+    # --- Time ligulation
+    df_lam = df_elt[(df_elt.axis == 'MS') & (df_elt.element == 'LeafElement1')].copy()
+    df_lam_green = df_lam[(~df_lam.is_growing) & (df_lam.senesced_mstruct == 0)]
+    lamina_lig = df_lam_green.groupby('metamer', as_index=False)['t'].min()
+    lamina_lig['t_lig'] = lamina_lig.t
+    lamina_lig = lamina_lig.merge(df_axe[['t', 'sum_TT']], on='t', how='left')
+    lamina_lig['sumTT_lig'] = lamina_lig.sum_TT
+    leaf_traits_df = leaf_traits_df.merge(lamina_lig[['metamer', 't_lig', 'sumTT_lig']], on='metamer', how='outer')
+    leaf_traits_df.loc[leaf_traits_df['metamer'] < 3, 't_lig'] = np.nan
+    leaf_traits_df.loc[leaf_traits_df['metamer'] < 3, 'sumTT_lig'] = np.nan
+    leaf_traits_df['ageTT_lig'] = leaf_traits_df.sumTT_lig - leaf_traits_df.sumTT_em
+
+    # --- Time onset of senescence
+    tmp = df_lam[df_lam.senesced_mstruct > 0]
+    tmp2 = tmp.groupby('metamer', as_index=False)['t'].min()
+    tmp2['t_senesc_onset'] = tmp2.t
+    tmp2 = tmp2.merge(df_axe[['t', 'sum_TT']], on='t', how='left')
+    tmp2['sumTT_senesc_onset'] = tmp2.sum_TT
+    leaf_traits_df = leaf_traits_df.merge(tmp2[['metamer', 't_senesc_onset', 'sumTT_senesc_onset']], on='metamer', how='outer')
+    leaf_traits_df['ageTT_senesc_onset'] = leaf_traits_df.sumTT_senesc_onset - leaf_traits_df.sumTT_em
+
+    # --- Time end of senescence
+    tmp = df_lam[df_lam.mstruct == 0]
+    tmp2 = tmp.groupby('metamer', as_index=False)['t'].min()
+    tmp2['t_senesc_end'] = tmp2.t
+    tmp2 = tmp2.merge(df_axe[['t', 'sum_TT']], on='t', how='left')
+    tmp2['sumTT_senesc_end'] = tmp2.sum_TT
+    leaf_traits_df = leaf_traits_df.merge(tmp2[['metamer', 't_senesc_end', 'sumTT_senesc_end']], on='metamer', how='outer')
+    leaf_traits_df['ageTT_senesc_end'] = leaf_traits_df.sumTT_senesc_end - leaf_traits_df.sumTT_em
+
+    # --- Lifespan
+    leaf_traits_df['lifespanTT_lig_green'] = leaf_traits_df.sumTT_senesc_onset - leaf_traits_df.sumTT_lig
+    leaf_traits_df['lifespanTT_lig'] = leaf_traits_df.sumTT_senesc_end - leaf_traits_df.sumTT_lig
+
+    # --- Mean SLA and SLN in between ligulation and onset of senescence
+    leaf_traits_df = leaf_traits_df.merge(df_lam_green.groupby('metamer', as_index=False).aggregate({'SLN': 'mean', 'SLA': 'mean'}), on='metamer', how='outer')
+
+    # --- Save results in postprocessing directory
+    leaf_traits_df.sort_values('metamer', inplace=True)
+    leaf_traits_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'leaf_traits.csv'), index=False, na_rep='NA')
 
 
 def table_C_usages(scenario_postprocessing_dirpath):
@@ -140,15 +253,17 @@ def calculate_performance_indices(scenario_postprocessing_dirpath, meteo_dirpath
     C_usages_div = C_usages.div(C_usages.C_produced, axis=0)
 
     # ---  Write results into a table
-    res_df = pd.DataFrame.from_dict({'RUE_plant_MJ_PAR': [RUE_plant],
-                                     'RUE_shoot_MJ_PAR': [RUE_shoot],
-                                     'RUE_plant_MJ_RGint': [RUE_plant_couvert],
-                                     'RUE_shoot_MJ_RGint': [RUE_shoot_couvert],
-                                     'Photosynthetic_efficiency': [avg_photo_y],
-                                     'C_usages_Respi_roots': C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
-                                     'C_usages_Respi_shoot': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'],
-                                     'C_usages_Respi': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'] + C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
-                                     'C_usages_exudation': C_usages_div.loc[max(C_usages_div.index), 'exudation']})
+    res_df = pd.DataFrame.from_dict({
+        'LAI': [df_LAI.loc[max(df_LAI.index), 'LAI']],
+        'RUE_plant_MJ_PAR': [RUE_plant],
+        'RUE_shoot_MJ_PAR': [RUE_shoot],
+        'RUE_plant_MJ_RGint': [RUE_plant_couvert],
+        'RUE_shoot_MJ_RGint': [RUE_shoot_couvert],
+        'Photosynthetic_efficiency': [avg_photo_y],
+        'C_usages_Respi_roots': C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
+        'C_usages_Respi_shoot': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'],
+        'C_usages_Respi': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'] + C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
+        'C_usages_exudation': C_usages_div.loc[max(C_usages_div.index), 'exudation']})
 
     res_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'performance_indices.csv'), index=False)
 
