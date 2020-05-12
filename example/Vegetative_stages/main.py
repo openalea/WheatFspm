@@ -464,7 +464,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                     # Run the rest of the model if the plant is alive
                     for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):
                         # get the meteo of the current step
-                        Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature_MA2', 'ambient_CO2_MA2', 'humidity_MA2', 'Wind_MA2']]
+                        Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
 
                         # run FarquharWheat
                         farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
@@ -485,13 +485,13 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
                                 for t_cnwheat in range(t_growthwheat, t_growthwheat + GROWTHWHEAT_TIMESTEP, CNWHEAT_TIMESTEP):
                                     print('t cnwheat is {}'.format(t_cnwheat))
+
+                                    # N fertilization if any
+                                    if N_fertilizations is not None and len(N_fertilizations) > 0:
+                                        if t_cnwheat in N_fertilizations.keys():
+                                            cnwheat_facade_.soils[(1, 'MS')].nitrates += N_fertilizations[t_cnwheat]
+
                                     if t_cnwheat > 0:
-
-                                        # N fertilization if any
-                                        if N_fertilizations is not None and len(N_fertilizations) > 0:
-                                            if t_cnwheat in N_fertilizations.keys():
-                                                cnwheat_facade_.soils[(1, 'MS')].nitrates += N_fertilizations[t_cnwheat]
-
                                         # run CNWheat
                                         Tair = meteo.loc[t_elongwheat, 'air_temperature']
                                         Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
