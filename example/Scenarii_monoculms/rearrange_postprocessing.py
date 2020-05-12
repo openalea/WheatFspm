@@ -96,3 +96,4 @@ if __name__ == '__main__':
     rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
     rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=2999)
     rearrange_postprocessing(postprocessing_tables=['performance_indices'])
+    rearrange_postprocessing(postprocessing_tables=['leaf_traits'])

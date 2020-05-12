@@ -105,6 +105,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
                                             graph_list=['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
                                                         'green_area_blade'])
         if RUN_POSTPROCESSING:
+            fspmwheat_postprocessing.leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath)
             fspmwheat_postprocessing.table_C_usages(scenario_postprocessing_dirpath)
             fspmwheat_postprocessing.calculate_performance_indices(scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')), scenario.get('Plant_Density', 250.))
 

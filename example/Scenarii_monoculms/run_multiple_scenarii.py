@@ -24,6 +24,7 @@ if __name__ == '__main__':
     rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999, scenarii=list(scenarii))
     rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=2999, scenarii=list(scenarii))
     rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['performance_indices'], scenarii=list(scenarii))
+    rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['leaf_traits'], scenarii=list(scenarii))
 
     tend = time.time()
     tmp = (tend - tstart) / 60.
