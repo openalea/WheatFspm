@@ -480,7 +480,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                     # Run the rest of the model if the plant is alive
                     for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):
                         # get the meteo of the current step
-                        Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature_MA2', 'ambient_CO2_MA2', 'humidity_MA2', 'Wind_MA2']]
+                        Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
 
                         # run FarquharWheat
                         farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
