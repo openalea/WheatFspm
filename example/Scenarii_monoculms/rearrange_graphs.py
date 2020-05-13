@@ -3,8 +3,9 @@ import shutil
 
 # Graphs to be rearranged
 graphs_titles_inputs = ['N_content_roots_axis', 'N_content_shoot_axis', 'N_content_blade', 'shoot_roots_ratio_axis', 'green_area_blade', 'Ag_blade',
-                        'lamina_Wmax', 'leaf_Lmax', 'internode_Lmax', 'sheath_Lmax', 'phyllochron', 'Conc_Sucrose_phloem', 'Conc_Amino_acids_phloem', 'S_Amino_Acids_roots', 'LAI', 'RER_comparison',
-                        'Conc_Nitrates_roots', 'Conc_Sucrose_roots', 'sum_dry_mass_roots_axis', 'sum_dry_mass_shoot_axis', 'sum_dry_mass_axis', 'Summary', 'SSLW', 'RUE', 'SLN_blade',
+                        'lamina_Wmax', 'lamina_W_Lg', 'leaf_Lmax', 'internode_Lmax', 'sheath_Lmax', 'phyllochron', 'Conc_Sucrose_phloem', 'Conc_Amino_acids_phloem', 'S_Amino_Acids_roots', 'LAI', 'RER_comparison',
+                        'Conc_Nitrates_roots', 'Conc_Sucrose_roots', 'sum_dry_mass_roots_axis', 'sum_dry_mass_shoot_axis', 'sum_dry_mass_axis', 'Summary', 'SSLW','LSSW',
+                        'RUE', 'SLN_blade',
                         'SLN_nonstruct_blade', 'Conc_Nitrates_Soil',
                         'C_usages_cumulated', 'Photosynthetic_yield_blade', 'Photosynthetic_yield_plante', 'Photosynthetic_yield_plante2', 'Ts_blade', 'internode_Lmax', 'NNI_axis', 'N_dilution',
                         'S_Amino_Acids_blade', 'HATS_LATS_roots', 'senesced_mstruct_roots', 'synthetized_mstruct_roots','mstruct_roots']
