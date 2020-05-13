@@ -1,3 +1,5 @@
+# -*- coding: latin-1 -*-
+
 from __future__ import print_function
 import os
 import sys
@@ -12,8 +14,9 @@ from fspmwheat import fspmwheat_postprocessing
 import additional_graphs
 
 
-def exponential_fertilization_rate(V0, K, t, dt):
-    return V0 / K * (exp(-K * (t + dt)/168) - exp(-K * t/168))
+def exponential_fertilization_rate(V0, K, t, dt, plant_density):
+    ferti_per_plant = V0 / K * (exp(-K * (t + dt) / 168) - exp(-K * t / 168))  # g N per plant
+    return ferti_per_plant * plant_density * (10**6)/14  # µmol N m-2
 
 
 def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
@@ -37,7 +40,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
     scenario_name = 'Scenario_%.4d' % scenario_id  # 'Scenario_{}'.format(int(scenario_id))#
 
     # Create dict of parameters for the scenario
-    update_parameters = tools.buildDic(scenario)
+    scenario_parameters = tools.buildDic(scenario)
 
     # Path of the directory which contains the outputs of the model
     if outputs_dir_path:
@@ -80,23 +83,23 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
 
     # -- SIMULATION CONDITIONS
 
-    # Build N Fertilizations dict
-    N_FERTILIZATIONS = {}
-    if 'constant_Conc_Nitrates' in scenario.keys():
-        N_FERTILIZATIONS = {'constant_Conc_Nitrates': scenario.get('constant_Conc_Nitrates')}
-    # Setup N_fertilizations time if time interval is given:
-    if 'fertilization_interval' in scenario.keys() and 'fertilization_quantity' in scenario.keys():
-        fertilization_times = range(0, SIMULATION_LENGTH, scenario['fertilization_interval'])
-        N_FERTILIZATIONS = {t: scenario['fertilization_quantity'] for t in fertilization_times}
-    if 'fertilization_interval' in scenario.keys() and 'fertilization_expo_rate' in scenario.keys():
-        fertilization_times = range(0, SIMULATION_LENGTH, scenario['fertilization_interval'])
-        K = scenario['fertilization_expo_rate']['K']
-        V0 = scenario['fertilization_expo_rate']['V0']
-        dt = scenario['fertilization_interval']
-        N_FERTILIZATIONS = {t: exponential_fertilization_rate(V0=V0, K=K, t=t, dt=dt) for t in fertilization_times}
-
     # Plant density
     PLANT_DENSITY = {1: scenario.get('Plant_Density', 250.)}
+
+    # Build N Fertilizations dict
+    N_FERTILIZATIONS = {}
+    if 'constant_Conc_Nitrates' in scenario_parameters:
+        N_FERTILIZATIONS = {'constant_Conc_Nitrates': scenario_parameters.get('constant_Conc_Nitrates')}
+    # Setup N_fertilizations time if time interval is given:
+    if 'fertilization_interval' in scenario_parameters and 'fertilization_quantity' in scenario_parameters:
+        fertilization_times = range(0, SIMULATION_LENGTH, scenario_parameters['fertilization_interval'])
+        N_FERTILIZATIONS = {t: scenario_parameters['fertilization_quantity'] for t in fertilization_times}
+    if 'fertilization_interval' in scenario_parameters and 'fertilization_expo_rate' in scenario_parameters:
+        fertilization_times = range(0, SIMULATION_LENGTH, scenario_parameters['fertilization_interval'])
+        K = scenario_parameters['fertilization_expo_rate']['K']
+        V0 = scenario_parameters['fertilization_expo_rate']['V0']
+        dt = scenario_parameters['fertilization_interval']
+        N_FERTILIZATIONS = {t: exponential_fertilization_rate(V0=V0, K=K, t=t, dt=dt, plant_density=PLANT_DENSITY[1]) for t in fertilization_times}
 
     # -- RUN main fspmwheat --
     try:
@@ -110,7 +113,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
                   GRAPHS_DIRPATH=scenario_graphs_dirpath,
                   OUTPUTS_DIRPATH=scenario_outputs_dirpath,
                   POSTPROCESSING_DIRPATH=scenario_postprocessing_dirpath,
-                  update_parameters_all_models=update_parameters)
+                  update_parameters_all_models=scenario_parameters)
         if GENERATE_GRAPHS:
             additional_graphs.graph_summary(scenario_id,
                                             graph_list=['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
@@ -127,7 +130,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
 if __name__ == '__main__':
     inputs = None
     outputs = None
-    scenario = 4139
+    scenario = 7
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "i:o:s:d", ["inputs=", "outputs=", "scenario="])
