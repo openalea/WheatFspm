@@ -4,11 +4,16 @@ import sys
 import getopt
 
 import pandas as pd
+from math import exp
 
 import main
 import tools
 from fspmwheat import fspmwheat_postprocessing
 import additional_graphs
+
+
+def exponential_fertilization_rate(V0, K, t, dt):
+    return V0 / K * (exp(-K * (t + dt)/168) - exp(-K * t/168))
 
 
 def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
@@ -80,9 +85,15 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
     if 'constant_Conc_Nitrates' in scenario.keys():
         N_FERTILIZATIONS = {'constant_Conc_Nitrates': scenario.get('constant_Conc_Nitrates')}
     # Setup N_fertilizations time if time interval is given:
-    if 'fertilization_interval' in scenario.keys():
+    if 'fertilization_interval' in scenario.keys() and 'fertilization_quantity' in scenario.keys():
         fertilization_times = range(0, SIMULATION_LENGTH, scenario['fertilization_interval'])
         N_FERTILIZATIONS = {t: scenario['fertilization_quantity'] for t in fertilization_times}
+    if 'fertilization_interval' in scenario.keys() and 'fertilization_expo_rate' in scenario.keys():
+        fertilization_times = range(0, SIMULATION_LENGTH, scenario['fertilization_interval'])
+        K = scenario['fertilization_expo_rate']['K']
+        V0 = scenario['fertilization_expo_rate']['V0']
+        dt = scenario['fertilization_interval']
+        N_FERTILIZATIONS = {t: exponential_fertilization_rate(V0=V0, K=K, t=t, dt=dt) for t in fertilization_times}
 
     # Plant density
     PLANT_DENSITY = {1: scenario.get('Plant_Density', 250.)}
@@ -116,7 +127,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
 if __name__ == '__main__':
     inputs = None
     outputs = None
-    scenario = 1
+    scenario = 4139
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "i:o:s:d", ["inputs=", "outputs=", "scenario="])
