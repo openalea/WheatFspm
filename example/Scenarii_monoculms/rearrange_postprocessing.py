@@ -35,7 +35,7 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
     if merge_with_scenarii_list:
         if scenarii_list_columns is None:
             scenarii_list_columns = ['Scenario', 'Scenario_label', 'Plant_Density',
-                                     'constant_Conc_Nitrates', 'fertilization_quantity', 'fertilization_interval', 'PAR']
+                                     'constant_Conc_Nitrates', 'fertilization_U_3500', 'fertilization_quantity', 'fertilization_interval', 'PAR']
         scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col='Scenario')
         scenarii_df['Scenario'] = scenarii_df.index
 

@@ -100,6 +100,8 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
         V0 = scenario_parameters['fertilization_expo_rate']['V0']
         dt = scenario_parameters['fertilization_interval']
         N_FERTILIZATIONS = {t: exponential_fertilization_rate(V0=V0, K=K, t=t, dt=dt, plant_density=PLANT_DENSITY[1]) for t in fertilization_times}
+        N0 = scenario_parameters['fertilization_expo_rate'].get('N0_U', 0) * (10**5) / 14   # Initial nitrates in the soil (conversion from kg N ha-1 to µmol m-2)
+        N_FERTILIZATIONS[0] += N0
 
     # -- RUN main fspmwheat --
     try:
@@ -130,7 +132,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
 if __name__ == '__main__':
     inputs = None
     outputs = None
-    scenario = 7
+    scenario = 1
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "i:o:s:d", ["inputs=", "outputs=", "scenario="])
