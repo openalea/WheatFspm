@@ -39,7 +39,7 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
         scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col='Scenario')
         scenarii_df['Scenario'] = scenarii_df.index
 
-        scenarii_list_columns = [c for c in scenarii_list_columns if c in scenarii_df.columns]
+        scenarii_list_columns = [c for c in scenarii_list_columns if c in scenarii_df.columns] + [c for c in scenarii_df.columns if c.startswith('P_')]
 
     #: For each postprocessing table, extract the prostprocessings at t of the scenarii
     for pp_table in postprocessing_tables:
@@ -94,6 +94,6 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
 
 if __name__ == '__main__':
     rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
-    rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=2999)
+    rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=3499)
     rearrange_postprocessing(postprocessing_tables=['performance_indices'])
     rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
