@@ -35,6 +35,13 @@ def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):
                                                                                                                                                      left_on='metamer',
                                                                                                                                                      right_on='metamer',
                                                                                                                                                      how='outer').copy()
+    # Lamina max width / max length at leaf emergence
+    res_em = df_hz[(df_hz['axis'] == 'MS') & (df_hz['plant'] == 1) & ~np.isnan(df_hz.leaf_Wmax)].copy()
+    em_idx = res_em.groupby(['metamer'])['t'].transform(min) == res_em['t']
+    res_em = res_em[em_idx].copy()
+    res_em['lamina_W_Lg_em'] = res_em.leaf_Wmax / res_em.lamina_Lmax
+    leaf_traits_df = leaf_traits_df.merge(res_em[['metamer', 'lamina_W_Lg_em']], on='metamer', how='outer')
+
     # --- Simulated RER
 
     # import simulation outputs
