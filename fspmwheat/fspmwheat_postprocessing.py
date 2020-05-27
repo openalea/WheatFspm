@@ -61,9 +61,9 @@ def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):
     prev_leaf_em = leaf_em.copy()
     prev_leaf_em.metamer = leaf_em.metamer + 1
     prev_leaf_em['sumTT_em_prev'] = prev_leaf_em['sumTT_em']
-    phyllo = leaf_em.merge( prev_leaf_em[['metamer', 'sumTT_em_prev']], on='metamer', how='outer')
+    phyllo = leaf_em.merge(prev_leaf_em[['metamer', 'sumTT_em_prev']], on='metamer', how='outer')
     phyllo['phyllo_TT'] = phyllo.sumTT_em - phyllo.sumTT_em_prev
-    leaf_traits_df = leaf_traits_df.merge(phyllo[['metamer', 'phyllo_TT']], on='metamer', how='outer')
+    leaf_traits_df = leaf_traits_df.merge(phyllo[['metamer', 'phyllo_TT', 'sumTT_em_prev']], on='metamer', how='outer')
 
     data_RER2 = pd.merge(data_RER, prev_leaf_em[['metamer', 't_em']], on='metamer')
     data_RER2 = data_RER2[data_RER2.t <= data_RER2.t_em]
@@ -84,6 +84,15 @@ def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):
         mod = sm.OLS(Y, X)
         fit_RER = mod.fit()
         leaf_traits_df.loc[leaf_traits_df.metamer == leaf, 'RER'] = fit_RER.params['SumTimeEq']
+
+    # --- Time of leaf initiation
+    leaf_init = df_hz.groupby('metamer', as_index=False)['t'].min()
+    leaf_init.loc[leaf_init.t == 0, 't'] = np.nan
+    leaf_init['t_init'] = leaf_init.t
+    leaf_init = leaf_init.merge(df_axe[['t', 'sum_TT']], on='t', how='left')
+    leaf_init['sumTT_init'] = leaf_init.sum_TT
+    leaf_traits_df = leaf_traits_df.merge(leaf_init[['metamer', 'sumTT_init']], on='metamer', how='outer')
+    leaf_traits_df['ageTT_init_em_prev'] = leaf_traits_df.sumTT_em_prev - leaf_traits_df.sumTT_init
 
     # --- Time ligulation
     df_lam = df_elt[(df_elt.axis == 'MS') & (df_elt.element == 'LeafElement1')].copy()
@@ -189,13 +198,13 @@ def table_C_usages(scenario_postprocessing_dirpath):
     C_usages['NS_other'] = C_NS_autre_init.reset_index(drop=True)
 
     # Total
-    C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) /\
+    C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
                            C_usages.C_produced
 
     C_usages.to_csv(os.path.join(scenario_postprocessing_dirpath, 'C_usages.csv'), index=False)
 
 
-def calculate_performance_indices(scenario_postprocessing_dirpath, meteo_dirpath, plant_density):
+def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocessing_dirpath, meteo_dirpath, plant_density):
     """
     Average RUE and photosynthetic yield for the whole cycle.
 
@@ -204,9 +213,10 @@ def calculate_performance_indices(scenario_postprocessing_dirpath, meteo_dirpath
     :param int plant_density: the plant density (plant m-2)
     """
 
-    # --- Import simulations prostprocessings
+    # --- Import simulations prostprocessings and outputs
     df_elt = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'elements_postprocessing.csv'))
     df_axe = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'axes_postprocessing.csv'))
+    df_axe_out = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'axes_outputs.csv'))
 
     # --- Import meteo file for incident PAR
     df_meteo = pd.read_csv(meteo_dirpath)
@@ -259,6 +269,30 @@ def calculate_performance_indices(scenario_postprocessing_dirpath, meteo_dirpath
     C_usages = pd.read_csv(C_usages_path)
     C_usages_div = C_usages.div(C_usages.C_produced, axis=0)
 
+    # --- Final canopy traits
+    t_end = max(df_elt.t)
+    df_lamina = df_elt[df_elt.element == 'LeafElement1']
+    df_lamina_end = df_lamina[(df_lamina.t == t_end)]
+    nb_final_em_leaves = max(df_lamina_end.metamer)
+    nb_final_lig_leaves = max(df_lamina_end[~df_lamina_end.is_growing].metamer)
+
+    # average SLA
+    df_lamina_end_green = df_lamina_end[(df_lamina_end.green_area > 0) & (df_lamina_end.mstruct > 0)]
+    if df_lamina_end_green.shape[0] > 1:
+        final_avg_SLA = sum(df_lamina_end_green.green_area) / (sum(df_lamina_end_green.sum_dry_mass) * 10 ** -3)
+    else:
+        final_avg_SLA = np.nan
+
+    # average phyllochron
+    avg_phyllo_df = df_lamina.groupby('metamer', as_index=False).agg({'t': 'min'})
+    avg_phyllo_df = avg_phyllo_df.merge(df_axe_out[['t', 'sum_TT']], on='t')
+    avg_phyllo_df = avg_phyllo_df[avg_phyllo_df.t > 0]
+    Y = avg_phyllo_df['metamer']
+    X = avg_phyllo_df['sum_TT']
+    X = sm.add_constant(X)
+    mod = sm.OLS(Y, X)
+    fit_phyllo = mod.fit()
+
     # ---  Write results into a table
     res_df = pd.DataFrame.from_dict({
         'LAI': [df_LAI.loc[max(df_LAI.index), 'LAI']],
@@ -270,10 +304,15 @@ def calculate_performance_indices(scenario_postprocessing_dirpath, meteo_dirpath
         'C_usages_Respi_roots': C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
         'C_usages_Respi_shoot': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'],
         'C_usages_Respi': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'] + C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
-        'C_usages_exudation': C_usages_div.loc[max(C_usages_div.index), 'exudation']})
+        'C_usages_exudation': C_usages_div.loc[max(C_usages_div.index), 'exudation'],
+        't_final': [t_end],
+        'nb_final_em': [nb_final_em_leaves],
+        'nb_final_lig': [nb_final_lig_leaves],
+        'final_avg_SLA': [final_avg_SLA],
+        'avg_phyllochron': [1 / fit_phyllo.params[1]]
+    })
 
     res_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'performance_indices.csv'), index=False)
-
 
 # def all_scenraii_postprocessings(scenarii_list_dirpath):
 #     # ------- Run the above functions for all the scenarii
