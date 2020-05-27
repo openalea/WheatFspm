@@ -65,7 +65,7 @@ def save_df_to_csv(df, outputs_filepath, precision):
 
 def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
          option_static=False, show_3Dplant=True, tillers_replications=None, heterogeneous_canopy=True,
-         N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
+         N_fertilizations=None, PLANT_DENSITY=None, INTER_ROW=0.15, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
     """
     Run a simulation of fspmwheat with coupling to several models
@@ -84,6 +84,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     :param dict [int, float] or [str, float] N_fertilizations: a dictionary for N fertilisation regime {date: N_input}, with date in hour and N_input in µmol N nitrates
                                                or {'constant_Conc_Nitrates': val} for constant nitrates concentrations
     :param dict [int, int] PLANT_DENSITY: a dict with plant density per plant id (temporary used to account for different cultivars if needed) ; plant m-2
+    :param float INTER_ROW: Inter-row spacing in the stand (m).
     :param dict update_parameters_all_models: a dict to update model parameters
                                              {'cnwheat': {'roots': {'param1': 'val1', 'param2': 'val2'},
                                                           'PhotosyntheticOrgan': {'param1': 'val1', 'param2': 'val2'}
@@ -244,7 +245,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     # -- ADEL and MTG CONFIGURATION --
 
     # Create the stand using density pattern
-    stand = AgronomicStand(sowing_density=PLANT_DENSITY[1], plant_density=PLANT_DENSITY[1], inter_row=0.15, noise=0.)
+    stand = AgronomicStand(sowing_density=PLANT_DENSITY[1], plant_density=PLANT_DENSITY[1], inter_row=INTER_ROW, noise=0.)
 
     # Create AdelDyn object and empty mtg
     adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass', top_leaves=0), stand=stand)
@@ -459,7 +460,8 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                 else:
                     run_caribu = False
 
-                caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
+                caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy,
+                                   plant_density=PLANT_DENSITY[1], inter_row=INTER_ROW)
 
                 for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
