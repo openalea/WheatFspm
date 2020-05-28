@@ -467,19 +467,6 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                     # run SenescWheat
                     senescwheat_facade_.run(history_rate_mstruct_roots_senescence=all_senescing_roots)
 
-                    # Test for dead plant # TODO: adapt in case of multiple plants
-                    if not shared_elements_inputs_outputs_df.empty and \
-                            np.nansum(shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0:
-                        # append the inputs and outputs at current step to global lists
-                        all_simulation_steps.append(t_senescwheat)
-                        axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                        organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                        hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
-                        elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                        soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
-                        break
-
-                    # Run the rest of the model if the plant is alive
                     for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):
                         # get the meteo of the current step
                         Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
@@ -526,11 +513,40 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                         elements_all_data_list.append(elements_outputs)
                                         soils_all_data_list.append(soils_outputs)
 
+                                        # Test for dead plant: if the whole shoot is senesced or if conc_sucrose_phloem < threshold
+                                        # TODO: adapt in case of multiple plants
+                                        # TODO: create a function with parameters (where ?)
+                                        if (np.nansum(elements_outputs.loc[elements_outputs['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0) or \
+                                                (organs_outputs.loc[organs_outputs['organ'] == 'phloem', 'sucrose'].values[0] / axes_outputs['mstruct'].values[0] < -50):
+                                            break
+
                                     # store the history of senescence
                                     roots_outputs = organs_outputs[organs_outputs.organ == 'roots']
                                     all_senescing_roots_new = pd.DataFrame({'age_roots': [roots_outputs.age.values[0]],
                                                                             'rate_mstruct_roots_growth': [roots_outputs.rate_mstruct_growth.values[0]]})
                                     all_senescing_roots = all_senescing_roots.append(all_senescing_roots_new, ignore_index=True, sort=False)
+
+
+                                else:
+                                    # Continue if CN-Wheat loop wasn't broken because of dead plant.
+                                    continue
+                                # CN-Wheat loop was broken, break the Caribu loop.
+                                break
+                            else:
+                                # Continue if GrowthWheat loop wasn't broken because of dead plant.
+                                continue
+                            # GrowthWheat loop was broken, break the Caribu loop.
+                            break
+                        else:
+                            # Continue if ElongWheat loop wasn't broken because of dead plant.
+                            continue
+                        # ElongWheat loop was broken, break the Caribu loop.
+                        break
+                    else:
+                        # Continue if FarqhuarWheat loop wasn't broken because of dead plant.
+                        continue
+                    # FarqhuarWheat loop was broken, break the Caribu loop.
+                    break
 
                 else:
                     # Continue if SenescWheat loop wasn't broken because of dead plant.
