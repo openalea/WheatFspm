@@ -4,8 +4,8 @@ from __future__ import division  # use "//" to do integer division
 
 import copy
 
-import model
-import parameters
+from growthwheat import model
+from growthwheat import parameters
 
 from respiwheat.model import RespirationModel
 
