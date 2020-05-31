@@ -87,6 +87,8 @@ def test_run(overwrite_desired_data=False):
     roots_outputs_df_list = []
     elements_outputs_df_list = []
 
+    all_senescing_roots = pd.DataFrame(columns=['age_roots', 'rate_mstruct_roots_growth'])
+
     # define the time grid to run the model on
     start_time = 0
     stop_time = 100
@@ -95,7 +97,7 @@ def test_run(overwrite_desired_data=False):
 
     # run the model on the time grid
     for t in time_grid:
-        simulation_.run()
+        simulation_.run(history_rate_mstruct_roots_senescence=all_senescing_roots)
 
         # convert outputs to dataframes
         roots_outputs_df, _, elements_outputs_df = converter.to_dataframes(simulation_.outputs)

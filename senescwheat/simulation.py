@@ -2,8 +2,8 @@
 
 from __future__ import division  # use "//" to do integer division
 
-import model
-import parameters
+from senescwheat import model
+from senescwheat import parameters
 
 """
     senescwheat.simulation
