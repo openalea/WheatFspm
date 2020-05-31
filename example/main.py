@@ -26,7 +26,7 @@ from elongwheat import simulation as elongwheat_simulation, converter as elongwh
 
 # --- PREAMBLE
 
-OPTION_SHOW_ADEL = True
+OPTION_SHOW_ADEL = False
 run_from_outputs = False
 delta_t = 3600
 loop_end = 900
