@@ -373,9 +373,9 @@ class Model(object):
 
             if count >= 30:  # TODO: test a faire? Semble prendre du tps de calcul
                 if abs((Ci - prec_Ci) / prec_Ci) >= cls.DELTA_CONVERGENCE:
-                    print ('{}, Ci cannot converge, prec_Ci= {}, Ci= {}'.format(organ_name, prec_Ci, Ci))
+                    print('{}, Ci cannot converge, prec_Ci= {}, Ci= {}'.format(organ_name, prec_Ci, Ci))
                 if prec_Ts != 0 and abs((Ts - prec_Ts) / prec_Ts) >= cls.DELTA_CONVERGENCE:
-                    print ('{}, Ts cannot converge, prec_Ts= {}, Ts= {}'.format(organ_name, prec_Ts, Ts))
+                    print('{}, Ts cannot converge, prec_Ts= {}, Ts= {}'.format(organ_name, prec_Ts, Ts))
                 break
             if abs((Ci - prec_Ci) / prec_Ci) < cls.DELTA_CONVERGENCE and ((prec_Ts == 0 and (Ts - prec_Ts) == 0) or abs((Ts - prec_Ts) / prec_Ts) < cls.DELTA_CONVERGENCE):
                 break
