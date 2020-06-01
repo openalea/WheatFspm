@@ -16,7 +16,7 @@ import additional_graphs
 
 def exponential_fertilization_rate(V0, K, t, dt, plant_density):
     ferti_per_plant = V0 / K * (exp(-K * (t + dt) / 168) - exp(-K * t / 168))  # g N per plant
-    return ferti_per_plant * plant_density * (10**6)/14  # µmol N m-2
+    return ferti_per_plant * plant_density * (10 ** 6) / 14  # µmol N m-2
 
 
 def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
@@ -101,7 +101,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
         V0 = scenario_parameters['fertilization_expo_rate']['V0']
         dt = scenario_parameters['fertilization_interval']
         N_FERTILIZATIONS = {t: exponential_fertilization_rate(V0=V0, K=K, t=t, dt=dt, plant_density=PLANT_DENSITY[1]) for t in fertilization_times}
-        N0 = scenario_parameters['fertilization_expo_rate'].get('N0_U', 0) * (10**5) / 14   # Initial nitrates in the soil (conversion from kg N ha-1 to µmol m-2)
+        N0 = scenario_parameters['fertilization_expo_rate'].get('N0_U', 0) * (10 ** 5) / 14  # Initial nitrates in the soil (conversion from kg N ha-1 to µmol m-2)
         N_FERTILIZATIONS[0] += N0
 
     # -- RUN main fspmwheat --
@@ -124,11 +124,11 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
                                                         'green_area_blade'])
         if RUN_POSTPROCESSING:
             fspmwheat_postprocessing.leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath)
-            fspmwheat_postprocessing.calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')),
-                                                                   scenario.get('Plant_Density', 250.))
             fspmwheat_postprocessing.table_C_usages(scenario_postprocessing_dirpath)
             fspmwheat_postprocessing.calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')),
                                                                    scenario.get('Plant_Density', 250.))
+            fspmwheat_postprocessing.canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')),
+                                                     scenario.get('Plant_Density', 250.))
 
     except Exception as e:
         print(e)
