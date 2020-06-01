@@ -4,7 +4,7 @@ import numpy as np
 
 from senescwheat import converter, simulation
 
-import tools
+from fspmwheat import tools
 
 """
     fspmwheat.senescwheat_facade
@@ -26,9 +26,6 @@ SHARED_AXES_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
 #: the columns which define the topology in the organs scale dataframe shared between all models
 SHARED_ORGANS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'organ']
 
-#: the columns which define the topology in the axis scale dataframe shared between all models
-SHARED_AXES_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis']
-
 #: the columns which define the topology in the elements scale dataframe shared between all models
 SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
 
@@ -49,7 +46,7 @@ class SenescWheatFacade(object):
                  shared_axes_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
                  update_parameters=None,
-                 update_shared_df = True):
+                 update_shared_df=True):
 
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.

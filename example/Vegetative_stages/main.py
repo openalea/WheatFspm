@@ -210,7 +210,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     if stored_times is None:
         stored_times = 'all'
     if not (stored_times == 'all' or type(stored_times) == list):
-        print 'stored_times should be either \'all\', a list or an empty list.'
+        print('stored_times should be either \'all\', a list or an empty list.')
         raise
 
     # create empty dataframes to shared data between the models
@@ -515,7 +515,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 break
 
             execution_time = int(time.time() - current_time_of_the_system)
-            print ('\n' 'Simulation run in {}'.format(str(datetime.timedelta(seconds=execution_time))))
+            print('\n' 'Simulation run in {}'.format(str(datetime.timedelta(seconds=execution_time))))
 
         finally:
             # convert list of outputs into dataframes

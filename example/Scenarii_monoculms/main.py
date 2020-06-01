@@ -207,7 +207,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     if stored_times is None:
         stored_times = 'all'
     if not (stored_times == 'all' or type(stored_times) == list):
-        print 'stored_times should be either \'all\', a list or an empty list.'
+        print('stored_times should be either \'all\', a list or an empty list.')
         raise
 
     # create empty dataframes to shared data between the models
@@ -525,7 +525,6 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                     all_senescing_roots_new = pd.DataFrame({'age_roots': [roots_outputs.age.values[0]],
                                                                             'rate_mstruct_roots_growth': [roots_outputs.rate_mstruct_growth.values[0]]})
                                     all_senescing_roots = all_senescing_roots.append(all_senescing_roots_new, ignore_index=True, sort=False)
-
 
                                 else:
                                     # Continue if CN-Wheat loop wasn't broken because of dead plant.

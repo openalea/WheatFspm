@@ -5,7 +5,7 @@ import numpy as np
 from alinea.astk.plantgl_utils import get_height  # for height calculation
 
 from farquharwheat import converter, simulation
-import tools
+from fspmwheat import tools
 
 """
     fspmwheat.farquharwheat_facade
@@ -47,7 +47,7 @@ class FarquharWheatFacade(object):
                  model_elements_inputs_df,
                  model_axes_inputs_df,
                  shared_elements_inputs_outputs_df,
-                 update_shared_df = True):
+                 update_shared_df=True):
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
         :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.

@@ -7,7 +7,7 @@ import warnings
 from alinea.caribu.CaribuScene import CaribuScene
 from alinea.caribu.sky_tools import GenSky, GetLight, Gensun, GetLightsSun, spitters_horaire
 
-import tools
+from fspmwheat import tools
 
 """
     fspmwheat.caribu_facade
@@ -84,7 +84,7 @@ class CaribuFacade(object):
             if sun_sky_option == 'sky':
                 _, aggregated_sky = c_scene_sky.run(direct=True, infinite=True)
                 Erel_sky = aggregated_sky['par']['Eabs']  #: Erel is the relative surfacic absorbed energy per organ
-                PARa_sky = {k: v * energy for k, v in Erel_sky.iteritems()}
+                PARa_sky = {k: v * energy for k, v in Erel_sky.items()}
                 Erel_output = Erel_sky
                 PARa_output = PARa_sky
 
@@ -92,7 +92,7 @@ class CaribuFacade(object):
             elif sun_sky_option == 'sun':
                 _, aggregated_sun = c_scene_sun.run(direct=True, infinite=True)
                 Erel_sun = aggregated_sun['par']['Eabs']  #: Erel is the relative surfacic absorbed energy per organ
-                PARa_sun = {k: v * energy for k, v in Erel_sun.iteritems()}
+                PARa_sun = {k: v * energy for k, v in Erel_sun.items()}
                 Erel_output = Erel_sun
                 PARa_output = PARa_sun
 
@@ -112,7 +112,7 @@ class CaribuFacade(object):
                 for element_id, Erel_value in Erel_sky.items():
                     Erel[element_id] = RdRs * Erel_value + (1 - RdRs) * Erel_sun[element_id]
                 Erel_output = Erel
-                PARa_output = {k: v * energy for k, v in Erel_output.iteritems()}
+                PARa_output = {k: v * energy for k, v in Erel_output.items()}
 
             else:
                 raise ValueError("Unknown sun_sky_option : can be either 'mix', 'sun' or 'sky'.")
@@ -121,7 +121,7 @@ class CaribuFacade(object):
             outputs = {'PARa': PARa_output, 'Erel': Erel_output}
 
         else:
-            PARa_output = {k: v * energy for k, v in Erel_input.iteritems()}
+            PARa_output = {k: v * energy for k, v in Erel_input.items()}
             outputs = {'PARa': PARa_output}
 
         # Updates
@@ -180,7 +180,7 @@ class CaribuFacade(object):
                     warnings.warn('Warning: unknown element type {}, vid={}'.format(self._shared_mtg.class_name(vid), vid))
 
             #: Generates CaribuScenes
-            if not heterogeneous_canopy: # TODO: adapt the domain to plant_density
+            if not heterogeneous_canopy:  # TODO: adapt the domain to plant_density
                 c_scene_sky = CaribuScene(scene=self._shared_mtg, light=sky, pattern=self._geometrical_model.domain, opt=opt)
                 c_scene_sun = CaribuScene(scene=self._shared_mtg, light=sun, pattern=self._geometrical_model.domain, opt=opt)
             else:
