@@ -1006,3 +1006,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         ax.set_xlim(left=0)
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'N_dilution.PNG'), format='PNG', bbox_inches='tight')
         plt.close()
+
+
+if __name__ == '__main__':
+    main(simulation_length=3600, forced_start_time=0,
+         run_simu=False, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+         show_3Dplant=False, heterogeneous_canopy=True, METEO_FILENAME="meteo_PAR100.csv")
