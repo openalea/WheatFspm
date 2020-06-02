@@ -83,9 +83,12 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
 
     # -- SIMULATION CONDITIONS
 
+    # Scenario input dirpath
+    SCENARIO_INPUT_DIRPATH = scenario_parameters.get('Inputs_Dirpath', INPUTS_DIRPATH)
+
     # Plant density and inter-row
-    PLANT_DENSITY = {1: scenario.get('Plant_Density', 250.)}
-    INTER_ROW = scenario.get('Inter_Row', 0.15)
+    PLANT_DENSITY = {1: scenario_parameters.get('Plant_Density', 250.)}
+    INTER_ROW = scenario_parameters.get('Inter_Row', 0.15)
 
     # Build N Fertilizations dict
     N_FERTILIZATIONS = {}
@@ -112,7 +115,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
                   N_fertilizations=N_FERTILIZATIONS,
                   PLANT_DENSITY=PLANT_DENSITY,
                   INTER_ROW=INTER_ROW,
-                  INPUTS_DIRPATH=INPUTS_DIRPATH,
+                  INPUTS_DIRPATH=SCENARIO_INPUT_DIRPATH,
                   METEO_FILENAME=scenario.get('METEO_FILENAME'),
                   GRAPHS_DIRPATH=scenario_graphs_dirpath,
                   OUTPUTS_DIRPATH=scenario_outputs_dirpath,
@@ -137,7 +140,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
 if __name__ == '__main__':
     inputs = None
     outputs = None
-    scenario = 1
+    scenario = 1037
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "i:o:s:d", ["inputs=", "outputs=", "scenario="])
