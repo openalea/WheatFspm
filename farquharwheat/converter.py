@@ -78,7 +78,7 @@ def to_dataframe(data_dict):
     data_df = pd.DataFrame(data_dict.values())
     df = pd.concat([ids_df, data_df], axis=1)
     df.sort_values(by=ELEMENT_TOPOLOGY_COLUMNS, inplace=True)
-    columns_sorted = ELEMENT_TOPOLOGY_COLUMNS + [column_name for column_name in FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS if column_name in df.columns]
+    columns_sorted = ELEMENT_TOPOLOGY_COLUMNS + [column_name for column_name in sorted(FARQUHARWHEAT_ELEMENTS_INPUTS_OUTPUTS) if column_name in df.columns]
     df = df.reindex(columns_sorted, axis=1, copy=False)
     df.reset_index(drop=True, inplace=True)
     return df

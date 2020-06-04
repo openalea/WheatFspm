@@ -2,7 +2,7 @@
 
 from __future__ import division  # use "//" to do integer division
 
-import model
+from farquharwheat import model
 
 """
     farquharwheat.simulation
