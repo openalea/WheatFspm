@@ -135,6 +135,155 @@ def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):
     leaf_traits_df.sort_values('metamer', inplace=True)
     leaf_traits_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'leaf_traits.csv'), index=False, na_rep='NA')
 
+def canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, meteo_dirpath, plant_density=250):
+    """
+    Kinetic of variables at canopy level
+
+    :param str scenario_outputs_dirpath: the path to the output CSV files of the scenario
+    :param str scenario_postprocessing_dirpath: the path to the postprocessing CSV files of the scenario
+    :param str meteo_dirpath: the path to the CSV meteo file
+    :param int plant_density: the plant density (plant m-2)
+    """
+
+    # --- Import simulations outputs/prostprocessings
+    df_axe = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'axes_outputs.csv'))
+    df_elt = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'elements_postprocessing.csv'))
+    df_hz = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'hiddenzones_outputs.csv'))
+
+    # --- Import meteo file for incident PAR
+    df_meteo = pd.read_csv(meteo_dirpath)
+    df_meteo['day'] = df_meteo.t // 24 + 1
+
+    # --- LAI
+    df_LAI = df_elt[(df_elt.element == 'LeafElement1')].groupby(['t'], as_index=False).agg({'green_area': 'sum'})
+    df_LAI['LAI'] = df_LAI.green_area * plant_density
+    df_LAI['day'] = df_LAI.t // 24 + 1
+    df_LAI_days = df_LAI.groupby('day', as_index=False).agg({'LAI':'mean'})
+    canopy_df = df_LAI_days[['day', 'LAI']]
+
+    # ## ----------  GLN / GAI
+    #
+    # ## -- Senescing area
+    # leaf_ligulation = df_elt[(df_elt.element == 'LeafElement1') & (df_elt.is_growing == 0)].groupby('metamer').agg({'t': 'min'})
+    # leaf_ligulation = leaf_ligulation.t.to_dict()
+    #
+    # df_elt_max_ga = df_elt[(df_elt.element == 'LeafElement1')].groupby(['metamer']).agg({'green_area_rep': 'max', 'green_area': 'max'})
+    # df_elt_max_ga['green_area_rep_max'] = df_elt_max_ga.green_area_rep
+    # df_elt_max_ga['green_area_max'] = df_elt_max_ga.green_area
+    # df_elt_max_ga['metamer'] = df_elt_max_ga.index
+    #
+    # df_senesc = df_elt[(df_elt.element == 'LeafElement1')].merge(df_elt_max_ga[['green_area_rep_max', 'green_area_max', 'metamer']], left_on='metamer', right_on='metamer').copy()
+    # df_senesc['senesc_area_rep'] = 0.
+    # df_senesc['senesc_area'] = 0.
+    # for i in df_senesc.index:
+    #     if df_senesc.at[i, 't'] > leaf_ligulation.get(df_senesc.at[i, 'metamer'], 5000):
+    #         df_senesc.at[i, 'senesc_area_rep'] = df_senesc.at[i, 'green_area_rep_max'] - df_senesc.at[i, 'green_area_rep']
+    #         df_senesc.at[i, 'senesc_area'] = df_senesc.at[i, 'green_area_max'] - df_senesc.at[i, 'green_area']
+    #
+    # tmp = expand_grid({'t': df_senesc.t.drop_duplicates(), 'metamer': df_senesc.metamer.drop_duplicates()})
+    # tmp2 = tmp.merge(df_elt_max_ga[['metamer', 'green_area_rep_max', 'green_area_max']], left_on=['metamer'], right_on=['metamer'], how='left')
+    # tmp2['fully_senesc_area_rep'] = tmp2.green_area_rep_max
+    # tmp2['fully_senesc_area'] = tmp2.green_area_max
+    #
+    # tmp3 = tmp2[['t', 'metamer', 'fully_senesc_area', 'fully_senesc_area_rep']].merge(df_senesc, left_on=['t', 'metamer'], right_on=['t', 'metamer'], how='left')
+    # tmp3['senesc_area_all'] = 0.
+    # tmp3['senesc_area_all_rep'] = 0.
+    # for i in tmp3.index:
+    #     if tmp3.at[i, 't'] < leaf_emergence.get((1, tmp3.at[i, 'metamer']), 0):
+    #         tmp3.at[i, 'senesc_area_all_rep'] = 0
+    #         tmp3.at[i, 'senesc_area_all'] = 0
+    #     else:
+    #         if np.isnan(tmp3['senesc_area_rep'][i]):
+    #             tmp3.at[i, 'senesc_area_all_rep'] = tmp3.at[i, 'fully_senesc_area_rep']
+    #             tmp3.at[i, 'senesc_area_all'] = tmp3.at[i, 'fully_senesc_area']
+    #         else:
+    #             tmp3.at[i, 'senesc_area_all_rep'] = tmp3.at[i, 'senesc_area_rep']
+    #             tmp3.at[i, 'senesc_area_all'] = tmp3.at[i, 'senesc_area']
+    #
+    # # Percentage of green area (only true for leaves that get ligulated during the simulation)
+    # tmp3['Pge_green_MS'] = tmp3.green_area / tmp3.green_area_max
+    # tmp3['Pge_green_rep'] = tmp3.green_area_rep / tmp3.green_area_rep_max
+    #
+    # df_senesc_tot = tmp3.groupby(['t']).agg({'senesc_area_all_rep': 'sum', 'Pge_green_MS': 'sum'})
+    # df_senesc_tot['t'] = df_senesc_tot.index
+    #
+    # df_LAI = df_LAI.merge(df_senesc_tot, left_on='t', right_on='t').copy()
+    # df_LAI['LAI_all'] = df_LAI.LAI + df_LAI.senesc_area_all_rep * PLANT_DENSITY[plant]
+    #
+    # df_LAI['day'] = df_LAI.t // 24 + 1
+    # LAI = df_LAI.groupby(['day']).agg({'LAI': 'mean'})
+    # LAI_all = df_LAI.groupby(['day']).agg({'LAI_all': 'mean'})
+    #
+    # LAI = LAI.merge(out_sam_days[['day', 'sum_TT', 'TT']], on='day').copy()
+    # LAI_all = LAI_all.merge(out_sam_days[['day', 'sum_TT', 'TT']], on='day').copy()
+    #
+    # ## -- Green Area Index (GAI)
+    #
+    # tmp = df_elt[(df_elt.organ == 'sheath')].groupby(['t', 'metamer'], as_index=False).agg({'green_area_rep': 'sum'})
+    # S_gaines = tmp.groupby(['t'], as_index=False).agg({'green_area_rep': 'sum'})
+    # S_gaines['S_GAI'] = S_gaines.green_area_rep / 2
+    # S_gaines['day'] = S_gaines.t // 24 + 1
+    # S_gaines_days = S_gaines.groupby(['day'], as_index=False).agg({'S_GAI': 'mean'})
+    # GAI = LAI.merge(S_gaines_days, on='day')
+    # GAI['GAI'] = GAI.LAI + GAI.S_GAI
+    #
+    # TT_Abichou9 = [570.79, 593.26, 719.1, 768.54, 1006.74, 1020.22]
+    # GAI_Abichou9 = [0.4127, 0.5137, 0.6687, 0.7377, 3.9999, 4.2039]
+    #
+    # TT_Abichou10 = [560.15, 587.45, 709.55, 763.86, 1024.72, 1024.82, 1025.18, 1297.87, 1302.11, 1306.58, 1640.39, 1649.14, 1649.73]
+    # GAI_Abichou10 = [0.3575, 0.484, 0.6576, 0.7794, 3.9037, 3.9049, 4.3055, 5.9101, 5.9272, 5.6305, 5.3831, 5.3654, 5.3641]
+    #
+    # TT_Abichou8 = [265.72, 335.37, 387.63, 439.85, 518.14, 631.16, 835.52, 900.7, 1022.51, 1104.92, 1405]
+    # GAI_Abichou8 = [0.1457, 0.2526, 0.3064, 0.4307, 0.6964, 1.1917, 1.9883, 2.3066, 2.6788, 3.3675, 4.4124]
+    #
+    # ## -- GLN
+    # GLN_Abichou_TT = [246, 299, 357, 383, 456, 498, 559, 704, 792, 846, 903, 1010, 1083, 1186, 1290, 1378, 1469, 1565, 1672, 1806, 1947]
+    # GLN_Abichou_GLN = [1.1, 1.7, 1.9, 2.8, 3.8, 4.3, 5, 3.8, 3.7, 3.8, 3.4, 3.8, 4.3, 4, 3.8, 3.3, 2.9, 2.8, 2.3, 1.7, 0.9]
+    #
+    # GLN_Abichou_TT2 = [238, 295, 341, 451, 485, 561, 705, 796, 834, 890, 1008, 1076, 1186, 1289, 1380, 1466, 1602, 1712, 1871, 1958]
+    # GLN_Abichou_GLN2 = [1.1, 1.8, 2.6, 3.6, 4.4, 5, 4.7, 3.9, 3.7, 3.9, 3.8, 4.4, 5, 5, 4.8, 4.1, 3.6, 2.9, 2.4, 2.1]
+    #
+    # GLN_Abichou_TT3 = [154, 204, 250, 258, 292, 380, 411, 442, 488, 534, 576, 603, 667, 727, 810, 989, 1065, 1275, 1362, 1524, 1835]
+    # GLN_Abichou_GLN3 = [0.3, 0.7, 1.2, 1.4, 1.7, 2.5, 2.7, 3.1, 3.5, 3.8, 4.3, 4.4, 4.3, 4.2, 3.5, 4, 4.5, 5.6, 5.3, 4.7, 2.5]
+    #
+    # GLN_Abichou_TT4 = [393, 488, 548, 598, 659, 700, 829, 898, 970, 1038, 1122, 1372, 1440, 1524, 1782, 1972, 2192]
+    # GLN_Abichou_GLN4 = [2.8, 3.7, 4.3, 4.5, 5.4, 5, 3.6, 3.8, 4.5, 5.2, 5.4, 5.5, 5.6, 5.4, 4.5, 2.5, 0]
+    #
+    # df_senesc_tot = df_senesc_tot.merge(out_sam[['t', 'sum_TT']], left_on='t', right_on='t').copy()
+    # tmp = df_senesc_tot[(df_senesc_tot.t < leaf_emergence[(1, 9)]) & (df_senesc_tot.Pge_green_MS != 0.)].copy()  # only valid before emergence of lamina 9 because we don't knpw its final length
+    #
+    # df_gln = tmp
+
+    # --- Ratio of incident PAR that is absorbed by the plant
+    df_elt['PARa_surface'] = df_elt.PARa * df_elt.green_area * plant_density
+    df_elt['PARa_surface2'] = df_elt.PARa * df_elt.green_area
+    tutu = df_elt.groupby(['t'], as_index=False).agg({'PARa_surface': 'sum',
+                                                           'green_area': 'sum'})
+    tutu = tutu.merge(df_meteo, on='t').copy()
+    tutu['ratio_PARa_PARi'] = tutu.PARa_surface / tutu.PARi
+
+    tutu_days = tutu.groupby(['day'], as_index=False).agg({'PARa_surface': 'sum',
+                                                           'PARi': 'sum',
+                                                           'green_area': 'mean',
+                                                           'ratio_PARa_PARi': 'mean',
+                                                           't': 'min'})
+    canopy_df = canopy_df.merge(tutu_days[['day','t', 'ratio_PARa_PARi']], on='day', how='outer')
+
+    # --- Surfacic PAR absorbed per day
+    tmp = df_elt[df_elt['element'].isin(['StemElement', 'LeafElement1'])]
+    tutu2 = tmp.groupby(['t'], as_index=False).agg({'PARa_surface2': 'sum',
+                                                    'green_area': 'sum'})
+    tutu2 = tutu2.merge(df_meteo, on='t').copy()
+    tutu2_days = tutu2.groupby(['day'], as_index=False).agg({'PARa_surface2': 'sum',
+                                                             'PARi': 'sum',
+                                                             'green_area': 'mean'})
+    tutu2_days['PARa_surfacique'] = tutu2_days.PARa_surface2 / tutu2_days.green_area
+    tutu2_days['PARa_mol_m2_d'] = tutu2_days['PARa_surfacique'] * 3600 * 10 ** -6
+
+    canopy_df = canopy_df.merge(tutu2_days[['day', 'PARa_mol_m2_d']], on = 'day', how='outer')
+
+    # --- Save canopy_df
+    canopy_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'canopy_kinetics_daily.csv'), index=False)
 
 def table_C_usages(scenario_postprocessing_dirpath):
     """ Calculate C usage from postprocessings and save it to a CSV file
@@ -208,7 +357,8 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
     """
     Average RUE and photosynthetic yield for the whole cycle.
 
-    :param str scenario_postprocessing_dirpath: the path to the CSV file describing all scenarii
+    :param str scenario_outputs_dirpath: the path to the output CSV files of the scenario
+    :param str scenario_postprocessing_dirpath: the path to the postprocessing CSV files of the scenario
     :param str meteo_dirpath: the path to the CSV meteo file
     :param int plant_density: the plant density (plant m-2)
     """

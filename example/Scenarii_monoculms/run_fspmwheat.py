@@ -16,7 +16,7 @@ from example.Scenarii_monoculms import additional_graphs
 
 def exponential_fertilization_rate(V0, K, t, dt, plant_density):
     ferti_per_plant = V0 / K * (exp(-K * (t + dt) / 168) - exp(-K * t / 168))  # g N per plant
-    return ferti_per_plant * plant_density * (10**6)/14  # µmol N m-2
+    return ferti_per_plant * plant_density * (10 ** 6) / 14  # Âµmol N m-2
 
 
 def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
@@ -83,9 +83,12 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
 
     # -- SIMULATION CONDITIONS
 
+    # Scenario input dirpath
+    SCENARIO_INPUT_DIRPATH = scenario_parameters.get('Inputs_Dirpath', INPUTS_DIRPATH)
+
     # Plant density and inter-row
-    PLANT_DENSITY = {1: scenario.get('Plant_Density', 250.)}
-    INTER_ROW = scenario.get('Inter_Row', 0.15)
+    PLANT_DENSITY = {1: scenario_parameters.get('Plant_Density', 250.)}
+    INTER_ROW = scenario_parameters.get('Inter_Row', 0.15)
 
     # Build N Fertilizations dict
     N_FERTILIZATIONS = {}
@@ -101,7 +104,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
         V0 = scenario_parameters['fertilization_expo_rate']['V0']
         dt = scenario_parameters['fertilization_interval']
         N_FERTILIZATIONS = {t: exponential_fertilization_rate(V0=V0, K=K, t=t, dt=dt, plant_density=PLANT_DENSITY[1]) for t in fertilization_times}
-        N0 = scenario_parameters['fertilization_expo_rate'].get('N0_U', 0) * (10**5) / 14   # Initial nitrates in the soil (conversion from kg N ha-1 to µmol m-2)
+        N0 = scenario_parameters['fertilization_expo_rate'].get('N0_U', 0) * (10 ** 5) / 14  # Initial nitrates in the soil (conversion from kg N ha-1 to Âµmol m-2)
         N_FERTILIZATIONS[0] += N0
 
     # -- RUN main fspmwheat --
@@ -112,7 +115,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
                   N_fertilizations=N_FERTILIZATIONS,
                   PLANT_DENSITY=PLANT_DENSITY,
                   INTER_ROW=INTER_ROW,
-                  INPUTS_DIRPATH=INPUTS_DIRPATH,
+                  INPUTS_DIRPATH=SCENARIO_INPUT_DIRPATH,
                   METEO_FILENAME=scenario.get('METEO_FILENAME'),
                   GRAPHS_DIRPATH=scenario_graphs_dirpath,
                   OUTPUTS_DIRPATH=scenario_outputs_dirpath,
@@ -125,7 +128,10 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
         if RUN_POSTPROCESSING:
             fspmwheat_postprocessing.leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath)
             fspmwheat_postprocessing.table_C_usages(scenario_postprocessing_dirpath)
-            fspmwheat_postprocessing.calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')), scenario.get('Plant_Density', 250.))
+            fspmwheat_postprocessing.calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')),
+                                                                   scenario.get('Plant_Density', 250.))
+            fspmwheat_postprocessing.canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')),
+                                                     scenario.get('Plant_Density', 250.))
 
     except Exception as e:
         print(e)
@@ -135,6 +141,7 @@ if __name__ == '__main__':
     inputs = None
     outputs = None
     scenario = 1001
+
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "i:o:s:d", ["inputs=", "outputs=", "scenario="])
