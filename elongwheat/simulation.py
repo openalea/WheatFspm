@@ -7,8 +7,8 @@ import copy
 
 import pandas as pd
 
-import model
-import parameters
+from elongwheat import model
+from elongwheat import parameters
 
 """
     elongwheat.simulation
