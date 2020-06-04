@@ -1,6 +1,7 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import print_function
+
 import os
 import sys
 import getopt
@@ -8,10 +9,15 @@ import getopt
 import pandas as pd
 from math import exp
 
-from example.Scenarii_monoculms import main
-from example.Scenarii_monoculms import tools
 from fspmwheat import fspmwheat_postprocessing
-from example.Scenarii_monoculms import additional_graphs
+try:  # Python3
+    from example.Scenarii_monoculms import main
+    from example.Scenarii_monoculms import tools
+    from example.Scenarii_monoculms import additional_graphs
+except ImportError as e:  # Python2
+    import main
+    import tools
+    import additional_graphs
 
 
 def exponential_fertilization_rate(V0, K, t, dt, plant_density):

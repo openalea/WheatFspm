@@ -132,7 +132,10 @@ def test_run(overwrite_desired_data=False):
 
     # read adelwheat inputs at t0
     adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-    g = adel_wheat.load(dir=INPUTS_DIRPATH)
+    try:  # Python3
+        g = adel_wheat.load(dir=INPUTS_DIRPATH)
+    except ValueError:  # Python2
+        g = adel_wheat.load(basename=INPUTS_DIRPATH + '/adel0000_python2')
 
     # ---------------------------------------------
     # ----- CONFIGURATION OF THE FACADES -------
