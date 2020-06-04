@@ -442,6 +442,7 @@ def calculate_leaf_Wmax(lamina_Lmax, leaf_rank, integral_conc_sucr, optimal_grow
         #: Actual width: length ratio
         # W_L_ratio = parameters.leaf_W_L_base * regul_W_L_ratio
         W_L_ratio = max(0.025, -0.02033728 - (-0.00005445836 / 0.000459551) * (1 - exp(-0.000459551 * integral_conc_sucr)))
+        # A tester : 0.1192345 + (0.02999999 - 0.1192345)/(1 + (integral_conc_sucr/877.3839)**25.0697)**0.01513638
 
         #: Maximal width (m)
         Wmax = lamina_Lmax * W_L_ratio
