@@ -7,8 +7,8 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy import interpolate
 
-import model
-import tools
+from cnwheat import model
+from cnwheat import tools
 
 """
     cnwheat.simulation
