@@ -27,6 +27,6 @@ SENESCENCE_LENGTH_MAX_RATE = SENESCENCE_MAX_RATE / 3.5e-3  # maximal senescence 
 RATIO_N_MSTRUCT = {1: 0.02, 2: 0.02, 3: 0.02, 4: 0.02, 5: 0.0175, 6: 0.015, 7: 0.01, 8: 0.005, 9: 0.005, 10: 0.005, 11: 0.005}  # Residual Mass of N in 1 g of mstruct at full senescence of the blade (from experiment NEMA)
 DEFAULT_RATIO_N_MSTRUCT = 0.005  #: default N content in total organ mass (senesced + green) if phytomer rank not found above
 
-AGE_EFFECT_SENESCENCE = 400  #: Age-induced senescence (degree-day calculated from elong-wheat as equivalent at 12°C)
+AGE_EFFECT_SENESCENCE = 400  #: Age-induced senescence (degree-day since leaf emergence calculated from elong-wheat as equivalent at 12°C)
 
 MIN_GREEN_AREA = 0.5E-8  #: Minimal green area of an element (m2). Below this area, set green_area to 0.0.
