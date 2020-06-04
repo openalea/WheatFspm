@@ -1,7 +1,6 @@
 # -*- coding: latin-1 -*-
 
 import datetime
-import logging
 import os
 import random
 import time
@@ -61,11 +60,6 @@ def save_df_to_csv(df, outputs_filepath, precision):
         warnings.warn('File will be saved at {}'.format(newpath))
 
 
-LOGGING_CONFIG_FILEPATH = os.path.join('..', '..', 'logging.json')
-
-LOGGING_LEVEL = logging.INFO  # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
-
-
 def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
          option_static=False, show_3Dplant=True, tillers_replications=None, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
@@ -80,7 +74,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     :param bool run_postprocessing: whether to run the postprocessing
     :param bool generate_graphs: whether to run the generate graphs
     :param bool run_from_outputs: whether to start a simulation from a specific time and initial states as found in previous outputs
-    :param str or list stored_times: Time steps when are stored the model outpus. Can be either 'all', a list or an empty list. Default to 'all'
+    :param str or list stored_times: Time steps when are stored the model outputs. Can be either 'all', a list or an empty list. Default to 'all'
     :param bool option_static: Whether the model should be run for a static plant architecture
     :param bool show_3Dplant: whether to plot the scene in pgl viewer
     :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value.
@@ -210,7 +204,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     if stored_times is None:
         stored_times = 'all'
     if not (stored_times == 'all' or type(stored_times) == list):
-        print 'stored_times should be either \'all\', a list or an empty list.'
+        print('stored_times should be either \'all\', a list or an empty list.')
         raise
 
     # create empty dataframes to shared data between the models
@@ -228,6 +222,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     soils_all_data_list = []
 
     all_simulation_steps = []  # to store the steps of the simulation
+    all_senescing_roots = pd.DataFrame(columns=['age_roots', 'rate_mstruct_roots_growth'])
 
     # -- POSTPROCESSING CONFIGURATION --
 
@@ -447,7 +442,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
                 for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
-                    senescwheat_facade_.run()
+                    senescwheat_facade_.run(history_rate_mstruct_roots_senescence=all_senescing_roots)
 
                     # Test for dead plant # TODO: adapt in case of multiple plants
                     if not shared_elements_inputs_outputs_df.empty and \
@@ -515,7 +510,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 break
 
             execution_time = int(time.time() - current_time_of_the_system)
-            print ('\n' 'Simulation run in {}'.format(str(datetime.timedelta(seconds=execution_time))))
+            print('\n' 'Simulation run in {}'.format(str(datetime.timedelta(seconds=execution_time))))
 
         finally:
             # convert list of outputs into dataframes
@@ -561,7 +556,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 assert not os.path.isfile(tmp_path), \
                     "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(tmp_filename, outputs_file_basename)
 
-            time_grid = outputs_df_dict.values()[0].t
+            time_grid = list(outputs_df_dict.values())[0].t
             delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
 
         else:
@@ -664,10 +659,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             phyllochron['phyllochron'].append(phyllo_DD)
 
         if len(phyllochron['metamer']) > 0:
-            plt.figure()
+            fig, ax = plt.subplots()
             plt.xlim((int(min(phyllochron['metamer']) - 1), int(max(phyllochron['metamer']) + 1)))
             plt.ylim(ymin=0, ymax=150)
-            ax = plt.subplot(111)
             ax.plot(phyllochron['metamer'], phyllochron['phyllochron'], color='b', marker='o')
             for i, j in zip(phyllochron['metamer'], phyllochron['phyllochron']):
                 ax.annotate(str(int(round(j, 0))), xy=(i, j + 2), ha='center')
@@ -696,11 +690,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
         var_list = ['leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'lamina_Wmax', 'internode_Lmax']
         for var in list(var_list):
-            plt.figure()
+            fig, ax = plt.subplots()
             plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
             plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 100 * 1.05) + list(bchmk[var] * 1.05)))
-
-            ax = plt.subplot(111)
 
             tmp = res[['metamer', var]].drop_duplicates()
 
@@ -714,10 +706,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             plt.close()
 
         var = 'lamina_W_Lg'
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
         plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 1.05) + list(bchmk[var] * 1.05)))
-        ax = plt.subplot(111)
         tmp = res[['metamer', var]].drop_duplicates()
         line1 = ax.plot(tmp.metamer, tmp[var], color='c', marker='o')
         line2 = ax.plot(bchmk.metamer, bchmk[var], color='orange', marker='o')
@@ -735,10 +726,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         bchmk = bchmk.reset_index()
         bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
 
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
         plt.ylim(ymin=0, ymax=50)
-        ax = plt.subplot(111)
 
         tmp = res[['metamer', 'SSLW']].drop_duplicates()
 
@@ -757,10 +747,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         bchmk = bchmk.reset_index()
         bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
 
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
         plt.ylim(ymin=0, ymax=0.8)
-        ax = plt.subplot(111)
 
         tmp = res[['metamer', 'LSSW']].drop_duplicates()
 
@@ -827,13 +816,13 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             RER_sim[leaf] = fit_RER.params['SumTimeEq']
 
         # - Graph
-        fig, (ax1) = plt.subplots(1)
+        fig, ax1 = plt.subplots()
         ax1.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
 
         x, y = zip(*sorted(RER_sim.items()))
         ax1.plot(x, y, label=r'Simulated RER', linestyle='-', color='g')
         ax1.errorbar(data_obs.metamer, data_obs.RER, yerr=data_obs.RER_confint, marker='o', color='g', linestyle='', label="Observed RER", markersize=2)
-        ax1.plot(rer_param.keys(), rer_param.values(), marker='*', color='k', linestyle='', label="Model parameters")
+        ax1.plot(list(rer_param.keys()), list(rer_param.values()), marker='*', color='k', linestyle='', label="Model parameters")
 
         # Formatting
         ax1.set_ylabel(u'Relative Elongation Rate at 12°C (s$^{-1}$)')
@@ -1023,7 +1012,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=False, generate_graphs=False, run_from_outputs=False,
+    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          show_3Dplant=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},

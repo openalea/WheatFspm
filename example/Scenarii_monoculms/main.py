@@ -207,7 +207,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     if stored_times is None:
         stored_times = 'all'
     if not (stored_times == 'all' or type(stored_times) == list):
-        print 'stored_times should be either \'all\', a list or an empty list.'
+        print('stored_times should be either \'all\', a list or an empty list.')
         raise
 
     # create empty dataframes to shared data between the models
@@ -526,7 +526,6 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                                             'rate_mstruct_roots_growth': [roots_outputs.rate_mstruct_growth.values[0]]})
                                     all_senescing_roots = all_senescing_roots.append(all_senescing_roots_new, ignore_index=True, sort=False)
 
-
                                 else:
                                     # Continue if CN-Wheat loop wasn't broken because of dead plant.
                                     continue
@@ -598,7 +597,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                 assert not os.path.isfile(tmp_path), \
                     "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(tmp_filename, outputs_file_basename)
 
-            time_grid = outputs_df_dict.values()[0].t
+            time_grid = list(outputs_df_dict.values())[0].t
             delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
 
         else:
@@ -700,10 +699,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
             phyllochron['phyllochron'].append(phyllo_DD)
 
         if len(phyllochron['metamer']) > 0:
-            plt.figure()
+            fig, ax = plt.subplots()
             plt.xlim((int(min(phyllochron['metamer']) - 1), int(max(phyllochron['metamer']) + 1)))
             plt.ylim(ymin=0, ymax=150)
-            ax = plt.subplot(111)
             ax.plot(phyllochron['metamer'], phyllochron['phyllochron'], color='b', marker='o')
             for i, j in zip(phyllochron['metamer'], phyllochron['phyllochron']):
                 ax.annotate(str(int(round(j, 0))), xy=(i, j + 2), ha='center')
@@ -731,11 +729,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
         var_list = ['leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'lamina_Wmax', 'internode_Lmax']
         for var in list(var_list):
-            plt.figure()
+            fig, ax = plt.subplots()
             plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
             plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 100 * 1.05) + list(bchmk[var] * 1.05)))
-
-            ax = plt.subplot(111)
 
             tmp = res[['metamer', var]].drop_duplicates()
 
@@ -749,10 +745,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
             plt.close()
 
         var = 'lamina_W_Lg'
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
         plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 1.05) + list(bchmk[var] * 1.05)))
-        ax = plt.subplot(111)
         tmp = res[['metamer', var]].drop_duplicates()
         line1 = ax.plot(tmp.metamer, tmp[var], color='c', marker='o')
         line2 = ax.plot(bchmk.metamer, bchmk[var], color='orange', marker='o')
@@ -770,10 +765,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         bchmk = bchmk.reset_index()
         bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
 
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
         plt.ylim(ymin=0, ymax=50)
-        ax = plt.subplot(111)
 
         tmp = res[['metamer', 'SSLW']].drop_duplicates()
 
@@ -792,10 +786,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         bchmk = bchmk.reset_index()
         bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
 
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
         plt.ylim(ymin=0, ymax=0.8)
-        ax = plt.subplot(111)
 
         tmp = res[['metamer', 'LSSW']].drop_duplicates()
 

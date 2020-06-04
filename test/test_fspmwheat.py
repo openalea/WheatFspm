@@ -15,8 +15,10 @@ from fspmwheat import elongwheat_facade
 from fspmwheat import farquharwheat_facade
 from fspmwheat import growthwheat_facade
 from fspmwheat import senescwheat_facade
+from fspmwheat import fspmwheat_facade
 
 from cnwheat import tools as cnwheat_tools
+from cnwheat import simulation as cnwheat_simulation
 
 """
     test_cnwheat
@@ -46,13 +48,6 @@ HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
 # the precision to use for quantitative comparison test
 PRECISION = 4
-
-# Index
-AXES_INDEX_COLUMNS = ['t', 'plant', 'axis']
-ELEMENTS_INDEX_COLUMNS = ['t', 'plant', 'axis', 'metamer', 'organ', 'element']
-HIDDENZONES_INDEX_COLUMNS = ['t', 'plant', 'axis', 'metamer']
-ORGANS_INDEX_COLUMNS = ['t', 'plant', 'axis', 'organ']
-SOILS_INDEX_COLUMNS = ['t', 'plant', 'axis']
 
 
 def test_run(overwrite_desired_data=False):
@@ -100,6 +95,7 @@ def test_run(overwrite_desired_data=False):
     meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t')
 
     # -- OUTPUTS CONFIGURATION --
+
     # Path of the directory which contains the inputs of the model
     OUTPUTS_DIRPATH = 'outputs'
 
@@ -130,6 +126,7 @@ def test_run(overwrite_desired_data=False):
     soils_all_data_list = []
 
     all_simulation_steps = []  # to store the steps of the simulation
+    all_senescing_roots = pd.DataFrame(columns=['age_roots', 'rate_mstruct_roots_growth'])
 
     # -- ADEL and MTG CONFIGURATION --
 
@@ -271,6 +268,7 @@ def test_run(overwrite_desired_data=False):
     cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
                                                    CNWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                    PLANT_DENSITY,
+                                                   update_cnwheat_parameters,
                                                    cnwheat_organs_initial_state,
                                                    cnwheat_hiddenzones_initial_state,
                                                    cnwheat_elements_initial_state,
@@ -279,8 +277,13 @@ def test_run(overwrite_desired_data=False):
                                                    shared_organs_inputs_outputs_df,
                                                    shared_hiddenzones_inputs_outputs_df,
                                                    shared_elements_inputs_outputs_df,
-                                                   shared_soils_inputs_outputs_df,
-                                                   update_cnwheat_parameters)
+                                                   shared_soils_inputs_outputs_df)
+    # -- FSPMWHEAT --
+    # Facade initialisation
+    fspmwheat_facade_ = fspmwheat_facade.FSPMWheatFacade(g)
+
+    # Update geometry
+    adel_wheat.update_geometry(g)
 
     # ---------------------------------------------
     # -----      RUN OF THE SIMULATION      -------
@@ -291,11 +294,18 @@ def test_run(overwrite_desired_data=False):
         PARi = meteo.loc[t_caribu, ['PARi_MA4']].iloc[0]
         DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
         hour = meteo.loc[t_caribu, ['hour']].iloc[0]
-        caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=True, plant_density=PLANT_DENSITY[1])
+        PARi_next_hours = meteo.loc[range(t_caribu, t_caribu + CARIBU_TIMESTEP), ['PARi']].sum().values[0]
+
+        if (t_caribu % CARIBU_TIMESTEP == 0) and (PARi_next_hours > 0):
+            run_caribu = True
+        else:
+            run_caribu = False
+
+        caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=True, plant_density=PLANT_DENSITY[1])
 
         for t_senescwheat in range(t_caribu, t_caribu + CARIBU_TIMESTEP, SENESCWHEAT_TIMESTEP):
             # run SenescWheat
-            senescwheat_facade_.run()
+            senescwheat_facade_.run(history_rate_mstruct_roots_senescence=all_senescing_roots)
 
             # Run the rest of the model if the plant is alive
             for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):
@@ -326,24 +336,35 @@ def test_run(overwrite_desired_data=False):
                                 cnwheat_facade_.run(Tair, Tsoil)
 
                             # append outputs at current step to global lists
+                            axes_outputs, elements_outputs, hiddenzones_outputs, organs_outputs, soils_outputs = fspmwheat_facade_.build_outputs_df_from_MTG()
+
                             all_simulation_steps.append(t_cnwheat)
-                            axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                            organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                            hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
-                            elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                            soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+                            axes_all_data_list.append(axes_outputs)
+                            organs_all_data_list.append(organs_outputs)
+                            hiddenzones_all_data_list.append(hiddenzones_outputs)
+                            elements_all_data_list.append(elements_outputs)
+                            soils_all_data_list.append(soils_outputs)
 
     # compare actual to desired outputs at each scale level (an exception is raised if the test failed)
     for (outputs_df_list,
          desired_outputs_filename,
          actual_outputs_filename,
+         index_columns,
          state_variables_names) \
-            in ((axes_all_data_list, DESIRED_AXES_OUTPUTS_FILENAME, ACTUAL_AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
-                (organs_all_data_list, DESIRED_ORGANS_OUTPUTS_FILENAME, ACTUAL_ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
-                (hiddenzones_all_data_list, DESIRED_HIDDENZONES_OUTPUTS_FILENAME, ACTUAL_HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
-                (elements_all_data_list, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
-                (soils_all_data_list, DESIRED_SOILS_OUTPUTS_FILENAME, ACTUAL_SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
-        outputs_df = pd.concat(outputs_df_list, ignore_index=True)
+            in ((axes_all_data_list, DESIRED_AXES_OUTPUTS_FILENAME,
+                 ACTUAL_AXES_OUTPUTS_FILENAME, cnwheat_simulation.Simulation.AXES_T_INDEXES, cnwheat_simulation.Simulation.AXES_STATE),
+                (organs_all_data_list, DESIRED_ORGANS_OUTPUTS_FILENAME, ACTUAL_ORGANS_OUTPUTS_FILENAME,
+                 cnwheat_simulation.Simulation.ORGANS_T_INDEXES, cnwheat_simulation.Simulation.ORGANS_STATE),
+                (hiddenzones_all_data_list, DESIRED_HIDDENZONES_OUTPUTS_FILENAME, ACTUAL_HIDDENZONES_OUTPUTS_FILENAME,
+                 cnwheat_simulation.Simulation.HIDDENZONE_T_INDEXES, cnwheat_simulation.Simulation.HIDDENZONE_STATE),
+                (elements_all_data_list, DESIRED_ELEMENTS_OUTPUTS_FILENAME, ACTUAL_ELEMENTS_OUTPUTS_FILENAME,
+                 cnwheat_simulation.Simulation.ELEMENTS_T_INDEXES, cnwheat_simulation.Simulation.ELEMENTS_STATE),
+                (soils_all_data_list, DESIRED_SOILS_OUTPUTS_FILENAME, ACTUAL_SOILS_OUTPUTS_FILENAME,
+                 cnwheat_simulation.Simulation.SOILS_T_INDEXES, cnwheat_simulation.Simulation.SOILS_STATE)):
+        outputs_df = pd.concat(outputs_df_list, keys=all_simulation_steps, sort=False)
+        outputs_df.reset_index(0, inplace=True)
+        outputs_df.rename({'level_0': 't'}, axis=1, inplace=True)
+        outputs_df = outputs_df.reindex(index_columns + outputs_df.columns.difference(index_columns).tolist(), axis=1, copy=False)
         outputs_df = outputs_df.loc[:, state_variables_names]  # compare only the values of the compartments
         cnwheat_tools.compare_actual_to_desired(OUTPUTS_DIRPATH, outputs_df, desired_outputs_filename,
                                                 actual_outputs_filename, precision=PRECISION, overwrite_desired_data=overwrite_desired_data)

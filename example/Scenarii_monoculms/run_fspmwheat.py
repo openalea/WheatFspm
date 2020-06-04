@@ -8,15 +8,15 @@ import getopt
 import pandas as pd
 from math import exp
 
-import main
-import tools
+from example.Scenarii_monoculms import main
+from example.Scenarii_monoculms import tools
 from fspmwheat import fspmwheat_postprocessing
-import additional_graphs
+from example.Scenarii_monoculms import additional_graphs
 
 
 def exponential_fertilization_rate(V0, K, t, dt, plant_density):
     ferti_per_plant = V0 / K * (exp(-K * (t + dt) / 168) - exp(-K * t / 168))  # g N per plant
-    return ferti_per_plant * plant_density * (10 ** 6) / 14  # µmol N m-2
+    return ferti_per_plant * plant_density * (10 ** 6) / 14  # Âµmol N m-2
 
 
 def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
@@ -104,7 +104,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
         V0 = scenario_parameters['fertilization_expo_rate']['V0']
         dt = scenario_parameters['fertilization_interval']
         N_FERTILIZATIONS = {t: exponential_fertilization_rate(V0=V0, K=K, t=t, dt=dt, plant_density=PLANT_DENSITY[1]) for t in fertilization_times}
-        N0 = scenario_parameters['fertilization_expo_rate'].get('N0_U', 0) * (10 ** 5) / 14  # Initial nitrates in the soil (conversion from kg N ha-1 to µmol m-2)
+        N0 = scenario_parameters['fertilization_expo_rate'].get('N0_U', 0) * (10 ** 5) / 14  # Initial nitrates in the soil (conversion from kg N ha-1 to Âµmol m-2)
         N_FERTILIZATIONS[0] += N0
 
     # -- RUN main fspmwheat --
@@ -140,7 +140,8 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
 if __name__ == '__main__':
     inputs = None
     outputs = None
-    scenario = 1037
+    scenario = 1001
+
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "i:o:s:d", ["inputs=", "outputs=", "scenario="])

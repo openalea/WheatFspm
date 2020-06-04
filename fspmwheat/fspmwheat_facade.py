@@ -201,7 +201,7 @@ class FSPMWheatFacade(object):
             current_columns_sorted = current_topology_columns + list(current_outputs_names)
             current_df = current_df.reindex(current_columns_sorted, axis=1, copy=False)
             # Reset dtypes
-            current_df = pd.DataFrame(current_df.where(current_df.notnull(), pd.np.nan).values.tolist(), columns=current_df.columns)
+            current_df = pd.DataFrame(current_df.where(current_df.notnull(), np.nan).values.tolist(), columns=current_df.columns)
             current_df.reset_index(drop=True, inplace=True)
             dataframes_dict[current_key] = current_df
 
