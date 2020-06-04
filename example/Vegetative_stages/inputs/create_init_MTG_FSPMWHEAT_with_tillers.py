@@ -36,30 +36,6 @@ def create_init_MTG_with_tillers(nplants=1, sowing_density=250., plant_density=2
     g = adel.setup_canopy(age)
     return adel, g
 
-def save_adel():
-    adel, g = create_init_MTG_with_tillers(nff = 14) # nff = 14 pour obtenir 11 feuilles
-
-    # Save mtg
-    adel.save(g, dir = 'adel_issue4')
-    # save adel pars
-    adel.save_pars(dir='adel_issue4')
-
-def load_and_update():
-    # read adelwheat inputs
-    adel2 = AdelDyn(seed=1, scene_unit='m',leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-    adel2.pars = adel2.read_pars(dir='adel_issue4')
-    g2 = adel2.load(dir='adel_issue4')
-
-    adel2.update_geometry(g2)
-
-def old_load_and_update():
-    # But working for old inputs
-    adel3 = AdelDyn(seed=1234, scene_unit='m')
-    g3 = adel3.load(dir='adel_saved')
-
-    adel3.update_geometry(g3)
-
-
 adel, g = create_init_MTG_with_tillers(nff = 14)
 
 adel.plot(g)

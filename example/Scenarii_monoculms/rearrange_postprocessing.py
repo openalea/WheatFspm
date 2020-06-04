@@ -94,7 +94,7 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
 
 if __name__ == '__main__':
     # rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
-    # rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=3499)
+    rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=3499)
     rearrange_postprocessing(postprocessing_tables=['organs_postprocessing'], t=3499)
-    # rearrange_postprocessing(postprocessing_tables=['performance_indices'])
-    # rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
+    rearrange_postprocessing(postprocessing_tables=['performance_indices'])
+    rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
