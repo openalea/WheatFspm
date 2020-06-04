@@ -35,13 +35,13 @@ ORGANS_VARIABLES = simulation.Simulation.ORGANS_INDEXES + simulation.Simulation.
 
 #: the columns of the outputs dataframe at HIDDEN ZONE scale
 HIDDENZONE_VARIABLES = simulation.Simulation.HIDDENZONE_INDEXES + simulation.Simulation.HIDDENZONE_RUN_VARIABLES
-HIDDENZONE_OUTPUTS_VARIABLES = HIDDENZONE_VARIABLES + ['nb_replications']
-HIDDENZONE_OUTPUTS_RUN_VARIABLES = simulation.Simulation.HIDDENZONE_RUN_VARIABLES + ['nb_replications']
+HIDDENZONE_OUTPUTS_VARIABLES = HIDDENZONE_VARIABLES
+HIDDENZONE_OUTPUTS_RUN_VARIABLES = simulation.Simulation.HIDDENZONE_RUN_VARIABLES
 
 #: the columns of the outputs dataframe at ELEMENT scale
 ELEMENTS_VARIABLES = simulation.Simulation.ELEMENTS_INDEXES + simulation.Simulation.ELEMENTS_RUN_VARIABLES
-ELEMENTS_OUTPUTS_VARIABLES = ELEMENTS_VARIABLES + ['nb_replications']
-ELEMENTS_OUTPUTS_RUN_VARIABLES = simulation.Simulation.ELEMENTS_RUN_VARIABLES + ['nb_replications']
+ELEMENTS_OUTPUTS_VARIABLES = ELEMENTS_VARIABLES
+ELEMENTS_OUTPUTS_RUN_VARIABLES = simulation.Simulation.ELEMENTS_RUN_VARIABLES
 
 #: the columns of the outputs dataframe at SOIL scale
 SOILS_VARIABLES = simulation.Simulation.SOILS_INDEXES + simulation.Simulation.SOILS_RUN_VARIABLES

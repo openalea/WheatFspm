@@ -533,7 +533,7 @@ def test_postprocessing(overwrite_desired_data=False):
         outputs_file_basename = outputs_filename.split('.')[0]
         outputs_df_dict[outputs_file_basename] = outputs_df
 
-    time_grid = outputs_df_dict.values()[0].t
+    time_grid = list(outputs_df_dict.values())[0].t
     delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
 
     # Compute the post-processing
