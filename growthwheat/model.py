@@ -1,7 +1,7 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import division  # use "//" to do integer division
-import parameters
+from growthwheat import parameters
 
 """
     growthwheat.model
