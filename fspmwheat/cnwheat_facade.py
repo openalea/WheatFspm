@@ -392,7 +392,7 @@ class CNWheatFacade(object):
         for cnwheat_data_name in MTG_RUN_VARIABLES:
             if cnwheat_data_name not in mtg_property_names:
                 self._shared_mtg.add_property(cnwheat_data_name)
-        for cnwheat_organ_label in MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING.keys() + ['soil'] + [cnwheat_converter.CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnwheat_model.HiddenZone]]:
+        for cnwheat_organ_label in list(MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING.keys()) + ['soil'] + [cnwheat_converter.CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnwheat_model.HiddenZone]]:
             if cnwheat_organ_label not in mtg_property_names:
                 self._shared_mtg.add_property(cnwheat_organ_label)
 
