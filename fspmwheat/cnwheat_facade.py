@@ -49,11 +49,11 @@ POPULATION_STATE_VARIABLE = set(cnwheat_simulation.Simulation.PLANTS_STATE + cnw
 
 #: all the variables of a CNWheat population computed during a run step of the simulation
 POPULATION_RUN_VARIABLES = set(cnwheat_simulation.Simulation.PLANTS_RUN_VARIABLES + cnwheat_simulation.Simulation.AXES_RUN_VARIABLES +
-                                cnwheat_simulation.Simulation.PHYTOMERS_RUN_VARIABLES + cnwheat_simulation.Simulation.ORGANS_RUN_VARIABLES +
-                                cnwheat_simulation.Simulation.HIDDENZONE_RUN_VARIABLES + cnwheat_simulation.Simulation.ELEMENTS_RUN_VARIABLES)
+                               cnwheat_simulation.Simulation.PHYTOMERS_RUN_VARIABLES + cnwheat_simulation.Simulation.ORGANS_RUN_VARIABLES +
+                               cnwheat_simulation.Simulation.HIDDENZONE_RUN_VARIABLES + cnwheat_simulation.Simulation.ELEMENTS_RUN_VARIABLES)
 
 #: all the variables to be stored in the MTG
-MTG_RUN_VARIABLES = set( list(POPULATION_RUN_VARIABLES) + cnwheat_simulation.Simulation.SOILS_RUN_VARIABLES)
+MTG_RUN_VARIABLES = set(list(POPULATION_RUN_VARIABLES) + cnwheat_simulation.Simulation.SOILS_RUN_VARIABLES)
 
 # number of seconds in 1 hour
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
@@ -79,7 +79,7 @@ class CNWheatFacade(object):
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
                  shared_soils_inputs_outputs_df,
-                 update_shared_df = True):
+                 update_shared_df=True):
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
         :param int delta_t: The delta between two runs, in seconds.
@@ -392,7 +392,7 @@ class CNWheatFacade(object):
         for cnwheat_data_name in MTG_RUN_VARIABLES:
             if cnwheat_data_name not in mtg_property_names:
                 self._shared_mtg.add_property(cnwheat_data_name)
-        for cnwheat_organ_label in MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING.keys() + ['soil'] + [cnwheat_converter.CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnwheat_model.HiddenZone]]:
+        for cnwheat_organ_label in list(MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING.keys()) + ['soil'] + [cnwheat_converter.CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnwheat_model.HiddenZone]]:
             if cnwheat_organ_label not in mtg_property_names:
                 self._shared_mtg.add_property(cnwheat_organ_label)
 
@@ -482,7 +482,6 @@ class CNWheatFacade(object):
                     for cnwheat_property_name in cnwheat_simulation.Simulation.SOILS_RUN_VARIABLES:
                         if hasattr(self.soils[axis_id], cnwheat_property_name):
                             mtg_soil_properties[cnwheat_property_name] = getattr(self.soils[axis_id], cnwheat_property_name)
-
 
     def _update_shared_dataframes(self, cnwheat_axes_data_df=None, cnwheat_organs_data_df=None,
                                   cnwheat_hiddenzones_data_df=None, cnwheat_elements_data_df=None,

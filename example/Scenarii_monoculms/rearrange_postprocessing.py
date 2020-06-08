@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 # Get the list of scenarii
-titi = os.walk('.').next()[1]
+titi = os.listdir()
 scenarii = []
 for i in titi:
     if i[:9] == 'Scenario_':

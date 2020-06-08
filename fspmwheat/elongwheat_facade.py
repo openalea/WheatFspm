@@ -1,11 +1,8 @@
 # -*- coding: latin-1 -*-
 import numpy as np
-import pandas as pd
-import os
 
 from elongwheat import converter, simulation
-import fspmwheat
-import tools
+from fspmwheat import tools
 
 """
     fspmwheat.elongwheat_facade
@@ -50,7 +47,7 @@ class ElongWheatFacade(object):
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
                  geometrical_model, phytoT=None, update_parameters=None,
-                 update_shared_df = True, option_static=False):
+                 update_shared_df=True, option_static=False):
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
         :param int delta_t: The delta between two runs, in seconds.

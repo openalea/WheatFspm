@@ -4,8 +4,8 @@ import numpy as np
 
 from alinea.astk.plantgl_utils import get_height  # for height calculation
 
-from farquharwheat import converter, simulation
-import tools
+from farquharwheat import converter, simulation, parameters
+from fspmwheat import tools
 
 """
     fspmwheat.farquharwheat_facade
@@ -47,17 +47,19 @@ class FarquharWheatFacade(object):
                  model_elements_inputs_df,
                  model_axes_inputs_df,
                  shared_elements_inputs_outputs_df,
-                 update_shared_df = True):
+                 update_parameters=None,
+                 update_shared_df=True):
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
         :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
         :param pandas.DataFrame model_axes_inputs_df: the inputs of the model at axis scale.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
+        :param dict update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
         :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
-        self._simulation = simulation.Simulation()  #: the simulator to use to run the model
+        self._simulation = simulation.Simulation(update_parameters=update_parameters)  #: the simulator to use to run the model
 
         all_farquharwheat_inputs_dict = converter.from_dataframe(model_elements_inputs_df, model_axes_inputs_df)
         self._update_shared_MTG(all_farquharwheat_inputs_dict)
@@ -129,13 +131,12 @@ class FarquharWheatFacade(object):
                             element_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index, mtg_organ_label, mtg_element_label)
 
                             farquharwheat_element_inputs_dict = {}
-                            # TODO: temporary ; replace 'FARQUHARWHEAT_ELEMENT_PROPERTIES_TEMP' by default values in a parameters file
-                            FARQUHARWHEAT_ELEMENT_PROPERTIES_TEMP = {'PARa': 0, 'nitrates': 0, 'amino_acids': 0, 'proteins': 0, 'Nstruct': 0, 'green_area': 0}
+                            FARQUHARWHEAT_ELEMENT_DEFAULT_PROPERTIES = parameters.ElementDefaultProperties().__dict__
 
                             for farquharwheat_element_input_name in converter.FARQUHARWHEAT_ELEMENTS_INPUTS:
                                 mtg_element_input = mtg_element_properties.get(farquharwheat_element_input_name)
                                 if mtg_element_input is None:
-                                    mtg_element_input = FARQUHARWHEAT_ELEMENT_PROPERTIES_TEMP.get(farquharwheat_element_input_name)
+                                    mtg_element_input = FARQUHARWHEAT_ELEMENT_DEFAULT_PROPERTIES.get(farquharwheat_element_input_name)
                                 #: Height computation for growing visible elements
                                 if mtg_element_label in FARQUHARWHEAT_VISIBLE_ELEMENTS_INPUTS and farquharwheat_element_input_name == 'height':
                                     mtg_element_geom = self._shared_mtg.property('geometry').get(mtg_element_vid)
@@ -156,7 +157,7 @@ class FarquharWheatFacade(object):
 
                 farquharwheat_axis_inputs_dict['height_canopy'] = np.nanmax(np.array(height_element_list, dtype=np.float64))
                 if np.isnan(farquharwheat_axis_inputs_dict['height_canopy']) or (farquharwheat_axis_inputs_dict['height_canopy'] is None):
-                    farquharwheat_axis_inputs_dict['height_canopy'] = 0.78  # TODO : by default values in a parameters file
+                    farquharwheat_axis_inputs_dict['height_canopy'] = parameters.AxisDefaultProperties().__dict__['height']
                 all_farquharwheat_axes_inputs_dict[axis_id] = farquharwheat_axis_inputs_dict
 
         self._simulation.initialize({'elements': all_farquharwheat_elements_inputs_dict, 'axes': all_farquharwheat_axes_inputs_dict})

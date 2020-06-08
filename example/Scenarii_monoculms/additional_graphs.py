@@ -11,7 +11,7 @@ import matplotlib.ticker as mtick
 import matplotlib.image as mpimg
 
 from elongwheat import parameters as elongwheat_parameters
-import tools
+from fspmwheat import tools
 
 # ----- Import scenarii list and description
 scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col='Scenario')

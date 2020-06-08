@@ -12,7 +12,7 @@ graphs_titles_inputs = ['N_content_roots_axis', 'N_content_shoot_axis', 'N_conte
                         'Cont_WSC_DM_axis', 'Cont_WSC_DM_hz','Cont_WSC_DM_blade','Cont_WSC_DM_sheath']
 
 # Get the list of scenarii
-titi = os.walk('.').next()[1]
+titi = os.listdir()
 scenarii = []
 for i in titi:
     if i[:9] == 'Scenario_':

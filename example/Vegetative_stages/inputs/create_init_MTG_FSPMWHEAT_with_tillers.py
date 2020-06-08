@@ -3,7 +3,7 @@
 
 
 from alinea.adel.Stand import AgronomicStand
-from alinea.adel.adel_dynamic import AdelWheatDyn
+from alinea.adel.adel_dynamic import AdelDyn
 from alinea.adel.AdelR import devCsv
 from alinea.adel.plantgen_extensions import TillerEmission, TillerRegression, \
     AxePop, PlantGen, HaunStage
@@ -30,7 +30,7 @@ def create_init_MTG_with_tillers(nplants=1, sowing_density=250., plant_density=2
     axeT, dimT, phenT = pgen.adelT(plants)
     axeT = axeT.sort_values(['id_plt', 'id_cohort', 'N_phytomer'])
     devT = devCsv(axeT, dimT, phenT)
-    adel = AdelWheatDyn(nplants=nplants, nsect=nsect, devT=devT, stand=stand,
+    adel = AdelDyn(nplants=nplants, nsect=nsect, devT=devT, stand=stand,
                      seed=seed, sample='sequence', leaves=leaves,  scene_unit='m')
     age = hs.TT(reg.hs_debreg(nff=nff)) # date a laquelle debut des regression. Problemes : 1) toutes les feuilles pas encore visibles, 2) il y a des feuilles senescentes
     g = adel.setup_canopy(age)
@@ -43,8 +43,8 @@ adel.plot(g)
 ## -- Adapt the dimensions to inputs data
 
 INPUTS_DIRPATH = ''
-HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_inputs.csv')
-ELEMENTS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'elements_inputs.csv')
+HIDDENZONE_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'hiddenzones_initial_state.csv')
+ELEMENTS_INPUTS_FILEPATH = os.path.join(INPUTS_DIRPATH, 'elements_initial_state.csv')
 hdz_inputs = pd.read_csv(HIDDENZONE_INPUTS_FILEPATH)
 elt_inputs = pd.read_csv(ELEMENTS_INPUTS_FILEPATH)
 
@@ -94,7 +94,7 @@ adel.save(g)
 # save adel pars
 adel.save_pars()
 
-adel2 = AdelWheatDyn(seed=1, scene_unit='m',leaves=echap_leaves(xy_model='Soissons_byleafclass'))
+adel2 = AdelDyn(seed=1, scene_unit='m',leaves=echap_leaves(xy_model='Soissons_byleafclass'))
 adel2.pars = adel2.read_pars()
 g2 = adel2.load()
 adel2.update_geometry(g2)
