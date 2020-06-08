@@ -28,6 +28,8 @@ if __name__ == '__main__':
         rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['organs_postprocessing'], t=3499, scenarii=list(scenarii))
         rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['performance_indices'], scenarii=list(scenarii))
         rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['leaf_traits'], scenarii=list(scenarii))
+        rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['canopy_kinetics_daily'], scenarii=list(scenarii))
+        rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['Conc_phloem'], scenarii=list(scenarii))
 
     tend = time.time()
     tmp = (tend - tstart) / 60.
