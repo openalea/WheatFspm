@@ -134,7 +134,6 @@ class HiddenZoneInit(object):
         self.leaf_Lmax_em = None                 #: m, no calculation before emergence Ln-1
         self.lamina_Lmax = None                  #: m, no calculation before emergence Ln-1
         self.sheath_Lmax = None                  #: m, no calculation before emergence Ln-1
-        self.leaf_Wmax_int = 2e-7                #: m, intermediate maximum leaf width
         self.leaf_Wmax = None                    #: m, no calculation before emergence Ln-1
         self.SSLW = None                         #: g m-2, no calculation before emergence Ln-1
         self.LSSW = None                         #: g m-1, no calculation before emergence Ln-1 (about 2)
