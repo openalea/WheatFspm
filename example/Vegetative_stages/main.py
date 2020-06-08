@@ -527,6 +527,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 outputs_df = outputs_df.reindex(index_columns + outputs_df.columns.difference(index_columns).tolist(), axis=1, copy=False)
                 if run_from_outputs:
                     outputs_df = pd.concat([previous_outputs_dataframes[outputs_filename], outputs_df], sort=False)
+                outputs_df.fillna(value=np.nan, inplace=True)  # Convert back None to NaN
                 save_df_to_csv(outputs_df, outputs_filepath, OUTPUTS_PRECISION)
                 outputs_file_basename = outputs_filename.split('.')[0]
                 outputs_df_dict[outputs_file_basename] = outputs_df.reset_index()
