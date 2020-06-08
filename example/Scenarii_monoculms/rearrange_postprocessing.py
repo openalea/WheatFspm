@@ -53,11 +53,18 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
 
             scenario_name = 'Scenario_%.4d' % scenario # 'Scenario_' + str(scenario)
             scenario_postprocessing_dirpath = os.path.join(scenario_name, 'postprocessing')
-            scenario_postprocessing_table_dirpath = os.path.join(scenario_postprocessing_dirpath, pp_table + '.csv')
+
+            pp_table_name = pp_table
+            if pp_table == 'Conc_phloem':
+                pp_table_name = 'organs_postprocessing'
+            scenario_postprocessing_table_dirpath = os.path.join(scenario_postprocessing_dirpath, pp_table_name + '.csv')
 
             if not os.path.exists(scenario_postprocessing_table_dirpath):
                 continue
             pp_res = pd.read_csv(scenario_postprocessing_table_dirpath)
+            if pp_table == 'Conc_phloem':
+                pp_res = pp_res[pp_res.organ == 'phloem'][['t', 'Conc_Amino_Acids', 'Conc_Sucrose']].copy()
+                pp_res.reset_index(drop=True, inplace=True)
             if (t is not None) and ('t' in pp_res.columns):
                 if t not in pp_res.t:
                     continue
@@ -100,4 +107,5 @@ if __name__ == '__main__':
     # rearrange_postprocessing(postprocessing_tables=['organs_postprocessing'], t=3499)
     # rearrange_postprocessing(postprocessing_tables=['performance_indices'])
     # rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
-    rearrange_postprocessing(postprocessing_tables=['canopy_kinetics_daily'])
+    # rearrange_postprocessing(postprocessing_tables=['canopy_kinetics_daily'])
+    rearrange_postprocessing(postprocessing_tables=['Conc_phloem'])
