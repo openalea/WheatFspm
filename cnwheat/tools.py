@@ -178,7 +178,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', x_lim=N
     ax.set_ylim(bottom=0.)
 
     if x_lim is not None:
-        ax.set_xlim(right=x_lim)
+        ax.set_xlim(left=0, right=x_lim)
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
