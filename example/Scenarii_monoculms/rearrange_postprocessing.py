@@ -58,7 +58,7 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
             if not os.path.exists(scenario_postprocessing_table_dirpath):
                 continue
             pp_res = pd.read_csv(scenario_postprocessing_table_dirpath)
-            if 't' in pp_res.columns:
+            if (t is not None) and ('t' in pp_res.columns):
                 if t not in pp_res.t:
                     continue
                 scenarii_with_res.append(scenario)
@@ -85,6 +85,8 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
         # Add info about the scenario
         if merge_with_scenarii_list:
             scenarii_description = scenarii_df[scenarii_list_columns]
+            scenarii_description.reset_index(drop=True, inplace=True)
+            res_df.reset_index(drop=True, inplace=True)
             res_df = scenarii_description.merge(res_df, how='outer', on='Scenario')
 
         # write the datafram
@@ -94,7 +96,8 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
 
 if __name__ == '__main__':
     # rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
-    rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=3499)
-    rearrange_postprocessing(postprocessing_tables=['organs_postprocessing'], t=3499)
-    rearrange_postprocessing(postprocessing_tables=['performance_indices'])
-    rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
+    # rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=3499)
+    # rearrange_postprocessing(postprocessing_tables=['organs_postprocessing'], t=3499)
+    # rearrange_postprocessing(postprocessing_tables=['performance_indices'])
+    # rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
+    rearrange_postprocessing(postprocessing_tables=['canopy_kinetics_daily'])
