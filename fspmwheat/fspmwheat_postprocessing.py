@@ -135,6 +135,7 @@ def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):
     leaf_traits_df.sort_values('metamer', inplace=True)
     leaf_traits_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'leaf_traits.csv'), index=False, na_rep='NA')
 
+
 def canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, meteo_dirpath, plant_density=250):
     """
     Kinetic of variables at canopy level
@@ -284,6 +285,7 @@ def canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, m
 
     # --- Save canopy_df
     canopy_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'canopy_kinetics_daily.csv'), index=False)
+
 
 def table_C_usages(scenario_postprocessing_dirpath):
     """ Calculate C usage from postprocessings and save it to a CSV file
@@ -463,6 +465,7 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
     })
 
     res_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'performance_indices.csv'), index=False)
+
 
 # def all_scenraii_postprocessings(scenarii_list_dirpath):
 #     # ------- Run the above functions for all the scenarii

@@ -12,7 +12,8 @@ scenarii_inputs = scenarii
 INDEX_COLUMNS = ['t', 'plant', 'axis', 'metamer', 'organ', 'element']
 
 
-def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge_with_scenarii_list=True, scenarii_list_columns=None):
+def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge_with_scenarii_list=True, scenarii_list_columns=None,
+                             outputs_dir_path='outputs'):
     """
     For each graph type, create a common directory with the graphs of all the scenarii.
 
@@ -21,13 +22,14 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
     :param list scenarii: List of scenarii (numbers) for which the graphs will be rearranged.
     :param bool merge_with_scenarii_list: if True, the output datafram will be merge with a subset of the scenarii_list table (only the columns in scenarii_list_columns)
     :param list scenarii_list_columns: List of columns name of the scenarii_list table that are of interest.
+    :param str outputs_dir_path: the path with the outputs of the scenarii
     """
 
     if scenarii is None:
         scenarii = scenarii_inputs
 
     # Create directory with general postprocessing
-    general_res_dir = os.path.join('General_postprocessing')
+    general_res_dir = os.path.join(outputs_dir_path, 'General_postprocessing')
     if not os.path.exists(general_res_dir):
         os.mkdir(general_res_dir)
 
@@ -52,7 +54,7 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
         for scenario in scenarii:
 
             scenario_name = 'Scenario_%.4d' % scenario # 'Scenario_' + str(scenario)
-            scenario_postprocessing_dirpath = os.path.join(scenario_name, 'postprocessing')
+            scenario_postprocessing_dirpath = os.path.join(outputs_dir_path, scenario_name, 'postprocessing')
 
             pp_table_name = pp_table
             if pp_table == 'Conc_phloem':
@@ -102,10 +104,10 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
 
 
 if __name__ == '__main__':
-    # rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
-    # rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=3499)
-    # rearrange_postprocessing(postprocessing_tables=['organs_postprocessing'], t=3499)
-    # rearrange_postprocessing(postprocessing_tables=['performance_indices'])
-    # rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
-    # rearrange_postprocessing(postprocessing_tables=['canopy_kinetics_daily'])
+    rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
+    rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=3499)
+    rearrange_postprocessing(postprocessing_tables=['organs_postprocessing'], t=3499)
+    rearrange_postprocessing(postprocessing_tables=['performance_indices'])
+    rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
+    rearrange_postprocessing(postprocessing_tables=['canopy_kinetics_daily'])
     rearrange_postprocessing(postprocessing_tables=['Conc_phloem'])

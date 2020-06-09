@@ -26,7 +26,7 @@ def exponential_fertilization_rate(V0, K, t, dt, plant_density):
     return ferti_per_plant * plant_density * (10 ** 6) / 14  # µmol N m-2
 
 
-def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
+def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path='outputs'):
     """
     Run the main.py of fspmwheat using data from a specific scenario
 
@@ -70,10 +70,11 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path=None):
         # -- SIMULATION DIRECTORIES --
 
         # Path of the directory which contains the outputs of the model
-        if outputs_dir_path:
-            scenario_dirpath = os.path.join(outputs_dir_path, scenario_name)
-        else:
-            scenario_dirpath = scenario_name
+        if not outputs_dir_path:
+            outputs_dir_path = 'outputs'
+        scenario_dirpath = os.path.join(outputs_dir_path, scenario_name)
+        if not os.path.exists(outputs_dir_path):
+            os.mkdir(outputs_dir_path)
 
         # Create the directory of the Scenario where results will be stored
         if not os.path.exists(scenario_dirpath):
