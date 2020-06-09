@@ -217,7 +217,7 @@ def calculate_photosynthesis(PAR, surfacic_nonstructural_nitrogen, surfacic_WSC,
             parameters.J_B * parameters.THETA)  #: Electron transport rate (Muller et al. (2005), Evers et al. (2010)) (µmol m-2 s-1)
     Aj = (J * (Ci - Gamma)) / (parameters.Aj_A * Ci + parameters.Aj_B * Gamma)  #: Rate of assimilation under RuBP regeneration limitation (µmol m-2 s-1)
 
-    #: Triose phosphate utilisation-limited carboxylation rate
+    #: Triose phosphate utilisation-limited carboxylation rate --- NOT USED, calculate just for information
     Sna_TPU25 = parameters.PARAM_N['S_surfacic_nitrogen']['TPU25']
     surfacic_nitrogen_min_TPU25 = parameters.PARAM_N['surfacic_nitrogen_min']['TPU25']
     TPU25 = Sna_TPU25 * (surfacic_nonstructural_nitrogen - surfacic_nitrogen_min_TPU25)  #: Relation between TPU25 and surfacic_nitrogen (µmol m-2 s-1)
@@ -230,7 +230,7 @@ def calculate_photosynthesis(PAR, surfacic_nonstructural_nitrogen, surfacic_WSC,
     # where 0 < alpha > 1 is the fraction of glycolate carbon not returned to the chloroplast, but I couldn't find any estimation of alpha for wheat
 
     #: Gross assimilation rate (µmol m-2 s-1)
-    Ag_before_inhibition_WSC = min(Ac, Aj, Ap)
+    Ag_before_inhibition_WSC = min(Ac, Aj)
     Ag = Ag_before_inhibition_WSC * (1 - _inhibition_by_WSC(surfacic_WSC))
 
     #: Mitochondrial respiration rate of organ in light Rd (processes other than photorespiration)
