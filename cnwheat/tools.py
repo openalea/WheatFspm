@@ -137,8 +137,7 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', x_lim=N
     outputs_grouped = outputs.groupby(group_keys)
 
     # plots each group as a new line
-    plt.figure()
-    ax = plt.subplot(111)
+    fig, ax = plt.subplots()
 
     matplot_colors_cycler = cycle(colors)
     matplot_linestyles_cycler = cycle(linestyles)
@@ -179,11 +178,13 @@ def plot_cnwheat_ouputs(outputs, x_name, y_name, x_label='', y_label='', x_lim=N
 
     if x_lim is not None:
         ax.set_xlim(left=0, right=x_lim)
+    else:
+        ax.set_xlim(left=0)
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if kwargs['label']:
-        ax.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax.legend(prop={'size': 6}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
     ax.set_title(title)
     plt.tight_layout()
 
