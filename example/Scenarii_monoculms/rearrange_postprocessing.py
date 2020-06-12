@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 # Get the list of scenarii
-titi = os.listdir()
+titi = os.listdir('outputs')
 scenarii = []
 for i in titi:
     if i[:9] == 'Scenario_':
@@ -53,7 +53,7 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
         #: For each scenario, extract the prostprocessings at t
         for scenario in scenarii:
 
-            scenario_name = 'Scenario_%.4d' % scenario # 'Scenario_' + str(scenario)
+            scenario_name = 'Scenario_%.4d' % scenario
             scenario_postprocessing_dirpath = os.path.join(outputs_dir_path, scenario_name, 'postprocessing')
 
             pp_table_name = pp_table
@@ -104,7 +104,7 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
 
 
 if __name__ == '__main__':
-    rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
+    # rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
     rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=3499)
     rearrange_postprocessing(postprocessing_tables=['organs_postprocessing'], t=3499)
     rearrange_postprocessing(postprocessing_tables=['performance_indices'])

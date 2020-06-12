@@ -12,7 +12,7 @@ graphs_titles_inputs = ['N_content_roots_axis', 'N_content_shoot_axis', 'N_conte
                         'Cont_WSC_DM_axis', 'Cont_WSC_DM_hz','Cont_WSC_DM_blade','Cont_WSC_DM_sheath']
 
 # Get the list of scenarii
-titi = os.listdir()
+titi = os.listdir('outputs')
 scenarii = []
 for i in titi:
     if i[:9] == 'Scenario_':
@@ -28,7 +28,7 @@ scenarii_inputs = scenarii
 # else:
 #     scenarii_df['Scenario_label'] = scenarii_df['Scenario_label'].fillna('')
 
-def rearrange_graphs(graphs_titles=None, scenarii=None):
+def rearrange_graphs(graphs_titles=None, scenarii=None, outputs_dir_path=None):
     """
     For each graph type, create a common directory with the graphs of all the scenarii.
 
@@ -40,26 +40,28 @@ def rearrange_graphs(graphs_titles=None, scenarii=None):
         scenarii = scenarii_inputs
     if graphs_titles is None:
         graphs_titles = graphs_titles_inputs
+    if not outputs_dir_path:
+        outputs_dir_path = 'outputs'
 
     # Create directory with graphs by type
-    graph_dir = os.path.join('Graphs_by_type')
+    graph_dir = os.path.join(outputs_dir_path, 'Graphs_by_type')
     if not os.path.exists(graph_dir):
         os.mkdir(graph_dir)
 
     #: For each graph type, create a common directory
     for graph in graphs_titles:
 
-        graph_dir = os.path.join('Graphs_by_type', graph)
+        graph_dir = os.path.join(outputs_dir_path, 'Graphs_by_type', graph)
         if not os.path.exists(graph_dir):
             os.mkdir(graph_dir)
 
         #: For each scenario, copy and rename the graphs in the common directory
         for scenario in scenarii:
 
-            scenario_name = 'Scenario_%.4d' % scenario #'Scenario_' + str(scenario)
+            scenario_name = 'Scenario_%.4d' % scenario
             # scenario_label = scenarii_df['Scenario_label'].get( scenario, '' ).replace(" ", "_")
 
-            scenario_dir = os.path.join(scenario_name, 'graphs')
+            scenario_dir = os.path.join(outputs_dir_path, scenario_name, 'graphs')
             graph_src = os.path.join(scenario_dir, graph + '.PNG')
             graph_dest = os.path.join(graph_dir, graph + '.PNG')
             graph_renamed = os.path.join(graph_dir, scenario_name + '.PNG')  # os.path.join(graph_dir, scenario_name+'_'+scenario_label+'.PNG')

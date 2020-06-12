@@ -11,7 +11,7 @@ import matplotlib.ticker as mtick
 import matplotlib.image as mpimg
 
 from elongwheat import parameters as elongwheat_parameters
-from fspmwheat import tools
+import tools
 
 # ----- Import scenarii list and description
 scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col='Scenario')
@@ -24,9 +24,12 @@ scenarii = scenarii_df.Scenario
 
 
 # ------- Def functions to make graphs
-def graph_RER(scenario):
-    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
-    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+def graph_RER(scenario, scenario_graphs_dirpath=None, scenario_outputs_dirpath=None):
+    scenario_name = 'Scenario_%.4d' % scenario
+    if not scenario_graphs_dirpath:
+        scenario_graphs_dirpath = os.path.join('outputs', scenario_name, 'graphs')
+    if not scenario_outputs_dirpath:
+        scenario_outputs_dirpath = os.path.join('outputs', scenario_name, 'outputs')
 
     # ------ RERmax from parameters : from parameters file or from scenarii_list.csv
     scenario_dict = tools.buildDic(scenarii_df.to_dict('index')[scenario])
@@ -40,10 +43,10 @@ def graph_RER(scenario):
     # ------ Simulated RER
 
     # import simulation outputs
-    data_RER = pd.read_csv(os.path.join(scenario_name, 'outputs', 'hiddenzones_outputs.csv'))
+    data_RER = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'hiddenzones_outputs.csv'))
     data_RER = data_RER[(data_RER.axis == 'MS') & (data_RER.metamer >= 4)].copy()
     data_RER.sort_values(['t', 'metamer'], inplace=True)
-    data_teq = pd.read_csv(os.path.join(scenario_name, 'outputs', 'axes_outputs.csv'))
+    data_teq = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'axes_outputs.csv'))
     data_teq = data_teq[data_teq.axis == 'MS'].copy()
 
     # Time previous leaf emergence
@@ -84,7 +87,7 @@ def graph_RER(scenario):
     # ax1.errorbar(rer_obs.leaf, rer_obs.RER, yerr=rer_obs.RER_confint, marker='o', color='g', linestyle='', label="Observed RER", markersize=2)
 
     # Parameters
-    ax1.plot(rer_param.keys(), rer_param.values(), marker='*', color='k', linestyle='', label="Model parameters")
+    ax1.plot( list(rer_param.keys()), list(rer_param.values()), marker='*', color='k', linestyle='', label="Model parameters")
 
     # Formatting
     ax1.set_ylabel(u'Relative Elongation Rate at 12°C (s$^{-1}$)')
@@ -97,15 +100,18 @@ def graph_RER(scenario):
     plt.close()
 
 
-def graph_C_usages(scenario):
-    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
-    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+def graph_C_usages(scenario, scenario_graphs_dirpath=None, scenario_postprocessing_dirpath=None):
+    scenario_name = 'Scenario_%.4d' % scenario
+    if not scenario_graphs_dirpath:
+        scenario_graphs_dirpath = os.path.join('outputs', scenario_name, 'graphs')
+    if not scenario_postprocessing_dirpath:
+        scenario_postprocessing_dirpath = os.path.join('outputs', scenario_name, 'postprocessing')
 
     # --- Import simulations prostprocessings
-    df_elt = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'elements_postprocessing.csv'))
-    df_org = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'organs_postprocessing.csv'))
-    df_axe = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'axes_postprocessing.csv'))
-    df_hz = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'hiddenzones_postprocessing.csv'))
+    df_elt = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'elements_postprocessing.csv'))
+    df_org = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'organs_postprocessing.csv'))
+    df_axe = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'axes_postprocessing.csv'))
+    df_hz = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'hiddenzones_postprocessing.csv'))
     df_roots = df_org[df_org['organ'] == 'roots'].copy()
     df_phloem = df_org[df_org['organ'] == 'phloem'].copy()
 
@@ -175,20 +181,23 @@ def graph_C_usages(scenario):
     ax.set_ylabel(u'Carbon usages : Photosynthesis (%)')
     ax.set_ylim(bottom=0, top=100.)
 
-    fig.suptitle(u'Total cumulated usages are ' + str(round(C_usages.C_budget.tail(1) * 100, 0)) + u' % of Photosynthesis')
+    fig.suptitle(u'Total cumulated usages are ' + str(round(C_usages.C_budget.tail(1).values[0] * 100, 0)) + u' % of Photosynthesis')
 
     plt.savefig(os.path.join(scenario_graphs_dirpath, 'C_usages_cumulated.PNG'), format='PNG', bbox_inches='tight')
     plt.close()
 
 
-def graph_Conc_Nitrates(scenario):
-    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
-    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+def graph_Conc_Nitrates(scenario, scenario_graphs_dirpath=None, scenario_postprocessing_dirpath=None):
+    scenario_name = 'Scenario_%.4d' % scenario
+    if not scenario_graphs_dirpath:
+        scenario_graphs_dirpath = os.path.join('outputs', scenario_name, 'graphs')
+    if not scenario_postprocessing_dirpath:
+        scenario_postprocessing_dirpath = os.path.join('outputs', scenario_name, 'postprocessing')
 
     # --- Import simulations prostprocessings
-    df_elt = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'elements_postprocessing.csv'))
-    df_org = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'organs_postprocessing.csv'))
-    df_axe = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'axes_postprocessing.csv'))
+    df_elt = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'elements_postprocessing.csv'))
+    df_org = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'organs_postprocessing.csv'))
+    df_axe = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'axes_postprocessing.csv'))
     df_roots = df_org[df_org['organ'] == 'roots'].copy()
     df_roots = df_roots.reset_index(drop=True)
 
@@ -226,12 +235,15 @@ def graph_Conc_Nitrates(scenario):
     plt.close()
 
 
-def graph_Uptake_N(scenario):
-    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
-    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+def graph_Uptake_N(scenario, scenario_graphs_dirpath=None, scenario_outputs_dirpath=None):
+    scenario_name = 'Scenario_%.4d' % scenario
+    if not scenario_graphs_dirpath:
+        scenario_graphs_dirpath = os.path.join('outputs', scenario_name, 'graphs')
+    if not scenario_outputs_dirpath:
+        scenario_outputs_dirpath = os.path.join('outputs', scenario_name, 'outputs')
 
     # --- Import simulations outsptus
-    df_org = pd.read_csv(os.path.join(scenario_name, 'outputs', 'organs_outputs.csv'))
+    df_org = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'organs_outputs.csv'))
     df_roots = df_org[df_org['organ'] == 'roots'].copy()
     df_roots = df_roots.reset_index(drop=True)
 
@@ -245,14 +257,17 @@ def graph_Uptake_N(scenario):
     plt.close()
 
 
-def graph_phi_s_Devienne1994a(scenario):
+def graph_phi_s_Devienne1994a(scenario, scenario_graphs_dirpath=None, scenario_outputs_dirpath=None):
     """Sum of NO3- reduction flux and NO3- deposition into the sylem sap"""
 
-    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
-    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+    scenario_name = 'Scenario_%.4d' % scenario
+    if not scenario_graphs_dirpath:
+        scenario_graphs_dirpath = os.path.join('outputs', scenario_name, 'graphs')
+    if not scenario_outputs_dirpath:
+        scenario_outputs_dirpath = os.path.join('outputs', scenario_name, 'outputs')
 
     # --- Import simulations outsptus
-    df_org = pd.read_csv(os.path.join(scenario_name, 'outputs', 'organs_outputs.csv'))
+    df_org = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'organs_outputs.csv'))
     df_roots = df_org[df_org['organ'] == 'roots'].copy()
     df_roots = df_roots.reset_index(drop=True)
 
@@ -266,14 +281,17 @@ def graph_phi_s_Devienne1994a(scenario):
     plt.close()
 
 
-def graph_N_dilution(scenario):
+def graph_N_dilution(scenario, scenario_graphs_dirpath=None, scenario_postprocessing_dirpath=None):
     """N shoot in function of above-ground biomass"""
 
-    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
-    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+    scenario_name = 'Scenario_%.4d' % scenario
+    if not scenario_graphs_dirpath:
+        scenario_graphs_dirpath = os.path.join('outputs', scenario_name, 'graphs')
+    if not scenario_postprocessing_dirpath:
+        scenario_postprocessing_dirpath = os.path.join('outputs', scenario_name, 'postprocessing')
 
     # --- Import simulations postprocessing
-    df_axe = pd.read_csv(os.path.join(scenario_name, 'postprocessing', 'axes_postprocessing.csv'))
+    df_axe = pd.read_csv(os.path.join(scenario_postprocessing_dirpath, 'axes_postprocessing.csv'))
 
     fig, ax = plt.subplots()
     ax.plot(df_axe.sum_dry_mass_shoot, df_axe.N_content_shoot)
@@ -285,13 +303,14 @@ def graph_N_dilution(scenario):
     plt.close()
 
 
-def graph_summary(scenario, graph_list=None):
+def graph_summary(scenario, scenario_graphs_dirpath=None, graph_list=None):
     if graph_list is None:
         graph_list = ['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
                       'green_area_blade']
-    scenario_name = 'Scenario_%.4d' % scenario #'Scenario_{}'.format(scenario)
+    scenario_name = 'Scenario_%.4d' % scenario
     scenario_label = scenarii_df['Scenario_label'][scenario]
-    scenario_graphs_dirpath = os.path.join(scenario_name, 'graphs')
+    if not scenario_graphs_dirpath:
+        scenario_graphs_dirpath = os.path.join('outputs', scenario_name, 'graphs')
 
     nb_graphs = len(graph_list)
     if nb_graphs <= 4:
@@ -330,9 +349,9 @@ if __name__ == '__main__':
     # ------- Make the graphs and tables for all the scenarii
 
     for sc in scenarii:
-        # graph_phi_s_Devienne1994a(int(scenario))
-        # graph_Uptake_N(int(scenario))
-        # graph_Conc_Nitrates(int(scenario))
+        # graph_phi_s_Devienne1994a(int(sc))
+        # graph_Uptake_N(int(sc))
+        # graph_Conc_Nitrates(int(sc))
         graph_N_dilution(int(sc))
         graph_RER(int(sc))
         graph_C_usages(int(sc))

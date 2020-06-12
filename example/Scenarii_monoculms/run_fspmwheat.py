@@ -134,7 +134,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path='outputs
                       POSTPROCESSING_DIRPATH=scenario_postprocessing_dirpath,
                       update_parameters_all_models=scenario_parameters)
             if GENERATE_GRAPHS:
-                additional_graphs.graph_summary(scenario_id,
+                additional_graphs.graph_summary(scenario_id, scenario_graphs_dirpath,
                                                 graph_list=['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
                                                             'green_area_blade'])
             if RUN_POSTPROCESSING:
