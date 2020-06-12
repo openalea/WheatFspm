@@ -445,6 +445,20 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
     mod = sm.OLS(Y, X)
     fit_phyllo = mod.fit()
 
+    # --- mean RGR
+    df_axe['day'] = df_axe.t // 24 + 1
+    df_axe = df_axe.merge(df_axe_out[['t', 'sum_TT']], on='t')
+    df_RGR = df_axe.groupby('day', as_index=False).agg({'sum_dry_mass': 'max', 'sum_TT': 'max'})
+    df_RGR_prev = df_RGR.copy()
+    df_RGR_prev.day = df_RGR_prev.day + 1
+    df_RGR_prev['sum_dry_mass_prev'] = df_RGR_prev.sum_dry_mass
+    df_RGR_prev['sum_TT_prev'] = df_RGR_prev.sum_TT
+    df_RGR = df_RGR.merge(df_RGR_prev[['day', 'sum_TT_prev', 'sum_dry_mass_prev']], on='day')
+    df_RGR['delta_sum_TT'] = df_RGR.sum_TT - df_RGR.sum_TT_prev
+    df_RGR['delta_sum_dry_mass'] = df_RGR.sum_dry_mass - df_RGR.sum_dry_mass_prev
+    df_RGR['RGR'] = df_RGR.delta_sum_dry_mass / df_RGR.sum_dry_mass
+    df_RGR['RGR_TT'] = df_RGR.RGR / df_RGR.delta_sum_TT
+
     # ---  Write results into a table
     res_df = pd.DataFrame.from_dict({
         'LAI': [df_LAI.loc[max(df_LAI.index), 'LAI']],
@@ -461,7 +475,8 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
         'nb_final_em': [nb_final_em_leaves],
         'nb_final_lig': [nb_final_lig_leaves],
         'final_avg_SLA': [final_avg_SLA],
-        'avg_phyllochron': [1 / fit_phyllo.params[1]]
+        'avg_phyllochron': [1 / fit_phyllo.params[1]],
+        'avg_RGR_TT': [df_RGR.RGR_TT.mean()]
     })
 
     res_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'performance_indices.csv'), index=False)
