@@ -303,6 +303,38 @@ def graph_N_dilution(scenario, scenario_graphs_dirpath=None, scenario_postproces
     plt.close()
 
 
+def graph_photosynthetic_rates(scenario, blade_number, scenario_graphs_dirpath=None, scenario_outputs_dirpath=None):
+    scenario_name = 'Scenario_%.4d' % scenario
+    if not scenario_graphs_dirpath:
+        scenario_graphs_dirpath = os.path.join('outputs', scenario_name, 'graphs')
+    if not scenario_outputs_dirpath:
+        scenario_outputs_dirpath = os.path.join('outputs', scenario_name, 'outputs')
+
+    # import simulation outputs
+    df_elt = pd.read_csv(os.path.join(scenario_outputs_dirpath, 'elements_outputs.csv'))
+    df_elt = df_elt[(df_elt.axis == 'MS') & (df_elt.element == 'LeafElement1')].copy()
+
+    # ------ Graph per blade_number
+    for bl in blade_number:
+
+        df_bl = df_elt[df_elt.metamer == bl]
+
+        fig, (ax1) = plt.subplots(1)
+
+        ax1.plot(df_bl.t, df_bl.Ap, label="Ap")
+        ax1.plot(df_bl.t, df_bl.Ac, label="Ac")
+        ax1.plot(df_bl.t, df_bl.Aj, label="Aj")
+        ax1.plot(df_bl.t, df_bl.Ag, label="Ag")
+        # ax1.plot(df_elt.t, df_elt.Ag_before_inhibition_WSC, label="Ag_before_inhibition_WSC")
+
+        # Formatting
+        ax1.set_ylabel(u'Photosynthetic rate (µmol m$^{-2}$ s$^{-1}$)')
+        ax1.legend(prop={'size': 10}, framealpha=0.5, loc='center left', bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax1.set_xlabel('t (Hour)')
+        plt.tight_layout()
+        plt.savefig(os.path.join(scenario_graphs_dirpath, 'Photosynthetic_rates_F' + str(bl) + '.PNG'), format='PNG', bbox_inches='tight')
+        plt.close()
+
 def graph_summary(scenario, scenario_graphs_dirpath=None, graph_list=None):
     if graph_list is None:
         graph_list = ['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
@@ -352,8 +384,9 @@ if __name__ == '__main__':
         # graph_phi_s_Devienne1994a(int(sc))
         # graph_Uptake_N(int(sc))
         # graph_Conc_Nitrates(int(sc))
-        graph_N_dilution(int(sc))
-        graph_RER(int(sc))
-        graph_C_usages(int(sc))
+        # graph_photosynthetic_rates(int(sc), blade_number=[6, 12])
+        # graph_N_dilution(int(sc))
+        # graph_RER(int(sc))
+        # graph_C_usages(int(sc))
         graph_summary(int(sc), graph_list=['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
                                                  'green_area_blade'])

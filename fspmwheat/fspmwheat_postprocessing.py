@@ -159,7 +159,7 @@ def canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, m
     df_LAI = df_elt[(df_elt.element == 'LeafElement1')].groupby(['t'], as_index=False).agg({'green_area': 'sum'})
     df_LAI['LAI'] = df_LAI.green_area * plant_density
     df_LAI['day'] = df_LAI.t // 24 + 1
-    df_LAI_days = df_LAI.groupby('day', as_index=False).agg({'LAI':'mean'})
+    df_LAI_days = df_LAI.groupby('day', as_index=False).agg({'LAI': 'mean'})
     canopy_df = df_LAI_days[['day', 'LAI']]
 
     # ## ----------  GLN / GAI
@@ -259,7 +259,7 @@ def canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, m
     df_elt['PARa_surface'] = df_elt.PARa * df_elt.green_area * plant_density
     df_elt['PARa_surface2'] = df_elt.PARa * df_elt.green_area
     tutu = df_elt.groupby(['t'], as_index=False).agg({'PARa_surface': 'sum',
-                                                           'green_area': 'sum'})
+                                                      'green_area': 'sum'})
     tutu = tutu.merge(df_meteo, on='t').copy()
     tutu['ratio_PARa_PARi'] = tutu.PARa_surface / tutu.PARi
 
@@ -268,7 +268,7 @@ def canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, m
                                                            'green_area': 'mean',
                                                            'ratio_PARa_PARi': 'mean',
                                                            't': 'min'})
-    canopy_df = canopy_df.merge(tutu_days[['day','t', 'ratio_PARa_PARi']], on='day', how='outer')
+    canopy_df = canopy_df.merge(tutu_days[['day', 't', 'ratio_PARa_PARi']], on='day', how='outer')
 
     # --- Surfacic PAR absorbed per day
     tmp = df_elt[df_elt['element'].isin(['StemElement', 'LeafElement1'])]
@@ -281,7 +281,7 @@ def canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, m
     tutu2_days['PARa_surfacique'] = tutu2_days.PARa_surface2 / tutu2_days.green_area
     tutu2_days['PARa_mol_m2_d'] = tutu2_days['PARa_surfacique'] * 3600 * 10 ** -6
 
-    canopy_df = canopy_df.merge(tutu2_days[['day', 'PARa_mol_m2_d']], on = 'day', how='outer')
+    canopy_df = canopy_df.merge(tutu2_days[['day', 'PARa_mol_m2_d']], on='day', how='outer')
 
     # --- Save canopy_df
     canopy_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'canopy_kinetics_daily.csv'), index=False)
@@ -423,17 +423,19 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
 
     # --- Final canopy traits
     t_end = max(df_elt.t)
-    df_lamina = df_elt[df_elt.element == 'LeafElement1']
+    df_lamina = df_elt[df_elt.element == 'LeafElement1'].copy()
     df_lamina_end = df_lamina[(df_lamina.t == t_end)]
     nb_final_em_leaves = max(df_lamina_end.metamer)
     nb_final_lig_leaves = max(df_lamina_end[~df_lamina_end.is_growing].metamer)
 
-    # average SLA
+    # final average SLA
     df_lamina_end_green = df_lamina_end[(df_lamina_end.green_area > 0) & (df_lamina_end.mstruct > 0)]
     if df_lamina_end_green.shape[0] > 1:
         final_avg_SLA = sum(df_lamina_end_green.green_area) / (sum(df_lamina_end_green.sum_dry_mass) * 10 ** -3)
     else:
         final_avg_SLA = np.nan
+
+    # --- Mean canopy traits
 
     # average phyllochron
     avg_phyllo_df = df_lamina.groupby('metamer', as_index=False).agg({'t': 'min'})
@@ -448,39 +450,76 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
     # --- mean RGR
     df_axe['day'] = df_axe.t // 24 + 1
     df_axe = df_axe.merge(df_axe_out[['t', 'sum_TT']], on='t')
-    df_RGR = df_axe.groupby('day', as_index=False).agg({'sum_dry_mass': 'max', 'sum_TT': 'max'})
+    df_RGR = df_axe.groupby('day', as_index=False).agg({'sum_dry_mass': 'max',
+                                                        'sum_dry_mass_shoot': 'max',
+                                                        'sum_dry_mass_roots': 'max',
+                                                        'sum_TT': 'max'})
     df_RGR_prev = df_RGR.copy()
     df_RGR_prev.day = df_RGR_prev.day + 1
     df_RGR_prev['sum_dry_mass_prev'] = df_RGR_prev.sum_dry_mass
+    df_RGR_prev['sum_dry_mass_shoot_prev'] = df_RGR_prev.sum_dry_mass_shoot
+    df_RGR_prev['sum_dry_mass_roots_prev'] = df_RGR_prev.sum_dry_mass_roots
     df_RGR_prev['sum_TT_prev'] = df_RGR_prev.sum_TT
-    df_RGR = df_RGR.merge(df_RGR_prev[['day', 'sum_TT_prev', 'sum_dry_mass_prev']], on='day')
+    df_RGR = df_RGR.merge(df_RGR_prev[['day', 'sum_TT_prev', 'sum_dry_mass_prev', 'sum_dry_mass_shoot_prev', 'sum_dry_mass_roots_prev']], on='day')
     df_RGR['delta_sum_TT'] = df_RGR.sum_TT - df_RGR.sum_TT_prev
     df_RGR['delta_sum_dry_mass'] = df_RGR.sum_dry_mass - df_RGR.sum_dry_mass_prev
+    df_RGR['delta_sum_dry_mass_shoot'] = df_RGR.sum_dry_mass_shoot - df_RGR.sum_dry_mass_shoot_prev
+    df_RGR['delta_sum_dry_mass_roots'] = df_RGR.sum_dry_mass_roots - df_RGR.sum_dry_mass_roots_prev
     df_RGR['RGR'] = df_RGR.delta_sum_dry_mass / df_RGR.sum_dry_mass
+    df_RGR['RGR_shoot'] = df_RGR.delta_sum_dry_mass_shoot / df_RGR.sum_dry_mass_shoot
+    df_RGR['RGR_roots'] = df_RGR.delta_sum_dry_mass_roots / df_RGR.sum_dry_mass_roots
     df_RGR['RGR_TT'] = df_RGR.RGR / df_RGR.delta_sum_TT
+    df_RGR['RGR_shoot_TT'] = df_RGR.RGR_shoot / df_RGR.delta_sum_TT
+    df_RGR['RGR_roots_TT'] = df_RGR.RGR_roots / df_RGR.delta_sum_TT
+
+    # --- mean NAR: Net Assimilation Rate : delta g DM m-2 °Cd-1
+    df_lamina_tot = df_lamina.groupby(['t'], as_index=False).agg({'green_area': 'sum',
+                                                                  'sum_dry_mass': 'sum'})
+    df_lamina_tot['day'] = df_lamina_tot.t // 24 + 1
+    df_lamina_day_tot = df_lamina_tot.groupby(['day'], as_index=False).agg({'green_area': 'max',
+                                                                            'sum_dry_mass': 'max'})
+    df_lamina_day_tot['sum_dry_mass_laminea'] = df_lamina_day_tot['sum_dry_mass']
+    df_lamina_day_tot['sum_dry_mass_laminea'] = df_lamina_day_tot['sum_dry_mass']
+    df_RGR = df_RGR.merge(df_lamina_day_tot[['day', 'green_area', 'sum_dry_mass_laminea']], on='day')
+    df_RGR['NAR_TT'] = df_RGR.delta_sum_dry_mass / df_RGR.green_area / df_RGR.delta_sum_TT
+
+    # --- mean LAR: leaf area ratio = m2 / g DM plante
+    df_RGR['LAR'] = df_RGR.green_area / df_RGR.sum_dry_mass
+
+    # --- mean LMR: leaf mass ratio = g DM feuille / g DM plante
+    df_RGR['LMR'] = df_RGR.sum_dry_mass_laminea / df_RGR.sum_dry_mass
+
+    # --- mean SLA: m2 / g DM feuille
+    df_RGR['SLA'] = df_RGR.green_area / df_RGR.sum_dry_mass_laminea
 
     # ---  Write results into a table
-    res_df = pd.DataFrame.from_dict({
-        'LAI': [df_LAI.loc[max(df_LAI.index), 'LAI']],
-        'RUE_plant_MJ_PAR': [RUE_plant],
-        'RUE_shoot_MJ_PAR': [RUE_shoot],
-        'RUE_plant_MJ_RGint': [RUE_plant_couvert],
-        'RUE_shoot_MJ_RGint': [RUE_shoot_couvert],
-        'Photosynthetic_efficiency': [avg_photo_y],
-        'C_usages_Respi_roots': C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
-        'C_usages_Respi_shoot': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'],
-        'C_usages_Respi': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'] + C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
-        'C_usages_exudation': C_usages_div.loc[max(C_usages_div.index), 'exudation'],
-        't_final': [t_end],
-        'nb_final_em': [nb_final_em_leaves],
-        'nb_final_lig': [nb_final_lig_leaves],
-        'final_avg_SLA': [final_avg_SLA],
-        'avg_phyllochron': [1 / fit_phyllo.params[1]],
-        'avg_RGR_TT': [df_RGR.RGR_TT.mean()]
-    })
+    res_df = pd.DataFrame.from_dict({'LAI': [df_LAI.loc[max(df_LAI.index), 'LAI']],
+                                     'RUE_plant_MJ_PAR': [RUE_plant],
+                                     'RUE_shoot_MJ_PAR': [RUE_shoot],
+                                     'RUE_plant_MJ_RGint': [RUE_plant_couvert],
+                                     'RUE_shoot_MJ_RGint': [RUE_shoot_couvert],
+                                     'Photosynthetic_efficiency': [avg_photo_y],
+                                     'C_usages_Respi_roots': C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
+                                     'C_usages_Respi_shoot': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'],
+                                     'C_usages_Respi': C_usages_div.loc[max(C_usages_div.index), 'Respi_shoot'] + C_usages_div.loc[max(C_usages_div.index), 'Respi_roots'],
+                                     'C_usages_exudation': C_usages_div.loc[max(C_usages_div.index), 'exudation'],
+                                     't_final': [t_end],
+                                     'nb_final_em': [nb_final_em_leaves],
+                                     'nb_final_lig': [nb_final_lig_leaves],
+                                     'final_avg_SLA': [final_avg_SLA],
+                                     'avg_phyllochron': [1 / fit_phyllo.params[1]],
+                                     'avg_RGR_TT': [df_RGR.RGR_TT.mean()],
+                                     'avg_RGR_shoot_TT': [df_RGR.RGR_shoot_TT.mean()],
+                                     'avg_RGR_roots_TT': [df_RGR.RGR_roots_TT.mean()],
+                                     'avg_NAR_TT': [df_RGR.NAR_TT.mean()],
+                                     'avg_LAR': [df_RGR.LAR.mean()],
+                                     'final_LAR': [df_RGR.LAR.iloc[-1]],
+                                     'avg_LMR': [df_RGR.LMR.mean()],
+                                     'final_LMR': [df_RGR.LMR.iloc[-1]],
+                                     'avg_SLA': [df_RGR.SLA.mean()]
+                                     })
 
     res_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'performance_indices.csv'), index=False)
-
 
 # def all_scenraii_postprocessings(scenarii_list_dirpath):
 #     # ------- Run the above functions for all the scenarii

@@ -9,7 +9,7 @@ graphs_titles_inputs = ['N_content_roots_axis', 'N_content_shoot_axis', 'N_conte
                         'SLN_nonstruct_blade', 'Conc_Nitrates_Soil',
                         'C_usages_cumulated', 'Photosynthetic_yield_blade', 'Photosynthetic_yield_plante', 'Photosynthetic_yield_plante2', 'Ts_blade', 'internode_Lmax', 'NNI_axis', 'N_dilution',
                         'S_Amino_Acids_blade', 'HATS_LATS_roots', 'senesced_mstruct_roots', 'synthetized_mstruct_roots', 'mstruct_axis', 'mstruct_roots',
-                        'Cont_WSC_DM_axis', 'Cont_WSC_DM_hz','Cont_WSC_DM_blade','Cont_WSC_DM_sheath']
+                        'Cont_WSC_DM_axis', 'Cont_WSC_DM_hz','Cont_WSC_DM_blade','Cont_WSC_DM_sheath', 'Photosynthetic_rates_F6']
 
 # Get the list of scenarii
 titi = os.listdir('outputs')
