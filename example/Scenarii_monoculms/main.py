@@ -1010,6 +1010,6 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
 
 if __name__ == '__main__':
-    main(simulation_length=3000, forced_start_time=2997,
-         run_simu=True, run_postprocessing=True, generate_graphs=False, run_from_outputs=True,
+    main(simulation_length=3000, forced_start_time=0,
+         run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          show_3Dplant=False, heterogeneous_canopy=True, METEO_FILENAME="meteo_PAR250.csv")

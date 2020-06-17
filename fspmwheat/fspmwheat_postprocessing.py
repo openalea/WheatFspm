@@ -387,7 +387,7 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
     # --- RUE (g DM. MJ-1 RGint estimated from LAI using Beer-Lambert's law with extinction coefficient of 0.4)
 
     # Beer-Lambert
-    df_LAI = df_elt[(df_elt.element == 'LeafElement1')].groupby(['t']).agg({'green_area': 'sum'})
+    df_LAI = df_elt[(df_elt.element == 'LeafElement1')].groupby(['t'], as_index=False).agg({'green_area': 'sum'})
     df_LAI['LAI'] = df_LAI.green_area * plant_density
     df_LAI['t'] = df_LAI.index
 
