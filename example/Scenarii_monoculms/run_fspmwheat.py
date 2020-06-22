@@ -96,7 +96,8 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path='outputs
         # -- SIMULATION CONDITIONS
 
         # Scenario input dirpath
-        SCENARIO_INPUT_DIRPATH = scenario_parameters.get('Inputs_Dirpath', INPUTS_DIRPATH)
+        SCENARIO_INPUTS_PLANTSOIL_DIRPATH = scenario_parameters.get('Inputs_PlantSoil_Dirpath', INPUTS_DIRPATH)
+        SCENARIO_INPUT_METEO_DIRPATH = scenario_parameters.get('Input_Meteo_Dirpath', INPUTS_DIRPATH)
 
         # Plant density and inter-row
         PLANT_DENSITY = {1: scenario_parameters.get('Plant_Density', 250.)}
@@ -122,12 +123,14 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path='outputs
         # -- RUN main fspmwheat --
         try:
             main.main(simulation_length=SIMULATION_LENGTH, forced_start_time=0,
-                      run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS, run_from_outputs=RUN_FROM_OUTPUTS,
+                      run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING,
+                      generate_graphs=GENERATE_GRAPHS, run_from_outputs=RUN_FROM_OUTPUTS,
                       show_3Dplant=False, heterogeneous_canopy=True,
                       N_fertilizations=N_FERTILIZATIONS,
                       PLANT_DENSITY=PLANT_DENSITY,
                       INTER_ROW=INTER_ROW,
-                      INPUTS_DIRPATH=SCENARIO_INPUT_DIRPATH,
+                      INPUTS_PLANTSOIL_DIRPATH=SCENARIO_INPUTS_PLANTSOIL_DIRPATH,
+                      INPUT_METEO_DIRPATH=SCENARIO_INPUT_METEO_DIRPATH,
                       METEO_FILENAME=scenario.get('METEO_FILENAME'),
                       GRAPHS_DIRPATH=scenario_graphs_dirpath,
                       OUTPUTS_DIRPATH=scenario_outputs_dirpath,

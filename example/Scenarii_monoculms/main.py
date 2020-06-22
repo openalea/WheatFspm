@@ -66,7 +66,7 @@ def save_df_to_csv(df, outputs_filepath, precision):
 def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
          option_static=False, show_3Dplant=True, tillers_replications=None, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, INTER_ROW=0.15, update_parameters_all_models=None,
-         INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
+         INPUTS_PLANTSOIL_DIRPATH='inputs', INPUT_METEO_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
     """
     Run a simulation of fspmwheat with coupling to several models
 
@@ -91,8 +91,8 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                          },
                                               'elongwheat': {'param1': 'val1', 'param2': 'val2'}
                                              }
-    :param str or dict INPUTS_DIRPATH: the path directory of inputs, can also be {'adel':str, 'plants':str, 'meteo':str, 'soils':str}
-                                                                    #  The directory at path 'adel' must contain files 'adel_pars.RData', 'adel0000.pckl' and 'scene0000.bgeom' for ADELWHEAT
+    :param str INPUTS_PLANTSOIL_DIRPATH: the path directory with plant and soil inputs
+    :param str INPUT_METEO_DIRPATH: the path directory of meteo inputs
     :param str METEO_FILENAME: the name of the file with meteo data
     :param str OUTPUTS_DIRPATH: the path to save outputs
     :param str POSTPROCESSING_DIRPATH: the path to save postprocessings
@@ -136,7 +136,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     # -- INPUTS CONFIGURATION --
 
     # Path of the directory which contains the inputs of the model
-    INPUTS_DIRPATH = INPUTS_DIRPATH
+    INPUTS_DIRPATH = INPUTS_PLANTSOIL_DIRPATH
 
     # Name of the CSV files which describes the initial state of the system
     AXES_INITIAL_STATE_FILENAME = 'axes_initial_state.csv'
@@ -198,7 +198,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     START_TIME = max(0, new_start_time)
 
     # Name of the CSV files which contains the meteo data
-    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t')
+    meteo = pd.read_csv(os.path.join(INPUT_METEO_DIRPATH, METEO_FILENAME), index_col='t')
 
     # -- OUTPUTS CONFIGURATION --
 
