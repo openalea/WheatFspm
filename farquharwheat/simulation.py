@@ -94,20 +94,45 @@ class Simulation(object):
                 Ts = self.inputs['axes'][axis_id]['SAM_temperature']
             else:
                 PARa = element_inputs['PARa']  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
-
-                surfacic_photosynthetic_proteins = model.calculate_surfacic_photosynthetic_proteins(element_inputs['proteins'],
-                                                                                                    element_inputs['green_area'])
-
-                SLN_nonstruct_Farquhar = model.calculate_surfacic_nonstructural_nitrogen_Farquhar(surfacic_photosynthetic_proteins)
-                surfacic_WSC = model.calculate_surfacic_WSC(element_inputs['sucrose'], element_inputs['starch'], element_inputs['fructan'], element_inputs['green_area'])
-
                 height_canopy = self.inputs['axes'][axis_id]['height_canopy']
 
-                Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC, Tr, Ts, gs = model.run(SLN_nonstruct_Farquhar,
-                                                                                 surfacic_WSC,
-                                                                                 element_inputs['width'],
-                                                                                 element_inputs['height'],
-                                                                                 PARa, Ta, ambient_CO2, RH, Ur, organ_label, height_canopy)
+                if parameters.MODEL_VERSION in ['SurfacicProteins', 'SurfacicProteins_Retroinhibition']:
+                    surfacic_photosynthetic_proteins = model.calculate_surfacic_photosynthetic_proteins(element_inputs['proteins'],
+                                                                                                        element_inputs['green_area'])
+
+                    SLN_nonstruct_Farquhar = model.calculate_surfacic_nonstructural_nitrogen_Farquhar(surfacic_photosynthetic_proteins)
+
+                    option_Retroinhibition = False
+                    surfacic_WSC = None
+                    if parameters.MODEL_VERSION == 'SurfacicProteins_Retroinhibition':
+                        option_Retroinhibition = True
+                        surfacic_WSC = model.calculate_surfacic_WSC(element_inputs['sucrose'], element_inputs['starch'], element_inputs['fructan'], element_inputs['green_area'])
+
+                    Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC, Tr, Ts, gs = model.run(SLN_nonstruct_Farquhar,
+                                                                                             option_Retroinhibition,
+                                                                                             surfacic_WSC,
+                                                                                             element_inputs['width'],
+                                                                                             element_inputs['height'],
+                                                                                             PARa, Ta, ambient_CO2,
+                                                                                             RH, Ur, organ_label, height_canopy)
+                elif parameters.MODEL_VERSION == 'Barillot2016':
+                    surfacic_nitrogen = model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
+                                                                          element_inputs['amino_acids'],
+                                                                          element_inputs['proteins'],
+                                                                          element_inputs['Nstruct'],
+                                                                          element_inputs['green_area'])
+                    option_Retroinhibition = False
+                    surfacic_WSC = 0. # Not used if option_Retoinhibition = False
+
+                    Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC, Tr, Ts, gs = model.run(surfacic_nitrogen,
+                                                                                             option_Retroinhibition,
+                                                                                             surfacic_WSC,
+                                                                                             element_inputs['width'],
+                                                                                             element_inputs['height'],
+                                                                                             PARa, Ta, ambient_CO2,
+                                                                                             RH, Ur, organ_label, height_canopy)
+                else:
+                    raise NameError('MODEL_VERSION is not none. MODEL_VERSION must be Barillot2016 or SurfacicProteins or SurfacicProteins_Retroinhibition.')
 
             element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd,
                                'Ac': Ac, 'Aj': Aj, 'Ap': Ap, 'Ag_before_inhibition_WSC': Ag_before_inhibition_WSC,

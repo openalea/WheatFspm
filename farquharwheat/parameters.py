@@ -10,6 +10,44 @@
     :license: see LICENSE for details.
 
 """
+# -- Version of the photosynthesis sub model
+MODEL_VERSION = ['Barillot2016', 'SurfacicProteins', 'SurfacicProteins_Retroinhibition'][2]
+
+if MODEL_VERSION == 'Barillot2016':
+    # Dependence to surfacic_nitrogen including structural nitrogen
+
+    # -- Nitrogen dependance of photosynthetic parameters (derived from Braune et al. (2009) and Evers et al. (2010):
+    #     * S_surfacic_nitrogen: slope of the relation between surfacic_nitrogen and the parameter
+    #         * alpha: mol e- m2 mol-1 photon g-1 N
+    #         * Vc_max25: µmol CO2 g-1 N s-1
+    #         * Jmax25: µmol e- g-1 N s-1
+    #         * TPU25: µmol CO2 g-1 N s-1
+    #         * Rdark25: µmol CO2 g-1 N s-1
+    #     * surfacic_nitrogen_min: minimum amount of nitrogen below which photosynthesis rate is zero (g (N) m-2)
+    #     * beta: intercept parameter of the relation between alpha and surfacic_nitrogen (mol e- mol-1 photons)
+    #     * delta1 and delta2: parameters of m (scaling factor of gs) dependance to surfacic_nitrogen (m2 g-1 and dimensionless, respectively)
+    PARAM_N = {'S_surfacic_nitrogen': {'Vc_max25': 84.965, 'Jmax25': 117.6, 'alpha': 0.0413, 'TPU25': 9.25, 'Rdark25': 0.493},
+               'surfacic_nitrogen_min': {'Vc_max25': 0.17, 'Jmax25': 0.17, 'TPU25': 0.229, 'Rdark25': 0.118}, 'beta': 0.2101, 'delta1': 14.7, 'delta2': -0.548}
+    NA_0 = 2  # Initial value of surfacic_nitrogen (g m-2), used if no surfacic_nitrogen is provided by user
+    Psurf_to_SLNnonstruct = 1.06  #: Conversion factor from surfacic protein content to non structural SLN (estimation from NEMA and Ljutovac simulations)
+
+if MODEL_VERSION in ['SurfacicProteins', 'SurfacicProteins_Retroinhibition']:
+    # Dependence to surfacic_nitrogen without structural nitrogen
+
+    # -- Nitrogen dependance of photosynthetic parameters (derived from Braune et al. (2009) and Evers et al. (2010):
+    #     * S_surfacic_nitrogen: slope of the relation between surfacic_nitrogen and the parameter
+    #         * alpha: mol e- m2 mol-1 photon g-1 N
+    #         * Vc_max25: µmol CO2 g-1 N s-1
+    #         * Jmax25: µmol e- g-1 N s-1
+    #         * TPU25: µmol CO2 g-1 N s-1
+    #         * Rdark25: µmol CO2 g-1 N s-1
+    #     * surfacic_nitrogen_min: minimum amount of nitrogen below which photosynthesis rate is zero (g (N) m-2)
+    #     * beta: intercept parameter of the relation between alpha and surfacic_nitrogen (mol e- mol-1 photons)
+    #     * delta1 and delta2: parameters of m (scaling factor of gs) dependance to surfacic_nitrogen (m2 g-1 and dimensionless, respectively)
+    PARAM_N = {'S_surfacic_nitrogen': {'Vc_max25': 84.965, 'Jmax25': 117.6, 'alpha': 0.0413, 'TPU25': 9.25, 'Rdark25': 0.493},
+               'surfacic_nitrogen_min': {'Vc_max25': 0., 'Jmax25': 0., 'TPU25': 0., 'Rdark25': 0.}, 'beta': 0.2101 + 0.0083, 'delta1': 14.7, 'delta2': -0.548}
+    NA_0 = 2  # Initial value of surfacic_nitrogen (g m-2), used if no surfacic_nitrogen is provided by user
+    Psurf_to_SLNnonstruct = 1.06  #: Conversion factor from surfacic protein content to non structural SLN (estimation from NEMA and Ljutovac simulations)
 
 # -- Molecular weights
 MM_WATER = 18  # Molar mass of water (g mol-1)
@@ -65,21 +103,6 @@ Rd_A = 0.33  # parameter A in the calculation of the Rd
 Rd_B = 0.5  # parameter B in the calculation of the Rd
 Rd_C = 15  # parameter C in the calculation of the Rd
 Ci_init_ratio = 0.7
-
-# -- Nitrogen dependance of photosynthetic parameters (derived from Braune et al. (2009) and Evers et al. (2010):
-#     * S_surfacic_nitrogen: slope of the relation between surfacic_nitrogen and the parameter
-#         * alpha: mol e- m2 mol-1 photon g-1 N
-#         * Vc_max25: µmol CO2 g-1 N s-1
-#         * Jmax25: µmol e- g-1 N s-1
-#         * TPU25: µmol CO2 g-1 N s-1
-#         * Rdark25: µmol CO2 g-1 N s-1
-#     * surfacic_nitrogen_min: minimum amount of nitrogen below which photosynthesis rate is zero (g (N) m-2)
-#     * beta: intercept parameter of the relation between alpha and surfacic_nitrogen (mol e- mol-1 photons)
-#     * delta1 and delta2: parameters of m (scaling factor of gs) dependance to surfacic_nitrogen (m2 g-1 and dimensionless, respectively)
-PARAM_N = {'S_surfacic_nitrogen': {'Vc_max25': 84.965, 'Jmax25': 117.6, 'alpha': 0.0413, 'TPU25': 9.25, 'Rdark25': 0.493},
-           'surfacic_nitrogen_min': {'Vc_max25': 0., 'Jmax25': 0., 'TPU25': 0., 'Rdark25': 0.}, 'beta': 0.2101 + 0.0083, 'delta1': 14.7, 'delta2': -0.548}
-NA_0 = 2  # Initial value of surfacic_nitrogen (g m-2), used if no surfacic_nitrogen is provided by user
-Psurf_to_SLNnonstruct = 1.06  #: Conversion factor from surfacic protein content to non structural SLN (estimation from NEMA and Ljutovac simulations)
 
 # -- Stomatal conductance parameter
 GSMIN = 0.05  # Minimum gsw, measured in the dark (mol m-2 s-1). Braune et al. (2009).

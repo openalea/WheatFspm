@@ -94,13 +94,13 @@ def _organ_temperature(w, z, Zh, Ur, PAR, gsw, Ta, Ts, RH, organ_name):
     return Ts, Tr
 
 
-def _stomatal_conductance(Ag, An, surfacic_nonstructural_nitrogen, ambient_CO2, RH):
+def _stomatal_conductance(Ag, An, surfacic_nitrogen, ambient_CO2, RH):
     """
     Ball, Woodrow, and Berry model of stomatal conductance (1987)
 
     :param float Ag: gross assimilation rate (µmol m-2 s-1)
     :param float An: net assimilation rate (µmol m-2 s-1)
-    :param float surfacic_nonstructural_nitrogen: surfacic non-structural nitrogen content(g m-2)
+    :param float surfacic_nitrogen: surfacic nitrogen content(g m-2) including or not structural nitrogen depending on parameter.MODEL_VERSION
     :param float ambient_CO2: Air CO2 (µmol mol-1)
     :param float RH: Relative humidity (decimal fraction)
 
@@ -109,7 +109,7 @@ def _stomatal_conductance(Ag, An, surfacic_nonstructural_nitrogen, ambient_CO2, 
     """
 
     Cs = ambient_CO2 - An * (parameters.K_Cs / parameters.GB)  #: CO2 concentration at organ surface (µmol mol-1 or Pa). From Prieto et al. (2012). GB in mol m-2 s-1
-    m = parameters.PARAM_N['delta1'] * surfacic_nonstructural_nitrogen ** parameters.PARAM_N['delta2']  #: Scaling factor dependance to surfacic_nitrogen (dimensionless). This focntion is maintained
+    m = parameters.PARAM_N['delta1'] * surfacic_nitrogen ** parameters.PARAM_N['delta2']  #: Scaling factor dependance to surfacic_nitrogen (dimensionless). This focntion is maintained
     # although I'm not conviced that it should be taken into account
     gsw = (parameters.GSMIN + m * ((Ag * RH) / Cs))  #: Stomatal conductance to water vapour (mol m-2 s-1), from Braune et al. (2009), Muller et al. (2005): using Ag rather than An.
     # Would be better with a function of VPD and with (Ci-GAMMA) instead of Cs.
@@ -154,7 +154,7 @@ def _f_temperature(pname, p25, T):
         deltaS = parameters.PARAM_TEMP['deltaS'][pname]  #: entropy term of parameter pname (kJ mol-1 K-1)
         deltaHd = parameters.PARAM_TEMP['deltaHd'][pname]  #: Enthalpie of deactivation of parameter pname (kJ mol-1)
         f_deactivation = (1 + exp((Tref * deltaS - deltaHd) / (Tref * parameters.R * 1E-3))) / (
-                    1 + exp((Tk * deltaS - deltaHd) / (Tk * parameters.R * 1E-3)))  #: Energy of deactivation (normalized to unity)
+                1 + exp((Tk * deltaS - deltaHd) / (Tk * parameters.R * 1E-3)))  #: Energy of deactivation (normalized to unity)
     else:
         f_deactivation = 1
 
@@ -179,13 +179,14 @@ def _inhibition_by_WSC(WSC):
     return RD_A
 
 
-def calculate_photosynthesis(PAR, surfacic_nonstructural_nitrogen, surfacic_WSC, Ts, Ci):
+def calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, Ts, Ci):
     """
     Computes photosynthesis rate following Farquhar's model with regulation by organ temperature and nitrogen content.
     In this version, most of parameters are derived from Braune et al. (2009) on barley and Evers et al. (2010) for N dependencies.
 
     :param float PAR: PAR absorbed (µmol m-2 s-1)
-    :param float surfacic_nonstructural_nitrogen: surfacic non-structural nitrogen content(g m-2)
+    :param float surfacic_nitrogen: surfacic nitrogen content(g m-2) including or not structural nitrogen depending on parameter.MODEL_VERSION
+    :param bool option_Retroinhibition: if True, Ag is inhibited by surfacic WSC
     :param float surfacic_WSC: surfacic content of water soluble carbohydrates (µmol C m-2)
     :param float Ts: organ temperature (degree C)
     :param float Ci: internal CO2 (µmol mol-1), Ci = 0.7*CO2air for the first iteration
@@ -202,15 +203,15 @@ def calculate_photosynthesis(PAR, surfacic_nonstructural_nitrogen, surfacic_WSC,
     #: RuBisCO-limited carboxylation rate
     Sna_Vcmax25 = parameters.PARAM_N['S_surfacic_nitrogen']['Vc_max25']
     surfacic_nitrogen_min_Vcmax25 = parameters.PARAM_N['surfacic_nitrogen_min']['Vc_max25']
-    Vc_max25 = Sna_Vcmax25 * (surfacic_nonstructural_nitrogen - surfacic_nitrogen_min_Vcmax25)  #: Relation between Vc_max25 and surfacic_nonstructural_nitrogen (µmol m-2 s-1)
+    Vc_max25 = Sna_Vcmax25 * (surfacic_nitrogen - surfacic_nitrogen_min_Vcmax25)  #: Relation between Vc_max25 and surfacic_nonstructural_nitrogen (µmol m-2 s-1)
     Vc_max = _f_temperature('Vc_max', Vc_max25, Ts)  #: Relation between Vc_max and temperature (µmol m-2 s-1)
     Ac = (Vc_max * (Ci - Gamma)) / (Ci + Kc * (1 + parameters.O / Ko))  #: Rate of assimilation under Vc_max limitation (µmol m-2 s-1)
 
     #: RuBP regeneration-limited carboxylation rate via electron transport
-    ALPHA = parameters.PARAM_N['S_surfacic_nitrogen']['alpha'] * surfacic_nonstructural_nitrogen + parameters.PARAM_N['beta']  #: Relation between ALPHA and surfacic_nitrogen (mol e- mol-1 photon)
+    ALPHA = parameters.PARAM_N['S_surfacic_nitrogen']['alpha'] * surfacic_nitrogen + parameters.PARAM_N['beta']  #: Relation between ALPHA and surfacic_nitrogen (mol e- mol-1 photon)
     Sna_Jmax25 = parameters.PARAM_N['S_surfacic_nitrogen']['Jmax25']
     surfacic_nitrogen_min_Jmax25 = parameters.PARAM_N['surfacic_nitrogen_min']['Jmax25']
-    Jmax25 = Sna_Jmax25 * (surfacic_nonstructural_nitrogen - surfacic_nitrogen_min_Jmax25)  #: Relation between Jmax25 and surfacic_nitrogen (µmol m-2 s-1)
+    Jmax25 = Sna_Jmax25 * (surfacic_nitrogen - surfacic_nitrogen_min_Jmax25)  #: Relation between Jmax25 and surfacic_nitrogen (µmol m-2 s-1)
     Jmax = _f_temperature('Jmax', Jmax25, Ts)  #: Relation between Jmax and temperature (µmol m-2 s-1)
 
     J = ((Jmax + ALPHA * PAR) - sqrt((Jmax + ALPHA * PAR) ** parameters.J_expo - parameters.J_A * parameters.THETA * ALPHA * PAR * Jmax)) / (
@@ -220,7 +221,7 @@ def calculate_photosynthesis(PAR, surfacic_nonstructural_nitrogen, surfacic_WSC,
     #: Triose phosphate utilisation-limited carboxylation rate --- NOT USED, calculated just for information
     Sna_TPU25 = parameters.PARAM_N['S_surfacic_nitrogen']['TPU25']
     surfacic_nitrogen_min_TPU25 = parameters.PARAM_N['surfacic_nitrogen_min']['TPU25']
-    TPU25 = Sna_TPU25 * (surfacic_nonstructural_nitrogen - surfacic_nitrogen_min_TPU25)  #: Relation between TPU25 and surfacic_nitrogen (µmol m-2 s-1)
+    TPU25 = Sna_TPU25 * (surfacic_nitrogen - surfacic_nitrogen_min_TPU25)  #: Relation between TPU25 and surfacic_nitrogen (µmol m-2 s-1)
     TPU = _f_temperature('TPU', TPU25, Ts)  #: Relation between TPU and temperature (µmol m-2 s-1)
     Vomax = (Vc_max * Ko * Gamma) / (parameters.Vomax_A * Kc * parameters.O)  #: Maximum rate of Vo (µmol m-2 s-1) (µmol m-2 s-1)
     Vo = (Vomax * parameters.O) / (parameters.O + Ko * (1 + Ci / Kc))  #: Rate of oxygenation of RuBP (µmol m-2 s-1)
@@ -230,11 +231,14 @@ def calculate_photosynthesis(PAR, surfacic_nonstructural_nitrogen, surfacic_WSC,
     # where 0 < alpha > 1 is the fraction of glycolate carbon not returned to the chloroplast, but I couldn't find any estimation of alpha for wheat
 
     #: Gross assimilation rate (µmol m-2 s-1)
-    Ag_before_inhibition_WSC = min(Ac, Aj)
-    Ag = Ag_before_inhibition_WSC * (1 - _inhibition_by_WSC(surfacic_WSC))
+    if option_Retroinhibition:
+        Ag_before_inhibition_WSC = min(Ac, Aj)
+        Ag = Ag_before_inhibition_WSC * (1 - _inhibition_by_WSC(surfacic_WSC))
+    else:
+        Ag_before_inhibition_WSC = Ag = min(Ac, Aj, Ap)
 
     #: Mitochondrial respiration rate of organ in light Rd (processes other than photorespiration)
-    Rdark25 = parameters.PARAM_N['S_surfacic_nitrogen']['Rdark25'] * (surfacic_nonstructural_nitrogen - parameters.PARAM_N['surfacic_nitrogen_min'][
+    Rdark25 = parameters.PARAM_N['S_surfacic_nitrogen']['Rdark25'] * (surfacic_nitrogen - parameters.PARAM_N['surfacic_nitrogen_min'][
         'Rdark25'])  #: Relation between Rdark25 (respiration in obscurity at 25 degree C) and surfacic_nitrogen (µmol m-2 s-1)
     Rdark = _f_temperature('Rdark', Rdark25, Ts)  #: Relation between Rdark and temperature (µmol m-2 s-1)
     Rd = Rdark * (parameters.Rd_A + (1 - parameters.Rd_A) * parameters.Rd_B ** (PAR / parameters.Rd_C))  # Found in Muller et al. (2005), eq. 19 (µmol m-2 s-1)
@@ -317,15 +321,16 @@ def calculate_surfacic_WSC(sucrose, starch, fructan, green_area):
     return (sucrose + starch + fructan) / green_area
 
 
-def run(surfacic_nonstructural_nitrogen, surfacic_WSC, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name, height_canopy):
+def run(surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name, height_canopy):
     """
     Computes the photosynthesis of a photosynthetic element. The photosynthesis is computed by using the biochemical FCB model (Farquhar et al., 1980) coupled to the semiempirical
     BWB model of stomatal conductance (Ball, 1987).
 
-    :param float surfacic_nonstructural_nitrogen: surfacic non-structural nitrogen content of organs (g m-2), obtained by the sum of nitrogen, amino acids and proteins.
+    :param float surfacic_nitrogen: surfacic nitrogen content of organs (g m-2), including or not structural nitrogen depending on parameter.MODEL_VERSION
            Properly speaking, photosynthesis should be related to proteins (RubisCO), but parameters of most Farquhar models are calibrated on total N measurements (DUMAS method).
            We use only non-structural nitrogen to overcome issues in the case of extrem scenarios (high SLN for thick leaves under low nitrogen conditions).
            If None, surfacic_nitrogen = :attr:`NA_0`
+    :param bool option_Retroinhibition: if True, Ag is inhibited by surfacic WSC
     :param float surfacic_WSC: surfacic content of water soluble carbohydrates (µmol C m-2)
     :param float width: width of the organ (or diameter for stem organ) (m),
            characteristic dimension to be considered for heat transfer through forced convection (by wind).
@@ -345,8 +350,8 @@ def run(surfacic_nonstructural_nitrogen, surfacic_WSC, width, height, PAR, Ta, a
     :rtype: (float, float, float, float, float, float, float, float, float, float)
     """
 
-    if surfacic_nonstructural_nitrogen is None:
-        surfacic_nonstructural_nitrogen = parameters.NA_0
+    if surfacic_nitrogen is None:
+        surfacic_nitrogen = parameters.NA_0
 
     # Iterations to find organ temperature and Ci #
     Ci, Ts = parameters.Ci_init_ratio * ambient_CO2, Ta  # Initial values
@@ -354,9 +359,9 @@ def run(surfacic_nonstructural_nitrogen, surfacic_WSC, width, height, PAR, Ta, a
 
     while True:
         prec_Ci, prec_Ts = Ci, Ts
-        Ag, An, Rd, Ac, Aj, Ap, Ap_inhibited_WSC = calculate_photosynthesis(PAR, surfacic_nonstructural_nitrogen, surfacic_WSC, Ts, Ci)
+        Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC = calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, Ts, Ci)
         # Stomatal conductance to water
-        gsw = _stomatal_conductance(Ag, An, surfacic_nonstructural_nitrogen, ambient_CO2, RH)
+        gsw = _stomatal_conductance(Ag, An, surfacic_nitrogen, ambient_CO2, RH)
 
         # New value of Ci
         Ci = _calculate_Ci(ambient_CO2, An, gsw)
@@ -379,4 +384,5 @@ def run(surfacic_nonstructural_nitrogen, surfacic_WSC, width, height, PAR, Ta, a
     #: Decrease efficency of non-lamina organs
     if organ_name != 'blade':
         Ag = Ag * parameters.EFFICENCY_STEM
-    return Ag, An, Rd, Ac, Aj, Ap, Ap_inhibited_WSC, Tr, Ts, gsw
+        Ag_before_inhibition_WSC = Ag_before_inhibition_WSC * parameters.EFFICENCY_STEM
+    return Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC, Tr, Ts, gsw
