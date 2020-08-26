@@ -15,4 +15,4 @@
     .. see also:: Barillot et al. 2016.
 """
 
-__version__ = '1.0'
+__version__ = '2.0'
