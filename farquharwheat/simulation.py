@@ -90,7 +90,6 @@ class Simulation(object):
             # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
             if element_inputs['height'] is None:
                 Ag, An, Rd, Tr, gs = 0., 0., 0., 0., 0.
-                Ac, Aj, Ap, Ag_before_inhibition_WSC = 0., 0., 0., 0.
                 Ts = self.inputs['axes'][axis_id]['SAM_temperature']
             else:
                 PARa = element_inputs['PARa']  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
@@ -109,12 +108,12 @@ class Simulation(object):
                         surfacic_WSC = model.calculate_surfacic_WSC(element_inputs['sucrose'], element_inputs['starch'], element_inputs['fructan'], element_inputs['green_area'])
 
                     Ag, An, Rd, Tr, Ts, gs = model.run(SLN_nonstruct_Farquhar,
-                                                                                             option_Retroinhibition,
-                                                                                             surfacic_WSC,
-                                                                                             element_inputs['width'],
-                                                                                             element_inputs['height'],
-                                                                                             PARa, Ta, ambient_CO2,
-                                                                                             RH, Ur, organ_label, height_canopy)
+                                                       option_Retroinhibition,
+                                                       surfacic_WSC,
+                                                       element_inputs['width'],
+                                                       element_inputs['height'],
+                                                       PARa, Ta, ambient_CO2,
+                                                       RH, Ur, organ_label, height_canopy)
                 elif parameters.MODEL_VERSION == 'Barillot2016':
                     surfacic_nitrogen = model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
                                                                           element_inputs['amino_acids'],
@@ -124,13 +123,13 @@ class Simulation(object):
                     option_Retroinhibition = False
                     surfacic_WSC = 0. # Not used if option_Retoinhibition = False
 
-                    Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC, Tr, Ts, gs = model.run(surfacic_nitrogen,
-                                                                                             option_Retroinhibition,
-                                                                                             surfacic_WSC,
-                                                                                             element_inputs['width'],
-                                                                                             element_inputs['height'],
-                                                                                             PARa, Ta, ambient_CO2,
-                                                                                             RH, Ur, organ_label, height_canopy)
+                    Ag, An, Rd, Tr, Ts, gs = model.run(surfacic_nitrogen,
+                                                       option_Retroinhibition,
+                                                       surfacic_WSC,
+                                                       element_inputs['width'],
+                                                       element_inputs['height'],
+                                                       PARa, Ta, ambient_CO2,
+                                                       RH, Ur, organ_label, height_canopy)
                 else:
                     raise NameError('MODEL_VERSION is not none. MODEL_VERSION must be Barillot2016 or SurfacicProteins or SurfacicProteins_Retroinhibition.')
 

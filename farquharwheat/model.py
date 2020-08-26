@@ -192,7 +192,7 @@ def calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, sur
     :param float Ci: internal CO2 (µmol mol-1), Ci = 0.7*CO2air for the first iteration
 
     :return: Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1)
-    :rtype: (float, float, float, float, float, float, float)
+    :rtype: (float, float, float)
     """
 
     #: RuBisCO parameters dependance to temperature
@@ -345,7 +345,7 @@ def run(surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, width, height, 
 
     :return: Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1),
         Tr (mmol m-2 s-1), Ts (°C) and  gsw (mol m-2 s-1)
-    :rtype: (float, float, float, float, float, float, float, float, float, float)
+    :rtype: (float, float, float, float, float, float)
     """
 
     if surfacic_nitrogen is None:
