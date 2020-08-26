@@ -2,7 +2,8 @@
 
 from __future__ import division  # use "//" to do integer division
 
-import model
+from farquharwheat import model
+from farquharwheat import parameters
 
 """
     farquharwheat.simulation
@@ -28,13 +29,13 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
 
-    def __init__(self):
+    def __init__(self, update_parameters=None):
 
         #: The inputs of Farquhar-Wheat.
         #:
         #: `inputs` is a dictionary of dictionaries:
         #:     {(plant_index, axis_label, metamer_index, organ_label, element_label): {element_input_name: element_input_value, ...}, ...}
-        #: See :meth:`Model.run <farquharwheat.model.Model.run>`
+        #: See :meth:`Model.run <farquharwheat.model.run>`
         #: for more information about the inputs.
         self.inputs = {}
 
@@ -42,9 +43,13 @@ class Simulation(object):
         #:
         #: `outputs` is a dictionary of dictionaries:
         #:     {(plant_index, axis_label, metamer_index, organ_label, element_label): {element_output_name: element_output_value, ...}, ...}
-        #: See :meth:`Model.run <farquharwheat.model.Model.run>`
+        #: See :meth:`Model.run <farquharwheat.model.run>`
         #: for more information about the outputs.
         self.outputs = {}
+
+        #: Update parameters if specified
+        if update_parameters:
+            parameters.__dict__.update(update_parameters)
 
     def initialize(self, inputs):
         """
@@ -55,7 +60,7 @@ class Simulation(object):
                     - `axes` : The inputs by axis.
               `inputs` must be a dictionary with the same structure as :attr:`inputs`.
 
-            See :meth:`Model.run <farquharwheat.model.Model.run>`
+            See :meth:`Model.run <farquharwheat.model.run>`
                for more information about the inputs.
         """
         self.inputs.clear()
@@ -84,22 +89,53 @@ class Simulation(object):
                 continue
             # In case it is an HiddenElement, we need temperature calculation. Cases of Visible Element without geomtry proprety (because too small) don't have photosynthesis calculation neither.
             if element_inputs['height'] is None:
-                Ag, An, Rd, Tr, gs = 0.0, 0.0, 0.0, 0.0, 0.0
+                Ag, An, Rd, Tr, gs = 0., 0., 0., 0., 0.
+                Ac, Aj, Ap, Ag_before_inhibition_WSC = 0., 0., 0., 0.
                 Ts = self.inputs['axes'][axis_id]['SAM_temperature']
             else:
                 PARa = element_inputs['PARa']  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
-
-                surfacic_photosynthetic_proteins = model.Model.calculate_surfacic_photosynthetic_proteins(element_inputs['proteins'],
-                                                                                                          element_inputs['green_area'])
-
-                estimate_SLN_nonstruct = surfacic_photosynthetic_proteins * 1.06  # TODO: create a separated parameters.py file
-
                 height_canopy = self.inputs['axes'][axis_id]['height_canopy']
-                Ag, An, Rd, Tr, Ts, gs = model.Model.run(estimate_SLN_nonstruct,
-                                                         element_inputs['width'],
-                                                         element_inputs['height'],
-                                                         PARa, Ta, ambient_CO2, RH, Ur, organ_label, height_canopy)
 
-            element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd, 'Tr': Tr, 'Ts': Ts, 'gs': gs, 'width': element_inputs['width'], 'height': element_inputs['height']}
+                if parameters.MODEL_VERSION in ['SurfacicProteins', 'SurfacicProteins_Retroinhibition']:
+                    surfacic_photosynthetic_proteins = model.calculate_surfacic_photosynthetic_proteins(element_inputs['proteins'],
+                                                                                                        element_inputs['green_area'])
+
+                    SLN_nonstruct_Farquhar = model.calculate_surfacic_nonstructural_nitrogen_Farquhar(surfacic_photosynthetic_proteins)
+
+                    option_Retroinhibition = False
+                    surfacic_WSC = None
+                    if parameters.MODEL_VERSION == 'SurfacicProteins_Retroinhibition':
+                        option_Retroinhibition = True
+                        surfacic_WSC = model.calculate_surfacic_WSC(element_inputs['sucrose'], element_inputs['starch'], element_inputs['fructan'], element_inputs['green_area'])
+
+                    Ag, An, Rd, Tr, Ts, gs = model.run(SLN_nonstruct_Farquhar,
+                                                                                             option_Retroinhibition,
+                                                                                             surfacic_WSC,
+                                                                                             element_inputs['width'],
+                                                                                             element_inputs['height'],
+                                                                                             PARa, Ta, ambient_CO2,
+                                                                                             RH, Ur, organ_label, height_canopy)
+                elif parameters.MODEL_VERSION == 'Barillot2016':
+                    surfacic_nitrogen = model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
+                                                                          element_inputs['amino_acids'],
+                                                                          element_inputs['proteins'],
+                                                                          element_inputs['Nstruct'],
+                                                                          element_inputs['green_area'])
+                    option_Retroinhibition = False
+                    surfacic_WSC = 0. # Not used if option_Retoinhibition = False
+
+                    Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC, Tr, Ts, gs = model.run(surfacic_nitrogen,
+                                                                                             option_Retroinhibition,
+                                                                                             surfacic_WSC,
+                                                                                             element_inputs['width'],
+                                                                                             element_inputs['height'],
+                                                                                             PARa, Ta, ambient_CO2,
+                                                                                             RH, Ur, organ_label, height_canopy)
+                else:
+                    raise NameError('MODEL_VERSION is not none. MODEL_VERSION must be Barillot2016 or SurfacicProteins or SurfacicProteins_Retroinhibition.')
+
+            element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd,
+                               'Tr': Tr, 'Ts': Ts, 'gs': gs,
+                               'width': element_inputs['width'], 'height': element_inputs['height']}
 
             self.outputs[element_id] = element_outputs
