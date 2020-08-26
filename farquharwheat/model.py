@@ -165,11 +165,11 @@ def _f_temperature(pname, p25, T):
 
 def _inhibition_by_WSC(WSC):
     """
-    Calculates the relative diminution of Ap (or Ag) due to inhibition by WSC. Adapted from Azcon-Bieto 1983
+    Calculates the relative diminution of Ag due to inhibition by WSC. Adapted from Azcon-Bieto 1983
 
     :param float WSC: Surfacic content of water soluble carbohydrates  (µmol C m-2)
 
-    :return: Ci (µmol mol-1)
+    :return: Relative diminution (dimensionless)
     :rtype: float
     """
     if WSC <= parameters.WSC_min:
@@ -191,7 +191,7 @@ def calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, sur
     :param float Ts: organ temperature (degree C)
     :param float Ci: internal CO2 (µmol mol-1), Ci = 0.7*CO2air for the first iteration
 
-    :return: Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1), Ac (µmol m-2 s-1), Aj (µmol m-2 s-1), Ap (µmol m-2 s-1), Ap_inhibited_WSC (µmol m-2 s-1)
+    :return: Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1)
     :rtype: (float, float, float, float, float, float, float)
     """
 
@@ -232,10 +232,9 @@ def calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, sur
 
     #: Gross assimilation rate (µmol m-2 s-1)
     if option_Retroinhibition:
-        Ag_before_inhibition_WSC = min(Ac, Aj)
-        Ag = Ag_before_inhibition_WSC * (1 - _inhibition_by_WSC(surfacic_WSC))
+        Ag = min(Ac, Aj) * (1 - _inhibition_by_WSC(surfacic_WSC))
     else:
-        Ag_before_inhibition_WSC = Ag = min(Ac, Aj, Ap)
+        Ag = min(Ac, Aj, Ap)
 
     #: Mitochondrial respiration rate of organ in light Rd (processes other than photorespiration)
     Rdark25 = parameters.PARAM_N['S_surfacic_nitrogen']['Rdark25'] * (surfacic_nitrogen - parameters.PARAM_N['surfacic_nitrogen_min'][
@@ -249,7 +248,7 @@ def calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, sur
     else:
         An = Ag - Rd
 
-    return Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC
+    return Ag, An, Rd
 
 
 def calculate_surfacic_nitrogen(nitrates, amino_acids, proteins, Nstruct, green_area):
@@ -345,7 +344,6 @@ def run(surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, width, height, 
     :param float height_canopy: total canopy height (m)
 
     :return: Ag (µmol m-2 s-1), An (µmol m-2 s-1), Rd (µmol m-2 s-1),
-        Ac (µmol m-2 s-1), Aj (µmol m-2 s-1), Ap (µmol m-2 s-1), Ap_inhibited_WSC (µmol m-2 s-1),
         Tr (mmol m-2 s-1), Ts (°C) and  gsw (mol m-2 s-1)
     :rtype: (float, float, float, float, float, float, float, float, float, float)
     """
@@ -359,7 +357,7 @@ def run(surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, width, height, 
 
     while True:
         prec_Ci, prec_Ts = Ci, Ts
-        Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC = calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, Ts, Ci)
+        Ag, An, Rd = calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, Ts, Ci)
         # Stomatal conductance to water
         gsw = _stomatal_conductance(Ag, An, surfacic_nitrogen, ambient_CO2, RH)
 
@@ -384,5 +382,4 @@ def run(surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, width, height, 
     #: Decrease efficency of non-lamina organs
     if organ_name != 'blade':
         Ag = Ag * parameters.EFFICENCY_STEM
-        Ag_before_inhibition_WSC = Ag_before_inhibition_WSC * parameters.EFFICENCY_STEM
-    return Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC, Tr, Ts, gsw
+    return Ag, An, Rd, Tr, Ts, gsw

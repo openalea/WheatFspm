@@ -108,7 +108,7 @@ class Simulation(object):
                         option_Retroinhibition = True
                         surfacic_WSC = model.calculate_surfacic_WSC(element_inputs['sucrose'], element_inputs['starch'], element_inputs['fructan'], element_inputs['green_area'])
 
-                    Ag, An, Rd, Ac, Aj, Ap, Ag_before_inhibition_WSC, Tr, Ts, gs = model.run(SLN_nonstruct_Farquhar,
+                    Ag, An, Rd, Tr, Ts, gs = model.run(SLN_nonstruct_Farquhar,
                                                                                              option_Retroinhibition,
                                                                                              surfacic_WSC,
                                                                                              element_inputs['width'],
@@ -135,7 +135,6 @@ class Simulation(object):
                     raise NameError('MODEL_VERSION is not none. MODEL_VERSION must be Barillot2016 or SurfacicProteins or SurfacicProteins_Retroinhibition.')
 
             element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd,
-                               'Ac': Ac, 'Aj': Aj, 'Ap': Ap, 'Ag_before_inhibition_WSC': Ag_before_inhibition_WSC,
                                'Tr': Tr, 'Ts': Ts, 'gs': gs,
                                'width': element_inputs['width'], 'height': element_inputs['height']}
 
