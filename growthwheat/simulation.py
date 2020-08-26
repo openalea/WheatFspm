@@ -4,8 +4,8 @@ from __future__ import division  # use "//" to do integer division
 
 import copy
 
-import model
-import parameters
+from growthwheat import model
+from growthwheat import parameters
 
 from respiwheat.model import RespirationModel
 
@@ -35,7 +35,7 @@ HIDDENZONE_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enc
                       'Nstruct', 'Respi_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct', 'is_over', 'leaf_is_remobilizing', 'internode_is_remobilizing']
 ELEMENT_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'nitrates', 'mstruct', 'Nstruct',
                    'green_area', 'max_proteins', 'max_mstruct', 'Nresidual', 'senesced_length_element', 'senesced_mstruct']
-ROOT_OUTPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'Respi_growth', 'R_min_upt', 'rate_mstruct_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct']
+ROOT_OUTPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'Respi_growth', 'R_min_upt', 'delta_mstruct_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct']
 AXIS_OUTPUTS = []
 
 #: the inputs and outputs of GrowthWheat.
@@ -385,7 +385,7 @@ class Simulation(object):
             curr_root_outputs['sucrose'] -= (curr_root_outputs['sucrose_consumption_mstruct'] + curr_root_outputs['Respi_growth'])
             curr_root_outputs['Nstruct'] += Nstruct_growth
             curr_root_outputs['amino_acids'] -= curr_root_outputs['AA_consumption_mstruct']
-            curr_root_outputs['rate_mstruct_growth'] = mstruct_growth / self.delta_t
+            curr_root_outputs['delta_mstruct_growth'] = mstruct_growth
             self.outputs['roots'][root_id] = curr_root_outputs
 
             # Update of axis outputs

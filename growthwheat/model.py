@@ -1,7 +1,7 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import division  # use "//" to do integer division
-import parameters
+from growthwheat import parameters
 
 """
     growthwheat.model
@@ -219,7 +219,6 @@ def calculate_sheath_mstruct(sheath_L, LSSW):
     return sheath_L * LSSW
 
 
-# Roots
 def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_teq, postflowering_stages):
     """Root structural dry mass growth integrated over delta_t
 
@@ -241,7 +240,8 @@ def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_teq, pos
     N = parameters.N_ROOTS_GROWTH
 
     mstruct_C_growth = ((conc_sucrose ** N) * Vmax) / ((conc_sucrose ** N) + (parameters.K_ROOTS_GROWTH ** N)) * delta_teq * mstruct  #: root growth in C (µmol of C)
-    mstruct_growth = (mstruct_C_growth * 1E-6 * parameters.C_MOLAR_MASS) / parameters.RATIO_C_MSTRUCT_ROOTS  #: root growth (g of structural dry mass)
+    mstruct_growth = mstruct_C_growth * parameters.CONVERSION_MMOL_C_G_MSTRUCT_ROOTS  #: root growth (g of structural dry mass)
+
     Nstruct_growth = mstruct_growth * parameters.RATIO_N_MSTRUCT_ROOTS_  #: root growth in N (g of structural dry mass)
     Nstruct_N_growth = min(amino_acids, (Nstruct_growth / parameters.N_MOLAR_MASS) * 1E6)  #: root growth in nitrogen (µmol N)
 
