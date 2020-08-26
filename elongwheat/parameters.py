@@ -35,7 +35,7 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # Exponential elongation
 RERmax_Ljutovac_fit = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000151, 10: 0.00000134, 11: 0.00000129} # Optimal RERmax (s-1 at 12°C) allowing to simulate leaf dimensions of Ljutovac (2002)
 # { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # Observed RER on data of Ljutovac 2002 RER (s-1 at 12°C)
-RERmax = {5: 3.35e-06, 6: 2.25e-06, 7: 2.12e-06, 8: 1.97e-06, 9: 1.92e-06, 10: 1.65e-06, 11: 1.56e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
+RERmax = {5: 3.35e-06, 6: 2.25e-06, 7: 2.12e-06, 8: 1.99e-06, 9: 1.92e-06, 10: 1.65e-06, 11: 1.56e-06}  # RERmax (s-1 at 12°C) fitted for simulations accounting for metabolic regulation
 RER_Kc = 100  #: affinity coefficient of RER to C (µmol g-1)
 RER_Kn = 15   #: affinity coefficient of RER to N (µmol g-1)
 
@@ -44,7 +44,7 @@ te = 300 * 3600 * 24 / 12     #: end of leaf elongation in automate growth (s at
 tm = 204.6 * 3600 * 24 / 12   #: time at which leaf elongation rate is maximal in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
 tb = -114.3 * 3600 * 24 / 12  #: beginning of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
 # NB : Previous fit on adapted data from Fournier 2005 in phyllochronic time te = 271, tm=176, tb=-25
-leaf_Lmax_MAX = 0.7           #: Maximum leaf_Lmax (m)
+leaf_Lmax_MAX = 0.6           #: Maximum leaf_Lmax (m)
 
 leaf_pseudo_age_Vmax = 1.2    #: Maximal regulation of leaf length after emergence by CN status (dimensionless)
 leaf_pseudo_age_Kc = 150      #: affinity coefficient to C (µmol g-1)
@@ -52,19 +52,18 @@ leaf_pseudo_age_Kn = 4        #: affinity coefficient to N (µmol g-1)
 
 # Leaf maximal width  TODO doc
 leaf_Wmax_dict = {3: 0.0040, 4: 0.0045, 5: 0.0056, 6: 0.0075, 7: 0.010, 8: 0.012, 9: 0.013, 10: 0.014, 11: 0.018}  #: m (Ljutovac 2002)
-leaf_W_L_base = 0.05
-leaf_W_L_Regul_MIN = 0.5
-leaf_W_L_Regul_MAX = 2
-leaf_W_L_int_MIN = 0
-leaf_W_L_int_MAX = 5800
+leaf_W_L_MIN = 0.025
+leaf_W_L_a = -0.02033728
+leaf_W_L_b = -0.00005445836
+leaf_W_L_c = 0.000459551
 
 # Structural Specific Lamina Weight
 leaf_SSLW = {1: 22, 2: 22, 3: 22, 4: 22, 5: 22, 6: 22, 7: 22, 8: 24, 9: 25, 10: 28, 11: 31}  # SSLW (g m-2)
 leaf_SSLW_NEMA = {1: 15, 2: 23, 3: 25, 4: 24, 5: 21, 6: 18, 7: 16, 8: 18, 9: 21, 10: 26, 11: 33}  # Manip NEMA 05/06 traitments N+ (from data of J. Bertheloot, 2004) sauf pour F7/F8
 leaf_SSLW_MIN = 5.
 leaf_SSLW_MAX = 45.
-leaf_SSLW_integral_min = 400.
-leaf_SSLW_integral_max = 5200.
+leaf_SSLW_a = 47.50516
+leaf_SSLW_b = 2927.944
 
 leaf_LSSW_dict = {1: 0.08, 2: 0.09, 3: 0.11, 4: 0.18, 5: 0.17, 6: 0.21, 7: 0.24, 8: 0.4, 9: 0.5, 10: 0.55, 11: 0.65}  # Manip NEMA 05/06 Soissons N+ (from data of J. Bertheloot, 2004)
 leaf_LSSW_a = 0.00005
@@ -134,7 +133,6 @@ class HiddenZoneInit(object):
         self.leaf_Lmax_em = None                 #: m, no calculation before emergence Ln-1
         self.lamina_Lmax = None                  #: m, no calculation before emergence Ln-1
         self.sheath_Lmax = None                  #: m, no calculation before emergence Ln-1
-        self.leaf_Wmax_int = 2e-7                #: m, intermediate maximum leaf width
         self.leaf_Wmax = None                    #: m, no calculation before emergence Ln-1
         self.SSLW = None                         #: g m-2, no calculation before emergence Ln-1
         self.LSSW = None                         #: g m-1, no calculation before emergence Ln-1 (about 2)
