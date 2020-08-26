@@ -434,15 +434,8 @@ def calculate_leaf_Wmax(lamina_Lmax, leaf_rank, integral_conc_sucr, optimal_grow
         Wmax = parameters.leaf_Wmax_dict[leaf_rank]
 
     else:
-        #: Regulation function of the width: length ratio
-        # regul_W_L_ratio = min(max((parameters.leaf_W_L_Regul_MAX - parameters.leaf_W_L_Regul_MIN) / (parameters.leaf_W_L_int_MAX - parameters.leaf_W_L_int_MIN) * integral_conc_sucr +
-        #                           (parameters.leaf_W_L_Regul_MIN * parameters.leaf_W_L_int_MAX - parameters.leaf_W_L_Regul_MAX * parameters.leaf_W_L_int_MIN) /
-        #                           (parameters.leaf_W_L_int_MAX - parameters.leaf_W_L_int_MIN), parameters.leaf_W_L_Regul_MIN), parameters.leaf_W_L_Regul_MAX)
-
-        #: Actual width: length ratio
-        # W_L_ratio = parameters.leaf_W_L_base * regul_W_L_ratio
-        W_L_ratio = max(0.025, -0.02033728 - (-0.00005445836 / 0.000459551) * (1 - exp(-0.000459551 * integral_conc_sucr)))
-        # A tester : 0.1192345 + (0.02999999 - 0.1192345)/(1 + (integral_conc_sucr/877.3839)**25.0697)**0.01513638
+        #: Width:length ratio
+        W_L_ratio = max(parameters.leaf_W_L_MIN, parameters.leaf_W_L_a - ( parameters.leaf_W_L_b / parameters.leaf_W_L_c) * (1 - exp(-parameters.leaf_W_L_c * integral_conc_sucr)))
 
         #: Maximal width (m)
         Wmax = lamina_Lmax * W_L_ratio
@@ -466,10 +459,7 @@ def calculate_SSLW(leaf_rank, integral_conc_sucr, optimal_growth_option=False):
     if optimal_growth_option:
         SSLW = parameters.leaf_SSLW[leaf_rank]
     else:
-        # integral_min = parameters.leaf_SSLW_integral_min
-        # integral_max = parameters.leaf_SSLW_integral_max
-        # SSLW = (SSLW_max - SSLW_min) / (integral_max - integral_min) * integral_conc_sucr + (SSLW_min * integral_max - SSLW_max * integral_min) / (integral_max - integral_min)
-        SSLW = (47.50516*integral_conc_sucr)/(2927.944 + integral_conc_sucr)
+        SSLW = (parameters.leaf_SSLW_a*integral_conc_sucr)/(parameters.leaf_SSLW_b + integral_conc_sucr)
 
     return max(min(SSLW, SSLW_max), SSLW_min)
 

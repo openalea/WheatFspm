@@ -52,19 +52,18 @@ leaf_pseudo_age_Kn = 4        #: affinity coefficient to N (µmol g-1)
 
 # Leaf maximal width  TODO doc
 leaf_Wmax_dict = {3: 0.0040, 4: 0.0045, 5: 0.0056, 6: 0.0075, 7: 0.010, 8: 0.012, 9: 0.013, 10: 0.014, 11: 0.018}  #: m (Ljutovac 2002)
-leaf_W_L_base = 0.05
-leaf_W_L_Regul_MIN = 0.5
-leaf_W_L_Regul_MAX = 2
-leaf_W_L_int_MIN = 200
-leaf_W_L_int_MAX = 5000
+leaf_W_L_MIN = 0.025
+leaf_W_L_a = -0.02033728
+leaf_W_L_b = -0.00005445836
+leaf_W_L_c = 0.000459551
 
 # Structural Specific Lamina Weight
 leaf_SSLW = {1: 22, 2: 22, 3: 22, 4: 22, 5: 22, 6: 22, 7: 22, 8: 24, 9: 25, 10: 28, 11: 31}  # SSLW (g m-2)
 leaf_SSLW_NEMA = {1: 15, 2: 23, 3: 25, 4: 24, 5: 21, 6: 18, 7: 16, 8: 18, 9: 21, 10: 26, 11: 33}  # Manip NEMA 05/06 traitments N+ (from data of J. Bertheloot, 2004) sauf pour F7/F8
 leaf_SSLW_MIN = 5.
 leaf_SSLW_MAX = 45.
-leaf_SSLW_integral_min = 400.
-leaf_SSLW_integral_max = 5200.
+leaf_SSLW_a = 47.50516
+leaf_SSLW_b = 2927.944
 
 leaf_LSSW_dict = {1: 0.08, 2: 0.09, 3: 0.11, 4: 0.18, 5: 0.17, 6: 0.21, 7: 0.24, 8: 0.4, 9: 0.5, 10: 0.55, 11: 0.65}  # Manip NEMA 05/06 Soissons N+ (from data of J. Bertheloot, 2004)
 leaf_LSSW_a = 0.00005
