@@ -219,19 +219,6 @@ def calculate_sheath_mstruct(sheath_L, LSSW):
     return sheath_L * LSSW
 
 
-# Roots
-def calculate_roots_age(age, delta_teq):
-    """ Age of the roots since model initialisation or since plant emergence (if not null at model initialisation)
-
-    :param age: Age of the roots (s equivalent at Tref)
-    :param delta_teq: Time step at Tref (s equivalent at Tref)
-
-    :return: Age of the roots
-    :rtype: float
-    """
-    return age + delta_teq
-
-
 def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, rate_mstruct_growth, delta_teq, postflowering_stages):
     """Root structural dry mass growth integrated over delta_t
 

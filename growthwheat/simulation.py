@@ -27,7 +27,7 @@ HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age
                      'sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct',
                      'internode_enclosed_Nstruct', 'mstruct', 'internode_Lmax', 'leaf_Lmax', 'sheath_Lmax', 'is_over', 'leaf_is_remobilizing', 'internode_is_remobilizing']
 ELEMENT_INPUTS = ['is_growing', 'mstruct', 'senesced_mstruct', 'green_area', 'length', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'cytokinins', 'Nstruct']
-ROOT_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'rate_mstruct_growth', 'age', 'synthetized_mstruct']
+ROOT_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'rate_mstruct_growth', 'synthetized_mstruct']
 AXIS_INPUTS = ['delta_teq', 'delta_teq_roots']
 
 #: the outputs computed by GrowthWheat
@@ -36,7 +36,7 @@ HIDDENZONE_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enc
 ELEMENT_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'nitrates', 'mstruct', 'Nstruct',
                    'green_area', 'max_proteins', 'max_mstruct', 'Nresidual', 'senesced_length_element', 'senesced_mstruct']
 ROOT_OUTPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'Respi_growth', 'R_min_upt', 'rate_mstruct_growth', 'delta_mstruct_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct',
-                'age','synthetized_mstruct']
+                'synthetized_mstruct']
 AXIS_OUTPUTS = []
 
 #: the inputs and outputs of GrowthWheat.
@@ -373,9 +373,6 @@ class Simulation(object):
             # Temperature-compensated time (delta_teq)
             delta_teq = all_axes_inputs[axe_id]['delta_teq_roots']
 
-            # Age of the roots
-            age = model.calculate_roots_age(root_inputs['age'], delta_teq)
-
             # Growth
             mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = model.calculate_roots_mstruct_growth(root_inputs['sucrose'], root_inputs['amino_acids'],
                                                                                                                       root_inputs['mstruct'], root_inputs['rate_mstruct_growth'],
@@ -393,7 +390,6 @@ class Simulation(object):
             curr_root_outputs['amino_acids'] -= curr_root_outputs['AA_consumption_mstruct']
             curr_root_outputs['delta_mstruct_growth'] = mstruct_growth
             curr_root_outputs['rate_mstruct_growth'] = mstruct_growth / delta_teq
-            curr_root_outputs['age'] = age
             self.outputs['roots'][root_id] = curr_root_outputs
 
             # Update of axis outputs
