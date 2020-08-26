@@ -1,7 +1,7 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import division  # use '//' to do integer division
-import parameters
+from senescwheat import parameters
 
 """
     senescwheat.model
@@ -204,10 +204,8 @@ class SenescenceModel(object):
     @classmethod
     def calculate_roots_senescence(cls, mstruct, Nstruct):
         """Root senescence
-
         :param float mstruct: structural mass (g)
         :param float Nstruct: structural N (g)
-
         :return: Rate of mstruct loss by root senescence (g mstruct s-1), rate of Nstruct loss by root senescence (g Nstruct s-1)
         :rtype: tuple [float, float]
         """
@@ -232,7 +230,7 @@ class SenescenceModel(object):
 
         :param float rate_mstruct_death: relative delta of root structural mass over delta_t (g s-1)
         :param float rate_Nstruct_death: relative delta of root N structural mass over delta_t (g s-1)
-        :param float delta_teq: previous value of an organ structural N (s)
+        :param float delta_teq: Temperature-consensated time = time duration at a reference temperature (s)
 
         :return: delta_mstruct (g), delta_Nstruct (g)
         :rtype: tuple [float, float]
