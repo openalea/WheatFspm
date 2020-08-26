@@ -27,7 +27,7 @@ HIDDENZONE_INPUTS = ['leaf_is_growing', 'internode_is_growing', 'leaf_pseudo_age
                      'sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enclosed_mstruct', 'leaf_enclosed_Nstruct', 'internode_enclosed_mstruct',
                      'internode_enclosed_Nstruct', 'mstruct', 'internode_Lmax', 'leaf_Lmax', 'sheath_Lmax', 'is_over', 'leaf_is_remobilizing', 'internode_is_remobilizing']
 ELEMENT_INPUTS = ['is_growing', 'mstruct', 'senesced_mstruct', 'green_area', 'length', 'sucrose', 'amino_acids', 'fructan', 'proteins', 'cytokinins', 'Nstruct']
-ROOT_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'rate_mstruct_growth', 'synthetized_mstruct']
+ROOT_INPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct']
 AXIS_INPUTS = ['delta_teq', 'delta_teq_roots']
 
 #: the outputs computed by GrowthWheat
@@ -35,8 +35,7 @@ HIDDENZONE_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'leaf_enc
                       'Nstruct', 'Respi_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct', 'is_over', 'leaf_is_remobilizing', 'internode_is_remobilizing']
 ELEMENT_OUTPUTS = ['sucrose', 'amino_acids', 'fructan', 'proteins', 'nitrates', 'mstruct', 'Nstruct',
                    'green_area', 'max_proteins', 'max_mstruct', 'Nresidual', 'senesced_length_element', 'senesced_mstruct']
-ROOT_OUTPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'Respi_growth', 'R_min_upt', 'rate_mstruct_growth', 'delta_mstruct_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct',
-                'synthetized_mstruct']
+ROOT_OUTPUTS = ['sucrose', 'amino_acids', 'mstruct', 'Nstruct', 'Respi_growth', 'R_min_upt', 'delta_mstruct_growth', 'sucrose_consumption_mstruct', 'AA_consumption_mstruct']
 AXIS_OUTPUTS = []
 
 #: the inputs and outputs of GrowthWheat.
@@ -375,21 +374,18 @@ class Simulation(object):
 
             # Growth
             mstruct_C_growth, mstruct_growth, Nstruct_growth, Nstruct_N_growth = model.calculate_roots_mstruct_growth(root_inputs['sucrose'], root_inputs['amino_acids'],
-                                                                                                                      root_inputs['mstruct'], root_inputs['rate_mstruct_growth'],
-                                                                                                                      delta_teq, postflowering_stages)
+                                                                                                                      root_inputs['mstruct'], delta_teq, postflowering_stages)
             # Respiration growth
             curr_root_outputs['Respi_growth'] = RespirationModel.R_growth(mstruct_C_growth)
 
             # Update of root outputs
             curr_root_outputs['mstruct'] += mstruct_growth
-            curr_root_outputs['synthetized_mstruct'] = root_inputs['synthetized_mstruct'] + mstruct_growth
             curr_root_outputs['AA_consumption_mstruct'] = Nstruct_N_growth
             curr_root_outputs['sucrose_consumption_mstruct'] = model.calculate_roots_s_mstruct_sucrose(mstruct_growth, Nstruct_N_growth)
             curr_root_outputs['sucrose'] -= (curr_root_outputs['sucrose_consumption_mstruct'] + curr_root_outputs['Respi_growth'])
             curr_root_outputs['Nstruct'] += Nstruct_growth
             curr_root_outputs['amino_acids'] -= curr_root_outputs['AA_consumption_mstruct']
             curr_root_outputs['delta_mstruct_growth'] = mstruct_growth
-            curr_root_outputs['rate_mstruct_growth'] = mstruct_growth / delta_teq
             self.outputs['roots'][root_id] = curr_root_outputs
 
             # Update of axis outputs

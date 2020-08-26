@@ -47,7 +47,6 @@ VMAX_ROOTS_GROWTH_POSTFLO = 0.015 * CONVERSION_FACTOR_20_TO_12  #: Maximal rate 
 VMAX_ROOTS_GROWTH_PREFLO = 0.0855 * CONVERSION_FACTOR_20_TO_12  #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) pre flo at 12°C
 K_ROOTS_GROWTH = 1250                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS) post flo
 N_ROOTS_GROWTH = 1.8
-MSTRUCT_ROOTS_BEG_LINEAR_GROWTH = 100  #: Structural mass from which roots grow with a linear rate (g)
 
 RATIO_C_MSTRUCT_ROOTS = 0.444         #: Mean contribution of carbon to root structural dry mass (g C g-1 Mstruct) : same as shoot
 RATIO_N_MSTRUCT_ROOTS_ = 0.005        #: Mean contribution of nitrogen to root structural dry mass (g N g-1 Mstruct) : same as shoot
