@@ -633,7 +633,16 @@ def test_graphs_generation():
 
 if __name__ == '__main__':
     test_simulation_run(overwrite_desired_data=False)
+    print('Simulation Run - OK')
+
     test_simulation_run_with_interpolation(overwrite_desired_data=False)
+    print('Simulation Run with interpolation - OK')
+
     test_simulation_logging(overwrite_desired_data=False)
+    print('Simulation Logging - OK')
+
     test_postprocessing(overwrite_desired_data=False)
+    print('Simulation Postprocessing - OK')
+
     test_graphs_generation()
+    print('Simulation Graphs - OK')
