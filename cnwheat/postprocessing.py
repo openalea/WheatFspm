@@ -48,9 +48,12 @@ AXES_INDEXES = cnwheat_simulation.Simulation.AXES_INDEXES
 AXES_T_INDEXES = cnwheat_simulation.Simulation.AXES_T_INDEXES
 #: axes post-processing variables
 AXES_POSTPROCESSING_VARIABLES = ['C_N_ratio', 'C_N_ratio_shoot', 'N_content', 'N_content_shoot', 'N_content_roots', 'N_content_mstruct', 'N_content_mstruct_shoot', 'N_content_total_DM_shoot',
-                                 'N_content_mstruct_roots', 'sum_N_g', 'sum_N_g_shoot', 'sum_dry_mass', 'sum_dry_mass_shoot', 'sum_dry_mass_roots', 'dry_mass_phloem', 'shoot_roots_ratio',
-                                 'shoot_roots_mstruct_ratio', 'Total_Photosynthesis', 'Tillers_Photosynthesis', 'Tillers_Photosynthesis_An', 'NNI', 'NS', 'NS_shoot', 'NS_roots', 'mstruct_shoot',
-                                 'C_respired_shoot', 'C_respired_roots', 'Cont_WSC_DM', 'Cont_WSC_DM_shoot', 'Cont_WSC_DM_roots', 'Cont_WSC_DM_laminae', 'Cont_WSC_DM_stem']
+                                 'N_content_mstruct_roots', 'sum_N_g', 'sum_N_g_shoot',
+                                 'sum_dry_mass', 'sum_dry_mass_shoot', 'sum_dry_mass_laminae', 'sum_dry_mass_stem', 'sum_dry_mass_roots', 'dry_mass_phloem', 'shoot_roots_ratio',
+                                 'shoot_roots_mstruct_ratio', 'Total_Photosynthesis', 'Tillers_Photosynthesis', 'Tillers_Photosynthesis_An', 'NNI',
+                                 'NS', 'NS_shoot', 'NS_stem', 'NS_laminae', 'NS_roots', 'mstruct_shoot', 'mstruct_laminae', 'mstruct_stem',
+                                 'C_respired_shoot', 'C_respired_roots', 'Cont_WSC_DM', 'Cont_WSC_DM_shoot', 'Cont_WSC_DM_roots', 'Cont_WSC_DM_laminae', 'Cont_WSC_DM_stem',
+                                 'sum_C_g', 'sum_NSC_g']
 
 #: concatenation of :attr:`AXES_T_INDEXES`, :attr:`AXES_RUN_VARIABLES <cnwheat.simulation.Simulation.AXES_RUN_VARIABLES>` and :attr:`AXES_POSTPROCESSING_VARIABLES`
 AXES_RUN_POSTPROCESSING_VARIABLES = set(AXES_T_INDEXES + cnwheat_simulation.Simulation.AXES_RUN_VARIABLES + AXES_POSTPROCESSING_VARIABLES)
@@ -1148,6 +1151,8 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
 
             # Ratio Non Structural Mass
             NS_shoot = (1 - sum_mstruct_shoot / sum_dry_mass_shoot) * 100
+            NS_stem = (1 - sum_mstruct_stem / sum_dry_mass_stem) * 100
+            NS_laminae = (1 - sum_mstruct_laminae / sum_dry_mass_laminae) * 100
             NS_roots = (1 - sum_mstruct_roots / sum_dry_mass_roots) * 100
             NS = (1 - sum_mstruct / sum_dry_mass) * 100
 
@@ -1173,6 +1178,8 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
             pp_axes_df.loc[:, 'sum_N_g_shoot'] = sum_N_g_shoot.values
             pp_axes_df.loc[:, 'sum_dry_mass'] = sum_dry_mass.values
             pp_axes_df.loc[:, 'sum_dry_mass_shoot'] = sum_dry_mass_shoot.values
+            pp_axes_df.loc[:, 'sum_dry_mass_laminae'] = sum_dry_mass_laminae.values
+            pp_axes_df.loc[:, 'sum_dry_mass_stem'] = sum_dry_mass_stem.values
             pp_axes_df.loc[:, 'sum_dry_mass_roots'] = sum_dry_mass_roots.values
             pp_axes_df.loc[:, 'sum_C_g'] = sum_C_g.values
             pp_axes_df.loc[:, 'sum_NSC_g'] = sum_NSC_g.values
@@ -1185,8 +1192,12 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
             pp_axes_df.loc[:, 'NNI'] = NNI.values
             pp_axes_df.loc[:, 'NS_roots'] = NS_roots.values
             pp_axes_df.loc[:, 'NS_shoot'] = NS_shoot.values
+            pp_axes_df.loc[:, 'NS_stem'] = NS_stem.values
+            pp_axes_df.loc[:, 'NS_laminae'] = NS_laminae.values
             pp_axes_df.loc[:, 'NS'] = NS.values
             pp_axes_df.loc[:, 'mstruct_shoot'] = sum_mstruct_shoot.values
+            pp_axes_df.loc[:, 'mstruct_laminae'] = sum_mstruct_laminae.values
+            pp_axes_df.loc[:, 'mstruct_stem'] = sum_mstruct_stem.values
             pp_axes_df.loc[:, 'C_respired_shoot'] = C_respired_shoot
             pp_axes_df.loc[:, 'C_respired_roots'] = C_respired_roots
             pp_axes_df.loc[:, 'WSC_g'] = WSC_g_plant.values
