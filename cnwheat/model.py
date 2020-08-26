@@ -4,7 +4,7 @@ from __future__ import division  # use "//" to do integer division
 import numpy as np
 from math import exp
 
-import parameters
+from cnwheat import parameters
 
 """
     cnwheat.model
@@ -286,7 +286,7 @@ class HiddenZone(Organ):
 
     def __init__(self, label='hiddenzone', mstruct=INIT_COMPARTMENTS.mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct,
                  sucrose=INIT_COMPARTMENTS.sucrose, fructan=INIT_COMPARTMENTS.fructan, amino_acids=INIT_COMPARTMENTS.amino_acids, proteins=INIT_COMPARTMENTS.proteins,
-                 ratio_DZ=INIT_COMPARTMENTS.ratio_DZ, ratio_EOZ=INIT_COMPARTMENTS.ratio_EOZ, cohorts=None, cohorts_replications=None, index=None):
+                 ratio_DZ=INIT_COMPARTMENTS.ratio_DZ, cohorts=None, cohorts_replications=None, index=None):
 
         super(HiddenZone, self).__init__(label)
 
@@ -300,9 +300,6 @@ class HiddenZone(Organ):
         self.mstruct = mstruct  #: g
         self.Nstruct = Nstruct  #: g
         self.ratio_DZ = ratio_DZ
-        self.ratio_EOZ = ratio_EOZ
-        self.ratio_DZ = ratio_DZ
-        self.ratio_EOZ = ratio_EOZ
 
         # state variables
         self.sucrose = sucrose  #: µmol` C

@@ -533,7 +533,7 @@ def test_postprocessing(overwrite_desired_data=False):
         outputs_file_basename = outputs_filename.split('.')[0]
         outputs_df_dict[outputs_file_basename] = outputs_df
 
-    time_grid = outputs_df_dict.values()[0].t
+    time_grid = list(outputs_df_dict.values())[0].t
     delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
 
     # Compute the post-processing
@@ -633,7 +633,16 @@ def test_graphs_generation():
 
 if __name__ == '__main__':
     test_simulation_run(overwrite_desired_data=False)
+    print('Simulation Run - OK')
+
     test_simulation_run_with_interpolation(overwrite_desired_data=False)
+    print('Simulation Run with interpolation - OK')
+
     test_simulation_logging(overwrite_desired_data=False)
+    print('Simulation Logging - OK')
+
     test_postprocessing(overwrite_desired_data=False)
+    print('Simulation Postprocessing - OK')
+
     test_graphs_generation()
+    print('Simulation Graphs - OK')

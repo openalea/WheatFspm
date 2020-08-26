@@ -152,7 +152,6 @@ class HiddenZoneInitCompartments(object):
         self.mstruct = 6.39E-08  #: initial value of mstruct (g)
         self.Nstruct = 2.06E-09  #: initial value of Nstruct (g)
         self.ratio_DZ = 1        #: initial value of ratio of Division Zone into the HiddenZone
-        self.ratio_EOZ = 0       #: initial value of ratio of Elongation-only Zone into the HiddenZone
 
 
 #: The instance of class :class:`cnwheat.parameters.HiddenZoneInitCompartments` for current process
