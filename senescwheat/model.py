@@ -202,14 +202,18 @@ class SenescenceModel(object):
         return remob_proteins, delta_amino_acids, delta_Nresidual
 
     @classmethod
-    def calculate_roots_senescence(cls, mstruct, Nstruct):
+    def calculate_roots_senescence(cls, mstruct, Nstruct, postflowering_stages):
         """Root senescence
         :param float mstruct: structural mass (g)
         :param float Nstruct: structural N (g)
         :return: Rate of mstruct loss by root senescence (g mstruct s-1), rate of Nstruct loss by root senescence (g Nstruct s-1)
         :rtype: tuple [float, float]
         """
-        return mstruct * parameters.SENESCENCE_ROOTS, Nstruct * parameters.SENESCENCE_ROOTS
+        if postflowering_stages:
+            rate_senescence = parameters.SENESCENCE_ROOTS_POSTFLOWERING
+        else:
+            rate_senescence = parameters.SENESCENCE_ROOTS_PREFLOWERING
+        return mstruct * rate_senescence, Nstruct * rate_senescence
 
     @classmethod
     def calculate_relative_delta_mstruct_roots(cls, rate_mstruct_death, root_mstruct, delta_teq):
