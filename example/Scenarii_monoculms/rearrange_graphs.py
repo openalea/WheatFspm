@@ -9,7 +9,8 @@ graphs_titles_inputs = ['N_content_roots_axis', 'N_content_shoot_axis', 'N_conte
                         'SLN_nonstruct_blade', 'Conc_Nitrates_Soil',
                         'C_usages_cumulated', 'Photosynthetic_yield_blade', 'Photosynthetic_yield_plante', 'Photosynthetic_yield_plante2', 'Ts_blade', 'internode_Lmax', 'NNI_axis', 'N_dilution',
                         'S_Amino_Acids_blade', 'HATS_LATS_roots', 'senesced_mstruct_roots', 'synthetized_mstruct_roots', 'mstruct_axis', 'mstruct_roots',
-                        'Cont_WSC_DM_axis', 'Cont_WSC_DM_hz','Cont_WSC_DM_blade','Cont_WSC_DM_sheath', 'Photosynthetic_rates_F6']
+                        'Cont_WSC_DM_axis', 'Cont_WSC_DM_hz','Cont_WSC_DM_blade','Cont_WSC_DM_sheath', 'Photosynthetic_rates_F6',
+                        'Transpiration_blade']
 
 # Get the list of scenarii
 titi = os.listdir('outputs')
@@ -18,15 +19,6 @@ for i in titi:
     if i[:9] == 'Scenario_':
         scenarii.append(int(i[9:]))
 scenarii_inputs = scenarii
-
-
-# Get the scenario labels
-# scenarii_df = pd.read_csv( os.path.join('inputs','scenarii_list.csv'), index_col='Scenario')
-# scenarii_df['Scenario'] = scenarii_df.index
-# if 'Scenario_label' not in scenarii_df.keys():
-#     scenarii_df['Scenario_label'] =  ''
-# else:
-#     scenarii_df['Scenario_label'] = scenarii_df['Scenario_label'].fillna('')
 
 def rearrange_graphs(graphs_titles=None, scenarii=None, outputs_dir_path=None):
     """
@@ -59,7 +51,6 @@ def rearrange_graphs(graphs_titles=None, scenarii=None, outputs_dir_path=None):
         for scenario in scenarii:
 
             scenario_name = 'Scenario_%.4d' % scenario
-            # scenario_label = scenarii_df['Scenario_label'].get( scenario, '' ).replace(" ", "_")
 
             scenario_dir = os.path.join(outputs_dir_path, scenario_name, 'graphs')
             graph_src = os.path.join(scenario_dir, graph + '.PNG')

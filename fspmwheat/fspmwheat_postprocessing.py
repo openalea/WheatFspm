@@ -131,6 +131,9 @@ def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):
     # --- Mean SLA and SLN in between ligulation and onset of senescence
     leaf_traits_df = leaf_traits_df.merge(df_lam_green.groupby('metamer', as_index=False).aggregate({'SLN': 'mean', 'SLA': 'mean'}), on='metamer', how='outer')
 
+    # --- max green_area
+    leaf_traits_df = leaf_traits_df.merge(df_lam_green.groupby('metamer', as_index=False).aggregate({'green_area': 'max'}), on='metamer', how='outer')
+
     # --- Save results in postprocessing directory
     leaf_traits_df.sort_values('metamer', inplace=True)
     leaf_traits_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'leaf_traits.csv'), index=False, na_rep='NA')

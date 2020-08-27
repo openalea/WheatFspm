@@ -75,18 +75,17 @@ class SenescWheatFacade(object):
         if self._update_shared_df:
             self._update_shared_dataframes(model_roots_inputs_df, model_axes_inputs_df, model_elements_inputs_df)
 
-    def run(self, history_rate_mstruct_roots_senescence, forced_max_protein_elements=None, postflowering_stages=False, update_shared_df=None):
+    def run(self, forced_max_protein_elements=None, postflowering_stages=False, update_shared_df=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
-        :param DataFrame history_rate_mstruct_roots_senescence: Rate of roots mstruct synthesis X s  at 12°C ago. The root mstruct producted at X s will now senesce.
         :param set forced_max_protein_elements: The elements ids with fixed max proteins.
         :param bool postflowering_stages: True to run a simulation with postflo parameter
         :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
         """
 
         self._initialize_model()
-        self._simulation.run(history_rate_mstruct_roots_senescence, forced_max_protein_elements=forced_max_protein_elements, postflowering_stages=postflowering_stages)
+        self._simulation.run(forced_max_protein_elements=forced_max_protein_elements, postflowering_stages=postflowering_stages)
         self._update_shared_MTG(self._simulation.outputs['roots'], self._simulation.outputs['axes'], self._simulation.outputs['elements'])
 
         if update_shared_df or (update_shared_df is None and self._update_shared_df):

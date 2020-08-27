@@ -37,7 +37,8 @@ def rearrange_postprocessing(postprocessing_tables, t=None, scenarii=None, merge
     if merge_with_scenarii_list:
         if scenarii_list_columns is None:
             scenarii_list_columns = ['Scenario', 'Scenario_label', 'Plant_Density',
-                                     'constant_Conc_Nitrates', 'fertilization_U_3500', 'fertilization_quantity', 'fertilization_interval', 'PAR']
+                                     'constant_Conc_Nitrates', 'fertilization_U_3500', 'fertilization_quantity', 'fertilization_interval',
+                                     'PAR', 'Inputs_PlantSoil_Dirpath']
         scenarii_df = pd.read_csv(os.path.join('inputs', 'scenarii_list.csv'), index_col='Scenario')
         scenarii_df['Scenario'] = scenarii_df.index
 
@@ -107,6 +108,7 @@ if __name__ == '__main__':
     rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=1999)
     rearrange_postprocessing(postprocessing_tables=['axes_postprocessing'], t=3499)
     rearrange_postprocessing(postprocessing_tables=['organs_postprocessing'], t=3499)
+    rearrange_postprocessing(postprocessing_tables=['hiddenzones_postprocessing'], t=3499)
     rearrange_postprocessing(postprocessing_tables=['performance_indices'])
     rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
     rearrange_postprocessing(postprocessing_tables=['canopy_kinetics_daily'])

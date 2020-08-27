@@ -225,13 +225,6 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     soils_all_data_list = []
 
     all_simulation_steps = []  # to store the steps of the simulation
-    all_senescing_roots = pd.DataFrame(columns=['age_roots', 'rate_mstruct_roots_growth'])
-    if run_from_outputs:
-        # restore the history of senescence
-        roots_outputs = previous_outputs_dataframes[ORGANS_OUTPUTS_FILENAME][previous_outputs_dataframes[ORGANS_OUTPUTS_FILENAME].organ == 'roots']
-        all_senescing_roots_new = pd.DataFrame({'age_roots': roots_outputs.age.values,
-                                                'rate_mstruct_roots_growth': roots_outputs.rate_mstruct_growth.values})
-        all_senescing_roots = all_senescing_roots.append(all_senescing_roots_new, ignore_index=True, sort=False)
 
     # -- POSTPROCESSING CONFIGURATION --
 
@@ -472,7 +465,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
                 for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
-                    senescwheat_facade_.run(history_rate_mstruct_roots_senescence=all_senescing_roots)
+                    senescwheat_facade_.run()
 
                     for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):
                         # get the meteo of the current step
@@ -526,13 +519,6 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                         if (np.nansum(elements_outputs.loc[elements_outputs['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0) or \
                                                 (organs_outputs.loc[organs_outputs['organ'] == 'phloem', 'sucrose'].values[0] / axes_outputs['mstruct'].values[0] < -50):
                                             break
-
-                                    # store the history of senescence
-                                    roots_outputs = organs_outputs[organs_outputs.organ == 'roots']
-                                    all_senescing_roots_new = pd.DataFrame({'age_roots': [roots_outputs.age.values[0]],
-                                                                            'rate_mstruct_roots_growth': [roots_outputs.rate_mstruct_growth.values[0]]})
-                                    all_senescing_roots = all_senescing_roots.append(all_senescing_roots_new, ignore_index=True, sort=False)
-
                                 else:
                                     # Continue if CN-Wheat loop wasn't broken because of dead plant.
                                     continue
@@ -1010,6 +996,6 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
 
 if __name__ == '__main__':
-    main(simulation_length=3000, forced_start_time=0,
+    main(simulation_length=2000, forced_start_time=0,
          run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          show_3Dplant=False, heterogeneous_canopy=True, METEO_FILENAME="meteo_PAR250.csv")
