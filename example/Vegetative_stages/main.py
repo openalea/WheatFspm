@@ -222,7 +222,6 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     soils_all_data_list = []
 
     all_simulation_steps = []  # to store the steps of the simulation
-    all_senescing_roots = pd.DataFrame(columns=['age_roots', 'rate_mstruct_roots_growth'])
 
     # -- POSTPROCESSING CONFIGURATION --
 
@@ -323,11 +322,15 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         farquharwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
         [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
+    # Use the initial version of the photosynthesis sub-model (as in Barillot et al. 2016, and in Gauthier et al. 2020)
+    update_parameters_farquharwheat = {'MODEL_VERSION': 'Barillot2016'}
+
     # Facade initialisation
     farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
                                                                      farquharwheat_elements_initial_state,
                                                                      farquharwheat_axes_initial_state,
                                                                      shared_elements_inputs_outputs_df,
+                                                                     update_parameters_farquharwheat,
                                                                      update_shared_df=UPDATE_SHARED_DF)
 
     # -- GROWTHWHEAT --
@@ -442,7 +445,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
                 for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
-                    senescwheat_facade_.run(history_rate_mstruct_roots_senescence=all_senescing_roots)
+                    senescwheat_facade_.run()
 
                     # Test for dead plant # TODO: adapt in case of multiple plants
                     if not shared_elements_inputs_outputs_df.empty and \
@@ -682,7 +685,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         res = res[last_value_idx].copy()
         res['lamina_Wmax'] = res.leaf_Wmax
         res['lamina_W_Lg'] = res.leaf_Wmax / res.lamina_Lmax
-        bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
+        bchmk = bchmk.loc[bchmk.metamer >= min(res.metamer)]
         bchmk['lamina_W_Lg'] = bchmk.lamina_Wmax / bchmk.lamina_Lmax
         last_value_idx = res_IN.groupby(['metamer'])['t'].transform(max) == res_IN['t']
         res_IN = res_IN[last_value_idx].copy()

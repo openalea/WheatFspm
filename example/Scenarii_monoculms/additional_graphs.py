@@ -382,11 +382,11 @@ if __name__ == '__main__':
 
     for sc in scenarii:
         # graph_phi_s_Devienne1994a(int(sc))
-        # graph_Uptake_N(int(sc))
-        # graph_Conc_Nitrates(int(sc))
-        # graph_photosynthetic_rates(int(sc), blade_number=[6, 12])
-        # graph_N_dilution(int(sc))
-        # graph_RER(int(sc))
-        # graph_C_usages(int(sc))
+        graph_Uptake_N(int(sc))
+        graph_Conc_Nitrates(int(sc))
+        graph_photosynthetic_rates(int(sc), blade_number=[6, 12])
+        graph_N_dilution(int(sc))
+        graph_RER(int(sc))
+        graph_C_usages(int(sc))
         graph_summary(int(sc), graph_list=['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
                                                  'green_area_blade'])
