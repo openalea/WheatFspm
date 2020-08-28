@@ -249,12 +249,6 @@ class RootsParameters(object):
         # Nitrate export
         self.K_NITRATE_EXPORT = 5E-3         #: Relative rate of nitrate export from roots (s-1)
 
-        # Vacuolar nitrates
-        self.VMAX_NITRATES_VACUOLE_LOAD = 0.02  #: Maximal rate of loading of nitrates into the vacuole (:math:`\mu` mol N s-1 g-1 MS)
-        self.K_NITRATES_VACUOLE_LOAD = 200  #: Affinity coefficient of loading of nitrates into the vacuole (:math:`\mu` mol N g-1 MS)
-        self.VMAX_NITRATES_VACUOLE_UNLOAD = 0.015  #: Maximual rate of unloading of nitrates from the vacuole into the cytosol (:math:`\mu` mol N s-1 g-1 MS)
-        self.K_NITRATES_VACUOLE_UNLOAD = 120  #: Affinity coefficient of unloading of nitrates into the vacuole (:math:`\mu` mol N g-1 MS)
-
         # Amino acids
         self.VMAX_AMINO_ACIDS = 0.001        #: Maximal rate of amino acid synthesis (:math:`\mu` mol N s-1 g-1 MS)
         self.K_AMINO_ACIDS_NITRATES = 3      #: Affinity coefficient of amino acid synthesis from nitrates (:math:`\mu` mol N g-1 MS)
@@ -287,7 +281,6 @@ class RootsInitCompartments(object):
     def __init__(self):
         self.sucrose = 0       #: initial value of sucrose (:math:`\mu` mol C)
         self.nitrates = 0      #: initial value of nitrates (:math:`\mu` mol C)
-        self.nitrates_vacuole = 0      #: initial value of nitrates in the vacuole (:math:`\mu` mol C)
         self.amino_acids = 0   #: initial value of amino_acids (:math:`\mu` mol N)
         self.cytokinins = 0    #: initial value of cytokinins (AU)
         self.mstruct = 0.15    #: initial value of mstruct (g)
