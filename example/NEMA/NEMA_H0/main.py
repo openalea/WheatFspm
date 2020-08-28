@@ -129,9 +129,7 @@ def calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False, ratio_diffu
             for mtg_metamer_vid in g.components_iter(mtg_axis_vid):
                 mtg_metamer_index = int(g.index(mtg_metamer_vid))
                 for mtg_organ_vid in g.components_iter(mtg_metamer_vid):
-                    mtg_organ_label = str(g.label(mtg_organ_vid))
-                    if mtg_organ_label[:2] == "b'":  # TODO TEMPORARY: fix error related to the conversion from Py2 to Py3 of the pickle of the MTG of NEMA example
-                        mtg_organ_label = mtg_organ_label[2:-1]
+                    mtg_organ_label = g.label(mtg_organ_vid)
                     for mtg_element_vid in g.components_iter(mtg_organ_vid):
                         mtg_element_label = g.label(mtg_element_vid)
                         if mtg_element_label not in CARIBU_ELEMENTS_NAMES:

@@ -2,9 +2,9 @@ import os
 import pandas as pd
 
 # Get the list of scenarii
-titi = os.listdir('outputs')
+subdirectories_outputs = os.listdir('outputs')
 scenarii = []
-for i in titi:
+for i in subdirectories_outputs:
     if i[:9] == 'Scenario_':
         scenarii.append(int(i[9:]))
 scenarii_inputs = scenarii
