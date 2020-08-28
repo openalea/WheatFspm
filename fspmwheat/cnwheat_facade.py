@@ -257,11 +257,9 @@ class CNWheatFacade(object):
                             for cnwheat_organ_data_name in cnwheat_organ_data_names:
                                 cnwheat_organ_data_dict[cnwheat_organ_data_name] = mtg_organ_properties[cnwheat_organ_data_name]
 
-                                # MG
+                                # Debug: Tell if missing input variable
                                 if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] is None:
-                                    print(mtg_axis_vid)
-                                    print(mtg_organ_label)
-                                    print(cnwheat_organ_data_name)
+                                    print('Missing variable', cnwheat_organ_data_name, 'for vertex id', mtg_axis_vid, 'which is', mtg_organ_label)
 
                             cnwheat_organ.__dict__.update(cnwheat_organ_data_dict)
 

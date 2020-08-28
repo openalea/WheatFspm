@@ -126,16 +126,12 @@ def test_run(overwrite_desired_data=False):
     soils_all_data_list = []
 
     all_simulation_steps = []  # to store the steps of the simulation
-    all_senescing_roots = pd.DataFrame(columns=['age_roots', 'rate_mstruct_roots_growth'])
 
     # -- ADEL and MTG CONFIGURATION --
 
     # read adelwheat inputs at t0
     adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-    try:  # Python3
-        g = adel_wheat.load(dir=INPUTS_DIRPATH)
-    except ValueError:  # Python2
-        g = adel_wheat.load(basename=INPUTS_DIRPATH + '/adel0000_python2')
+    g = adel_wheat.load(dir=INPUTS_DIRPATH)
 
     # ---------------------------------------------
     # ----- CONFIGURATION OF THE FACADES -------
@@ -308,7 +304,7 @@ def test_run(overwrite_desired_data=False):
 
         for t_senescwheat in range(t_caribu, t_caribu + CARIBU_TIMESTEP, SENESCWHEAT_TIMESTEP):
             # run SenescWheat
-            senescwheat_facade_.run(history_rate_mstruct_roots_senescence=all_senescing_roots)
+            senescwheat_facade_.run()
 
             # Run the rest of the model if the plant is alive
             for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):

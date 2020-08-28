@@ -9,8 +9,8 @@ import time
 
 import numpy as np
 import pandas as pd
-from alinea.adel.adel_dynamic import AdelDyn
 
+from alinea.adel.adel_dynamic import AdelDyn
 from cnwheat import tools as cnwheat_tools
 from fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat_facade, growthwheat_facade, caribu_facade, elongwheat_facade
 
@@ -129,7 +129,9 @@ def calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False, ratio_diffu
             for mtg_metamer_vid in g.components_iter(mtg_axis_vid):
                 mtg_metamer_index = int(g.index(mtg_metamer_vid))
                 for mtg_organ_vid in g.components_iter(mtg_metamer_vid):
-                    mtg_organ_label = g.label(mtg_organ_vid)
+                    mtg_organ_label = str(g.label(mtg_organ_vid))
+                    if mtg_organ_label[:2] == "b'":  # TODO TEMPORARY: fix error related to the conversion from Py2 to Py3 of the pickle of the MTG of NEMA example
+                        mtg_organ_label = mtg_organ_label[2:-1]
                     for mtg_element_vid in g.components_iter(mtg_organ_vid):
                         mtg_element_label = g.label(mtg_element_vid)
                         if mtg_element_label not in CARIBU_ELEMENTS_NAMES:
@@ -240,8 +242,8 @@ def main(stop_time, run_simu=True, make_graphs=True):
         cnwheat_hiddenzones_inputs_t0 = pd.read_csv(CNWHEAT_HIDDENZONE_INPUTS_FILEPATH)
         cnwheat_elements_inputs_t0 = pd.read_csv(CNWHEAT_ELEMENTS_INPUTS_FILEPATH)
         cnwheat_soils_inputs_t0 = pd.read_csv(CNWHEAT_SOILS_INPUTS_FILEPATH)
-        update_cnwheat_parameters = {'roots': {'K_AMINO_ACIDS_EXPORT': 3E-5,
-                                               'K_NITRATE_EXPORT': 1E-6}}
+        update_cnwheat_parameters = {'roots': {'K_AMINO_ACIDS_EXPORT': 25*3E-5,
+                                               'K_NITRATE_EXPORT': 25*1E-6}}
 
         cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
                                                        cnwheat_ts * hour_to_second_conversion_factor,
@@ -292,6 +294,10 @@ def main(stop_time, run_simu=True, make_graphs=True):
                 print('t senescwheat is {}'.format(t_senescwheat))
                 senescwheat_facade_.run(forced_max_protein_elements, postflowering_stages=True)
 
+                # Test for fully senesced shoot tissues  #TODO: Make the model to work even if the whole shoot is dead but the roots are alived
+                if sum(senescwheat_facade_._shared_elements_inputs_outputs_df['green_area']) <= 0.25E-6:
+                    break
+
                 for t_growthwheat in range(t_senescwheat, t_senescwheat + senescwheat_ts, growthwheat_ts):
                     # run GrowthWheat
                     print('t growthwheat is {}'.format(t_growthwheat))
@@ -322,6 +328,9 @@ def main(stop_time, run_simu=True, make_graphs=True):
                             organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
                             elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
                             soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+            else:
+                continue
+            break
 
         execution_time = int(time.time() - current_time_of_the_system)
         print('\n', 'Simulation run in ', str(datetime.timedelta(seconds=execution_time)))
