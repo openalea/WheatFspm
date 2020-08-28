@@ -166,7 +166,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
         adel_wheat = AdelDyn(seed=1234, scene_unit='m')
         g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
 
-        adel_wheat.plot(g)
+        # adel_wheat.plot(g)
 
         # create empty dataframes to shared data between the models
         shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -213,10 +213,13 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # farquharwheat
         farquharwheat_elements_inputs_t0 = pd.read_csv(FARQUHARWHEAT_INPUTS_FILEPATH)
         farquharwheat_axes_inputs_t0 = pd.read_csv(FARQUHARWHEAT_AXES_INPUTS_FILEPATH)
+        update_parameters_farquharwheat = {'MODEL_VERSION': 'Barillot2016'}  # Use the initial version of the photosynthesis sub-model (as in Barillot et al. 2016, and in Gauthier et al. 2020)
+
         farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
                                                                          farquharwheat_elements_inputs_t0,
                                                                          farquharwheat_axes_inputs_t0,
-                                                                         shared_elements_inputs_outputs_df)
+                                                                         shared_elements_inputs_outputs_df,
+                                                                         update_parameters=update_parameters_farquharwheat)
 
         # elongwheat # Only for temperature related computations
         elongwheat_hiddenzones_inputs_t0 = pd.read_csv(ELONGWHEAT_HZ_INPUTS_FILEPATH)
@@ -237,12 +240,13 @@ def main(stop_time, run_simu=True, make_graphs=True):
         cnwheat_hiddenzones_inputs_t0 = pd.read_csv(CNWHEAT_HIDDENZONE_INPUTS_FILEPATH)
         cnwheat_elements_inputs_t0 = pd.read_csv(CNWHEAT_ELEMENTS_INPUTS_FILEPATH)
         cnwheat_soils_inputs_t0 = pd.read_csv(CNWHEAT_SOILS_INPUTS_FILEPATH)
-        update_cnwheat_parameters = {'roots': {'K_AMINO_ACIDS_EXPORT': 3E-5,
-                                               'K_NITRATE_EXPORT': 1E-6}}
+        update_cnwheat_parameters = {'roots': {'K_AMINO_ACIDS_EXPORT': 25*3E-5,
+                                               'K_NITRATE_EXPORT': 25*1E-6}}
 
         cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
                                                        cnwheat_ts * hour_to_second_conversion_factor,
                                                        CULM_DENSITY,
+                                                       update_cnwheat_parameters,
                                                        cnwheat_organs_inputs_t0,
                                                        cnwheat_hiddenzones_inputs_t0,
                                                        cnwheat_elements_inputs_t0,
@@ -251,11 +255,10 @@ def main(stop_time, run_simu=True, make_graphs=True):
                                                        shared_organs_inputs_outputs_df,
                                                        shared_hiddenzones_inputs_outputs_df,
                                                        shared_elements_inputs_outputs_df,
-                                                       shared_soils_inputs_outputs_df,
-                                                       update_cnwheat_parameters)
+                                                       shared_soils_inputs_outputs_df)
 
         # adel_wheat.update_geometry(g) # NE FONCTIONNE PAS car MTG non compatible (pas de top et base element)
-        adel_wheat.plot(g)
+        # adel_wheat.plot(g)
 
         # define organs for which the variable 'max_proteins' is fixed
         forced_max_protein_elements = {(1, 'MS', 9, 'blade', 'LeafElement1'), (1, 'MS', 10, 'blade', 'LeafElement1'), (1, 'MS', 11, 'blade', 'LeafElement1'), (2, 'MS', 9, 'blade', 'LeafElement1'),
@@ -291,6 +294,10 @@ def main(stop_time, run_simu=True, make_graphs=True):
                     print('t senescwheat is {}'.format(t_senescwheat))
                     senescwheat_facade_.run(forced_max_protein_elements, postflowering_stages=True)
 
+                    # Test for fully senesced shoot tissues  #TODO: Make the model to work even if the whole shoot is dead but the roots are alived
+                    if sum(senescwheat_facade_._shared_elements_inputs_outputs_df['green_area']) <= 0.25E-6:
+                        break
+
                     for t_growthwheat in range(t_senescwheat, t_senescwheat + senescwheat_ts, growthwheat_ts):
                         # run GrowthWheat
                         print('t growthwheat is {}'.format(t_growthwheat))
@@ -303,8 +310,8 @@ def main(stop_time, run_simu=True, make_graphs=True):
                             aggregated_PARa = calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False)
                             print('t caribu is {}'.format(t_farquharwheat))
                             # caribu_facade_.run(energy=PARi,sun_sky_option='sky')
-                            caribu_facade_.update_shared_MTG(aggregated_PARa)
-                            caribu_facade_.update_shared_dataframes(aggregated_PARa)
+                            caribu_facade_.update_shared_MTG({'PARa': aggregated_PARa})
+                            caribu_facade_.update_shared_dataframes({'PARa':aggregated_PARa})
                             # run FarquharWheat
                             print('t farquhar is {}'.format(t_farquharwheat))
                             farquharwheat_facade_.run(Tair, ambient_CO2, RH, Ur)
@@ -321,6 +328,9 @@ def main(stop_time, run_simu=True, make_graphs=True):
                                 organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
                                 elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
                                 soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+                else:
+                    continue
+                break
 
             execution_time = int(time.time() - current_time_of_the_system)
             print('\n', 'Simulation run in ', str(datetime.timedelta(seconds=execution_time)))
@@ -370,7 +380,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
             states_df = pd.read_csv(states_filepath)
             states_file_basename = os.path.basename(states_filepath).split('.')[0]
             states_df_dict[states_file_basename] = states_df
-        time_grid = states_df_dict.values()[0].t
+        time_grid = states_df_dict['elements_states']['t']
         delta_t = (time_grid.unique()[1] - time_grid.unique()[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
 
         # run the postprocessing

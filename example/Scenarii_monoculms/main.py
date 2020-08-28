@@ -1,23 +1,22 @@
 # -*- coding: latin-1 -*-
 
 import os
-import warnings
 import random
+import warnings
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
+from alinea.adel.Stand import AgronomicStand
+from alinea.adel.adel_dynamic import AdelDyn
+from alinea.adel.echap_leaf import echap_leaves
 from fspmwheat import caribu_facade
 from fspmwheat import cnwheat_facade
 from fspmwheat import elongwheat_facade
 from fspmwheat import farquharwheat_facade
+from fspmwheat import fspmwheat_facade
 from fspmwheat import growthwheat_facade
 from fspmwheat import senescwheat_facade
-
-from alinea.adel.adel_dynamic import AdelDyn
-from alinea.adel.echap_leaf import echap_leaves
-from alinea.adel.Stand import AgronomicStand
 
 """
     main
@@ -64,9 +63,10 @@ def save_df_to_csv(df, outputs_filepath, precision):
         warnings.warn('File will be saved at {}'.format(newpath))
 
 
-def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, option_static=False, show_3Dplant=True,
-         tillers_replications=None, heterogeneous_canopy=True, N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
-         INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
+def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
+         option_static=False, show_3Dplant=True, tillers_replications=None, heterogeneous_canopy=True,
+         N_fertilizations=None, PLANT_DENSITY=None, INTER_ROW=0.15, update_parameters_all_models=None,
+         INPUTS_PLANTSOIL_DIRPATH='inputs', INPUT_METEO_DIRPATH='inputs', METEO_FILENAME='meteo.csv', OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
     """
     Run a simulation of fspmwheat with coupling to several models
 
@@ -76,6 +76,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     :param bool run_postprocessing: whether to run the postprocessing
     :param bool generate_graphs: whether to run the generate graphs
     :param bool run_from_outputs: whether to start a simulation from a specific time and initial states as found in previous outputs
+    :param str or list stored_times: can be 'all', a list or an empty list
     :param bool option_static: Whether the model should be run for a static plant architecture
     :param bool show_3Dplant: whether to plot the scene in pgl viewer
     :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value.
@@ -83,14 +84,15 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     :param dict [int, float] or [str, float] N_fertilizations: a dictionary for N fertilisation regime {date: N_input}, with date in hour and N_input in µmol N nitrates
                                                or {'constant_Conc_Nitrates': val} for constant nitrates concentrations
     :param dict [int, int] PLANT_DENSITY: a dict with plant density per plant id (temporary used to account for different cultivars if needed) ; plant m-2
+    :param float INTER_ROW: Inter-row spacing in the stand (m).
     :param dict update_parameters_all_models: a dict to update model parameters
-                                             {'cnwheat': {'organ1': {'param1': 'val1', 'param2': 'val2'},
-                                                          'organ2': {'param1': 'val1', 'param2': 'val2'}
+                                             {'cnwheat': {'roots': {'param1': 'val1', 'param2': 'val2'},
+                                                          'PhotosyntheticOrgan': {'param1': 'val1', 'param2': 'val2'}
                                                          },
                                               'elongwheat': {'param1': 'val1', 'param2': 'val2'}
                                              }
-    :param str or dict INPUTS_DIRPATH: the path directory of inputs, can also be {'adel':str, 'plants':str, 'meteo':str, 'soils':str}
-                                                                    #  The directory at path 'adel' must contain files 'adel_pars.RData', 'adel0000.pckl' and 'scene0000.bgeom' for ADELWHEAT
+    :param str INPUTS_PLANTSOIL_DIRPATH: the path directory with plant and soil inputs
+    :param str INPUT_METEO_DIRPATH: the path directory of meteo inputs
     :param str METEO_FILENAME: the name of the file with meteo data
     :param str OUTPUTS_DIRPATH: the path to save outputs
     :param str POSTPROCESSING_DIRPATH: the path to save postprocessings
@@ -108,8 +110,8 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
     # define the time step in hours for each simulator
     CARIBU_TIMESTEP = 4
-    SENESCWHEAT_TIMESTEP = 2
-    FARQUHARWHEAT_TIMESTEP = 2
+    SENESCWHEAT_TIMESTEP = 1
+    FARQUHARWHEAT_TIMESTEP = 1
     ELONGWHEAT_TIMESTEP = 1
     GROWTHWHEAT_TIMESTEP = 1
     CNWHEAT_TIMESTEP = 1
@@ -134,7 +136,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     # -- INPUTS CONFIGURATION --
 
     # Path of the directory which contains the inputs of the model
-    INPUTS_DIRPATH = INPUTS_DIRPATH
+    INPUTS_DIRPATH = INPUTS_PLANTSOIL_DIRPATH
 
     # Name of the CSV files which describes the initial state of the system
     AXES_INITIAL_STATE_FILENAME = 'axes_initial_state.csv'
@@ -196,9 +198,17 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     START_TIME = max(0, new_start_time)
 
     # Name of the CSV files which contains the meteo data
-    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t')
+    meteo = pd.read_csv(os.path.join(INPUT_METEO_DIRPATH, METEO_FILENAME), index_col='t')
 
     # -- OUTPUTS CONFIGURATION --
+
+    # Save the outputs with a full scan of the MTG at each time step (or at selected time steps)
+    UPDATE_SHARED_DF = False
+    if stored_times is None:
+        stored_times = 'all'
+    if not (stored_times == 'all' or type(stored_times) == list):
+        print('stored_times should be either \'all\', a list or an empty list.')
+        raise
 
     # create empty dataframes to shared data between the models
     shared_axes_inputs_outputs_df = pd.DataFrame()
@@ -228,7 +238,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     # -- ADEL and MTG CONFIGURATION --
 
     # Create the stand using density pattern
-    stand = AgronomicStand(sowing_density=PLANT_DENSITY[1], plant_density=PLANT_DENSITY[1], inter_row=0.15, noise=0.)
+    stand = AgronomicStand(sowing_density=PLANT_DENSITY[1], plant_density=PLANT_DENSITY[1], inter_row=INTER_ROW, noise=0.)
 
     # Create AdelDyn object and empty mtg
     adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass', top_leaves=0), stand=stand)
@@ -278,12 +288,14 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                             shared_hiddenzones_inputs_outputs_df,
                                                             shared_elements_inputs_outputs_df,
                                                             adel_wheat, phytoT_df,
-                                                            update_parameters_elongwheat)
+                                                            update_parameters_elongwheat,
+                                                            update_shared_df=UPDATE_SHARED_DF)
 
     # -- CARIBU --
     caribu_facade_ = caribu_facade.CaribuFacade(g,
                                                 shared_elements_inputs_outputs_df,
-                                                adel_wheat)
+                                                adel_wheat,
+                                                update_shared_df=UPDATE_SHARED_DF)
 
     # -- SENESCWHEAT --
     # Initial states    
@@ -314,7 +326,8 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                                shared_organs_inputs_outputs_df,
                                                                shared_axes_inputs_outputs_df,
                                                                shared_elements_inputs_outputs_df,
-                                                               update_parameters_senescwheat)
+                                                               update_parameters_senescwheat,
+                                                               update_shared_df=UPDATE_SHARED_DF)
 
     # -- FARQUHARWHEAT --
     # Initial states    
@@ -326,11 +339,19 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         farquharwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
         [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
+    # Update parameters if specified
+    if update_parameters_all_models and 'farquharwheat' in update_parameters_all_models:
+        update_parameters_farquharwheat = update_parameters_all_models['farquharwheat']
+    else:
+        update_parameters_farquharwheat = None
+
     # Facade initialisation
     farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
                                                                      farquharwheat_elements_initial_state,
                                                                      farquharwheat_axes_initial_state,
-                                                                     shared_elements_inputs_outputs_df)
+                                                                     shared_elements_inputs_outputs_df,
+                                                                     update_parameters_farquharwheat,
+                                                                     update_shared_df=UPDATE_SHARED_DF)
 
     # -- GROWTHWHEAT --
     # Initial states    
@@ -367,7 +388,8 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                                shared_hiddenzones_inputs_outputs_df,
                                                                shared_elements_inputs_outputs_df,
                                                                shared_axes_inputs_outputs_df,
-                                                               update_parameters_growthwheat)
+                                                               update_parameters_growthwheat,
+                                                               update_shared_df=UPDATE_SHARED_DF)
 
     # -- CNWHEAT --
     # Initial states    
@@ -393,6 +415,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     cnwheat_facade_ = cnwheat_facade.CNWheatFacade(g,
                                                    CNWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                    PLANT_DENSITY,
+                                                   update_parameters_cnwheat,
                                                    cnwheat_organs_initial_state,
                                                    cnwheat_hiddenzones_initial_state,
                                                    cnwheat_elements_initial_state,
@@ -402,12 +425,16 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                                                    shared_hiddenzones_inputs_outputs_df,
                                                    shared_elements_inputs_outputs_df,
                                                    shared_soils_inputs_outputs_df,
-                                                   update_parameters_cnwheat)
+                                                   update_shared_df=UPDATE_SHARED_DF)
 
     # Run cnwheat with constant nitrates concentration in the soil if specified
     if N_fertilizations is not None and 'constant_Conc_Nitrates' in N_fertilizations.keys():
         cnwheat_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True  # TODO: make (1, 'MS') more general
         cnwheat_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * cnwheat_facade_.soils[(1, 'MS')].volume
+
+    # -- FSPMWHEAT --
+    # Facade initialisation
+    fspmwheat_facade_ = fspmwheat_facade.FSPMWheatFacade(g)
 
     # Update geometry
     adel_wheat.update_geometry(g)
@@ -421,32 +448,28 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
     if run_simu:
 
         try:
-            for t_caribu in range(START_TIME, SIMULATION_LENGTH, CARIBU_TIMESTEP):
+            for t_caribu in range(START_TIME, SIMULATION_LENGTH, SENESCWHEAT_TIMESTEP):
                 # run Caribu
-                PARi = meteo.loc[t_caribu, ['PARi_MA4']].iloc[0]
+                PARi = meteo.loc[t_caribu, ['PARi']].iloc[0]
                 DOY = meteo.loc[t_caribu, ['DOY']].iloc[0]
                 hour = meteo.loc[t_caribu, ['hour']].iloc[0]
-                caribu_facade_.run(energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
+                PARi_next_hours = meteo.loc[range(t_caribu, t_caribu + CARIBU_TIMESTEP), ['PARi']].sum().values[0]
 
-                for t_senescwheat in range(t_caribu, t_caribu + CARIBU_TIMESTEP, SENESCWHEAT_TIMESTEP):
+                if (t_caribu % CARIBU_TIMESTEP == 0) and (PARi_next_hours > 0):
+                    run_caribu = True
+                else:
+                    run_caribu = False
+
+                caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy,
+                                   plant_density=PLANT_DENSITY[1], inter_row=INTER_ROW)
+
+                for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
                     senescwheat_facade_.run()
 
-                    # Test for dead plant # TODO: adapt in case of multiple plants
-                    if np.nansum(shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0:
-                        # append the inputs and outputs at current step to global lists
-                        all_simulation_steps.append(t_senescwheat)
-                        axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                        organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                        hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
-                        elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                        soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
-                        break
-
-                    # Run the rest of the model if the plant is alive
                     for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):
                         # get the meteo of the current step
-                        Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature_MA2', 'ambient_CO2_MA2', 'humidity_MA2', 'Wind_MA2']]
+                        Ta, ambient_CO2, RH, Ur = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
 
                         # run FarquharWheat
                         farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
@@ -467,25 +490,55 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
                                 for t_cnwheat in range(t_growthwheat, t_growthwheat + GROWTHWHEAT_TIMESTEP, CNWHEAT_TIMESTEP):
                                     print('t cnwheat is {}'.format(t_cnwheat))
+
+                                    # N fertilization if any
+                                    if N_fertilizations is not None and len(N_fertilizations) > 0:
+                                        if t_cnwheat in N_fertilizations.keys():
+                                            cnwheat_facade_.soils[(1, 'MS')].nitrates += N_fertilizations[t_cnwheat]
+
                                     if t_cnwheat > 0:
-
-                                        # N fertilization if any
-                                        if N_fertilizations is not None and len(N_fertilizations) > 0:
-                                            if t_cnwheat in N_fertilizations.keys():
-                                                cnwheat_facade_.soils[(1, 'MS')].nitrates += N_fertilizations[t_cnwheat]
-
                                         # run CNWheat
                                         Tair = meteo.loc[t_elongwheat, 'air_temperature']
                                         Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
                                         cnwheat_facade_.run(Tair, Tsoil, tillers_replications)
 
                                     # append outputs at current step to global lists
-                                    all_simulation_steps.append(t_cnwheat)
-                                    axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                                    organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                                    hiddenzones_all_data_list.append(shared_hiddenzones_inputs_outputs_df.copy())
-                                    elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                                    soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+                                    if (stored_times == 'all') or (t_cnwheat in stored_times):
+                                        axes_outputs, elements_outputs, hiddenzones_outputs, organs_outputs, soils_outputs = fspmwheat_facade_.build_outputs_df_from_MTG()
+
+                                        all_simulation_steps.append(t_cnwheat)
+                                        axes_all_data_list.append(axes_outputs)
+                                        organs_all_data_list.append(organs_outputs)
+                                        hiddenzones_all_data_list.append(hiddenzones_outputs)
+                                        elements_all_data_list.append(elements_outputs)
+                                        soils_all_data_list.append(soils_outputs)
+
+                                        # Test for dead plant: if the whole shoot is senesced or if conc_sucrose_phloem < threshold
+                                        # TODO: adapt in case of multiple plants
+                                        # TODO: create a function with parameters (where ?)
+                                        if (np.nansum(elements_outputs.loc[elements_outputs['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0) or \
+                                                (organs_outputs.loc[organs_outputs['organ'] == 'phloem', 'sucrose'].values[0] / axes_outputs['mstruct'].values[0] < -50):
+                                            break
+                                else:
+                                    # Continue if CN-Wheat loop wasn't broken because of dead plant.
+                                    continue
+                                # CN-Wheat loop was broken, break the Caribu loop.
+                                break
+                            else:
+                                # Continue if GrowthWheat loop wasn't broken because of dead plant.
+                                continue
+                            # GrowthWheat loop was broken, break the Caribu loop.
+                            break
+                        else:
+                            # Continue if ElongWheat loop wasn't broken because of dead plant.
+                            continue
+                        # ElongWheat loop was broken, break the Caribu loop.
+                        break
+                    else:
+                        # Continue if FarqhuarWheat loop wasn't broken because of dead plant.
+                        continue
+                    # FarqhuarWheat loop was broken, break the Caribu loop.
+                    break
 
                 else:
                     # Continue if SenescWheat loop wasn't broken because of dead plant.
@@ -508,9 +561,10 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                 outputs_df = outputs_df.reindex(index_columns + outputs_df.columns.difference(index_columns).tolist(), axis=1, copy=False)
                 if run_from_outputs:
                     outputs_df = pd.concat([previous_outputs_dataframes[outputs_filename], outputs_df], sort=False)
+                outputs_df.fillna(value=np.nan, inplace=True)  # Convert back None to NaN
                 save_df_to_csv(outputs_df, outputs_filepath, OUTPUTS_PRECISION)
                 outputs_file_basename = outputs_filename.split('.')[0]
-                outputs_df_dict[outputs_file_basename] = outputs_df.where(outputs_df.notnull(), pd.np.nan ).reset_index()
+                outputs_df_dict[outputs_file_basename] = outputs_df.reset_index()
 
     # ---------------------------------------------
     # ---------      POST-PROCESSING      ---------
@@ -537,7 +591,7 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
                 assert not os.path.isfile(tmp_path), \
                     "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(tmp_filename, outputs_file_basename)
 
-            time_grid = outputs_df_dict.values()[0].t
+            time_grid = list(outputs_df_dict.values())[0].t
             delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
 
         else:
@@ -639,10 +693,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
             phyllochron['phyllochron'].append(phyllo_DD)
 
         if len(phyllochron['metamer']) > 0:
-            plt.figure()
+            fig, ax = plt.subplots()
             plt.xlim((int(min(phyllochron['metamer']) - 1), int(max(phyllochron['metamer']) + 1)))
             plt.ylim(ymin=0, ymax=150)
-            ax = plt.subplot(111)
             ax.plot(phyllochron['metamer'], phyllochron['phyllochron'], color='b', marker='o')
             for i, j in zip(phyllochron['metamer'], phyllochron['phyllochron']):
                 ax.annotate(str(int(round(j, 0))), xy=(i, j + 2), ha='center')
@@ -670,11 +723,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
 
         var_list = ['leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'lamina_Wmax', 'internode_Lmax']
         for var in list(var_list):
-            plt.figure()
+            fig, ax = plt.subplots()
             plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
             plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 100 * 1.05) + list(bchmk[var] * 1.05)))
-
-            ax = plt.subplot(111)
 
             tmp = res[['metamer', var]].drop_duplicates()
 
@@ -688,10 +739,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
             plt.close()
 
         var = 'lamina_W_Lg'
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
         plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 1.05) + list(bchmk[var] * 1.05)))
-        ax = plt.subplot(111)
         tmp = res[['metamer', var]].drop_duplicates()
         line1 = ax.plot(tmp.metamer, tmp[var], color='c', marker='o')
         line2 = ax.plot(bchmk.metamer, bchmk[var], color='orange', marker='o')
@@ -709,10 +759,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         bchmk = bchmk.reset_index()
         bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
 
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
         plt.ylim(ymin=0, ymax=50)
-        ax = plt.subplot(111)
 
         tmp = res[['metamer', 'SSLW']].drop_duplicates()
 
@@ -731,10 +780,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         bchmk = bchmk.reset_index()
         bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
 
-        plt.figure()
+        fig, ax = plt.subplots()
         plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
         plt.ylim(ymin=0, ymax=0.8)
-        ax = plt.subplot(111)
 
         tmp = res[['metamer', 'LSSW']].drop_duplicates()
 
@@ -945,3 +993,9 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         ax.set_xlim(left=0)
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'N_dilution.PNG'), format='PNG', bbox_inches='tight')
         plt.close()
+
+
+if __name__ == '__main__':
+    main(simulation_length=2000, forced_start_time=0,
+         run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+         show_3Dplant=False, heterogeneous_canopy=True, METEO_FILENAME="meteo_PAR250.csv")

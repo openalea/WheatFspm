@@ -47,6 +47,14 @@ POPULATION_STATE_VARIABLE = set(cnwheat_simulation.Simulation.PLANTS_STATE + cnw
                                 cnwheat_simulation.Simulation.PHYTOMERS_STATE + cnwheat_simulation.Simulation.ORGANS_STATE +
                                 cnwheat_simulation.Simulation.HIDDENZONE_STATE + cnwheat_simulation.Simulation.ELEMENTS_STATE)
 
+#: all the variables of a CNWheat population computed during a run step of the simulation
+POPULATION_RUN_VARIABLES = set(cnwheat_simulation.Simulation.PLANTS_RUN_VARIABLES + cnwheat_simulation.Simulation.AXES_RUN_VARIABLES +
+                               cnwheat_simulation.Simulation.PHYTOMERS_RUN_VARIABLES + cnwheat_simulation.Simulation.ORGANS_RUN_VARIABLES +
+                               cnwheat_simulation.Simulation.HIDDENZONE_RUN_VARIABLES + cnwheat_simulation.Simulation.ELEMENTS_RUN_VARIABLES)
+
+#: all the variables to be stored in the MTG
+MTG_RUN_VARIABLES = set(list(POPULATION_RUN_VARIABLES) + cnwheat_simulation.Simulation.SOILS_RUN_VARIABLES)
+
 # number of seconds in 1 hour
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
 
@@ -61,7 +69,7 @@ class CNWheatFacade(object):
 
     """
 
-    def __init__(self, shared_mtg, delta_t, culm_density,
+    def __init__(self, shared_mtg, delta_t, culm_density, update_parameters,
                  model_organs_inputs_df,
                  model_hiddenzones_inputs_df,
                  model_elements_inputs_df,
@@ -71,11 +79,12 @@ class CNWheatFacade(object):
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
                  shared_soils_inputs_outputs_df,
-                 update_parameters=None):
+                 update_shared_df=True):
         """
         :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
         :param int delta_t: The delta between two runs, in seconds.
         :param dict culm_density: The density of culm. One key per plant.
+        :param dict update_parameters: A dictionary with the parameters to update, should have the form {'Organ_label1': {'param1': value1, 'param2': value2}, ...}.
         :param pandas.DataFrame model_organs_inputs_df: the inputs of the model at organs scale.
         :param pandas.DataFrame model_hiddenzones_inputs_df: the inputs of the model at hiddenzones scale.
         :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
@@ -85,7 +94,8 @@ class CNWheatFacade(object):
         :param pandas.DataFrame shared_hiddenzones_inputs_outputs_df: the dataframe of inputs and outputs at hiddenzones scale shared between all models.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
         :param pandas.DataFrame shared_soils_inputs_outputs_df: the dataframe of inputs and outputs at soils scale shared between all models.
-        :param dict or None update_parameters: A dictionary with the parameters to update, should have the form {'Organ_label1': {'param1': value1, 'param2': value2}, ...}.
+        :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
+
         """
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
@@ -105,32 +115,36 @@ class CNWheatFacade(object):
         self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df  #: the dataframe at hiddenzones scale shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df  #: the dataframe at elements scale shared between all models
         self._shared_soils_inputs_outputs_df = shared_soils_inputs_outputs_df  #: the dataframe at soils scale shared between all models
-        self._update_shared_dataframes(cnwheat_organs_data_df=model_organs_inputs_df,
-                                       cnwheat_hiddenzones_data_df=model_hiddenzones_inputs_df,
-                                       cnwheat_elements_data_df=model_elements_inputs_df,
-                                       cnwheat_soils_data_df=model_soils_inputs_df)
+        self._update_shared_df = update_shared_df
+        if self._update_shared_df:
+            self._update_shared_dataframes(cnwheat_organs_data_df=model_organs_inputs_df,
+                                           cnwheat_hiddenzones_data_df=model_hiddenzones_inputs_df,
+                                           cnwheat_elements_data_df=model_elements_inputs_df,
+                                           cnwheat_soils_data_df=model_soils_inputs_df)
 
-    def run(self, Tair=12, Tsoil=12, tillers_replications=None):
+    def run(self, Tair=12, Tsoil=12, tillers_replications=None, update_shared_df=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
+        :param update_shared_df:
         :param float Tair: air temperature (°C)
         :param float Tsoil: soil temperature (°C)
         :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value.
+        :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
         """
 
         self._initialize_model(Tair=Tair, Tsoil=Tsoil, tillers_replications=tillers_replications)
         self._simulation.run()
         self._update_shared_MTG()
 
-        _, cnwheat_axes_inputs_outputs_df, _, cnwheat_organs_inputs_outputs_df, cnwheat_hiddenzones_inputs_outputs_df, cnwheat_elements_inputs_outputs_df, cnwheat_soils_inputs_outputs_df = \
-            cnwheat_converter.to_dataframes(self._simulation.population, self._simulation.soils)
-
-        self._update_shared_dataframes(cnwheat_axes_data_df=cnwheat_axes_inputs_outputs_df,
-                                       cnwheat_organs_data_df=cnwheat_organs_inputs_outputs_df,
-                                       cnwheat_hiddenzones_data_df=cnwheat_hiddenzones_inputs_outputs_df,
-                                       cnwheat_elements_data_df=cnwheat_elements_inputs_outputs_df,
-                                       cnwheat_soils_data_df=cnwheat_soils_inputs_outputs_df)
+        if update_shared_df or (update_shared_df is None and self._update_shared_df):
+            _, cnwheat_axes_inputs_outputs_df, _, cnwheat_organs_inputs_outputs_df, cnwheat_hiddenzones_inputs_outputs_df, cnwheat_elements_inputs_outputs_df, cnwheat_soils_inputs_outputs_df = \
+                cnwheat_converter.to_dataframes(self._simulation.population, self._simulation.soils)
+            self._update_shared_dataframes(cnwheat_axes_data_df=cnwheat_axes_inputs_outputs_df,
+                                           cnwheat_organs_data_df=cnwheat_organs_inputs_outputs_df,
+                                           cnwheat_hiddenzones_data_df=cnwheat_hiddenzones_inputs_outputs_df,
+                                           cnwheat_elements_data_df=cnwheat_elements_inputs_outputs_df,
+                                           cnwheat_soils_data_df=cnwheat_soils_inputs_outputs_df)
 
     @staticmethod
     def postprocessing(axes_outputs_df, organs_outputs_df, hiddenzone_outputs_df, elements_outputs_df, soils_outputs_df, delta_t):
@@ -243,11 +257,9 @@ class CNWheatFacade(object):
                             for cnwheat_organ_data_name in cnwheat_organ_data_names:
                                 cnwheat_organ_data_dict[cnwheat_organ_data_name] = mtg_organ_properties[cnwheat_organ_data_name]
 
-                                # MG
+                                # Debug: Tell if missing input variable
                                 if math.isnan(mtg_organ_properties[cnwheat_organ_data_name]) or mtg_organ_properties[cnwheat_organ_data_name] is None:
-                                    print(mtg_axis_vid)
-                                    print(mtg_organ_label)
-                                    print(cnwheat_organ_data_name)
+                                    print('Missing variable', cnwheat_organ_data_name, 'for vertex id', mtg_axis_vid, 'which is', mtg_organ_label)
 
                             cnwheat_organ.__dict__.update(cnwheat_organ_data_dict)
 
@@ -375,10 +387,10 @@ class CNWheatFacade(object):
         """
         # add the missing properties
         mtg_property_names = self._shared_mtg.property_names()
-        for cnwheat_data_name in POPULATION_STATE_VARIABLE:
+        for cnwheat_data_name in MTG_RUN_VARIABLES:
             if cnwheat_data_name not in mtg_property_names:
                 self._shared_mtg.add_property(cnwheat_data_name)
-        for cnwheat_organ_label in MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING.keys() + [cnwheat_converter.CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnwheat_model.HiddenZone]]:
+        for cnwheat_organ_label in list(MTG_TO_CNWHEAT_AXES_ORGANS_MAPPING.keys()) + ['soil'] + [cnwheat_converter.CNWHEAT_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnwheat_model.HiddenZone]]:
             if cnwheat_organ_label not in mtg_property_names:
                 self._shared_mtg.add_property(cnwheat_organ_label)
 
@@ -398,7 +410,7 @@ class CNWheatFacade(object):
                     if self._shared_mtg.label(mtg_axis_vid) == cnwheat_axis_label:
                         break
 
-                cnwheat_axis_property_names = [property_name for property_name in cnwheat_simulation.Simulation.AXES_STATE if hasattr(cnwheat_axis, property_name)]
+                cnwheat_axis_property_names = [property_name for property_name in cnwheat_simulation.Simulation.AXES_RUN_VARIABLES if hasattr(cnwheat_axis, property_name)]
                 for cnwheat_axis_property_name in cnwheat_axis_property_names:
                     cnwheat_axis_property_value = getattr(cnwheat_axis, cnwheat_axis_property_name)
                     self._shared_mtg.property(cnwheat_axis_property_name)[mtg_axis_vid] = cnwheat_axis_property_value
@@ -410,7 +422,7 @@ class CNWheatFacade(object):
                     # Update the property describing the organ of the current axis in the MTG
                     cnwheat_organ = getattr(cnwheat_axis, mtg_organ_label)
                     mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)[mtg_organ_label]
-                    for cnwheat_property_name in cnwheat_simulation.Simulation.ORGANS_STATE:
+                    for cnwheat_property_name in cnwheat_simulation.Simulation.ORGANS_RUN_VARIABLES:
                         if hasattr(cnwheat_organ, cnwheat_property_name):
                             mtg_organ_properties[cnwheat_property_name] = getattr(cnwheat_organ, cnwheat_property_name)
                 mtg_metamers_iterator = self._shared_mtg.components_iter(mtg_axis_vid)
@@ -427,7 +439,9 @@ class CNWheatFacade(object):
                             self._shared_mtg.property(mtg_hiddenzone_label)[mtg_metamer_vid] = {}
                         # Update the property describing the hiddenzone of the current metamer in the MTG
                         mtg_hiddenzone_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)[mtg_hiddenzone_label]
-                        mtg_hiddenzone_properties.update(cnwheat_phytomer.hiddenzone.__dict__)
+                        for cnwheat_property_name in cnwheat_simulation.Simulation.HIDDENZONE_RUN_VARIABLES:
+                            if hasattr(cnwheat_phytomer.hiddenzone, cnwheat_property_name):
+                                mtg_hiddenzone_properties[cnwheat_property_name] = getattr(cnwheat_phytomer.hiddenzone, cnwheat_property_name)
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
                         if mtg_organ_label not in MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING:
@@ -435,7 +449,7 @@ class CNWheatFacade(object):
                         cnwheat_organ = getattr(cnwheat_phytomer, CNWHEAT_ATTRIBUTES_MAPPING[MTG_TO_CNWHEAT_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]])
                         if cnwheat_organ is None:
                             continue
-                        cnwheat_organ_property_names = [property_name for property_name in cnwheat_simulation.Simulation.ORGANS_STATE if hasattr(cnwheat_organ, property_name)]
+                        cnwheat_organ_property_names = [property_name for property_name in cnwheat_simulation.Simulation.ORGANS_RUN_VARIABLES if hasattr(cnwheat_organ, property_name)]
                         for cnwheat_organ_property_name in cnwheat_organ_property_names:
                             attribute_value = getattr(cnwheat_organ, cnwheat_organ_property_name)
                             # TODO: temporary ; replace by inputs at photosynthetic organs scale
@@ -449,11 +463,23 @@ class CNWheatFacade(object):
                             if mtg_element_label not in cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING:
                                 continue
                             cnwheat_element = getattr(cnwheat_organ, cnwheat_converter.DATAFRAME_TO_CNWHEAT_ELEMENTS_NAMES_MAPPING[mtg_element_label])
-                            cnwheat_element_property_names = [property_name for property_name in cnwheat_simulation.Simulation.ELEMENTS_STATE if hasattr(cnwheat_element, property_name)]
+                            cnwheat_element_property_names = [property_name for property_name in cnwheat_simulation.Simulation.ELEMENTS_RUN_VARIABLES if hasattr(cnwheat_element, property_name)]
                             for cnwheat_element_property_name in cnwheat_element_property_names:
                                 cnwheat_element_property_value = getattr(cnwheat_element, cnwheat_element_property_name)
                                 self._shared_mtg.property(cnwheat_element_property_name)[mtg_element_vid] = cnwheat_element_property_value
                                 self._shared_mtg.property(cnwheat_element_property_name)[mtg_organ_vid] = cnwheat_element_property_value  # Update organ property too
+
+                #: Temporary: Store Soil variables at axis level
+                axis_id = (cnwheat_plant_index, cnwheat_axis_label)
+                if axis_id in self.soils.keys():
+                    if 'soil' not in self._shared_mtg.get_vertex_property(mtg_axis_vid):
+                        # Add a property describing the organ to the current axis of the MTG
+                        self._shared_mtg.property('soil')[mtg_axis_vid] = {}
+                    # Update the property describing the organ of the current axis in the MTG
+                    mtg_soil_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)['soil']
+                    for cnwheat_property_name in cnwheat_simulation.Simulation.SOILS_RUN_VARIABLES:
+                        if hasattr(self.soils[axis_id], cnwheat_property_name):
+                            mtg_soil_properties[cnwheat_property_name] = getattr(self.soils[axis_id], cnwheat_property_name)
 
     def _update_shared_dataframes(self, cnwheat_axes_data_df=None, cnwheat_organs_data_df=None,
                                   cnwheat_hiddenzones_data_df=None, cnwheat_elements_data_df=None,
