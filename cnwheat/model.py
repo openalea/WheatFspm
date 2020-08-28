@@ -785,7 +785,7 @@ class Roots(Organ):
     INIT_COMPARTMENTS = parameters.ROOTS_INIT_COMPARTMENTS  #: the initial values of compartments and state parameters
 
     def __init__(self, label='roots', mstruct=INIT_COMPARTMENTS.mstruct, senesced_mstruct=INIT_COMPARTMENTS.senesced_mstruct, Nstruct=INIT_COMPARTMENTS.Nstruct, sucrose=INIT_COMPARTMENTS.sucrose,
-                 nitrates=INIT_COMPARTMENTS.nitrates, nitrates_vacuole=INIT_COMPARTMENTS.nitrates_vacuole, amino_acids=INIT_COMPARTMENTS.amino_acids, cytokinins=INIT_COMPARTMENTS.cytokinins):
+                 nitrates=INIT_COMPARTMENTS.nitrates, amino_acids=INIT_COMPARTMENTS.amino_acids, cytokinins=INIT_COMPARTMENTS.cytokinins):
 
         super(Roots, self).__init__(label)
 
@@ -797,7 +797,6 @@ class Roots(Organ):
         # state variables
         self.sucrose = sucrose  #: µmol` C sucrose
         self.nitrates = nitrates  #: µmol` N nitrates
-        self.nitrates_vacuole = nitrates_vacuole  #: µmol` N nitrates
         self.amino_acids = amino_acids  #: µmol` N amino acids
         self.cytokinins = cytokinins  #: AU cytokinins
 
@@ -1047,33 +1046,6 @@ class Roots(Organ):
 
         return max(min(Export_cytokinins, cytokinins), 0.)
 
-    def calculate_Loading_Nitrates_Vacuole(self, nitrates_roots, T_effect_Vmax):
-        """Rate of nitrates loading from root cytosol to root vacuole(µmol` N nitratet loaded g-1 mstruct h-1).
-        Michaelis-Menten function of the nitrates concentrations in the cytosol.
-
-        :param float nitrates_roots: Amount of nitrates in root cytosol (µmol` N)
-        :param float T_effect_Vmax: Effect of the temperature on the Vmax at 20°C (AU)
-
-        :return: Rate of Nitrates Loading into the vacuole (µmol` N g-1 mstruct h-1)
-        :rtype: float
-        """
-        conc_nitrates_roots = nitrates_roots / (self.mstruct * self.__class__.PARAMETERS.ALPHA)
-        return (conc_nitrates_roots * Roots.PARAMETERS.VMAX_NITRATES_VACUOLE_LOAD / (
-                    conc_nitrates_roots + Roots.PARAMETERS.K_NITRATES_VACUOLE_LOAD)) * T_effect_Vmax * parameters.SECOND_TO_HOUR_RATE_CONVERSION
-
-    def calculate_Unloading_Nitrates_Vacuole(self, nitrates_vacuole, T_effect_Vmax):
-        """Rate of sucrose Unloading from the root vacuole to the root cytosol (µmol` N unloaded g-1 mstruct h-1).
-
-        :param float nitrates_vacuole: Amount of nitrates in the root vacuole (µmol` N)
-        :param float T_effect_Vmax: Effect of the temperature on the Vmax rate at 20°C (AU).
-
-        :return: Rate of Nitrates Unloading from the root vacuole to the root cytosol (µmol` N g-1 mstruct h-1)
-        :rtype: float
-        """
-        conc_nitrates_vacuole = nitrates_vacuole / (self.mstruct * self.__class__.PARAMETERS.ALPHA)
-        return (conc_nitrates_vacuole * Roots.PARAMETERS.VMAX_NITRATES_VACUOLE_LOAD / (
-                    conc_nitrates_vacuole + Roots.PARAMETERS.K_NITRATES_VACUOLE_LOAD)) * T_effect_Vmax * parameters.SECOND_TO_HOUR_RATE_CONVERSION
-
     # COMPARTMENTS
 
     def calculate_sucrose_derivative(self, Unloading_Sucrose, S_Amino_Acids, C_exudation, sum_respi):
@@ -1091,32 +1063,19 @@ class Roots(Organ):
         sucrose_consumption_AA = (S_Amino_Acids / EcophysiologicalConstants.AMINO_ACIDS_N_RATIO) * EcophysiologicalConstants.AMINO_ACIDS_C_RATIO
         return (Unloading_Sucrose - sucrose_consumption_AA - C_exudation) * self.mstruct - sum_respi
 
-    def calculate_nitrates_derivative(self, Uptake_Nitrates, Export_Nitrates, S_Amino_Acids, Loading_Nitrates_Vacuole, Unloading_Nitrates_Vacuole):
+    def calculate_nitrates_derivative(self, Uptake_Nitrates, Export_Nitrates, S_Amino_Acids):
         """delta root nitrates.
 
         :param float Uptake_Nitrates: Nitrate uptake (µmol` N nitrates)
         :param float Export_Nitrates: Export of nitrates (µmol` N)
         :param float S_Amino_Acids: Amino acids synthesis (µmol` N g-1 mstruct)
-        :param float Loading_Nitrates_Vacuole: Loading of Nitrate into the vacuole (µmol` N nitrates)
-        :param float Unloading_Nitrates_Vacuole: Unloading of nitrates into the cytosol (µmol` N nitrates)
 
         :return: delta root nitrates (µmol` N nitrates)
         :rtype: float
         """
         import_nitrates_roots = Uptake_Nitrates
         nitrate_reduction_AA = S_Amino_Acids  #: Contribution of nitrates to the synthesis of amino_acids
-        return import_nitrates_roots - Export_Nitrates - nitrate_reduction_AA * self.mstruct - Loading_Nitrates_Vacuole + Unloading_Nitrates_Vacuole
-
-    def calculate_nitrates_vacuole_derivative(self, Loading_Nitrates_Vacuole, Unloading_Nitrates_Vacuole):
-        """delta roots' vacuole nitrates.
-
-        :param float Loading_Nitrates_Vacuole: Loading of Nitrate into the vacuole (µmol` N nitrates g-1 mstruct h-1)
-        :param float Unloading_Nitrates_Vacuole: Unloading of nitrates into the cytosol (µmol` N nitrates  g-1 mstruct h-1)
-
-        :return: delta root nitrates (µmol` N nitrates)
-        :rtype: float
-        """
-        return (Loading_Nitrates_Vacuole - Unloading_Nitrates_Vacuole) * self.mstruct
+        return import_nitrates_roots - Export_Nitrates - nitrate_reduction_AA * self.mstruct
 
     def calculate_amino_acids_derivative(self, Unloading_Amino_Acids, S_Amino_Acids, Export_Amino_Acids, N_exudation):
         """delta root amino acids.

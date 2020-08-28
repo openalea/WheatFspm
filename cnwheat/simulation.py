@@ -146,7 +146,7 @@ class Simulation(object):
                                 model.Axis: ['C_exudated', 'sum_respi_shoot', 'sum_respi_roots'],
                                 model.Phytomer: [],
                                 model.Organ: ['age_from_flowering', 'amino_acids', 'cytokinins',
-                                              'nitrates', 'nitrates_vacuole', 'proteins', 'starch', 'structure', 'sucrose'],
+                                              'nitrates', 'proteins', 'starch', 'structure', 'sucrose'],
                                 model.HiddenZone: ['amino_acids', 'fructan', 'proteins', 'sucrose'],
                                 model.PhotosyntheticOrganElement: ['amino_acids', 'cytokinins', 'fructan',
                                                                    'nitrates', 'proteins', 'starch', 'sucrose', 'triosesP'],
@@ -884,7 +884,6 @@ class Simulation(object):
                 axis.phloem.amino_acids = y[self.initial_conditions_mapping[axis.phloem]['amino_acids']]
                 # Roots
                 axis.roots.nitrates = y[self.initial_conditions_mapping[axis.roots]['nitrates']]
-                axis.roots.nitrates_vacuole = y[self.initial_conditions_mapping[axis.roots]['nitrates_vacuole']]
                 axis.roots.amino_acids = y[self.initial_conditions_mapping[axis.roots]['amino_acids']]
                 axis.roots.sucrose = y[self.initial_conditions_mapping[axis.roots]['sucrose']]
                 axis.roots.cytokinins = y[self.initial_conditions_mapping[axis.roots]['cytokinins']]
@@ -906,7 +905,7 @@ class Simulation(object):
                 axis.roots.regul_transpiration = axis.roots.calculate_regul_transpiration(axis.Total_Transpiration)
 
                 # compute the flows from/to the roots to/from photosynthetic organs
-                axis.roots.Uptake_Nitrates, axis.roots.HATS_LATS = axis.roots.calculate_Uptake_Nitrates(soil.Conc_Nitrates_Soil, axis.roots.nitrates + axis.roots.nitrates_vacuole, axis.roots.sucrose,
+                axis.roots.Uptake_Nitrates, axis.roots.HATS_LATS = axis.roots.calculate_Uptake_Nitrates(soil.Conc_Nitrates_Soil, axis.roots.nitrates, axis.roots.sucrose,
                                                                                                         soil.T_effect_Vmax)
                 soil_contributors.append((axis.roots.Uptake_Nitrates, plant.index))  #: TODO TEMP!!!
                 axis.roots.R_Nnit_upt = self.respiration_model.RespirationModel.R_Nnit_upt(axis.roots.Uptake_Nitrates, axis.roots.sucrose)
@@ -1081,23 +1080,18 @@ class Simulation(object):
                                                                                                                      axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, root=True)
                 axis.roots.C_exudation, axis.roots.N_exudation = axis.roots.calculate_exudation(axis.roots.Unloading_Sucrose, axis.roots.sucrose, axis.roots.amino_acids, axis.phloem.amino_acids)
                 axis.roots.S_cytokinins = axis.roots.calculate_S_cytokinins(axis.roots.sucrose, axis.roots.nitrates, soil.T_effect_Vmax)
-                axis.roots.Loading_Nitrates_Vacuole = axis.roots.calculate_Loading_Nitrates_Vacuole(axis.roots.nitrates, soil.T_effect_Vmax)
-                axis.roots.Unloading_Nitrates_Vacuole = axis.roots.calculate_Unloading_Nitrates_Vacuole(axis.roots.nitrates_vacuole, soil.T_effect_Vmax)
 
                 # compartments derivatives
                 axis.roots.R_residual, _ = self.respiration_model.RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, axis.roots.Total_Organic_Nitrogen,
                                                                                               soil.Tsoil)
                 axis.roots.sum_respi = axis.roots.R_Nnit_upt + axis.roots.R_Nnit_red + axis.roots.R_residual
                 sucrose_derivative = axis.roots.calculate_sucrose_derivative(axis.roots.Unloading_Sucrose, axis.roots.S_Amino_Acids, axis.roots.C_exudation, axis.roots.sum_respi)
-                nitrates_derivative = axis.roots.calculate_nitrates_derivative(axis.roots.Uptake_Nitrates, axis.roots.Export_Nitrates, axis.roots.S_Amino_Acids,axis.roots.Loading_Nitrates_Vacuole,
-                                                                               axis.roots.Unloading_Nitrates_Vacuole)
-                nitrates_vacuole_derivative = axis.roots.calculate_nitrates_vacuole_derivative(axis.roots.Loading_Nitrates_Vacuole, axis.roots.Unloading_Nitrates_Vacuole)
+                nitrates_derivative = axis.roots.calculate_nitrates_derivative(axis.roots.Uptake_Nitrates, axis.roots.Export_Nitrates, axis.roots.S_Amino_Acids)
                 amino_acids_derivative = axis.roots.calculate_amino_acids_derivative(axis.roots.Unloading_Amino_Acids, axis.roots.S_Amino_Acids, axis.roots.Export_Amino_Acids, axis.roots.N_exudation)
                 cytokinins_derivative = axis.roots.calculate_cytokinins_derivative(axis.roots.S_cytokinins, axis.roots.Export_cytokinins)
 
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['sucrose']] = sucrose_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['nitrates']] = nitrates_derivative
-                y_derivatives[self.initial_conditions_mapping[axis.roots]['nitrates_vacuole']] = nitrates_vacuole_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['amino_acids']] = amino_acids_derivative
                 y_derivatives[self.initial_conditions_mapping[axis.roots]['cytokinins']] = cytokinins_derivative
 
