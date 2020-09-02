@@ -387,6 +387,10 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
     RUE_shoot = np.polyfit(PARa_cum, df_axe.sum_dry_mass_shoot, 1)[0]
     RUE_plant = np.polyfit(PARa_cum, df_axe.sum_dry_mass, 1)[0]
 
+    df_senesced = df_elt.groupby(['t'], as_index=False).agg({'senesced_mstruct': 'sum'})
+    RUE_shoot_including_senesced = np.polyfit(PARa_cum, (df_axe.sum_dry_mass_shoot + df_senesced.senesced_mstruct), 1)[0]
+    RUE_plant_including_senesced = np.polyfit(PARa_cum, (df_axe.sum_dry_mass + df_senesced.senesced_mstruct), 1)[0]
+
     # --- RUE (g DM. MJ-1 RGint estimated from LAI using Beer-Lambert's law with extinction coefficient of 0.4)
 
     # Beer-Lambert
@@ -404,6 +408,17 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
 
     RUE_shoot_couvert = np.polyfit(RGint_BL_cum, df_axe.sum_dry_mass_shoot_couvert, 1)[0]
     RUE_plant_couvert = np.polyfit(RGint_BL_cum, df_axe.sum_dry_mass_couvert, 1)[0]
+
+    # --- senesced area
+    df_elt_max_ga = df_elt[(df_elt.element == 'LeafElement1')].groupby(['metamer'], as_index=False).agg({'green_area': 'max'})
+    df_elt_max_ga['green_area_max'] = df_elt_max_ga.green_area
+
+    df_senesced_area = df_elt[(df_elt.element == 'LeafElement1')].merge(df_elt_max_ga[['green_area_max', 'metamer']], left_on='metamer', right_on='metamer', how='left').copy()
+    df_senesced_area['senesced_area'] = df_senesced_area.green_area_max - df_senesced_area.green_area
+    df_senesced_area.loc[df_senesced_area.is_growing, 'senesc_area'] = 0.
+
+    df_LAI_senesced = df_senesced_area.groupby(['t'], as_index=False).agg({'senesced_area': 'sum'})
+    df_LAI_senesced['LAI_senesced'] = df_LAI_senesced.senesced_area * plant_density
 
     # ---  Photosynthetic efficiency of the plant
     df_elt['Photosynthesis_tillers'] = df_elt.Ag * df_elt.green_area * df_elt.nb_replications.fillna(1.)
@@ -497,8 +512,11 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
 
     # ---  Write results into a table
     res_df = pd.DataFrame.from_dict({'LAI': [df_LAI.loc[max(df_LAI.index), 'LAI']],
+                                     'LAI_senesced': [df_LAI_senesced.loc[max(df_LAI_senesced.index), 'LAI_senesced']],
                                      'RUE_plant_MJ_PAR': [RUE_plant],
                                      'RUE_shoot_MJ_PAR': [RUE_shoot],
+                                     'RUE_plant_total_MJ_PAR': [RUE_plant_including_senesced],
+                                     'RUE_shoot_total_MJ_PAR': [RUE_shoot_including_senesced],
                                      'RUE_plant_MJ_RGint': [RUE_plant_couvert],
                                      'RUE_shoot_MJ_RGint': [RUE_shoot_couvert],
                                      'Photosynthetic_efficiency': [avg_photo_y],
@@ -519,7 +537,8 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
                                      'final_LAR': [df_RGR.LAR.iloc[-1]],
                                      'avg_LMR': [df_RGR.LMR.mean()],
                                      'final_LMR': [df_RGR.LMR.iloc[-1]],
-                                     'avg_SLA': [df_RGR.SLA.mean()]
+                                     'avg_SLA': [df_RGR.SLA.mean()],
+                                     'tot_PARa_MJ': [PARa_cum[PARa_cum.last_valid_index()]]
                                      })
 
     res_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'performance_indices.csv'), index=False)
