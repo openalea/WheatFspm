@@ -279,11 +279,11 @@ class Simulation(object):
     #: of the compartments associated to each element (see :attr:`MODEL_COMPARTMENTS_NAMES`)
     ELEMENTS_STATE = ELEMENTS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.PhotosyntheticOrganElement, [])
     #: the variables that we need to compute in order to compute fluxes and/or compartments values at element scale
-    ELEMENTS_INTERMEDIATE_VARIABLES = ['Photosynthesis', 'R_Nnit_red', 'R_phloem_loading', 'R_residual', 'R_maintenance', 'Transpiration', 'sum_respi', 'nb_replications']
+    ELEMENTS_INTERMEDIATE_VARIABLES = ['Photosynthesis', 'R_Nnit_red', 'R_phloem_loading', 'R_residual', 'Transpiration', 'sum_respi', 'nb_replications']
     #: the fluxes exchanged between the compartments at element scale
     ELEMENTS_FLUXES = ['Amino_Acids_import', 'D_Fructan', 'D_Proteins', 'D_Starch', 'D_cytokinins', 'Loading_Amino_Acids', 'Loading_Sucrose',
                        'Nitrates_import', 'Regul_S_Fructan', 'S_Fructan', 'S_Starch', 'S_Sucrose', 'S_Amino_Acids', 'S_Proteins',
-                       'cytokinins_import', 'k_proteins']
+                       'cytokinins_import']
     #: the variables computed by integrating values of element components parameters/variables recursively
     ELEMENTS_INTEGRATIVE_VARIABLES = ['Total_Organic_Nitrogen']
     #: all the variables computed during a run step of the simulation at element scale
@@ -980,7 +980,7 @@ class Simulation(object):
 
                             # compartments derivatives
                             starch_derivative = element.calculate_starch_derivative(element.S_Starch, element.D_Starch)
-                            element.R_residual, element.R_maintenance = self.respiration_model.RespirationModel.R_residual(element.sucrose, element.mstruct * element.__class__.PARAMETERS.ALPHA,
+                            element.R_residual = self.respiration_model.RespirationModel.R_residual(element.sucrose, element.mstruct * element.__class__.PARAMETERS.ALPHA,
                                                                                                                            element.Total_Organic_Nitrogen, element.Ts)
                             element.sum_respi = element.R_phloem_loading + element.R_Nnit_red + element.R_residual
                             sum_respi_shoot += element.sum_respi * element.nb_replications
@@ -1024,7 +1024,7 @@ class Simulation(object):
                         hiddenzone.D_Proteins = hiddenzone.calculate_D_Proteins(hiddenzone.proteins, plant.T_effect_Vmax)
 
                         # Residual respiration
-                        hiddenzone.R_residual, hiddenzone.R_maintenance = self.respiration_model.RespirationModel.R_residual(hiddenzone.sucrose,
+                        hiddenzone.R_residual = self.respiration_model.RespirationModel.R_residual(hiddenzone.sucrose,
                                                                                                                              hiddenzone.mstruct * hiddenzone.__class__.PARAMETERS.ALPHA,
                                                                                                                              hiddenzone.Total_Organic_Nitrogen,
                                                                                                                              plant.Tair)
@@ -1069,7 +1069,7 @@ class Simulation(object):
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['structure']] = structure_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['starch']] = starch_derivative
                     y_derivatives[self.initial_conditions_mapping[axis.grains]['proteins']] = proteins_derivative
-                    y_derivatives[self.initial_conditions_mapping[axis.grains]['age_from_flowering']] += (self.delta_t * T_effect_growth)
+                    y_derivatives[self.initial_conditions_mapping[axis.grains]['age_from_flowering']] += (self.delta_t * T_effect_growth) #TODO: create a function
 
                 # compute the derivative of each compartment of roots
                 # flows
@@ -1082,7 +1082,7 @@ class Simulation(object):
                 axis.roots.S_cytokinins = axis.roots.calculate_S_cytokinins(axis.roots.sucrose, axis.roots.nitrates, soil.T_effect_Vmax)
 
                 # compartments derivatives
-                axis.roots.R_residual, _ = self.respiration_model.RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, axis.roots.Total_Organic_Nitrogen,
+                axis.roots.R_residual = self.respiration_model.RespirationModel.R_residual(axis.roots.sucrose, axis.roots.mstruct * model.Roots.PARAMETERS.ALPHA, axis.roots.Total_Organic_Nitrogen,
                                                                                               soil.Tsoil)
                 axis.roots.sum_respi = axis.roots.R_Nnit_upt + axis.roots.R_Nnit_red + axis.roots.R_residual
                 sucrose_derivative = axis.roots.calculate_sucrose_derivative(axis.roots.Unloading_Sucrose, axis.roots.S_Amino_Acids, axis.roots.C_exudation, axis.roots.sum_respi)

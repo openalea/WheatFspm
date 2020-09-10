@@ -72,7 +72,7 @@ ORGANS_INDEXES = cnwheat_simulation.Simulation.ORGANS_INDEXES
 #: concatenation of :attr:`T_INDEX` and :attr:`ORGANS_INDEXES`
 ORGANS_T_INDEXES = cnwheat_simulation.Simulation.ORGANS_T_INDEXES
 #: organs post-processing variables
-ORGANS_POSTPROCESSING_VARIABLES = ['Conc_Amino_Acids', 'Conc_Nitrates', 'Conc_Sucrose', 'Conc_cytokinins', 'Dry_Mass', 'Proteins_N_Mass', 'R_maintenance', 'N_tot', 'WSC_g']
+ORGANS_POSTPROCESSING_VARIABLES = ['Conc_Amino_Acids', 'Conc_Nitrates', 'Conc_Sucrose', 'Conc_cytokinins', 'Dry_Mass', 'Proteins_N_Mass',  'N_tot', 'WSC_g']
 ORGANS_RUN_VARIABLES_ADDITIONAL = ['sucrose_consumption_mstruct', 'AA_consumption_mstruct', 'synthetized_mstruct']
 #: concatenation of :attr:`ORGANS_T_INDEXES`, :attr:`ORGANS_RUN_VARIABLES <cnwheat.simulation.Simulation.ORGANS_RUN_VARIABLES>` and :attr:`ORGANS_POSTPROCESSING_VARIABLES`
 ORGANS_RUN_POSTPROCESSING_VARIABLES = set(ORGANS_T_INDEXES + cnwheat_simulation.Simulation.ORGANS_RUN_VARIABLES + ORGANS_POSTPROCESSING_VARIABLES + ORGANS_RUN_VARIABLES_ADDITIONAL)
@@ -94,8 +94,8 @@ ELEMENTS_INDEXES = cnwheat_simulation.Simulation.ELEMENTS_INDEXES
 ELEMENTS_T_INDEXES = cnwheat_simulation.Simulation.ELEMENTS_T_INDEXES
 #: elements post-processing variables
 ELEMENTS_POSTPROCESSING_VARIABLES = ['Conc_Amino_Acids', 'Conc_Fructan', 'Conc_Nitrates', 'Conc_Proteins', 'Conc_Starch', 'Conc_Sucrose', 'Conc_TriosesP', 'Cont_Fructan_DM',
-                                     'Conc_cytokinins', 'R_maintenance', 'Surfacic N', 'Surfacic_NS', 'NS', 'N_content', 'N_content_total_DM', 'N_tot', 'nb_replications', 'SLA', 'SLN',
-                                     'SLN_nonstruct', 'sum_dry_mass', 'Photosynthetic_yield', 'Cont_WSC_DM']
+                                     'Conc_cytokinins', 'Surfacic_NS', 'NS', 'N_content', 'N_content_total_DM', 'N_tot', 'nb_replications', 'SLA', 'SLN',
+                                     'SLN_nonstruct', 'sum_dry_mass', 'Photosynthetic_efficiency', 'Cont_WSC_DM']
 ELEMENTS_RUN_VARIABLES_ADDITIONAL = ['length', 'PARa']
 #: concatenation of :attr:`ELEMENTS_T_INDEXES`, :attr:`ELEMENTS_RUN_VARIABLES <cnwheat.simulation.Simulation.ELEMENTS_RUN_VARIABLES>` and :attr:`ELEMENTS_POSTPROCESSING_VARIABLES`
 ELEMENTS_RUN_POSTPROCESSING_VARIABLES = set(ELEMENTS_T_INDEXES + cnwheat_simulation.Simulation.ELEMENTS_RUN_VARIABLES + ELEMENTS_RUN_VARIABLES_ADDITIONAL + ELEMENTS_POSTPROCESSING_VARIABLES)
@@ -866,7 +866,7 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
         R_residual = np.array(
             list(map(respiwheat_model.RespirationModel.R_residual, roots_df['sucrose'], roots_df['mstruct'] * cnwheat_model.Roots.PARAMETERS.ALPHA, roots_df['Total_Organic_Nitrogen'],
                      soils_df['Tsoil'])))
-        pp_organs_df.loc[pp_organs_df.organ == 'roots', 'R_maintenance'] = R_residual[:, 1]
+        pp_organs_df.loc[pp_organs_df.organ == 'roots', 'R_residual'] = R_residual
 
         # phloem
         phloems_df = organs_df.loc[organs_df.organ == 'phloem']
@@ -948,7 +948,7 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
         pp_elements_df.loc[pp_elements_df['is_growing'] == 1., 'SLN_nonstruct'] = np.nan
         pp_elements_df.loc[:, 'SLA'] = Element.calculate_SLA(elements_df['sum_dry_mass'], elements_df['green_area'])
         pp_elements_df.loc[pp_elements_df['is_growing'] == 1., 'SLA'] = np.nan
-        pp_elements_df.loc[:, 'Photosynthetic_yield'] = elements_df['Ag'] / elements_df['PARa']
+        pp_elements_df.loc[:, 'Photosynthetic_efficiency'] = elements_df['Ag'] / elements_df['PARa']
 
         grouped = elements_df.groupby('organ')
         for organ_type, parameters_class in \
@@ -966,7 +966,7 @@ def postprocessing(plants_df=None, axes_df=None, metamers_df=None, hiddenzones_d
             pp_curr_organ_elements_df = pp_elements_df.loc[group.index]
             R_residual = np.vectorize(respiwheat_model.RespirationModel.R_residual)(curr_organ_elements_df['sucrose'], curr_organ_elements_df['mstruct'] * parameters_class.ALPHA,
                                                                                     curr_organ_elements_df['Total_Organic_Nitrogen'], curr_organ_elements_df['Ts'])
-            pp_curr_organ_elements_df.loc[:, 'R_maintenance'] = R_residual[0]
+            pp_curr_organ_elements_df.loc[:, 'R_residual'] = R_residual
         pp_elements_df = pp_elements_df.reindex(columns=ELEMENTS_RUN_POSTPROCESSING_VARIABLES, copy=False)
         pp_elements_df[['plant', 'metamer']] = pp_elements_df[['plant', 'metamer']].astype(int)
         returned_dataframes.append(pp_elements_df)
@@ -1263,13 +1263,13 @@ def generate_graphs(axes_df=None, hiddenzones_df=None, organs_df=None, elements_
                                        'green_area': u'Green area (m$^{2}$)', 'R_phloem_loading': u'Respiration phloem loading (µmol C h$^{-1}$)',
                                        'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)', 'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'mstruct': u'Structural mass (g)',
                                        'Nstruct': u'Structural N mass (g)', 'Conc_cytokinins': u'[cytokinins] (UA g$^{-1}$ mstruct)', 'D_cytokinins': u'Cytokinin degradation (UA g$^{-1}$ mstruct)',
-                                       'cytokinins_import': u'Cytokinin import (UA)', 'Surfacic N': u'Surfacic N (g m$^{-2}$)', 'Surfacic_NS': u'Surfacic Non Structural mass (g m$^{-2}$)',
+                                       'cytokinins_import': u'Cytokinin import (UA)', 'Surfacic_NS': u'Surfacic Non Structural mass (g m$^{-2}$)',
                                        'NS': u'Ratio of Non Structural mass', 'N_content': u'N content in the green tissues (% DM)',
                                        'N_content_total_DM': u'N content in the green + senesced tissues (% DM)', 'N_tot': u'N mass (g)',
                                        'SLA': u'Specific Leaf Area (m$^{2}$.kg$^{-1}$)',
                                        'SLN': u'Surfacic Leaf Nitrogen (g.m$^{-2}$)',
                                        'SLN_nonstruct': u'Surfacic Leaf Non-structural Nitrogen (g.m$^{-2}$)', 'length': u'Length (m)',
-                                       'Photosynthetic_yield': u'Photosynthetic yield (µmol C/µmol PARa)'}
+                                       'Photosynthetic_efficiency': u'Photosynthetic yield (µmol C/µmol PARa)'}
 
         for org_ph in (['blade'], ['sheath'], ['internode'], ['peduncle', 'ear']):
             for variable_name, variable_label in graph_variables_ph_elements.items():
@@ -1294,7 +1294,7 @@ def generate_graphs(axes_df=None, hiddenzones_df=None, organs_df=None, elements_
                                   'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N h$^{-1}$)',
                                   'Export_Nitrates': u'Total export of nitrates (µmol N h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N h$^{-1}$)',
                                   'R_Nnit_upt': u'Respiration nitrates uptake (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)',
-                                  'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
+                                  'R_residual': u'Respiration residual (µmol C h$^{-1}$)',
                                   'R_grain_growth_struct': u'Respiration grain structural growth (µmol C h$^{-1}$)', 'R_grain_growth_starch': u'Respiration grain starch growth (µmol C h$^{-1}$)',
                                   'mstruct': u'Structural mass (g)', 'C_exudation': u'Carbon lost by root exudation (µmol C g$^{-1}$ mstruct h$^{-1}$',
                                   'N_exudation': u'Nitrogen lost by root exudation (µmol N g$^{-1}$ mstruct h$^{-1}$', 'Conc_cytokinins': u'[cytokinins] (UA g$^{-1}$ mstruct)',
