@@ -673,7 +673,7 @@ class Grains(Organ):
         :param float mstruct_axis: The structural dry mass of the axis (g)
         :param float T_effect_growth: Effect of the temperature on the growth rate at 20°C (AU)
 
-        :return: RGR of grain structure (dimensionless?)
+        :return: RGR of grain structure at 20°C (s-1)
         :rtype: float
         """
         return ((max(0., sucrose_phloem) / (mstruct_axis * Axis.PARAMETERS.ALPHA)) * Grains.PARAMETERS.VMAX_RGR) / ((max(0., sucrose_phloem) / (mstruct_axis * Axis.PARAMETERS.ALPHA)) +
@@ -1258,7 +1258,6 @@ class PhotosyntheticOrganElement(object):
         self.D_Fructan = None  #: Rate of fructan degradation ((µmol` C g-1 mstruct)
         self.Nitrates_import = None  #: Total nitrates imported from roots (µmol` N nitrates)
         self.Amino_Acids_import = None  #: Total amino acids imported from roots (µmol` N amino acids)
-        self.k_proteins = None  #: First order kinetic regulated by cytokinins concentration
         self.D_Proteins = None  #: Rate of protein degradation (µmol` N g-1 mstruct)
         self.cytokinins_import = None  #: Import of cytokinins (AU)
         self.D_cytokinins = None  #: Rate of cytokinins degradation (AU g-1 mstruct)
