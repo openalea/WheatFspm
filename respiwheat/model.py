@@ -179,15 +179,15 @@ class RespirationModel(object):
 
     @classmethod
     def R_residual(cls, sucrose, mstruct, Ntot, Ts):
-        """ Residual maintenance respiration (cost from protein turn-over, cell ion gradients, futile cycles...)
+        """ Residual respiration (cost from protein turn-over, cell ion gradients, futile cycles...)
 
         :param float sucrose: amount of C sucrose (µmol C)
         :param float mstruct: structural dry mass of organ (g)
         :param float Ntot: total N in organ (µmol N)
         :param float Ts : organ temperature (°C)
 
-        :return: R_residual, R_maintenance (µmol C respired h-1)
-        :rtype: (float, float)
+        :return: R_residual (µmol C respired h-1)
+        :rtype: float
         """
 
         Q10 = 2.
@@ -195,11 +195,8 @@ class RespirationModel(object):
 
         if sucrose <= 0. or mstruct <= 0.:
             R_residual = 0.
-            R_maintenance = 0.
         else:
             conc_sucrose = sucrose / mstruct
             R_residual = ((cls.KM_MAX * conc_sucrose) / (cls.KM + conc_sucrose)) * Ntot * Q10 ** ((Ts - T_ref) / 10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
 
-            rm = 0.004208754
-            R_maintenance = rm * mstruct * Q10 ** ((Ts - T_ref) / 10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
-        return R_residual, R_maintenance
+        return R_residual
