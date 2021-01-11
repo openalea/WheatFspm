@@ -102,7 +102,7 @@ class Simulation(object):
                     SLN_nonstruct_Farquhar = model.calculate_surfacic_nonstructural_nitrogen_Farquhar(surfacic_photosynthetic_proteins)
 
                     option_Retroinhibition = False
-                    surfacic_WSC = None
+                    surfacic_WSC = None  # TODO: rename by non structural carbohydrates because starch is not water-soluble.
                     if parameters.MODEL_VERSION == 'SurfacicProteins_Retroinhibition':
                         option_Retroinhibition = True
                         surfacic_WSC = model.calculate_surfacic_WSC(element_inputs['sucrose'], element_inputs['starch'], element_inputs['fructan'], element_inputs['green_area'])
@@ -121,7 +121,7 @@ class Simulation(object):
                                                                           element_inputs['Nstruct'],
                                                                           element_inputs['green_area'])
                     option_Retroinhibition = False
-                    surfacic_WSC = 0. # Not used if option_Retoinhibition = False
+                    surfacic_WSC = 0.  # Not used if option_Retoinhibition = False
 
                     Ag, An, Rd, Tr, Ts, gs = model.run(surfacic_nitrogen,
                                                        option_Retroinhibition,

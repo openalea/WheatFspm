@@ -307,7 +307,7 @@ def calculate_surfacic_nonstructural_nitrogen_Farquhar(surfacic_photosynthetic_p
 
 
 def calculate_surfacic_WSC(sucrose, starch, fructan, green_area):
-    """Surfacic content of water soluble carbohydrates
+    """Surfacic content of water soluble carbohydrates  # TODO: rename by non structural carbohydrates because starch is not water-soluble.
 
     :param float sucrose: amount of sucrose (µmol C)
     :param float starch: amount of starch (µmol C)
