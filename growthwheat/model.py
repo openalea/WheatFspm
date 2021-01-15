@@ -231,7 +231,7 @@ def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_teq, pos
     :return: mstruct_C_growth (µmol C), mstruct_growth (g), Nstruct_growth (g), Nstruct_N_growth (µmol N)
     :rtype: (float, float, float, float)
     """
-    conc_sucrose = max(0., sucrose / mstruct)
+    conc_sucrose_effective = max (0., sucrose / mstruct - parameters.conc_sucrose_offset)
 
     if postflowering_stages:
         Vmax = parameters.VMAX_ROOTS_GROWTH_POSTFLO
@@ -239,7 +239,7 @@ def calculate_roots_mstruct_growth(sucrose, amino_acids, mstruct, delta_teq, pos
         Vmax = parameters.VMAX_ROOTS_GROWTH_PREFLO
     N = parameters.N_ROOTS_GROWTH
 
-    mstruct_C_growth = ((conc_sucrose ** N) * Vmax) / ((conc_sucrose ** N) + (parameters.K_ROOTS_GROWTH ** N)) * delta_teq * mstruct  #: root growth in C (µmol of C)
+    mstruct_C_growth = max(0., ((conc_sucrose_effective ** N) * Vmax) / ((conc_sucrose_effective ** N) + (parameters.K_ROOTS_GROWTH ** N)) * delta_teq * mstruct)  #: root growth in C (µmol of C)
     mstruct_growth = mstruct_C_growth * parameters.CONVERSION_MMOL_C_G_MSTRUCT_ROOTS  #: root growth (g of structural dry mass)
 
     Nstruct_growth = mstruct_growth * parameters.RATIO_N_MSTRUCT_ROOTS_  #: root growth in N (g of structural dry mass)
