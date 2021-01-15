@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import time
+import sys
 
 import numpy as np
 import pandas as pd
@@ -279,222 +280,236 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # run the simulators
         current_time_of_the_system = time.time()
 
-        for t_elongwheat in range(start_time, stop_time, elongwheat_ts):  # Only to compute temperature related variable
+        try:
 
-            # run ElongWheat
-            print('t elongwheat is {}'.format(t_elongwheat))
-            Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']]
-            elongwheat_facade_.run(Tair, Tsoil, option_static=True)
+            for t_elongwheat in range(start_time, stop_time, elongwheat_ts):  # Only to compute temperature related variable
 
-            for t_senescwheat in range(t_elongwheat, t_elongwheat + elongwheat_ts, senescwheat_ts):
+                # run ElongWheat
+                print('t elongwheat is {}'.format(t_elongwheat))
+                Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']]
+                elongwheat_facade_.run(Tair, Tsoil, option_static=True)
 
-                # run SenescWheat
-                print('t senescwheat is {}'.format(t_senescwheat))
-                senescwheat_facade_.run(forced_max_protein_elements, postflowering_stages=True)
+                for t_senescwheat in range(t_elongwheat, t_elongwheat + elongwheat_ts, senescwheat_ts):
 
-                # Test for fully senesced shoot tissues  #TODO: Make the model to work even if the whole shoot is dead but the roots are alived
-                if sum(senescwheat_facade_._shared_elements_inputs_outputs_df['green_area']) <= 0.25E-6:
-                    break
+                    # run SenescWheat
+                    print('t senescwheat is {}'.format(t_senescwheat))
+                    senescwheat_facade_.run(forced_max_protein_elements, postflowering_stages=True)
 
-                for t_growthwheat in range(t_senescwheat, t_senescwheat + senescwheat_ts, growthwheat_ts):
-                    # run GrowthWheat
-                    print('t growthwheat is {}'.format(t_growthwheat))
-                    growthwheat_facade_.run(postflowering_stages=True)
+                    # Test for fully senesced shoot tissues  #TODO: Make the model to work even if the whole shoot is dead but the roots are alived
+                    if sum(senescwheat_facade_._shared_elements_inputs_outputs_df['green_area']) <= 0.25E-6:
+                        break
 
-                    for t_farquharwheat in range(t_growthwheat, t_growthwheat + growthwheat_ts, farquharwheat_ts):
-                        # get the meteo of the current step
-                        Tair, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
-                        # get PARa for current step
-                        aggregated_PARa = calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False)
-                        print('t caribu is {}'.format(t_farquharwheat))
-                        # caribu_facade_.run(energy=PARi,sun_sky_option='sky')
-                        caribu_facade_.update_shared_MTG({'PARa': aggregated_PARa})
-                        caribu_facade_.update_shared_dataframes({'PARa': aggregated_PARa})
-                        # run FarquharWheat
-                        print('t farquhar is {}'.format(t_farquharwheat))
-                        farquharwheat_facade_.run(Tair, ambient_CO2, RH, Ur)
+                    for t_growthwheat in range(t_senescwheat, t_senescwheat + senescwheat_ts, growthwheat_ts):
+                        # run GrowthWheat
+                        print('t growthwheat is {}'.format(t_growthwheat))
+                        growthwheat_facade_.run(postflowering_stages=True)
 
-                        for t_cnwheat in range(t_farquharwheat, t_farquharwheat + senescwheat_ts, cnwheat_ts):
-                            Tair, Tsoil = meteo.loc[t_cnwheat, ['air_temperature', 'air_temperature']]
-                            # run CNWheat
-                            print('t cnwheat is {}'.format(t_cnwheat))
-                            cnwheat_facade_.run(Tair=Tair, Tsoil=Tsoil)
+                        for t_farquharwheat in range(t_growthwheat, t_growthwheat + growthwheat_ts, farquharwheat_ts):
+                            # get the meteo of the current step
+                            Tair, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
+                            # get PARa for current step
+                            aggregated_PARa = calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False)
+                            print('t caribu is {}'.format(t_farquharwheat))
+                            # caribu_facade_.run(energy=PARi,sun_sky_option='sky')
+                            caribu_facade_.update_shared_MTG({'PARa': aggregated_PARa})
+                            caribu_facade_.update_shared_dataframes({'PARa': aggregated_PARa})
+                            # run FarquharWheat
+                            print('t farquhar is {}'.format(t_farquharwheat))
+                            farquharwheat_facade_.run(Tair, ambient_CO2, RH, Ur)
 
-                            # append the inputs and outputs at current step to global lists
-                            all_simulation_steps.append(t_cnwheat)
-                            axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
-                            organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
-                            elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
-                            soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
+                            for t_cnwheat in range(t_farquharwheat, t_farquharwheat + senescwheat_ts, cnwheat_ts):
+                                Tair, Tsoil = meteo.loc[t_cnwheat, ['air_temperature', 'air_temperature']]
+                                # run CNWheat
+                                print('t cnwheat is {}'.format(t_cnwheat))
+                                cnwheat_facade_.run(Tair=Tair, Tsoil=Tsoil)
 
-            else:
-                continue
-            break
+                                # append the inputs and outputs at current step to global lists
+                                all_simulation_steps.append(t_cnwheat)
+                                axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
+                                organs_all_data_list.append(shared_organs_inputs_outputs_df.copy())
+                                elements_all_data_list.append(shared_elements_inputs_outputs_df.copy())
+                                soils_all_data_list.append(shared_soils_inputs_outputs_df.copy())
 
-        execution_time = int(time.time() - current_time_of_the_system)
-        print('\n', 'Simulation run in ', str(datetime.timedelta(seconds=execution_time)))
+                else:
+                    continue
+                break
 
-        # write all inputs and outputs to CSV files
-        all_axes_inputs_outputs = pd.concat(axes_all_data_list, keys=all_simulation_steps)
-        all_axes_inputs_outputs.reset_index(0, inplace=True)
-        all_axes_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_axes_inputs_outputs.to_csv(AXES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        except Exception as ex:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            print(message, fname, exc_tb.tb_lineno)
 
-        all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps)
-        all_organs_inputs_outputs.reset_index(0, inplace=True)
-        all_organs_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+        finally:
+            execution_time = int(time.time() - current_time_of_the_system)
+            print('\n', 'Simulation run in ', str(datetime.timedelta(seconds=execution_time)))
 
-        all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
-        all_elements_inputs_outputs.reset_index(0, inplace=True)
-        all_elements_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            # write all inputs and outputs to CSV files
+            all_axes_inputs_outputs = pd.concat(axes_all_data_list, keys=all_simulation_steps)
+            all_axes_inputs_outputs.reset_index(0, inplace=True)
+            all_axes_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
+            all_axes_inputs_outputs.to_csv(AXES_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
-        all_soils_inputs_outputs = pd.concat(soils_all_data_list, keys=all_simulation_steps)
-        all_soils_inputs_outputs.reset_index(0, inplace=True)
-        all_soils_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
-        all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+            all_organs_inputs_outputs = pd.concat(organs_all_data_list, keys=all_simulation_steps)
+            all_organs_inputs_outputs.reset_index(0, inplace=True)
+            all_organs_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
+            all_organs_inputs_outputs.to_csv(ORGANS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+
+            all_elements_inputs_outputs = pd.concat(elements_all_data_list, keys=all_simulation_steps)
+            all_elements_inputs_outputs.reset_index(0, inplace=True)
+            all_elements_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
+            all_elements_inputs_outputs.to_csv(ELEMENTS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
+
+            all_soils_inputs_outputs = pd.concat(soils_all_data_list, keys=all_simulation_steps)
+            all_soils_inputs_outputs.reset_index(0, inplace=True)
+            all_soils_inputs_outputs.rename({'level_0': 't'}, axis=1, inplace=True)
+            all_soils_inputs_outputs.to_csv(SOILS_STATES_FILEPATH, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION))
 
     # -POST-PROCESSING##
 
     if make_graphs:
+        generate_graphs()
 
-        # POST PROCESSINGS
 
-        states_df_dict = {}
-        for states_filepath in (AXES_STATES_FILEPATH,
-                                ORGANS_STATES_FILEPATH,
-                                ELEMENTS_STATES_FILEPATH,
-                                SOILS_STATES_FILEPATH):
-            # assert states_filepaths were not opened during simulation run meaning that other filenames were saved
-            path, filename = os.path.split(states_filepath)
-            filename = os.path.splitext(filename)[0]
-            newfilename = 'ACTUAL_{}.csv'.format(filename)
-            newpath = os.path.join(path, newfilename)
-            assert not os.path.isfile(newpath), \
-                "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(newfilename, states_filepath)
+def generate_graphs():
 
-            # Retrieve outputs dataframes from precedent simulation run
-            states_df = pd.read_csv(states_filepath)
-            states_file_basename = os.path.basename(states_filepath).split('.')[0]
-            states_df_dict[states_file_basename] = states_df
-        time_grid = states_df_dict['elements_states']['t']
-        delta_t = (time_grid.unique()[1] - time_grid.unique()[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
+    # POST PROCESSINGS
 
-        # run the postprocessing
-        axes_postprocessing_file_basename = os.path.basename(AXES_POSTPROCESSING_FILEPATH).split('.')[0]
-        organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
-        elements_postprocessing_file_basename = os.path.basename(ELEMENTS_POSTPROCESSING_FILEPATH).split('.')[0]
-        soils_postprocessing_file_basename = os.path.basename(SOILS_POSTPROCESSING_FILEPATH).split('.')[0]
-        postprocessing_df_dict = {}
-        (postprocessing_df_dict[axes_postprocessing_file_basename],
-         _,
-         postprocessing_df_dict[organs_postprocessing_file_basename],
-         postprocessing_df_dict[elements_postprocessing_file_basename],
-         postprocessing_df_dict[soils_postprocessing_file_basename]) \
-            = cnwheat_facade.CNWheatFacade.postprocessing(axes_outputs_df=states_df_dict[os.path.basename(AXES_STATES_FILEPATH).split('.')[0]],
-                                                          organs_outputs_df=states_df_dict[os.path.basename(ORGANS_STATES_FILEPATH).split('.')[0]],
-                                                          hiddenzone_outputs_df=None,
-                                                          elements_outputs_df=states_df_dict[os.path.basename(ELEMENTS_STATES_FILEPATH).split('.')[0]],
-                                                          soils_outputs_df=states_df_dict[os.path.basename(SOILS_STATES_FILEPATH).split('.')[0]],
-                                                          delta_t=delta_t)
+    states_df_dict = {}
+    for states_filepath in (AXES_STATES_FILEPATH,
+                            ORGANS_STATES_FILEPATH,
+                            ELEMENTS_STATES_FILEPATH,
+                            SOILS_STATES_FILEPATH):
+        # assert states_filepaths were not opened during simulation run meaning that other filenames were saved
+        path, filename = os.path.split(states_filepath)
+        filename = os.path.splitext(filename)[0]
+        newfilename = 'ACTUAL_{}.csv'.format(filename)
+        newpath = os.path.join(path, newfilename)
+        assert not os.path.isfile(newpath), \
+            "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(newfilename, states_filepath)
 
-        # save the postprocessing to disk
-        for postprocessing_file_basename, postprocessing_filepath in ((axes_postprocessing_file_basename, AXES_POSTPROCESSING_FILEPATH),
-                                                                      (organs_postprocessing_file_basename, ORGANS_POSTPROCESSING_FILEPATH),
-                                                                      (elements_postprocessing_file_basename, ELEMENTS_POSTPROCESSING_FILEPATH),
-                                                                      (soils_postprocessing_file_basename, SOILS_POSTPROCESSING_FILEPATH)):
-            postprocessing_df_dict[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION + 5))
+        # Retrieve outputs dataframes from precedent simulation run
+        states_df = pd.read_csv(states_filepath)
+        states_file_basename = os.path.basename(states_filepath).split('.')[0]
+        states_df_dict[states_file_basename] = states_df
+    time_grid = states_df_dict['elements_states']['t']
+    delta_t = (time_grid.unique()[1] - time_grid.unique()[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
 
-        # - GRAPHS
+    # run the postprocessing
+    axes_postprocessing_file_basename = os.path.basename(AXES_POSTPROCESSING_FILEPATH).split('.')[0]
+    organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
+    elements_postprocessing_file_basename = os.path.basename(ELEMENTS_POSTPROCESSING_FILEPATH).split('.')[0]
+    soils_postprocessing_file_basename = os.path.basename(SOILS_POSTPROCESSING_FILEPATH).split('.')[0]
+    postprocessing_df_dict = {}
+    (postprocessing_df_dict[axes_postprocessing_file_basename],
+     _,
+     postprocessing_df_dict[organs_postprocessing_file_basename],
+     postprocessing_df_dict[elements_postprocessing_file_basename],
+     postprocessing_df_dict[soils_postprocessing_file_basename]) \
+        = cnwheat_facade.CNWheatFacade.postprocessing(axes_outputs_df=states_df_dict[os.path.basename(AXES_STATES_FILEPATH).split('.')[0]],
+                                                      organs_outputs_df=states_df_dict[os.path.basename(ORGANS_STATES_FILEPATH).split('.')[0]],
+                                                      hiddenzone_outputs_df=None,
+                                                      elements_outputs_df=states_df_dict[os.path.basename(ELEMENTS_STATES_FILEPATH).split('.')[0]],
+                                                      soils_outputs_df=states_df_dict[os.path.basename(SOILS_STATES_FILEPATH).split('.')[0]],
+                                                      delta_t=delta_t)
 
-        # Retrieve last computed post-processing dataframes
-        axes_postprocessing_file_basename = os.path.basename(AXES_POSTPROCESSING_FILEPATH).split('.')[0]
-        organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
-        elements_postprocessing_file_basename = os.path.basename(ELEMENTS_POSTPROCESSING_FILEPATH).split('.')[0]
-        soils_postprocessing_file_basename = os.path.basename(SOILS_POSTPROCESSING_FILEPATH).split('.')[0]
-        postprocessing_df_dict = {}
-        for (postprocessing_filepath, postprocessing_file_basename) in ((AXES_POSTPROCESSING_FILEPATH, axes_postprocessing_file_basename),
-                                                                        (ORGANS_POSTPROCESSING_FILEPATH, organs_postprocessing_file_basename),
-                                                                        (ELEMENTS_POSTPROCESSING_FILEPATH, elements_postprocessing_file_basename),
-                                                                        (SOILS_POSTPROCESSING_FILEPATH, soils_postprocessing_file_basename)):
-            postprocessing_df = pd.read_csv(postprocessing_filepath)
-            postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
+    # save the postprocessing to disk
+    for postprocessing_file_basename, postprocessing_filepath in ((axes_postprocessing_file_basename, AXES_POSTPROCESSING_FILEPATH),
+                                                                  (organs_postprocessing_file_basename, ORGANS_POSTPROCESSING_FILEPATH),
+                                                                  (elements_postprocessing_file_basename, ELEMENTS_POSTPROCESSING_FILEPATH),
+                                                                  (soils_postprocessing_file_basename, SOILS_POSTPROCESSING_FILEPATH)):
+        postprocessing_df_dict[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(INPUTS_OUTPUTS_PRECISION + 5))
 
-        # Generate graphs
-        cnwheat_facade.CNWheatFacade.graphs(axes_postprocessing_df=postprocessing_df_dict[axes_postprocessing_file_basename],
-                                            hiddenzones_postprocessing_df=None,
-                                            organs_postprocessing_df=postprocessing_df_dict[organs_postprocessing_file_basename],
-                                            elements_postprocessing_df=postprocessing_df_dict[elements_postprocessing_file_basename],
-                                            soils_postprocessing_df=postprocessing_df_dict[soils_postprocessing_file_basename],
-                                            graphs_dirpath=GRAPHS_DIRPATH)
-        #
-        # x_name = 't'
-        # x_label='Time (Hour)'
-        #
-        # # 1) Photosynthetic organs
-        # ph_elements_output_df = pd.read_csv(ELEMENTS_STATES_FILEPATH)
-        #
-        # graph_variables_ph_elements = {'PARa': u'Absorbed PAR (µmol m$^{-2}$ s$^{-1}$)', 'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
-        #                    'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
-        #                    'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
-        #                    'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
-        #                    'S_Amino_Acids': u'[Rate of amino acids synthesis] (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'D_Proteins': u'Rate of protein degradation (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'k_proteins': u'Relative rate of protein degradation (s$^{-1}$)',
-        #                    'Loading_Sucrose': u'Loading Sucrose (µmol C sucrose h$^{-1}$)', 'Loading_Amino_Acids': u'Loading Amino acids (µmol N amino acids h$^{-1}$)',
-        #                    'green_area': u'Green area (m$^{2}$)', 'R_phloem_loading': u'Respiration phloem loading (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)', 'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
-        #                    'mstruct': u'Structural mass (g)', 'Nstruct': u'Structural N mass (g)',
-        #                    'Conc_cytokinins':u'[cytokinins] (UA g$^{-1}$ mstruct)', 'D_cytokinins':u'Cytokinin degradation (UA g$^{-1}$ mstruct)', 'cytokinins_import':u'Cytokinin import (UA)'}
-        #
-        #
-        # for org_ph in (['blade'], ['sheath'], ['internode'], ['peduncle', 'ear']):
-        #     for variable_name, variable_label in graph_variables_ph_elements.iteritems():
-        #         graph_name = variable_name + '_' + '_'.join(org_ph) + '.PNG'
-        #         cnwheat_tools.plot_cnwheat_ouputs(ph_elements_output_df,
-        #                       x_name = x_name,
-        #                       y_name = variable_name,
-        #                       x_label=x_label,
-        #                       y_label=variable_label,
-        #                       filters={'organ': org_ph},
-        #                       plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
-        #                       explicit_label=False)
-        #
-        # # 2) Roots, grains and phloem
-        # organs_output_df = pd.read_csv(ORGANS_STATES_FILEPATH)
-        #
-        # graph_variables_organs = {'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Dry_Mass':'Dry mass (g)',
-        #                     'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Proteins_N_Mass': u'[N Proteins] (g)',
-        #                     'Uptake_Nitrates':u'Nitrates uptake (µmol h$^{-1}$)', 'Unloading_Sucrose':u'Unloaded sucrose (µmol C g$^{-1}$ mstruct h$^{-1}$)', 'Unloading_Amino_Acids':u'Unloaded Amino Acids (µmol N AA g$^{-1}$ mstruct h$^{-1}$)',
-        #                     'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N h$^{-1}$)', 'Export_Nitrates': u'Total export of nitrates (µmol N h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N h$^{-1}$)',
-        #                     'R_Nnit_upt': u'Respiration nitrates uptake (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)', 'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
-        #                     'R_grain_growth_struct': u'Respiration grain structural growth (µmol C h$^{-1}$)', 'R_grain_growth_starch': u'Respiration grain starch growth (µmol C h$^{-1}$)',
-        #                     'R_growth': u'Growth respiration of roots (µmol C h$^{-1}$)', 'mstruct': u'Structural mass (g)', 'rate_mstruct_death': u'Rate of structural mass death (g)',
-        #                     'C_exudation': u'Carbon lost by root exudation (µmol C g$^{-1}$ mstruct h$^{-1}$', 'N_exudation': u'Nitrogen lost by root exudation (µmol N g$^{-1}$ mstruct h$^{-1}$',
-        #                     'Conc_cytokinins':u'[cytokinins] (UA g$^{-1}$ mstruct)', 'S_cytokinins':u'Rate of cytokinins synthesis (UA g$^{-1}$ mstruct)', 'Export_cytokinins': 'Export of cytokinins from roots (UA h$^{-1}$)',
-        #                     'HATS_LATS': u'Potential uptake (µmol h$^{-1}$)' , 'regul_transpiration':'Regulating transpiration function'}
-        #
-        # for org in (['roots'], ['grains'], ['phloem']):
-        #     for variable_name, variable_label in graph_variables_organs.iteritems():
-        #         graph_name = variable_name + '_' + '_'.join(org) + '.PNG'
-        #         cnwheat_tools.plot_cnwheat_ouputs(organs_output_df,
-        #                       x_name = x_name,
-        #                       y_name = variable_name,
-        #                       x_label=x_label,
-        #                       y_label=variable_label,
-        #                       filters={'organ': org},
-        #                       plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
-        #                       explicit_label=False)
-        #
-        # # 3) Soil
-        # soil_output_df = pd.read_csv(SOILS_STATES_FILEPATH)
-        #
-        # fig, (ax1) = plt.subplots(1)
-        # conc_nitrates_soil = soil_output_df['Conc_Nitrates_Soil']*14E-6
-        # ax1.plot(soil_output_df['t'], conc_nitrates_soil)
-        # ax1.set_ylabel(u'[Nitrates] (g m$^{-3}$)')
-        # ax1.set_xlabel('Time from flowering (hour)')
-        # ax1.set_title = 'Conc Nitrates Soil'
-        # plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Conc_Nitrates_Soil.PNG'), format='PNG', bbox_inches='tight')
-        # plt.close()
+    # - GRAPHS
+
+    # Retrieve last computed post-processing dataframes
+    axes_postprocessing_file_basename = os.path.basename(AXES_POSTPROCESSING_FILEPATH).split('.')[0]
+    organs_postprocessing_file_basename = os.path.basename(ORGANS_POSTPROCESSING_FILEPATH).split('.')[0]
+    elements_postprocessing_file_basename = os.path.basename(ELEMENTS_POSTPROCESSING_FILEPATH).split('.')[0]
+    soils_postprocessing_file_basename = os.path.basename(SOILS_POSTPROCESSING_FILEPATH).split('.')[0]
+    postprocessing_df_dict = {}
+    for (postprocessing_filepath, postprocessing_file_basename) in ((AXES_POSTPROCESSING_FILEPATH, axes_postprocessing_file_basename),
+                                                                    (ORGANS_POSTPROCESSING_FILEPATH, organs_postprocessing_file_basename),
+                                                                    (ELEMENTS_POSTPROCESSING_FILEPATH, elements_postprocessing_file_basename),
+                                                                    (SOILS_POSTPROCESSING_FILEPATH, soils_postprocessing_file_basename)):
+        postprocessing_df = pd.read_csv(postprocessing_filepath)
+        postprocessing_df_dict[postprocessing_file_basename] = postprocessing_df
+
+    # Generate graphs
+    cnwheat_facade.CNWheatFacade.graphs(axes_postprocessing_df=postprocessing_df_dict[axes_postprocessing_file_basename],
+                                        hiddenzones_postprocessing_df=None,
+                                        organs_postprocessing_df=postprocessing_df_dict[organs_postprocessing_file_basename],
+                                        elements_postprocessing_df=postprocessing_df_dict[elements_postprocessing_file_basename],
+                                        soils_postprocessing_df=postprocessing_df_dict[soils_postprocessing_file_basename],
+                                        graphs_dirpath=GRAPHS_DIRPATH)
+    #
+    # x_name = 't'
+    # x_label='Time (Hour)'
+    #
+    # # 1) Photosynthetic organs
+    # ph_elements_output_df = pd.read_csv(ELEMENTS_STATES_FILEPATH)
+    #
+    # graph_variables_ph_elements = {'PARa': u'Absorbed PAR (µmol m$^{-2}$ s$^{-1}$)', 'Ag': u'Gross photosynthesis (µmol m$^{-2}$ s$^{-1}$)','An': u'Net photosynthesis (µmol m$^{-2}$ s$^{-1}$)', 'Tr':u'Organ surfacic transpiration rate (mmol H$_{2}$0 m$^{-2}$ s$^{-1}$)', 'Transpiration':u'Organ transpiration rate (mmol H$_{2}$0 s$^{-1}$)', 'Rd': u'Mitochondrial respiration rate of organ in light (µmol C h$^{-1}$)', 'Ts': u'Temperature surface (°C)', 'gs': u'Conductance stomatique (mol m$^{-2}$ s$^{-1}$)',
+    #                    'Conc_TriosesP': u'[TriosesP] (µmol g$^{-1}$ mstruct)', 'Conc_Starch':u'[Starch] (µmol g$^{-1}$ mstruct)', 'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Conc_Fructan':u'[Fructan] (µmol g$^{-1}$ mstruct)',
+    #                    'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids': u'[Amino_Acids] (µmol g$^{-1}$ mstruct)', 'Conc_Proteins': u'[Proteins] (g g$^{-1}$ mstruct)',
+    #                    'Nitrates_import': u'Total nitrates imported (µmol h$^{-1}$)', 'Amino_Acids_import': u'Total amino acids imported (µmol N h$^{-1}$)',
+    #                    'S_Amino_Acids': u'[Rate of amino acids synthesis] (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'D_Proteins': u'Rate of protein degradation (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'k_proteins': u'Relative rate of protein degradation (s$^{-1}$)',
+    #                    'Loading_Sucrose': u'Loading Sucrose (µmol C sucrose h$^{-1}$)', 'Loading_Amino_Acids': u'Loading Amino acids (µmol N amino acids h$^{-1}$)',
+    #                    'green_area': u'Green area (m$^{2}$)', 'R_phloem_loading': u'Respiration phloem loading (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)', 'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
+    #                    'mstruct': u'Structural mass (g)', 'Nstruct': u'Structural N mass (g)',
+    #                    'Conc_cytokinins':u'[cytokinins] (UA g$^{-1}$ mstruct)', 'D_cytokinins':u'Cytokinin degradation (UA g$^{-1}$ mstruct)', 'cytokinins_import':u'Cytokinin import (UA)'}
+    #
+    #
+    # for org_ph in (['blade'], ['sheath'], ['internode'], ['peduncle', 'ear']):
+    #     for variable_name, variable_label in graph_variables_ph_elements.iteritems():
+    #         graph_name = variable_name + '_' + '_'.join(org_ph) + '.PNG'
+    #         cnwheat_tools.plot_cnwheat_ouputs(ph_elements_output_df,
+    #                       x_name = x_name,
+    #                       y_name = variable_name,
+    #                       x_label=x_label,
+    #                       y_label=variable_label,
+    #                       filters={'organ': org_ph},
+    #                       plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
+    #                       explicit_label=False)
+    #
+    # # 2) Roots, grains and phloem
+    # organs_output_df = pd.read_csv(ORGANS_STATES_FILEPATH)
+    #
+    # graph_variables_organs = {'Conc_Sucrose':u'[Sucrose] (µmol g$^{-1}$ mstruct)', 'Dry_Mass':'Dry mass (g)',
+    #                     'Conc_Nitrates': u'[Nitrates] (µmol g$^{-1}$ mstruct)', 'Conc_Amino_Acids':u'[Amino Acids] (µmol g$^{-1}$ mstruct)', 'Proteins_N_Mass': u'[N Proteins] (g)',
+    #                     'Uptake_Nitrates':u'Nitrates uptake (µmol h$^{-1}$)', 'Unloading_Sucrose':u'Unloaded sucrose (µmol C g$^{-1}$ mstruct h$^{-1}$)', 'Unloading_Amino_Acids':u'Unloaded Amino Acids (µmol N AA g$^{-1}$ mstruct h$^{-1}$)',
+    #                     'S_Amino_Acids': u'Rate of amino acids synthesis (µmol N g$^{-1}$ mstruct h$^{-1}$)', 'S_Proteins': u'Rate of protein synthesis (µmol N h$^{-1}$)', 'Export_Nitrates': u'Total export of nitrates (µmol N h$^{-1}$)', 'Export_Amino_Acids': u'Total export of Amino acids (µmol N h$^{-1}$)',
+    #                     'R_Nnit_upt': u'Respiration nitrates uptake (µmol C h$^{-1}$)', 'R_Nnit_red': u'Respiration nitrate reduction (µmol C h$^{-1}$)', 'R_residual': u'Respiration residual (µmol C h$^{-1}$)', 'R_maintenance': u'Respiration residual (µmol C h$^{-1}$)',
+    #                     'R_grain_growth_struct': u'Respiration grain structural growth (µmol C h$^{-1}$)', 'R_grain_growth_starch': u'Respiration grain starch growth (µmol C h$^{-1}$)',
+    #                     'R_growth': u'Growth respiration of roots (µmol C h$^{-1}$)', 'mstruct': u'Structural mass (g)', 'rate_mstruct_death': u'Rate of structural mass death (g)',
+    #                     'C_exudation': u'Carbon lost by root exudation (µmol C g$^{-1}$ mstruct h$^{-1}$', 'N_exudation': u'Nitrogen lost by root exudation (µmol N g$^{-1}$ mstruct h$^{-1}$',
+    #                     'Conc_cytokinins':u'[cytokinins] (UA g$^{-1}$ mstruct)', 'S_cytokinins':u'Rate of cytokinins synthesis (UA g$^{-1}$ mstruct)', 'Export_cytokinins': 'Export of cytokinins from roots (UA h$^{-1}$)',
+    #                     'HATS_LATS': u'Potential uptake (µmol h$^{-1}$)' , 'regul_transpiration':'Regulating transpiration function'}
+    #
+    # for org in (['roots'], ['grains'], ['phloem']):
+    #     for variable_name, variable_label in graph_variables_organs.iteritems():
+    #         graph_name = variable_name + '_' + '_'.join(org) + '.PNG'
+    #         cnwheat_tools.plot_cnwheat_ouputs(organs_output_df,
+    #                       x_name = x_name,
+    #                       y_name = variable_name,
+    #                       x_label=x_label,
+    #                       y_label=variable_label,
+    #                       filters={'organ': org},
+    #                       plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
+    #                       explicit_label=False)
+    #
+    # # 3) Soil
+    # soil_output_df = pd.read_csv(SOILS_STATES_FILEPATH)
+    #
+    # fig, (ax1) = plt.subplots(1)
+    # conc_nitrates_soil = soil_output_df['Conc_Nitrates_Soil']*14E-6
+    # ax1.plot(soil_output_df['t'], conc_nitrates_soil)
+    # ax1.set_ylabel(u'[Nitrates] (g m$^{-3}$)')
+    # ax1.set_xlabel('Time from flowering (hour)')
+    # ax1.set_title = 'Conc Nitrates Soil'
+    # plt.savefig(os.path.join(GRAPHS_DIRPATH, 'Conc_Nitrates_Soil.PNG'), format='PNG', bbox_inches='tight')
+    # plt.close()
 
 
 if __name__ == '__main__':

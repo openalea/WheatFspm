@@ -12,9 +12,9 @@ from math import exp
 from fspmwheat import fspmwheat_postprocessing
 
 try:  # Python3
-    from example.Scenarii_monoculms import main
-    from example.Scenarii_monoculms import tools
-    from example.Scenarii_monoculms import additional_graphs
+    from example.Scenarios_monoculms import main
+    from example.Scenarios_monoculms import tools
+    from example.Scenarios_monoculms import additional_graphs
 except ImportError as e:  # Python2
     import main
     import tools
@@ -30,7 +30,7 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path='outputs
     """
     Run the main.py of fspmwheat using data from a specific scenario
 
-    :param int scenario_id: the index of the scenario to be read in the CSV file containing the list of scenarii
+    :param int scenario_id: the index of the scenario to be read in the CSV file containing the list of scenarios
     :param str inputs_dir_path: the path directory of inputs
     :param str outputs_dir_path: the path to save outputs
     """
@@ -42,9 +42,9 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path='outputs
         INPUTS_DIRPATH = 'inputs'
 
     # Scenario to be run
-    scenarii_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, 'scenarii_list.csv'), index_col='Scenario')
-    scenario = scenarii_df.loc[scenario_id].to_dict()
-    scenario_name = 'Scenario_%.4d' % scenario_id  # 'Scenario_{}'.format(int(scenario_id))#
+    scenarios_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, 'scenarios_list.csv'), index_col='Scenario')
+    scenario = scenarios_df.loc[scenario_id].to_dict()
+    scenario_name = 'Scenario_%.4d' % scenario_id
 
     # -- SIMULATION PARAMETERS --
 
@@ -145,11 +145,15 @@ def run_fspmwheat(scenario_id=1, inputs_dir_path=None, outputs_dir_path='outputs
                 fspmwheat_postprocessing.table_C_usages(scenario_postprocessing_dirpath)
                 fspmwheat_postprocessing.calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')),
                                                                        scenario.get('Plant_Density', 250.))
-                fspmwheat_postprocessing.canopy_kinetics(scenario_outputs_dirpath, scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')),
+                fspmwheat_postprocessing.canopy_dynamics(scenario_postprocessing_dirpath, os.path.join(INPUTS_DIRPATH, scenario.get('METEO_FILENAME')),
                                                          scenario.get('Plant_Density', 250.))
 
-        except Exception as e:
-            print(e)
+        except Exception as ex:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            print(message, fname, exc_tb.tb_lineno)
 
 
 if __name__ == '__main__':
