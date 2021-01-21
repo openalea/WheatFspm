@@ -32,7 +32,7 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # -------------------------------------------------------------------------------------------------------------------
 # --- Leaves
 # -------------------------------------------------------------------------------------------------------------------
-conc_sucrose_offset = 120  #: sucrose concentration under which no leaf and internode growth occurs (µmol of C g-1 mstruct) - same for root growth, see growthwheat
+conc_sucrose_offset = 240  #: sucrose concentration under which no leaf and internode growth occurs (µmol of C g-1 mstruct) - same for root growth, see growthwheat
 
 # Exponential elongation
 RERmax_Ljutovac_fit = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000151, 10: 0.00000134, 11: 0.00000129} # Optimal RERmax (s-1 at 12°C) allowing to simulate leaf dimensions of Ljutovac (2002)
