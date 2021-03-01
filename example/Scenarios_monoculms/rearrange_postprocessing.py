@@ -113,3 +113,4 @@ if __name__ == '__main__':
     rearrange_postprocessing(postprocessing_tables=['leaf_traits'])
     rearrange_postprocessing(postprocessing_tables=['canopy_dynamics_daily'])
     rearrange_postprocessing(postprocessing_tables=['Conc_phloem'])
+    rearrange_postprocessing(postprocessing_tables=['RUE'])
