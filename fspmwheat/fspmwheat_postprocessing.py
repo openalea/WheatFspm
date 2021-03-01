@@ -295,6 +295,33 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
     RUE_shoot_including_senesced = np.polyfit(PARa_cum, (df_axe.sum_dry_mass_shoot + df_senesced.senesced_mstruct), 1)[0]
     RUE_plant_including_senesced = np.polyfit(PARa_cum, (df_axe.sum_dry_mass + df_senesced.senesced_mstruct), 1)[0]
 
+    # --- Weekly RUE
+    RUE_dict = {'t': df_senesced.t,
+                'PARa': PARa,
+                'PARa_cum': PARa_cum,
+                'sum_dry_mass': df_axe.sum_dry_mass,
+                'sum_dry_mass_shoot': df_axe.sum_dry_mass_shoot,
+                'senesced_mstruct': df_senesced.senesced_mstruct}
+    RUE_df = pd.DataFrame.from_dict(RUE_dict)
+    RUE_df['day'] = RUE_df.t // 24 + 1
+    RUE_day_df = RUE_df.groupby(['day'], as_index=False).agg({'t': 'min',
+                                                              'PARa': 'max',
+                                                              'PARa_cum': 'max',
+                                                              'sum_dry_mass': 'max',
+                                                              'sum_dry_mass_shoot': 'max',
+                                                              'senesced_mstruct': 'max'})
+    tmp = RUE_day_df.copy()
+    tmp['day_prec7'] = tmp.day + 7
+    tmp['sum_dry_mass_prec7'] = tmp['sum_dry_mass']
+    tmp['senesced_mstruct_prec7'] = tmp['senesced_mstruct']
+    tmp['PARa_cum_prec7'] = tmp['PARa_cum']
+    RUE_day_df = RUE_day_df.merge(tmp[['day_prec7', 'sum_dry_mass_prec7', 'senesced_mstruct_prec7', 'PARa_cum_prec7']], left_on='day', right_on='day_prec7', how='left')
+    RUE_day_df['RUE_plant_MJ_PAR'] = (RUE_day_df.sum_dry_mass - RUE_day_df.sum_dry_mass_prec7) / (RUE_day_df.PARa_cum - RUE_day_df.PARa_cum_prec7)
+    RUE_day_df['RUE_plant_total_MJ_PAR'] = (RUE_day_df.sum_dry_mass + RUE_day_df.senesced_mstruct - RUE_day_df.sum_dry_mass_prec7 - RUE_day_df.senesced_mstruct_prec7) / (
+                RUE_day_df.PARa_cum - RUE_day_df.PARa_cum_prec7)
+
+    RUE_day_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'RUE.csv'), index=False)
+
     # --- RUE (g DM. MJ-1 RGint estimated from LAI using Beer-Lambert's law with extinction coefficient of 0.4)
 
     # Beer-Lambert
