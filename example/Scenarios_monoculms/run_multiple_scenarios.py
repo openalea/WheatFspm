@@ -30,6 +30,7 @@ if __name__ == '__main__':
         rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['leaf_traits'], scenarios=list(scenarios))
         rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['canopy_dynamics_daily'], scenarios=list(scenarios))
         rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['Conc_phloem'], scenarios=list(scenarios))
+        rearrange_postprocessing.rearrange_postprocessing(postprocessing_tables=['RUE'], scenarios=list(scenarios))
 
     tend = time.time()
     tmp = (tend - tstart) / 60.
