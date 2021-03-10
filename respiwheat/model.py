@@ -48,7 +48,6 @@ class RespirationModel(object):
 
     # R_min_upt #
     CMIN_UPT = 5000  # µmol of C substrate respired per g of minerals taken up
-    ASHE_CONTENT = 0.05  # g minerals per g of structural dry mass
 
     # R_residual #
     KM_MAX = 4.1E-6  # 8E-6 # 4.1E-6       # Maximum value of the maintenance constant when C is much greater than KM (µmol of C substrate respired per µmol N s-1)
