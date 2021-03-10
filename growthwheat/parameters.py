@@ -43,6 +43,8 @@ te_IN = 210 * 3600 * 24 / 12  #: end of internode elongation in automate growth 
 internode_rapid_growth_t = 288000  # Pseudo age at which the internode starts the rapid growth stage (s)
 
 # Roots
+conc_sucrose_offset = 240  #: sucrose concentration under which no root growth occurs (µmol of C g-1 mstruct) - same for leaf and internode growth, see elongwheat
+
 VMAX_ROOTS_GROWTH_POSTFLO = 0.015 * CONVERSION_FACTOR_20_TO_12  #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) post flo at 12°C
 VMAX_ROOTS_GROWTH_PREFLO = 0.0855 * CONVERSION_FACTOR_20_TO_12  #: Maximal rate of root structural dry matter growth (µmol C s-1 g-1 MS) pre flo at 12°C
 K_ROOTS_GROWTH = 1250                 #: Affinity coefficient of root structural dry matter growth (µmol C g-1 MS) post flo
