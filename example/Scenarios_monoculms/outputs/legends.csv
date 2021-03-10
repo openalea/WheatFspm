@@ -54,9 +54,9 @@ C_usages.csv,Respi_roots,C lost by respiration of the roots - cumulated since th
 C_usages.csv,Respi_shoot,C lost by respiration of the shoots - cumulated since the beging of the simulation.,,µmol C
 C_usages.csv,Structure_roots,C invested in the structural mass of the roots - cumulated since the beging of the simulation.,,µmol C
 C_usages.csv,Structure_shoot,C invested in the structural mass of the shoot(s) - cumulated since the beging of the simulation.,,µmol C
-canopy_linetics_daily.csv,LAI,Leaf Area Index,green_area * plant_density,Dimensionless
-canopy_linetics_daily.csv,PARa_mol_m2_d,Surfacic PAR absorbed,,mol m-2 day-1
-canopy_linetics_daily.csv,ratio_PARa_PARi,Fraction of incident PAR that is absorbed by the canopy,,Dimensionless
+canopy_dynamics_daily.csv,LAI,Leaf Area Index,green_area * plant_density,Dimensionless
+canopy_dynamics_daily.csv,PARa_mol_m2_d,Surfacic PAR absorbed by one plant,,mol m-2 day-1
+canopy_dynamics_daily.csv,ratio_PARa_PARi,Fraction of incident PAR that is absorbed by the canopy,,Dimensionless
 elements_postprocessing.csv,Ag,gross assimilation rate,Farquhar,µmol m-2 s-1
 elements_postprocessing.csv,amino_acids,Quantity of amino acids - Compartment of the model,,µmol N
 elements_postprocessing.csv,Amino_Acids_import,Amino acids imported from the roots through the transpiration flux,,µmol N h-1
