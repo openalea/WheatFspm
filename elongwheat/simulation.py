@@ -187,7 +187,8 @@ class Simulation(object):
         # -----------------------------
 
         for element_id, element_inputs in sorted(all_element_inputs.items()):
-            # Update element's age, only used to adapt element's geometry (MTG)
+            # Update element's age, only used by ADEL to adapt element's geometry (sor far lamina curvature, could be used to adapt stem geometry too)
+            # TODO : the calculation of element's age must be extracted from elongwheat as it is run even for mature leaves
             curr_age = all_element_inputs[element_id]['age']
             axis_id = element_id[:2]
             curr_axis_outputs = all_axes_outputs[axis_id]

@@ -192,8 +192,9 @@ def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_teq, leaf
     :return: delta delta_leaf_L (m)
     :rtype: float
     """
+    conc_sucrose_effective = max(0., sucrose / mstruct - parameters.conc_sucrose_offset)
 
-    if sucrose > 0 and amino_acids > 0:
+    if conc_sucrose_effective > 0 and amino_acids > 0:
         if optimal_growth_option:
             RER_max = parameters.RERmax_Ljutovac_fit.get(leaf_rank, parameters.RERmax_Ljutovac_fit[max(parameters.RERmax_Ljutovac_fit.keys())])
             delta_leaf_L = leaf_L * RER_max * delta_teq
@@ -201,8 +202,7 @@ def calculate_deltaL_preE(sucrose, leaf_L, amino_acids, mstruct, delta_teq, leaf
             RER_max = parameters.RERmax.get(leaf_rank, parameters.RERmax[max(parameters.RERmax.keys())])
             # Enzymatic rate for bi-substrats with random fixation
             conc_amino_acids = (amino_acids / mstruct)
-            conc_sucrose = (sucrose / mstruct)
-            delta_leaf_L = delta_teq * leaf_L * RER_max / ( (1 + parameters.RER_Kc / conc_sucrose) * (1 + parameters.RER_Kn / conc_amino_acids) )
+            delta_leaf_L = delta_teq * leaf_L * RER_max / ( (1 + parameters.RER_Kc / conc_sucrose_effective) * (1 + parameters.RER_Kn / conc_amino_acids) )
     else:
         delta_leaf_L = 0
 
@@ -250,8 +250,9 @@ def calculate_deltaL_postE(prev_leaf_pseudo_age, leaf_pseudo_age, prev_leaf_L, l
     :return: delta_leaf_L (m)
     :rtype: float
     """
+    conc_sucrose_effective = max(0., sucrose / mstruct - parameters.conc_sucrose_offset)
 
-    if sucrose > 0 and amino_acids > 0:
+    if conc_sucrose_effective > 0 and amino_acids > 0:
         if leaf_pseudo_age <= parameters.tb:
             delta_leaf_L = prev_leaf_L - Beta_function(0.) * leaf_Lmax
         elif leaf_pseudo_age < parameters.te:
@@ -263,9 +264,8 @@ def calculate_deltaL_postE(prev_leaf_pseudo_age, leaf_pseudo_age, prev_leaf_L, l
                 delta_leaf_L = delta_leaf_L_Beta_0
             else:
                 # Regulation by C and N
-                conc_sucrose = sucrose / mstruct
                 conc_amino_acids = amino_acids / mstruct
-                regul = parameters.leaf_pseudo_age_Vmax / (1 + parameters.leaf_pseudo_age_Kc / conc_sucrose) / (1 + parameters.leaf_pseudo_age_Kn / conc_amino_acids)
+                regul = parameters.leaf_pseudo_age_Vmax / (1 + parameters.leaf_pseudo_age_Kc / conc_sucrose_effective) / (1 + parameters.leaf_pseudo_age_Kn / conc_amino_acids)
                 # Actual leaf elongation
                 delta_leaf_L = delta_leaf_L_Beta_0 * regul
         else:  # end of leaf elongation
@@ -435,7 +435,7 @@ def calculate_leaf_Wmax(lamina_Lmax, leaf_rank, integral_conc_sucr, optimal_grow
 
     else:
         #: Width:length ratio
-        W_L_ratio = max(parameters.leaf_W_L_MIN, parameters.leaf_W_L_a - ( parameters.leaf_W_L_b / parameters.leaf_W_L_c) * (1 - exp(-parameters.leaf_W_L_c * integral_conc_sucr)))
+        W_L_ratio = max(parameters.leaf_W_L_MIN, parameters.leaf_W_L_a - (parameters.leaf_W_L_b / parameters.leaf_W_L_c) * (1 - exp(-parameters.leaf_W_L_c * integral_conc_sucr)))
 
         #: Maximal width (m)
         Wmax = lamina_Lmax * W_L_ratio
@@ -610,8 +610,9 @@ def calculate_delta_internode_L_preL(phytomer_rank, sucrose, internode_L, amino_
     :return: delta delta_internode_L (m)
     :rtype: float
     """
+    conc_sucrose_effective = max(0., sucrose / mstruct - parameters.conc_sucrose_offset)
 
-    if sucrose > 0 and amino_acids > 0:
+    if conc_sucrose_effective > 0 and amino_acids > 0:
         if optimal_growth_option:
             RER_max = parameters.RERmax_dict_IN.get(phytomer_rank, parameters.RERmax_dict_IN[max(parameters.RERmax_dict_IN.keys())])
             delta_internode_L = internode_L * RER_max * delta_teq
@@ -619,8 +620,7 @@ def calculate_delta_internode_L_preL(phytomer_rank, sucrose, internode_L, amino_
             RER_max = parameters.RERmax_dict_IN.get(phytomer_rank, parameters.RERmax_dict_IN[max(parameters.RERmax_dict_IN.keys())])
             # Enzymatic rate for bi-substrats with random fixation
             conc_amino_acids = (amino_acids / mstruct)
-            conc_sucrose = (sucrose / mstruct)
-            delta_internode_L = internode_L * RER_max * delta_teq / (1 + parameters.RER_Kc / conc_sucrose) / (1 + parameters.RER_Kn / conc_amino_acids)
+            delta_internode_L = internode_L * RER_max * delta_teq / (1 + parameters.RER_Kc / conc_sucrose_effective) / (1 + parameters.RER_Kn / conc_amino_acids)
     else:
         delta_internode_L = 0
 
@@ -684,7 +684,9 @@ def calculate_delta_internode_L_postL(prev_internode_pseudo_age, internode_pseud
     :return: internode_L (m)
     :rtype: float
     """
-    if sucrose > 0 and amino_acids > 0:
+    conc_sucrose_effective = max(0., sucrose / mstruct - parameters.conc_sucrose_offset)
+
+    if conc_sucrose_effective > 0 and amino_acids > 0:
         if internode_pseudo_age <= parameters.tb_IN:
             delta_internode_L = prev_internode_L - Beta_function_internode(0.) * internode_Lmax_lig
         elif internode_pseudo_age < parameters.te_IN:
@@ -696,9 +698,8 @@ def calculate_delta_internode_L_postL(prev_internode_pseudo_age, internode_pseud
                 delta_internode_L = delta_internode_L_Beta_0
             else:  # TODO: not tested yet
                 # Regulation by C and N
-                conc_sucrose = sucrose / mstruct
                 conc_amino_acids = amino_acids / mstruct
-                regul = parameters.leaf_pseudo_age_Vmax / (1 + parameters.leaf_pseudo_age_Kc / conc_sucrose) / (1 + parameters.leaf_pseudo_age_Kn / conc_amino_acids)
+                regul = parameters.leaf_pseudo_age_Vmax / (1 + parameters.leaf_pseudo_age_Kc / conc_sucrose_effective) / (1 + parameters.leaf_pseudo_age_Kn / conc_amino_acids)
 
                 # Current internode length
                 delta_internode_L = regul * delta_internode_L_Beta_0

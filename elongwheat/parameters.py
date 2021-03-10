@@ -32,6 +32,8 @@ Temp_Ttransition = 9  # Below this temperature f = linear function of temperatur
 # -------------------------------------------------------------------------------------------------------------------
 # --- Leaves
 # -------------------------------------------------------------------------------------------------------------------
+conc_sucrose_offset = 240  #: sucrose concentration under which no leaf and internode growth occurs (µmol of C g-1 mstruct) - same for root growth, see growthwheat
+
 # Exponential elongation
 RERmax_Ljutovac_fit = {5: 0.000003, 6: 0.00000175, 7: 0.00000164, 8: 0.00000154, 9: 0.00000151, 10: 0.00000134, 11: 0.00000129} # Optimal RERmax (s-1 at 12°C) allowing to simulate leaf dimensions of Ljutovac (2002)
 # { 5 : 0.00000279 , 6 : 0.00000176 , 7 : 0.00000162 , 8 : 0.00000144 , 9 : 0.00000144 , 10 : 0.00000144 , 11 : 0.00000142 } # Observed RER on data of Ljutovac 2002 RER (s-1 at 12°C)
@@ -44,7 +46,7 @@ te = 300 * 3600 * 24 / 12     #: end of leaf elongation in automate growth (s at
 tm = 204.6 * 3600 * 24 / 12   #: time at which leaf elongation rate is maximal in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
 tb = -114.3 * 3600 * 24 / 12  #: beginning of leaf elongation in automate growth (s at 12°c); fitted from adapted data from Fournier 2005
 # NB : Previous fit on adapted data from Fournier 2005 in phyllochronic time te = 271, tm=176, tb=-25
-leaf_Lmax_MAX = 0.6           #: Maximum leaf_Lmax (m)
+leaf_Lmax_MAX = 0.45           #: Maximum leaf_Lmax (m)
 
 leaf_pseudo_age_Vmax = 1.2    #: Maximal regulation of leaf length after emergence by CN status (dimensionless)
 leaf_pseudo_age_Kc = 150      #: affinity coefficient to C (µmol g-1)
@@ -52,7 +54,7 @@ leaf_pseudo_age_Kn = 4        #: affinity coefficient to N (µmol g-1)
 
 # Leaf maximal width  TODO doc
 leaf_Wmax_dict = {3: 0.0040, 4: 0.0045, 5: 0.0056, 6: 0.0075, 7: 0.010, 8: 0.012, 9: 0.013, 10: 0.014, 11: 0.018}  #: m (Ljutovac 2002)
-leaf_W_L_MIN = 0.025
+leaf_W_L_MIN = 0.025  #: Minimal leaf width
 leaf_W_L_a = -0.02033728
 leaf_W_L_b = -0.00005445836
 leaf_W_L_c = 0.000459551
