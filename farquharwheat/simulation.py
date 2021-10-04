@@ -95,43 +95,47 @@ class Simulation(object):
                 PARa = element_inputs['PARa']  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
                 height_canopy = self.inputs['axes'][axis_id]['height_canopy']
 
-                if parameters.MODEL_VERSION in ['SurfacicProteins', 'SurfacicProteins_Retroinhibition']:
+                if parameters.SurfacicProteins:
                     surfacic_photosynthetic_proteins = model.calculate_surfacic_photosynthetic_proteins(element_inputs['proteins'],
                                                                                                         element_inputs['green_area'])
 
-                    SLN_nonstruct_Farquhar = model.calculate_surfacic_nonstructural_nitrogen_Farquhar(surfacic_photosynthetic_proteins)
+                    surfacic_nitrogen = model.calculate_surfacic_nonstructural_nitrogen_Farquhar(surfacic_photosynthetic_proteins)
 
-                    option_Retroinhibition = False
-                    surfacic_WSC = None  # TODO: rename by non structural carbohydrates because starch is not water-soluble.
-                    if parameters.MODEL_VERSION == 'SurfacicProteins_Retroinhibition':
-                        option_Retroinhibition = True
-                        surfacic_WSC = model.calculate_surfacic_WSC(element_inputs['sucrose'], element_inputs['starch'], element_inputs['fructan'], element_inputs['green_area'])
-
-                    Ag, An, Rd, Tr, Ts, gs = model.run(SLN_nonstruct_Farquhar,
-                                                       option_Retroinhibition,
-                                                       surfacic_WSC,
-                                                       element_inputs['width'],
-                                                       element_inputs['height'],
-                                                       PARa, Ta, ambient_CO2,
-                                                       RH, Ur, organ_label, height_canopy)
-                elif parameters.MODEL_VERSION == 'Barillot2016':
+                else:
                     surfacic_nitrogen = model.calculate_surfacic_nitrogen(element_inputs['nitrates'],
                                                                           element_inputs['amino_acids'],
                                                                           element_inputs['proteins'],
                                                                           element_inputs['Nstruct'],
                                                                           element_inputs['green_area'])
-                    option_Retroinhibition = False
-                    surfacic_WSC = 0.  # Not used if option_Retoinhibition = False
 
+                surfacic_NSC = model.calculate_surfacic_WSC(element_inputs['sucrose'], element_inputs['starch'], element_inputs['fructan'], element_inputs['green_area'])
+
+                if not parameters.prim_scale:
+                    #:  Computation at organ scale
                     Ag, An, Rd, Tr, Ts, gs = model.run(surfacic_nitrogen,
-                                                       option_Retroinhibition,
-                                                       surfacic_WSC,
+                                                       parameters.NSC_Retroinhibition,
+                                                       surfacic_NSC,
                                                        element_inputs['width'],
                                                        element_inputs['height'],
                                                        PARa, Ta, ambient_CO2,
                                                        RH, Ur, organ_label, height_canopy)
+
                 else:
-                    raise NameError('MODEL_VERSION is not none. MODEL_VERSION must be Barillot2016 or SurfacicProteins or SurfacicProteins_Retroinhibition.')
+                    #:  Computation at primitive scale
+                    Ag_prim_list = []
+                    for PARa_prim in element_inputs['PARa_prim']:  #: Amount of absorbed PAR per unit area (µmol m-2 s-1)
+                        Ag_prim, An, Rd, Tr, Ts, gs = model.run(surfacic_nitrogen,
+                                                                parameters.NSC_Retroinhibition,
+                                                                surfacic_NSC,
+                                                                element_inputs['width'],
+                                                                element_inputs['height'],
+                                                                PARa_prim, Ta, ambient_CO2,
+                                                                RH, Ur, organ_label, height_canopy)
+                        Ag_prim_list.append(Ag_prim)
+                    if not Ag_prim_list:
+                        Ag = 0
+                    else:
+                        Ag = sum([Ag_prim * area_prim for Ag_prim, area_prim in zip(Ag_prim_list, element_inputs['area_prim'])]) / sum(element_inputs['area_prim'])
 
             element_outputs = {'Ag': Ag, 'An': An, 'Rd': Rd,
                                'Tr': Tr, 'Ts': Ts, 'gs': gs,

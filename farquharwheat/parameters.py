@@ -11,9 +11,12 @@
 
 """
 # -- Version of the photosynthesis sub model
-MODEL_VERSION = ['Barillot2016', 'SurfacicProteins', 'SurfacicProteins_Retroinhibition'][2]
+SurfacicProteins = True      #: If True, surfacic proteins used to regulate photosynthesis ; if not total N
+NSC_Retroinhibition = True   #: If True, NSC (Non Structural Carbohydrates) downregulate photosynthesis
+prim_scale = False           #: If True, photosynthesis calculated at primitive scale, if not at organ scale
 
-if MODEL_VERSION == 'Barillot2016':
+if not SurfacicProteins:
+    # Used in Barillot et al (2016) and Gauthier et al. (2020)
     # Dependence to surfacic_nitrogen including structural nitrogen
 
     # -- Nitrogen dependance of photosynthetic parameters (derived from Braune et al. (2009) and Evers et al. (2010):
@@ -31,7 +34,8 @@ if MODEL_VERSION == 'Barillot2016':
     NA_0 = 2  # Initial value of surfacic_nitrogen (g m-2), used if no surfacic_nitrogen is provided by user
     Psurf_to_SLNnonstruct = 1.06  #: Conversion factor from surfacic protein content to non structural SLN (estimation from NEMA and Ljutovac simulations)
 
-if MODEL_VERSION in ['SurfacicProteins', 'SurfacicProteins_Retroinhibition']:
+else:
+    # Used in Gauthier et al. (2021)
     # Dependence to surfacic_nitrogen without structural nitrogen
 
     # -- Nitrogen dependance of photosynthetic parameters (derived from Braune et al. (2009) and Evers et al. (2010):
@@ -134,6 +138,8 @@ class ElementDefaultProperties(object):
     """
     def __init__(self):
         self.PARa = 0
+        self.PARa_prim = []  #: For calculations at primitive scale
+        self.area_prim = 0   #: For calculations at primitive scale
         self.nitrates = 0
         self.proteins = 0
         self.Nstruct = 0

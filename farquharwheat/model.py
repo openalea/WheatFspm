@@ -163,31 +163,30 @@ def _f_temperature(pname, p25, T):
     return p
 
 
-def _inhibition_by_WSC(WSC):
+def _inhibition_by_NSC(NSC):
     """
-    Calculates the relative diminution of Ag due to inhibition by WSC. Adapted from Azcon-Bieto 1983
+    Calculates the relative diminution of Ag due to inhibition by NSC. Adapted from Azcon-Bieto 1983
 
-    :param float WSC: Surfacic content of water soluble carbohydrates  (µmol C m-2)
+    :param float NSC: Surfacic content of water soluble carbohydrates  (µmol C m-2)
 
     :return: Relative diminution (dimensionless)
     :rtype: float
     """
-    if WSC <= parameters.WSC_min:
-        RD_A = 0
+    if NSC <= parameters.WSC_min:
+        return 0
     else:
-        RD_A = min(parameters.Inhibition_max * (WSC - parameters.WSC_min) / (parameters.K_Inhibition + WSC - parameters.WSC_min), 1)
-    return RD_A
+        return min(parameters.Inhibition_max * (NSC - parameters.WSC_min) / (parameters.K_Inhibition + NSC - parameters.WSC_min), 1)
 
 
-def calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, Ts, Ci):
+def calculate_photosynthesis(PAR, surfacic_nitrogen, NSC_Retroinhibition, surfacic_NSC, Ts, Ci):
     """
     Computes photosynthesis rate following Farquhar's model with regulation by organ temperature and nitrogen content.
     In this version, most of parameters are derived from Braune et al. (2009) on barley and Evers et al. (2010) for N dependencies.
 
     :param float PAR: PAR absorbed (µmol m-2 s-1)
     :param float surfacic_nitrogen: surfacic nitrogen content(g m-2) including or not structural nitrogen depending on parameter.MODEL_VERSION
-    :param bool option_Retroinhibition: if True, Ag is inhibited by surfacic WSC
-    :param float surfacic_WSC: surfacic content of water soluble carbohydrates (µmol C m-2)
+    :param bool NSC_Retroinhibition: if True, Ag is inhibited by surfacic NSC (Non Structural Carbohydrates).
+    :param float surfacic_NSC: surfacic content of NSC (Non Structural Carbohydrates) (µmol C m-2).
     :param float Ts: organ temperature (degree C)
     :param float Ci: internal CO2 (µmol mol-1), Ci = 0.7*CO2air for the first iteration
 
@@ -226,13 +225,13 @@ def calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, sur
     Vomax = (Vc_max * Ko * Gamma) / (parameters.Vomax_A * Kc * parameters.O)  #: Maximum rate of Vo (µmol m-2 s-1) (µmol m-2 s-1)
     Vo = (Vomax * parameters.O) / (parameters.O + Ko * (1 + Ci / Kc))  #: Rate of oxygenation of RuBP (µmol m-2 s-1)
     Ap = (1 - Gamma / Ci) * (parameters.Ap_A * TPU + Vo)  #: Rate of assimilation under TPU limitation (µmol m-2 s-1).
-    # I think there was a mistake in the paper of Braune t al. (2009) where they wrote Ap = (1-Gamma/Ci)*(3*TPU) + Vo
+    # I think there was a mistake in the paper of Braune et al. (2009) where they wrote Ap = (1-Gamma/Ci)*(3*TPU) + Vo
     # A more recent expression of Ap was given by S. v Caemmerer in her book (2000): AP = (3TPU * (Ci-Gamma))/(Ci-(1+3alpha)*Gamma),
     # where 0 < alpha > 1 is the fraction of glycolate carbon not returned to the chloroplast, but I couldn't find any estimation of alpha for wheat
 
     #: Gross assimilation rate (µmol m-2 s-1)
-    if option_Retroinhibition:
-        Ag = min(Ac, Aj) * (1 - _inhibition_by_WSC(surfacic_WSC))
+    if NSC_Retroinhibition:
+        Ag = min(Ac, Aj) * (1 - _inhibition_by_NSC(surfacic_NSC))
     else:
         Ag = min(Ac, Aj, Ap)
 
@@ -320,17 +319,17 @@ def calculate_surfacic_WSC(sucrose, starch, fructan, green_area):
     return (sucrose + starch + fructan) / green_area
 
 
-def run(surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name, height_canopy):
+def run(surfacic_nitrogen, NSC_Retroinhibition, surfacic_NSC, width, height, PAR, Ta, ambient_CO2, RH, Ur, organ_name, height_canopy):
     """
     Computes the photosynthesis of a photosynthetic element. The photosynthesis is computed by using the biochemical FCB model (Farquhar et al., 1980) coupled to the semiempirical
     BWB model of stomatal conductance (Ball, 1987).
 
-    :param float surfacic_nitrogen: surfacic nitrogen content of organs (g m-2), including or not structural nitrogen depending on parameter.MODEL_VERSION
+    :param float surfacic_nitrogen: surfacic nitrogen content of organs (g m-2), could include total N or proteic N only depending on parameter.SurfacicProteins
            Properly speaking, photosynthesis should be related to proteins (RubisCO), but parameters of most Farquhar models are calibrated on total N measurements (DUMAS method).
            We use only non-structural nitrogen to overcome issues in the case of extrem scenarios (high SLN for thick leaves under low nitrogen conditions).
            If None, surfacic_nitrogen = :attr:`NA_0`
-    :param bool option_Retroinhibition: if True, Ag is inhibited by surfacic WSC
-    :param float surfacic_WSC: surfacic content of water soluble carbohydrates (µmol C m-2)
+    :param bool NSC_Retroinhibition: if True, Ag is inhibited by surfacic NSC (Non Structural Carbohydrates).
+    :param float surfacic_NSC: surfacic content of NSC (Non Structural Carbohydrates) (µmol C m-2).
     :param float width: width of the organ (or diameter for stem organ) (m),
            characteristic dimension to be considered for heat transfer through forced convection (by wind).
     :param float height: height of the organ from soil (m)
@@ -357,7 +356,7 @@ def run(surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, width, height, 
 
     while True:
         prec_Ci, prec_Ts = Ci, Ts
-        Ag, An, Rd = calculate_photosynthesis(PAR, surfacic_nitrogen, option_Retroinhibition, surfacic_WSC, Ts, Ci)
+        Ag, An, Rd = calculate_photosynthesis(PAR, surfacic_nitrogen, NSC_Retroinhibition, surfacic_NSC, Ts, Ci)
         # Stomatal conductance to water
         gsw = _stomatal_conductance(Ag, An, surfacic_nitrogen, ambient_CO2, RH)
 

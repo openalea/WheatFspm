@@ -17,7 +17,7 @@ import pandas as pd
 
 #: the inputs needed by FarquharWheat at element scale
 FARQUHARWHEAT_ELEMENTS_INPUTS = ['width', 'height', 'PARa', 'nitrates', 'amino_acids', 'proteins', 'Nstruct', 'green_area',
-                                 'sucrose', 'starch', 'fructan']
+                                 'sucrose', 'starch', 'fructan', 'PARa_prim', 'area_prim']
 #: the inputs needed by FarquharWheat at axis scale
 FARQUHARWHEAT_AXES_INPUTS = ['SAM_temperature', 'height_canopy']
 
