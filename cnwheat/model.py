@@ -859,7 +859,7 @@ class Roots(Organ):
 
     def calculate_Unloading_Sucrose(self, sucrose_roots, sucrose_phloem, mstruct_axis, T_effect_conductivity):
         """Rate of sucrose Unloading from phloem to roots (µmol` C sucrose unloaded g-1 mstruct h-1).
-        Michaelis-Menten function of the sucrose concentration in phloem.
+
 
         :param float sucrose_roots: Amount of sucrose in roots (µmol` C)
         :param float sucrose_phloem: Sucrose concentration in phloem (µmol` C g-1 mstruct)
