@@ -29,7 +29,7 @@ from fspmwheat import tools
 SHARED_ELEMENTS_INPUTS_OUTPUTS_INDEXES = ['plant', 'axis', 'metamer', 'organ', 'element']
 
 #: the outputs of Caribu
-CARIBU_OUTPUTS = ['PARa', 'Erel']
+CARIBU_OUTPUTS = ['PARa', 'Erel', 'PARa_prim', 'Erel_prim']
 
 
 class CaribuFacade(object):
@@ -59,7 +59,7 @@ class CaribuFacade(object):
         self._update_shared_df = update_shared_df
 
     def run(self, run_caribu, sun_sky_option='mix', energy=1, DOY=1, hourTU=12, latitude=48.85, diffuse_model='soc', azimuts=4, zenits=5, heterogeneous_canopy=False,
-            plant_density=250., inter_row=0.15, update_shared_df=None):
+            plant_density=250., inter_row=0.15, update_shared_df=None, prim_scale=False):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
@@ -76,33 +76,56 @@ class CaribuFacade(object):
         :param float plant_density: Number of plant per m2 in the stand (plant m-2).
         :param float inter_row: Inter-row spacing in the stand (m).
         :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
+        :param bool prim_scale: If True, light distribution output at primitive scale, if not at organ scale
         """
-        c_scene_sky, c_scene_sun, Erel_input = self._initialize_model(run_caribu, 1, diffuse_model, azimuts, zenits, DOY, hourTU, latitude, heterogeneous_canopy, plant_density, inter_row)
-
+        c_scene_sky, c_scene_sun, Erel_input, Erel_input_prim = self._initialize_model(run_caribu,
+                                                                                       1,
+                                                                                       diffuse_model,
+                                                                                       azimuts,
+                                                                                       zenits,
+                                                                                       DOY,
+                                                                                       hourTU,
+                                                                                       latitude,
+                                                                                       heterogeneous_canopy,
+                                                                                       plant_density,
+                                                                                       inter_row)
+        outputs = {}
         if run_caribu:
             #: Diffuse light
             if sun_sky_option == 'sky':
-                _, aggregated_sky = c_scene_sky.run(direct=True, infinite=True)
+                raw, aggregated_sky = c_scene_sky.run(direct=True, infinite=True)
                 Erel_sky = aggregated_sky['par']['Eabs']  #: Erel is the relative surfacic absorbed energy per organ
                 PARa_sky = {k: v * energy for k, v in Erel_sky.items()}
                 Erel_output = Erel_sky
                 PARa_output = PARa_sky
 
+                # Primitive scale
+                if prim_scale:
+                    Erel_prim = raw['par']['Eabs']
+                    raw_Eabs_abs = {k: [Eabs * energy for Eabs in raw['par']['Eabs'][k]] for k in raw['par']['Eabs']}
+                    outputs.update({'Erel_prim': Erel_prim, 'PARa_prim': raw_Eabs_abs, 'area_prim': raw['par']['area']})
+
             #: Direct light
             elif sun_sky_option == 'sun':
-                _, aggregated_sun = c_scene_sun.run(direct=True, infinite=True)
+                raw, aggregated_sun = c_scene_sun.run(direct=True, infinite=True)
                 Erel_sun = aggregated_sun['par']['Eabs']  #: Erel is the relative surfacic absorbed energy per organ
                 PARa_sun = {k: v * energy for k, v in Erel_sun.items()}
                 Erel_output = Erel_sun
                 PARa_output = PARa_sun
 
+                # Primitive scale
+                if prim_scale:
+                    Erel_prim = raw['par']['Eabs']
+                    raw_Eabs_abs = {k: [Eabs * energy for Eabs in raw['par']['Eabs'][k]] for k in raw['par']['Eabs']}
+                    outputs.update({'Erel_prim': Erel_prim, 'PARa_prim': raw_Eabs_abs, 'area_prim': raw['par']['area']})
+
             #: Mix sky-Sun
             elif sun_sky_option == 'mix':
                 #: Diffuse
-                _, aggregated_sky = c_scene_sky.run(direct=True, infinite=True)
+                raw_sky, aggregated_sky = c_scene_sky.run(direct=True, infinite=True)
                 Erel_sky = aggregated_sky['par']['Eabs']
                 #: Direct
-                _, aggregated_sun = c_scene_sun.run(direct=True, infinite=True)
+                raw_sun, aggregated_sun = c_scene_sun.run(direct=True, infinite=True)
                 Erel_sun = aggregated_sun['par']['Eabs']
 
                 #: Spitters's model estimating for the diffuse:direct ratio
@@ -111,18 +134,27 @@ class CaribuFacade(object):
                 Erel = {}
                 for element_id, Erel_value in Erel_sky.items():
                     Erel[element_id] = RdRs * Erel_value + (1 - RdRs) * Erel_sun[element_id]
+
                 Erel_output = Erel
                 PARa_output = {k: v * energy for k, v in Erel_output.items()}
+
+                # Primitive scale
+                if prim_scale:
+                    raise ValueError("prim_scale not yet implemented for mix sun_sky_option.")
 
             else:
                 raise ValueError("Unknown sun_sky_option : can be either 'mix', 'sun' or 'sky'.")
 
             # Ouputs
-            outputs = {'PARa': PARa_output, 'Erel': Erel_output}
-
+            outputs.update({'PARa': PARa_output, 'Erel': Erel_output})
         else:
             PARa_output = {k: v * energy for k, v in Erel_input.items()}
-            outputs = {'PARa': PARa_output}
+            raw_Eabs_abs = {k: [Eabs * energy for Eabs in Erel_input_prim[k]] for k in Erel_input_prim}
+            outputs.update({'PARa': PARa_output})
+
+            # Primitive scale
+            if prim_scale:
+                outputs.update({'PARa_prim': raw_Eabs_abs})
 
         # Updates
         self.update_shared_MTG(outputs)
@@ -143,10 +175,10 @@ class CaribuFacade(object):
         :param float latitude: latitude to be used for solar sources (°)
         :param bool heterogeneous_canopy: Whether to create a duplicated heterogeneous canopy from the initial mtg.
 
-        :return: A tuple of Caribu scenes instantiated for sky and sun sources, respectively, and a dictionary with Erel value per vertex id.
-        :rtype: (CaribuScene, CaribuScene, dict)
+        :return: A tuple of Caribu scenes instantiated for sky and sun sources, respectively, and two dictionaries with Erel value per vertex id and per primitive.
+        :rtype: (CaribuScene, CaribuScene, dict, dict)
         """
-        c_scene_sky, c_scene_sun, Erel = None, None, None
+        c_scene_sky, c_scene_sun, Erel, Erel_prim = None, None, None, None
 
         if run_caribu:
 
@@ -190,8 +222,9 @@ class CaribuFacade(object):
 
         else:
             Erel = self._shared_mtg.property('Erel')
+            Erel_prim = self._shared_mtg.property('Erel_prim')
 
-        return c_scene_sky, c_scene_sun, Erel
+        return c_scene_sky, c_scene_sun, Erel, Erel_prim
 
     def _create_heterogeneous_canopy(self, nplants=50, var_plant_position=0.03, var_leaf_inclination=0.157, var_leaf_azimut=1.57, var_stem_azimut=0.157,
                                      plant_density=250, inter_row=0.15):
@@ -266,8 +299,8 @@ class CaribuFacade(object):
                     anchor_point = self._shared_mtg.get_vertex_property(shp.id)['anchor_point']
                     trans_to_origin = plantgl.Translated(-anchor_point, shp.geometry)
                     # Rotation variability
-                    azimut = self._alea_canopy.loc[(self._alea_canopy.pos == position_number) & (self._alea_canopy.vid == shp.id), 'azimut_leaf'].values[0]  # random.uniform(-var_leaf_azimut, var_leaf_azimut)
-                    inclination = self._alea_canopy.loc[(self._alea_canopy.pos == position_number) & (self._alea_canopy.vid == shp.id), 'inclination_leaf'].values[0]  # random.uniform(-var_leaf_inclination, var_leaf_inclination)
+                    azimut = self._alea_canopy.loc[(self._alea_canopy.pos == position_number) & (self._alea_canopy.vid == shp.id), 'azimut_leaf'].values[0]
+                    inclination = self._alea_canopy.loc[(self._alea_canopy.pos == position_number) & (self._alea_canopy.vid == shp.id), 'inclination_leaf'].values[0]
                     rotated_geometry = plantgl.EulerRotated(azimut, inclination, 0, trans_to_origin)
                     # Restore leaf base at initial anchor point
                     translated_geometry = plantgl.Translated(anchor_point, rotated_geometry)

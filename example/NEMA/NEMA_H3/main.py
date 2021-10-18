@@ -214,7 +214,8 @@ def main(stop_time, run_simu=True, make_graphs=True):
         # farquharwheat
         farquharwheat_elements_inputs_t0 = pd.read_csv(FARQUHARWHEAT_INPUTS_FILEPATH)
         farquharwheat_axes_inputs_t0 = pd.read_csv(FARQUHARWHEAT_AXES_INPUTS_FILEPATH)
-        update_parameters_farquharwheat = {'MODEL_VERSION': 'Barillot2016'}  # Use the initial version of the photosynthesis sub-model (as in Barillot et al. 2016, and in Gauthier et al. 2020)
+        # Use the initial version of the photosynthesis sub-model (as in Barillot et al. 2016, and in Gauthier et al. 2020)
+        update_parameters_farquharwheat = {'SurfacicProteins': False, 'NSC_Retroinhibition': False}
 
         farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
                                                                          farquharwheat_elements_inputs_t0,

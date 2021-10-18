@@ -323,7 +323,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
     # Use the initial version of the photosynthesis sub-model (as in Barillot et al. 2016, and in Gauthier et al. 2020)
-    update_parameters_farquharwheat = {'MODEL_VERSION': 'Barillot2016'}
+    update_parameters_farquharwheat = {'SurfacicProteins': False, 'NSC_Retroinhibition': False}
 
     # Facade initialisation
     farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(g,
