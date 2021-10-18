@@ -5,6 +5,7 @@ from __future__ import division  # use "//" to do integer division
 import warnings
 import copy
 
+import numpy as np
 import pandas as pd
 
 from elongwheat import model
@@ -564,7 +565,7 @@ class Simulation(object):
                         #: Elongation only if Gibberelin production by SAM
                         if curr_axis_outputs['GA']:
                             #: Case of internodes that will not fully elongate, GA synthesis started after their previous leaf ligulation (i.e. no Lmax defined)
-                            if (not curr_hiddenzone_outputs['internode_Lmax']) or (not curr_hiddenzone_outputs['internode_Lmax_lig']):
+                            if (np.isnan(curr_hiddenzone_outputs['internode_Lmax'])) or (np.isnan(curr_hiddenzone_outputs['internode_Lmax_lig'])):
                                 curr_hiddenzone_outputs['internode_Lmax'] = curr_hiddenzone_outputs['internode_Lmax_lig'] = model.calculate_short_internode_Lmax(curr_hiddenzone_outputs['internode_L'],
                                                                                                                                                                  curr_hiddenzone_outputs[
                                                                                                                                                                      'internode_pseudo_age'])
