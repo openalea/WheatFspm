@@ -45,10 +45,12 @@ ROOT_INPUTS_OUTPUTS = sorted(set(ROOT_INPUTS + ROOT_OUTPUTS))
 AXIS_INPUTS_OUTPUTS = sorted(set(AXIS_INPUTS + AXIS_OUTPUTS))
 
 
-class SimulationError(Exception): pass
+class SimulationError(Exception):
+    pass
 
 
-class SimulationRunError(SimulationError): pass
+class SimulationRunError(SimulationError):
+    pass
 
 
 class Simulation(object):
@@ -182,7 +184,7 @@ class Simulation(object):
                     curr_visible_internode_outputs['proteins'] += internode_export_proteins
                     self.outputs['elements'][visible_internode_id] = curr_visible_internode_outputs
 
-                # -- Delta Growth leaf # TODO: revoir les cas if et else
+                # -- Delta Growth leaf
                 if not hiddenzone_inputs['leaf_is_emerged']:  #: Leaf is not emerged
                     # delta mstruct of the hidden leaf
                     ratio_mstruct_DM = model.calculate_ratio_mstruct_DM(hiddenzone_inputs['mstruct'], hiddenzone_inputs['sucrose'], hiddenzone_inputs['fructan'],
@@ -200,7 +202,7 @@ class Simulation(object):
                     # delta Nstruct of the enclosed en leaf
                     delta_leaf_enclosed_Nstruct = model.calculate_delta_Nstruct(delta_leaf_enclosed_mstruct)
 
-                if hiddenzone_inputs['leaf_is_emerged'] and hiddenzone_inputs['leaf_is_growing']:  #: leaf has emerged and still growing
+                    # leaf has emerged and still growing
                     visible_lamina_id = hiddenzone_id + tuple(['blade', 'LeafElement1'])
                     #: Lamina is growing
                     if all_elements_inputs[visible_lamina_id]['is_growing']:
@@ -336,7 +338,8 @@ class Simulation(object):
                     self.outputs['hiddenzone'][hiddenzone_id]['leaf_is_remobilizing'] = False
 
                 # -- Remobilisation at the end of internode elongation
-                if hiddenzone_inputs['internode_is_remobilizing']:  # Internodes stop to elongate after leaves. We cannot test delta_internode_L > 0 for the cases of short internodes which are mature before GA production.
+                # Internodes stop to elongate after leaves. We cannot test delta_internode_L > 0 for the cases of short internodes which are mature before GA production.
+                if hiddenzone_inputs['internode_is_remobilizing']:
 
                     # Add to hidden part of the internode
                     hidden_internode_id = hiddenzone_id + tuple(['internode', 'HiddenElement'])

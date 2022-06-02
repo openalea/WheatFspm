@@ -1,6 +1,7 @@
 # -*- coding: latin-1 -*-
 import os
 
+import numpy as np
 import pandas as pd
 
 from growthwheat import simulation, converter
@@ -43,10 +44,10 @@ root_inputs_t0 = pd.read_csv(ROOT_INPUTS_FILEPATH)
 axis_inputs_t0 = pd.read_csv(AXIS_INPUTS_FILEPATH)
 
 # Convert NaN to None
-hiddenzones_inputs_t0 = hiddenzones_inputs_t0.where(hiddenzones_inputs_t0.notnull(), None).copy(deep=True)
-element_inputs_t0 = element_inputs_t0.where(element_inputs_t0.notnull(), None).copy(deep=True)
-root_inputs_t0 = root_inputs_t0.where(root_inputs_t0.notnull(), None).copy(deep=True)
-axis_inputs_t0 = axis_inputs_t0.where(axis_inputs_t0.notnull(), None).copy(deep=True)
+hiddenzones_inputs_t0 = hiddenzones_inputs_t0.replace({np.nan: None}).copy(deep=True)
+element_inputs_t0 = element_inputs_t0.replace({np.nan: None}).copy(deep=True)
+root_inputs_t0 = root_inputs_t0.replace({np.nan: None}).copy(deep=True)
+axis_inputs_t0 = axis_inputs_t0.replace({np.nan: None}).copy(deep=True)
 
 OUTPUTS_PRECISION = 6
 

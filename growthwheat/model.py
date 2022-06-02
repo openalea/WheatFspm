@@ -1,6 +1,9 @@
 # -*- coding: latin-1 -*-
 
 from __future__ import division  # use "//" to do integer division
+
+import numpy as np
+
 from growthwheat import parameters
 
 """
