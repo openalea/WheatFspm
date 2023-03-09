@@ -140,10 +140,10 @@ class RespirationModel(object):
             R_Nnit_red = cls.F_NIT_RED_SH_CS * cls.C_NIT_RED * s_amino_acids * mstruct  # Respiration in shoot tissues
         else:
             R_Nnit_red = cls.C_NIT_RED * s_amino_acids * mstruct  # Respiration in root tissues
+            if sucrose < R_Nnit_red:
+                R_Nnit_red = 0
+                s_amino_acids = 0
 
-        #        if sucrose < R_Nnit_red:
-        #            R_Nnit_red = 0
-        #            s_amino_acids = 0
         return R_Nnit_red, s_amino_acids
 
     @classmethod
