@@ -174,7 +174,7 @@ class Simulation(object):
             # hiddenzone initiation
             for i in range(0, init_leaf):
                 # Initialise hiddenzone
-                hiddenzone_id = axis_id + tuple([1 + i + curr_axis_outputs['nb_leaves'] - init_leaf])  # TODO: peut etre simplifié tant que 'calculate_SAM_status' renvoie 1 erreur si init_leaf>1
+                hiddenzone_id = axis_id + tuple([1 + i + curr_axis_outputs['nb_leaves'] - init_leaf])  # TODO: peut etre simplifiÃ© tant que 'calculate_SAM_status' renvoie 1 erreur si init_leaf>1
                 new_hiddenzone = parameters.HiddenZoneInit().__dict__
                 self.outputs['hiddenzone'][hiddenzone_id] = new_hiddenzone
 
@@ -565,7 +565,7 @@ class Simulation(object):
                         #: Elongation only if Gibberelin production by SAM
                         if curr_axis_outputs['GA']:
                             #: Case of internodes that will not fully elongate, GA synthesis started after their previous leaf ligulation (i.e. no Lmax defined)
-                            if (np.isnan(curr_hiddenzone_outputs['internode_Lmax'])) or (np.isnan(curr_hiddenzone_outputs['internode_Lmax_lig'])):
+                            if (curr_hiddenzone_outputs['internode_Lmax'] is None) or (curr_hiddenzone_outputs['internode_Lmax_lig'] is None):
                                 curr_hiddenzone_outputs['internode_Lmax'] = curr_hiddenzone_outputs['internode_Lmax_lig'] = model.calculate_short_internode_Lmax(curr_hiddenzone_outputs['internode_L'],
                                                                                                                                                                  curr_hiddenzone_outputs[
                                                                                                                                                                      'internode_pseudo_age'])
