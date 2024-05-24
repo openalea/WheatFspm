@@ -43,7 +43,7 @@ def from_dataframe(element_inputs, axes_inputs):
     :return: The inputs/outputs in a dictionary.
     :rtype: dict [dict]
 
-    .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
+    seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Farquhar-Wheat inputs/outputs.
     """
     all_elements_dict = {}
@@ -72,7 +72,7 @@ def to_dataframe(data_dict):
     :return: one dataframe for element outputs
     :rtype: pandas.DataFrame
 
-    .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
+    seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Farquhar-Wheat inputs/outputs.
     """
     ids_df = pd.DataFrame(data_dict.keys(), columns=ELEMENT_TOPOLOGY_COLUMNS)

@@ -12,11 +12,11 @@
 """
 # -- Version of the photosynthesis sub model
 SurfacicProteins = True      #: If True, surfacic proteins used to regulate photosynthesis ; if not total N
-NSC_Retroinhibition = True   #: If True, NSC (Non Structural Carbohydrates) downregulate photosynthesis
+NSC_Retroinhibition = True   #: If True, NSC (Non-Structural Carbohydrates) downregulate photosynthesis
 prim_scale = False           #: If True, photosynthesis calculated at primitive scale, if not at organ scale
 
 if not SurfacicProteins:
-    # Used in Barillot et al (2016) and Gauthier et al. (2020)
+    # Used in Barillot et al. (2016) and Gauthier et al. (2020)
     # Dependence to surfacic_nitrogen including structural nitrogen
 
     # -- Nitrogen dependance of photosynthetic parameters (derived from Braune et al. (2009) and Evers et al. (2010):
@@ -32,7 +32,7 @@ if not SurfacicProteins:
     PARAM_N = {'S_surfacic_nitrogen': {'Vc_max25': 84.965, 'Jmax25': 117.6, 'alpha': 0.0413, 'TPU25': 9.25, 'Rdark25': 0.493},
                'surfacic_nitrogen_min': {'Vc_max25': 0.17, 'Jmax25': 0.17, 'TPU25': 0.229, 'Rdark25': 0.118}, 'beta': 0.2101, 'delta1': 14.7, 'delta2': -0.548}
     NA_0 = 2  # Initial value of surfacic_nitrogen (g m-2), used if no surfacic_nitrogen is provided by user
-    Psurf_to_SLNnonstruct = 1.06  #: Conversion factor from surfacic protein content to non structural SLN (estimation from NEMA and Ljutovac simulations)
+    Psurf_to_SLNnonstruct = 1.06  #: Conversion factor from surfacic protein content to non-structural SLN (estimation from NEMA and Ljutovac simulations)
 
 else:
     # Used in Gauthier et al. (2021)
@@ -51,7 +51,7 @@ else:
     PARAM_N = {'S_surfacic_nitrogen': {'Vc_max25': 84.965, 'Jmax25': 117.6, 'alpha': 0.0413, 'TPU25': 9.25, 'Rdark25': 0.493},
                'surfacic_nitrogen_min': {'Vc_max25': 0., 'Jmax25': 0., 'TPU25': 0., 'Rdark25': 0.}, 'beta': 0.2101 + 0.0083, 'delta1': 14.7, 'delta2': -0.548}
     NA_0 = 2  # Initial value of surfacic_nitrogen (g m-2), used if no surfacic_nitrogen is provided by user
-    Psurf_to_SLNnonstruct = 1.06  #: Conversion factor from surfacic protein content to non structural SLN (estimation from NEMA and Ljutovac simulations)
+    Psurf_to_SLNnonstruct = 1.06  #: Conversion factor from surfacic protein content to non-structural SLN (estimation from NEMA and Ljutovac simulations)
 
 # -- Molecular weights
 MM_WATER = 18  # Molar mass of water (g mol-1)
@@ -90,9 +90,9 @@ Watt_to_PPFD = 4.55  # It is assumed that 1 W m-2 of PAR is equivalent to 4.55 µ
 rbh_rbw = 0.96  # estimation factor Boundary layer resistance for water from Boundary layer resistance to heat
 
 # -- Photosynthetic parameter
-O = 21000  # Intercellular O2 concentration, µmol mol(air)-1 or Pa, from Bernacchi et al. (2001)
+O2 = 21000  # Intercellular O2 concentration, µmol mol(air)-1 or Pa, from Bernacchi et al. (2001)
 KC25 = 404  # Affinity constant of RuBisCO for C, µmol mol-1 or Pa, from Bernacchi et al. (2001) (estimation in Braune et al. (2009) not enough accurate)
-KO25 = 278.4E3  # Affinity constant of RuBisCO for O, µmol mol-1 or Pa, from Bernacchi et al. (2001) (estimation in Braune et al. (2009) not enough accurate)
+KO25 = 278.4E3  # Affinity constant of RuBisCO for O2, µmol mol-1 or Pa, from Bernacchi et al. (2001) (estimation in Braune et al. (2009) not enough accurate)
 GAMMA25 = 39  # CO2 compensation point, µmol(CO2) mol-1 (air), from Braune et al. (2009)
 THETA = 0.72  # curvature parameter of J, dimensionless
 EFFICENCY_STEM = 0.78
