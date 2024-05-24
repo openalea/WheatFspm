@@ -65,7 +65,7 @@ def from_dataframes(roots_inputs, axes_inputs, elements_inputs):
     :return: The inputs/outputs in a dictionary.
     :rtype: dict [str, dict]
 
-    .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
+    seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Senesc-Wheat inputs/outputs.
 
     """
@@ -93,7 +93,7 @@ def to_dataframes(data_dict):
     :return: One dataframe for roots inputs/outputs, one dataframe for axes inputs/outputs,  one dataframe for elements inputs/outputs.
     :rtype: (pandas.DataFrame, pandas.DataFrame, pandas.DataFrame)
 
-    .. seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
+    seealso:: see :attr:`simulation.Simulation.inputs` and :attr:`simulation.Simulation.outputs`
        for the structure of Senesc-Wheat inputs/outputs.
 
     """

@@ -172,7 +172,7 @@ class SenescenceModel(object):
 
     @classmethod
     def calculate_remobilisation_proteins(cls, organ, element_index, proteins, relative_delta_green_area, ratio_N_mstruct_max, full_remob):
-        """Protein remobilisation due to senescence over DELTA_T. Part is remobilized as amino_acids (µmol N), the rest is increasing Nresidual (g).
+        """Protein remobilisation due to senescence over DELTA_T. Part is remobilised as amino_acids (µmol N), the rest is increasing Nresidual (g).
         
         :param str organ: name of the organ
         :param int element_index: phytomer rank
@@ -206,6 +206,8 @@ class SenescenceModel(object):
         """Root senescence
         :param float mstruct: structural mass (g)
         :param float Nstruct: structural N (g)
+        :param bool postflowering_stages: if True the model will calculate root growth with the parameters calibrated for post flowering stages
+
         :return: Rate of mstruct loss by root senescence (g mstruct s-1), rate of Nstruct loss by root senescence (g Nstruct s-1)
         :rtype: tuple [float, float]
         """
