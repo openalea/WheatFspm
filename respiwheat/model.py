@@ -199,3 +199,25 @@ class RespirationModel(object):
             R_residual = ((cls.KM_MAX * conc_sucrose) / (cls.KM + conc_sucrose)) * Ntot * Q10 ** ((Ts - T_ref) / 10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
 
         return R_residual
+
+    @classmethod
+    def R_endosperm(cls, starch, mstruct, Tsoil):
+        """ Endosperm respiration during seed germination
+
+        :param float starch: amount of C sucrose (µmol C)
+        :param float mstruct: structural dry mass of organ (g)
+        :param float Tsoil : soil temperature (°C)
+
+        :return: R_residual (µmol C respired h-1)
+        :rtype: float
+        """
+
+        Q10 = 2.
+        T_ref = 20.
+
+        if starch <= 0. or mstruct <= 0.:
+            R_residual = 0.
+        else:
+            R_residual = 5.21E-4 * Q10 ** ((Tsoil - T_ref) / 10) * cls.SECOND_TO_HOUR_RATE_CONVERSION
+
+        return R_residual
