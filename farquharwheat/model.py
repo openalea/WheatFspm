@@ -128,7 +128,7 @@ def _calculate_Ci(ambient_CO2, An, gsw):
     :rtype: float
     """
     Ci = ambient_CO2 - An * ((parameters.gsw_gs_CO2 / gsw) + (parameters.Ci_A / parameters.GB))  #: Intercellular concentration of CO2 (µmol mol-1)
-    # gsw and GB in mol m-2 s-1 so that  (An * ((1.6/gs) + (1.37/parameters.GB)) is thus in µmol mol-1 as ambient_CO2
+    # gsw and GB in mol m-2 s-1 so that (An * ((1.6/gs) + (1.37/parameters.GB)) is thus in µmol mol-1 as ambient_CO2
 
     return Ci
 
