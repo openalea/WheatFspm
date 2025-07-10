@@ -236,7 +236,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
     # read adelwheat inputs at t0
     adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-    g = adel_wheat.load(dir=INPUTS_DIRPATH)
+    g = adel_wheat.load(directory=INPUTS_DIRPATH)
 
     # ---------------------------------------------
     # ----- CONFIGURATION OF THE FACADES -------
@@ -1019,5 +1019,5 @@ if __name__ == '__main__':
     main(2500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          show_3Dplant=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
-         heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
+         heterogeneous_canopy=True, N_fertilizations={1440: 357143, 2520: 1000000},
          PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')
