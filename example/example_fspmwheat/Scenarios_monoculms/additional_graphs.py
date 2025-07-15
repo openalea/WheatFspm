@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import matplotlib.image as mpimg
 
-from elongwheat import parameters as elongwheat_parameters
+from openalea.elongwheat import parameters as elongwheat_parameters
 from example.Scenarios_monoculms import tools
 
 # ----- Import scenarios list and description

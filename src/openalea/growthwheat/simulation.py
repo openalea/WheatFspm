@@ -4,10 +4,10 @@ from __future__ import division  # use "//" to do integer division
 
 import copy
 
-from growthwheat import model
-from growthwheat import parameters
+from openalea.growthwheat import model
+from openalea.growthwheat import parameters
 
-from respiwheat.model import RespirationModel
+from openalea.respiwheat.model import RespirationModel
 
 """
     growthwheat.simulation

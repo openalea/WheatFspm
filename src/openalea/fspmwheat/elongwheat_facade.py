@@ -1,8 +1,8 @@
 # -*- coding: latin-1 -*-
 import numpy as np
 
-from elongwheat import converter, simulation
-from fspmwheat import tools
+from openalea.elongwheat import converter, simulation
+from openalea.fspmwheat import tools
 
 """
     fspmwheat.elongwheat_facade

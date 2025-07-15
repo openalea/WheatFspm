@@ -6,7 +6,7 @@ import pandas as pd
 
 import time
 
-from elongwheat import simulation as elongwheat_simulation, converter as elongwheat_converter
+from openalea.elongwheat import simulation as elongwheat_simulation, converter as elongwheat_converter
 
 """
     main
@@ -111,7 +111,7 @@ elongwheat_ts = 1
 
 # --- ADEL
 if OPTION_SHOW_ADEL:
-    from fspmwheat import elongwheat_facade
+    from openalea.fspmwheat import elongwheat_facade
     from alinea.adel.adel_dynamic import AdelDyn
     from alinea.adel.echap_leaf import echap_leaves
 

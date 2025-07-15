@@ -46,12 +46,21 @@ test:
     - pandas
     - pytest
     - nbmake
-  imports:
-    - openalea.wheatfspm
+    - scipy
+    - alinea.adel # will probably change to openalea.adel
+#  imports:
+#    - openalea.wheatfspm
   source_files:
     - test/**
   commands:
-    - pytest -v
+    - cd test/test_cnwheat && pytest -v
+    - cd ../test_elongwheat && pytest -v
+    - cd ../test_farquharwheat && pytest -v
+    - cd ../test_fspmwheat && pytest -v
+    - cd ../test_growthwheat && pytest -v
+    - cd ../test_respiwheat && pytest -v
+    - cd ../test_senescwheat && pytest -v
+
 
 about:
   home: {{ home }}

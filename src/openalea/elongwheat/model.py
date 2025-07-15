@@ -2,7 +2,7 @@
 
 from __future__ import division  # use "//" to do integer division
 import pandas as pd
-from elongwheat import parameters
+from openalea.elongwheat import parameters
 from math import exp, log10
 
 """

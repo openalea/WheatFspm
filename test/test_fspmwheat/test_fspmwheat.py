@@ -9,16 +9,16 @@ import random
 from alinea.adel.adel_dynamic import AdelDyn
 from alinea.adel.echap_leaf import echap_leaves
 
-from fspmwheat import caribu_facade
-from fspmwheat import cnwheat_facade
-from fspmwheat import elongwheat_facade
-from fspmwheat import farquharwheat_facade
-from fspmwheat import growthwheat_facade
-from fspmwheat import senescwheat_facade
-from fspmwheat import fspmwheat_facade
+from openalea.fspmwheat import caribu_facade
+from openalea.fspmwheat import cnwheat_facade
+from openalea.fspmwheat import elongwheat_facade
+from openalea.fspmwheat import farquharwheat_facade
+from openalea.fspmwheat import growthwheat_facade
+from openalea.fspmwheat import senescwheat_facade
+from openalea.fspmwheat import fspmwheat_facade
 
-from cnwheat import tools as cnwheat_tools
-from cnwheat import simulation as cnwheat_simulation
+from openalea.cnwheat import tools as cnwheat_tools
+from openalea.cnwheat import simulation as cnwheat_simulation
 
 """
     test_cnwheat

@@ -13,14 +13,14 @@ import pandas as pd
 import statsmodels.api as sm
 from alinea.adel.adel_dynamic import AdelDyn
 from alinea.adel.echap_leaf import echap_leaves
-from elongwheat import parameters as elongwheat_parameters
-from fspmwheat import caribu_facade
-from fspmwheat import cnwheat_facade
-from fspmwheat import elongwheat_facade
-from fspmwheat import farquharwheat_facade
-from fspmwheat import fspmwheat_facade
-from fspmwheat import growthwheat_facade
-from fspmwheat import senescwheat_facade
+from openalea.elongwheat import parameters as elongwheat_parameters
+from openalea.fspmwheat import caribu_facade
+from openalea.fspmwheat import cnwheat_facade
+from openalea.fspmwheat import elongwheat_facade
+from openalea.fspmwheat import farquharwheat_facade
+from openalea.fspmwheat import fspmwheat_facade
+from openalea.fspmwheat import growthwheat_facade
+from openalea.fspmwheat import senescwheat_facade
 
 """
     main
@@ -632,7 +632,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                             graphs_dirpath=GRAPHS_DIRPATH)
 
         # --- Additional graphs
-        from cnwheat import tools as cnwheat_tools
+        from openalea.cnwheat import tools as cnwheat_tools
         colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey', 'lime']
         colors = colors + colors
 

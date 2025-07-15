@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from farquharwheat import simulation, converter
+from openalea.farquharwheat import simulation, converter
 
 """
     test_farquhar_wheat

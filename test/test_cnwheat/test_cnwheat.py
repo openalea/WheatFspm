@@ -7,9 +7,9 @@ import warnings
 
 import pandas as pd
 
-from cnwheat import simulation as cnwheat_simulation, converter as cnwheat_converter, \
+from openalea.cnwheat import simulation as cnwheat_simulation, converter as cnwheat_converter, \
     tools as cnwheat_tools, postprocessing as cnwheat_postprocessing
-from respiwheat import model as respiwheat_model
+from openalea.respiwheat import model as respiwheat_model
 
 """
     test_cnwheat

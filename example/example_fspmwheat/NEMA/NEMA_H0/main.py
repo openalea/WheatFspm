@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 
 from alinea.adel.adel_dynamic import AdelDyn
-from cnwheat import tools as cnwheat_tools
-from fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat_facade, growthwheat_facade, caribu_facade, elongwheat_facade
+from openalea.cnwheat import tools as cnwheat_tools
+from openalea.fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat_facade, growthwheat_facade, caribu_facade, elongwheat_facade
 
 """
     main

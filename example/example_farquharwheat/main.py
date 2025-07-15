@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from farquharwheat import simulation, converter
+from openalea.farquharwheat import simulation, converter
 
 """
     main

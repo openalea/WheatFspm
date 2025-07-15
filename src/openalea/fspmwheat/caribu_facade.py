@@ -7,7 +7,7 @@ import warnings
 from alinea.caribu.CaribuScene import CaribuScene
 from alinea.caribu.sky_tools import GenSky, GetLight, Gensun, GetLightsSun, spitters_horaire
 
-from fspmwheat import tools
+from openalea.fspmwheat import tools
 
 """
     fspmwheat.caribu_facade

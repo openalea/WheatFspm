@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 
-from cnwheat import model as cnwheat_model
+from openalea.cnwheat import model as cnwheat_model
 
 
 def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):

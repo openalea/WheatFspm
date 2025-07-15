@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from growthwheat import simulation, converter
+from openalea.growthwheat import simulation, converter
 
 """
     test_growthwheat

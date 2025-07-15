@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 
-from respiwheat import model
+from openalea.respiwheat import model
 
 """
     test_respiwheat

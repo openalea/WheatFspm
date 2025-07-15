@@ -9,7 +9,7 @@ import getopt
 import pandas as pd
 from math import exp
 
-from fspmwheat import fspmwheat_postprocessing
+from openalea.fspmwheat import fspmwheat_postprocessing
 
 try:  # Python3
     from example.Scenarios_monoculms import main

@@ -6,7 +6,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from cnwheat import tools
+from openalea.cnwheat import tools
 import matplotlib.pyplot as plt
 
 GRAPHS_DIRPATH = 'graphs'

@@ -7,8 +7,8 @@ import datetime
 
 import pandas as pd
 
-from respiwheat import model as respiwheat_model
-from cnwheat import simulation as cnwheat_simulation, converter as cnwheat_converter, \
+from openalea.respiwheat import model as respiwheat_model
+from openalea.cnwheat import simulation as cnwheat_simulation, converter as cnwheat_converter, \
     tools as cnwheat_tools, postprocessing as cnwheat_postprocessing
 
 """

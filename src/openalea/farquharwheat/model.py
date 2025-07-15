@@ -2,7 +2,7 @@
 
 from __future__ import division  # use '//' to do integer division
 from math import sqrt, log, exp
-from farquharwheat import parameters
+from openalea.farquharwheat import parameters
 
 """
     farquharwheat.model
