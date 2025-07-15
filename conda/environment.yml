@@ -1,0 +1,11 @@
+name: wheatfspm_dev
+channels:
+  - conda-forge
+  - openalea3
+dependencies:
+  - python
+  - numpy
+  - pandas
+  - pip
+  - pip:
+      - -e '..[test,dev,doc]'
