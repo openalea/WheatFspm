@@ -131,7 +131,7 @@ def test_run(overwrite_desired_data=False):
 
     # read adelwheat inputs at t0
     adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-    g = adel_wheat.load(dir=INPUTS_DIRPATH)
+    g = adel_wheat.load(directory=INPUTS_DIRPATH)
 
     # ---------------------------------------------
     # ----- CONFIGURATION OF THE FACADES -------

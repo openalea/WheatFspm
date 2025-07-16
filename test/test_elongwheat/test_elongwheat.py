@@ -58,7 +58,7 @@ def compare_actual_to_desired(data_dirpath, actual_data_df, desired_data_filenam
     if actual_data_filename is not None:
         actual_data_filepath = os.path.join(data_dirpath, actual_data_filename)
         actual_data_df.to_csv(actual_data_filepath, na_rep='NA', index=False)
-        actual_data_df.fillna(value=pd.np.nan, inplace=True)
+        actual_data_df.fillna(value=np.nan, inplace=True)
 
     if overwrite_desired_data:
         desired_data_filepath = os.path.join(data_dirpath, desired_data_filename)
