@@ -6,6 +6,13 @@ dependencies:
   - python
   - numpy
   - pandas
+  - scipy
+  - openalea.mtg
+  - openalea.plantgl
+  - openalea.lpy
+  - alinea.Caribu
+  - alinea.adel
+  - openalea.astk
   - pip
   - pip:
       - -e '..[test,dev,doc]'
