@@ -162,6 +162,7 @@ To run the example:
 * [INRAE](https://www.inrae.fr/): salaries of permanent staff 
 * French Research National Agency: projects [Breedwheat](https://breedwheat.fr/) (ANR-10-BTBR-03) and [Wheatamix](https://www6.inrae.fr/wheatamix/) (ANR-13-AGRO0008): postdoctoral research of R.Barillot
 * [itk](https://www.itk.fr/en/) company and [ANRT](http://www.anrt.asso.fr/fr): funded the [Cifre](http://www.anrt.asso.fr/fr/cifre-7843) PhD thesis of M.Gauthier
+  
 
 # License
 This project is licensed under the CeCILL-C License - see file [LICENSE](LICENSE) for details
