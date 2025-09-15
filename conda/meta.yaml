@@ -44,7 +44,7 @@ test:
     - pytest
     - nbmake
     - scipy
-    - alinea.adel # will probably change to openalea.adel
+    - openalea.adel # will probably change to openalea.adel
 #  imports:
 #    - openalea.wheatfspm
   source_files:

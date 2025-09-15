@@ -1,8 +1,8 @@
-from alinea.adel.dresser import blade_dimension, stem_dimension, dimension_table, AdelDressDyn
-from alinea.adel.Stand import AgronomicStand
-from alinea.adel.adel_dynamic import AdelWheatDyn
-from alinea.adel.AdelR import devCsv
-from alinea.adel.plantgen_extensions import TillerEmission, TillerRegression, \
+from openalea.adel.dresser import blade_dimension, stem_dimension, dimension_table, AdelDressDyn
+from openalea.adel.Stand import AgronomicStand
+from openalea.adel.adel_dynamic import AdelWheatDyn
+from openalea.adel.AdelR import devCsv
+from openalea.adel.plantgen_extensions import TillerEmission, TillerRegression, \
     AxePop, PlantGen, HaunStage
 
 

@@ -1,19 +1,19 @@
-from alinea.adel.dresser import blade_dimension, stem_dimension, ear_dimension, \
+from openalea.adel.dresser import blade_dimension, stem_dimension, ear_dimension, \
     dimension_table, AdelDress, AdelDressDyn
-from alinea.adel.data_samples import leaves
-from alinea.adel.adel_dynamic import AdelWheatDyn
+from openalea.adel.data_samples import leaves
+from openalea.adel.adel_dynamic import AdelWheatDyn
 
-from alinea.adel.data_samples import canopy_two_metamers, leaves
+from openalea.adel.data_samples import canopy_two_metamers, leaves
 
 """ Tutorial Reconstructing canopy from digitised data """
 
 import numpy
 
-from alinea.adel.dresser import blade_dimension, stem_dimension, ear_dimension, \
+from openalea.adel.dresser import blade_dimension, stem_dimension, ear_dimension, \
     dimension_table, AdelDress
-from alinea.adel.geometric_elements import Leaves
-from alinea.adel.Stand import AgronomicStand
-from alinea.adel.mtg_editions import add_plant, add_axe, add_vegetative_metamer, find_plants, \
+from openalea.adel.geometric_elements import Leaves
+from openalea.adel.Stand import AgronomicStand
+from openalea.adel.mtg_editions import add_plant, add_axe, add_vegetative_metamer, find_plants, \
     find_metamers, find_label, insert_elements, new_mtg_factory
 
 # test_mtg_editions

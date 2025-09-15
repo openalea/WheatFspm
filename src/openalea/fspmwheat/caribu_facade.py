@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 import warnings
 
-from alinea.caribu.CaribuScene import CaribuScene
-from alinea.caribu.sky_tools import GenSky, GetLight, Gensun, GetLightsSun, spitters_horaire
+from openalea.caribu.CaribuScene import CaribuScene
+from openalea.caribu.sky_tools import GenSky, GetLight, Gensun, GetLightsSun, spitters_horaire
 
 from openalea.fspmwheat import tools
 
@@ -49,7 +49,7 @@ class CaribuFacade(object):
         """
         :param openalea.mtg.MTG shared_mtg: The MTG shared between all models.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: The dataframe of inputs and outputs at elements scale shared between all models.
-        :param alinea.adel.adel_dynamic.AdelWheatDyn geometrical_model: The model which deals with geometry. This model must have an attribute "domain".
+        :param openalea.adel.adel_dynamic.AdelWheatDyn geometrical_model: The model which deals with geometry. This model must have an attribute "domain".
         :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
@@ -240,7 +240,7 @@ class CaribuFacade(object):
         :return: duplicated heterogenous scene and its domain
         :rtype: openalea.plantgl.all.Scene, (float)
         """
-        from alinea.adel.Stand import AgronomicStand
+        from openalea.adel.Stand import AgronomicStand
         import openalea.plantgl.all as plantgl
         import random
 

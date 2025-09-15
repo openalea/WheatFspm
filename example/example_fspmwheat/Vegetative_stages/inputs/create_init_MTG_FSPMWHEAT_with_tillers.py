@@ -2,12 +2,12 @@
 ## Adel master du 2018-11-30
 
 
-from alinea.adel.Stand import AgronomicStand
-from alinea.adel.adel_dynamic import AdelDyn
-from alinea.adel.AdelR import devCsv
-from alinea.adel.plantgen_extensions import TillerEmission, TillerRegression, \
+from openalea.adel.Stand import AgronomicStand
+from openalea.adel.adel_dynamic import AdelDyn
+from openalea.adel.AdelR import devCsv
+from openalea.adel.plantgen_extensions import TillerEmission, TillerRegression, \
     AxePop, PlantGen, HaunStage
-from alinea.adel.echap_leaf import echap_leaves
+from openalea.adel.echap_leaf import echap_leaves
 
 import os
 import pandas as pd

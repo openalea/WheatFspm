@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-from alinea.adel.adel_dynamic import AdelDyn
+from openalea.adel.adel_dynamic import AdelDyn
 from openalea.cnwheat import tools as cnwheat_tools
 from openalea.fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat_facade, growthwheat_facade, caribu_facade, elongwheat_facade
 
@@ -22,7 +22,7 @@ from openalea.fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat
     Script readatpted from example NEMA_H3 used in the paper Barillot et al. (2016).
     This example uses the format MTG to exchange data between the models.
 
-    You must first install :mod:`alinea.adel`, :mod:`cnwheat`, :mod:`farquharwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
+    You must first install :mod:`openalea.adel`, :mod:`cnwheat`, :mod:`farquharwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
     before running this script with the command `python`.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.

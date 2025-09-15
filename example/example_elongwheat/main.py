@@ -112,8 +112,8 @@ elongwheat_ts = 1
 # --- ADEL
 if OPTION_SHOW_ADEL:
     from openalea.fspmwheat import elongwheat_facade
-    from alinea.adel.adel_dynamic import AdelDyn
-    from alinea.adel.echap_leaf import echap_leaves
+    from openalea.adel.adel_dynamic import AdelDyn
+    from openalea.adel.echap_leaf import echap_leaves
 
     # adelwheat inputs at t0
     ADELWHEAT_INPUTS_DIRPATH = os.path.join(INPUTS_DIRPATH, 'adelwheat')  # the directory adelwheat must contain files 'adel0000.pckl' and 'scene0000.bgeom'

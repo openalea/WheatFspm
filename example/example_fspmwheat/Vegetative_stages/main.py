@@ -11,8 +11,8 @@ import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from alinea.adel.adel_dynamic import AdelDyn
-from alinea.adel.echap_leaf import echap_leaves
+from openalea.adel.adel_dynamic import AdelDyn
+from openalea.adel.echap_leaf import echap_leaves
 from openalea.elongwheat import parameters as elongwheat_parameters
 from openalea.fspmwheat import caribu_facade
 from openalea.fspmwheat import cnwheat_facade
@@ -29,7 +29,7 @@ from openalea.fspmwheat import senescwheat_facade
     An example to show how to couple models CN-Wheat, Farquhar-Wheat, Senesc-Wheat, Elong-Wheat, Growth-Wheat, Adel-Wheat and Caribu.
     This example uses the format MTG to exchange data between the models.
 
-    You must first install :mod:`alinea.adel`, :mod:`cnwheat`, :mod:`farquharwheat`, :mod:`elongwheat`, :mod:`growthwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
+    You must first install :mod:`openalea.adel`, :mod:`cnwheat`, :mod:`farquharwheat`, :mod:`elongwheat`, :mod:`growthwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
     before running this script with the command `python`.
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
