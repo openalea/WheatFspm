@@ -73,53 +73,30 @@ WheatFspm consists in a set of sub-models (named submodules in git) which share 
 * To run the tests: [Nose](http://nose.readthedocs.org/) >= 1.3.0 
 
 ## Installing
-*WheatFspm* has to be installed in a conda environment containing all dependencies.
-
-* Install Miniconda 2 or 3 for Python 3.7: https://docs.conda.io/en/latest/miniconda.html
-* Create a new environment in an Anaconda prompt:
-   `conda create -n WheatFspm python=3.7 openalea.mtg openalea.plantgl openalea.lpy alinea.caribu alinea.astk coverage nose sphinx statsmodels -c conda-forge -c fredboudon`
-* Activate the conda environment:
-    `conda activate WheatFspm`
-* Install Adel-Wheat:
-    Download and extract the following archive https://github.com/rbarillot/adel/archive/python3.zip (temporary branch for python 3 compatibility)
-    cd to your local reposoitory of adel and install it in your conda environment `python setup.py develop`
-* Install FspmWheat:
-    'todo'
-   
-### Users
-* Download WheatFspm package from https://github.com/openalea-incubator/WheatFspm/archive/master.zip
-* Extract archive
-* Open a command line interpreter in your local copy of *WheatFspm*,
-* Run command: `python setup.py install --user` 
+### for user
+1) Install Miniforge: [https://github.com/conda-forge/miniforge](https://github.com/conda-forge/miniforge)
+2) Create a conda environment:
+```shell
+mamba create -n wheatfspm openalea.wheatfspm -c conda-forge -c openalea3
+```
+3) activate the environment: `mamba activate wheatfspm`
 
 ### Developers
 
-This  package contains Git [submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) ([in French](https://git-scm.com/book/fr/v2/Utilitaires-Git-Sous-modules)).
-
-Development is done in the different submodules.
-
-#### Cloning
-
-To clone the project, please use:
-
-    git clone --recurse-submodules https://github.com/openalea-incubator/WheatFspm
-
-#### Updating submodules
-
-If you want to update all submodules:
-
-    git submodule update --remote
-
-Otherelse, update each one to a specific version, branch or tag, do:
-
-    cd mypackage
-    git fetch
-    git merge origin/master
-
-#### Install packages in develop mode
-
-* Open a command line interpreter into each copy of submodels
-* Run command: `python setup.py develop --user`
+1) To clone the project, please use:
+```commandline
+git clone https://github.com/openalea/WheatFspm
+```
+2) create and activate a conda environment with dependencies:
+```commandline
+mamba env create -n wheatfspm -f conda/environment.yml 
+activate wheatfspm
+```
+3) under the root directory of WheatFspm install the package in editable mode
+```commandline
+cd WheatFspm
+pip install -e .
+```
 
 # Usage
 
