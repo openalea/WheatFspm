@@ -81,10 +81,11 @@ channels = [
 dependencies = [
     "openalea.mtg",
     "openalea.plantgl",
-    " openalea.lpy",
-    " openalea.Caribu",
-    " openalea.adel",
-    " openalea.astk",
+    "openalea.lpy",
+    "openalea.Caribu",
+    "openalea.adel",
+    "openalea.astk",
+    "matplotlib-base",
 ]
 
 [project.urls]
