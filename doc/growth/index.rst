@@ -1,7 +1,7 @@
 
 .. _growthwheat:
 
-.. module:: growthwheat
+.. module:: openalea.growthwheat
 
 Growth-Wheat documentation
 ############################
@@ -58,5 +58,5 @@ Indices and tables
 * :ref:`search`
 
 
-.. |growthwheat| replace:: :mod:`growthwheat`
+.. |growthwheat| replace:: :mod:`openalea.growthwheat`
 
