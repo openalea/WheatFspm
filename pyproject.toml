@@ -22,7 +22,7 @@ local_scheme = "no-local-version"
 [project]
 name = "openalea.wheatfspm"
 authors = [
-  { name = "C.Chambon, R.Barillot" },
+  { name = "R.BArillot, C.Chambon, M.Gauthier, B.Andrieu" },
 ]
 description = "WheatFspm is a Functional Structural Plant Model (FSPM) of wheat ."
 readme = "README.md"
@@ -81,10 +81,11 @@ channels = [
 dependencies = [
     "openalea.mtg",
     "openalea.plantgl",
-    " openalea.lpy",
-    " alinea.Caribu",
-    " alinea.adel",
-    " openalea.astk",
+    "openalea.lpy",
+    "openalea.caribu",
+    "openalea.adel",
+    "openalea.astk",
+    "matplotlib-base",
 ]
 
 [project.urls]

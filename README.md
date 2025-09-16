@@ -1,18 +1,20 @@
+# WheatFspm
 [![License](https://img.shields.io/badge/license-CeCILL--C-blue )](https://img.shields.io/badge/license-CeCILL--C-blue )
 
 [![Documentation Status](https://readthedocs.org/projects/cn-wheat/badge/?version=latest)](https://cn-wheat.readthedocs.io/en/latest/?badge=latest)
 
-# WheatFspm
+## About
+
 WheatFspm is a Functional Structural Plant Model (FSPM) of wheat which fully integrates shoot morphogenesis and the metabolism of carbon (C) and nitrogen (N) at organ scale within a 3D representation of plant architecture. Plants are described as a collection of tillers, each consisting in individual shoot organs (lamina, sheath, internode, peduncle, chaff), a single root compartment, the grains, and a phloem.
 
 WheatFspm simulates:
-* Organ photosynthesis, temperature and transpiration from light distribution within the 3D canopy which is provided by Caribu and Adel-Wheat models ((Chelle and Andrieu, 1998) ; (Fournier *et al.*, 2003), respectively)
-* Leaf and internode elongation
-* Leaf, internode and root growth in mass
-* N acquisition, synthesis and allocation of C and N metabolites at organ level and among tiller organs
-* Senescence of shoot organs and roots
+* Organ photosynthesis, temperature and transpiration from light distribution within the 3D canopy.
+* Leaf and internode elongation.
+* Leaf, internode and root growth in mass.
+* N acquisition, synthesis and allocation of C and N metabolites at organ level and among tiller organs.
+* Senescence of shoot organs and roots.
 
-Model inputs are the climatic conditions (temperature, light, humidity, CO2, wind, soil NO<sub>3</sub><sup>-</sup>) and initial dimensions, mass and metabolic composition of individual organs.
+Model inputs are the pedoclimatic conditions (temperature, light, humidity, CO2, wind, soil NO<sub>3</sub><sup>-</sup>) and initial dimensions, mass and metabolic composition of individual organs.
 
 ![alt text](_media/Vegetative_stages_topview.gif "Growing canopy")
 
@@ -38,9 +40,9 @@ WheatFspm consists in a set of sub-models (named submodules in git) which share 
   * [Installing](#installing)
     + [Users](#users)
     + [Developers](#developers)
+- [Documentation](#installation)
 - [Usage](#usage)
   * [NEMA](#nema)
-  * [Papier_FSPMA2016](#papier-fspma2016)
   * [Vegetative stages](#vegetative-stages)
   * [Scenarios_monoculms](#scenarios-monoculms)
 - [Credits](#credits)
@@ -52,36 +54,26 @@ WheatFspm consists in a set of sub-models (named submodules in git) which share 
 
 # Installation
 
-*WheatFspm* has been tested on Windows 10 64 bit and Linux Fedora 24 64 bit. *WheatFspm* is now developed in Python 3.
-
 ## Prerequisites
 *WheatFspm* has the following dependencies (see documentation in the links provided, instructions for their installation are given in [Installing](#installing)):
 * To run the model: 
-    * [Python](http://www.python.org) >= 3.7
-    * [NumPy](http://www.numpy.org/) >= 1.7.2
-    * [SciPy](http://www.scipy.org/) >= 0.12.1
-    * [Pandas](http://pandas.pydata.org/) >= 0.14.0 
-    * [Openalea.MTG](https://github.com/openalea/mtg)
-    * [Openalea.Plantgl](https://github.com/openalea/plantgl)
-    * [Openalea.Lpy](https://github.com/openalea/lpy)
-    * [Alinea.Caribu](https://github.com/openalea-incubator/caribu) 
-    * [Alinea.Adel](https://github.com/openalea-incubator/adel)
-    * [Alinea.Astk](https://github.com/openalea-incubator/astk)
+    * [openalea.MTG](https://github.com/openalea/mtg)
+    * [openalea.Plantgl](https://github.com/openalea/plantgl)
+    * [openalea.Lpy](https://github.com/openalea/lpy)
+    * [openalea.Caribu](https://github.com/openalea-incubator/caribu) 
+    * [openalea.Adel](https://github.com/openalea-incubator/adel)
+    * [openalea.Astk](https://github.com/openalea-incubator/astk)
     
-* To run the tools: [Matplotlib](http://matplotlib.org/) >= 1.3.1 
-* To build the documentation: [Sphinx](http://sphinx-doc.org/) >= 1.1.3
-* To run the tests: [Nose](http://nose.readthedocs.org/) >= 1.3.0 
-
 ## Installing
-### for user
-1) Install Miniforge: [https://github.com/conda-forge/miniforge](https://github.com/conda-forge/miniforge)
-2) Create a conda environment:
+For general information about OpenAlea installation, see https://openalea.readthedocs.io/en/latest/install.html 
+### For users
+
 ```shell
 mamba create -n wheatfspm openalea.wheatfspm -c conda-forge -c openalea3
 ```
-3) activate the environment: `mamba activate wheatfspm`
+To activate the environment: `mamba activate wheatfspm`
 
-### Developers
+### For developers
 
 1) To clone the project, please use:
 ```commandline
@@ -92,59 +84,45 @@ git clone https://github.com/openalea/WheatFspm
 mamba env create -n wheatfspm -f conda/environment.yml 
 activate wheatfspm
 ```
-3) under the root directory of WheatFspm install the package in editable mode
-```commandline
-cd WheatFspm
-pip install -e .
-```
+# Documentation
+https://wheatfspm.rtfd.io
 
 # Usage
 
 To date, *WheatFspm* has been used in four main contexts described below. 
 
 The scripts to run *WheatFSPM* are located in:
-* `WheatFspm\fspm-wheat\example\NEMA`
-* `WheatFspm\fspm-wheat\example\Papier_FSPMA2016`
-* `WheatFspm\fspm-wheat\example\Vegetative_stages`
-* `WheatFspm\fspm-wheat\example\Scenarii_monoculms`
+* `WheatFspm\example\NEMA`
+* `WheatFspm\example\Papier_FSPMA2016`
+* `WheatFspm\example\Vegetative_stages`
+* `WheatFspm\example\Scenarii_monoculms`
 
 ## NEMA
-This example deals with the post-flowering stages of wheat developement under 3 nitrogen fertilisation regies (H0, H3 and H15). The main processes described are leaf senescence, C and N remobilisation, grain filling). During that stages, all vegetative organs have completed their growth. 
+This example deals with the post-flowering stages of wheat development under 3 nitrogen fertilisation regimes (H0, H3 and H15). The main processes described are leaf senescence, C and N remobilisation, grain filling). During that stages, all vegetative organs have completed their growth. 
 This work led to the research articles [Barillot *et al.* (2016a)](https://doi.org/10.1093/aob/mcw143) and [Barillot *et al.* (2016b)](https://doi.org/10.1093/aob/mcw144).
-This example has been maintained in the current version ; results of above papers were generated using the tag *release-1.0* of *CN-Wheat*. 
 
 To run the example:
-* Open a command line interpreter in `WheatFspm\fspm-wheat\example\NEMA`
-* Run each script called *main.py* located in *NEMA_H0*, *NEMA_H3*, *NEMA_H15*: `python main.py`
-
-## Papier_FSPMA2016
-This example deals with the effects of leaf inclination, radiations regimes, plant density and sowing patterns on plant metabolism and grain filling during the post-flowering stages.   
-This work led to the research article [Barillot *et al.* (2019)](https://doi.org/10.1093/aob/mcy208).
-The scripts have not been maintained in the current version but are available using tags *paper_FSPMA16* or each submodule listed in [Description](#description).
-
-To run the example:
-* Open a command line interpreter in `WheatFspm\fspm-wheat\example\Papier_FSPMA2016`
-* Run each script called *main.py* located in the different sub-directories: `python main.py`
-
+* Open a command line interpreter in `WheatFspm\example\NEMA`
+* To run the 3 scenarios, use : `python Multi_script_launcher.py`
+[index.rst](doc/doc_cnwheat/source/index.rst)
 ## Vegetative stages
-This example deals with the early vegetative stages of wheat development. It mainly covers the processes of leaf, internode and roots growth.
+This example simulates the early vegetative stages of wheat growth as measured from a field experiment conducted in 1998-99 in Grignon (France). It mainly covers the processes of leaf, internode and roots growth.
 Tillering is simplified: tiller emergence is a model input while tiller metabolism and growth is approximated from that  of the main stem.
 This work led to the research article [Gauthier *et al.* (2020)](https://doi.org/10.1093/jxb/eraa276). Results were obtained from the tag [paper_JXBot_2020](https://github.com/openalea-incubator/WheatFspm/releases/tag/paper_JXBot_2020).
-To run the model used for the paper, please download the code archives at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3759714.svg)](https://doi.org/10.5281/zenodo.3759714)
  
 To run the example:
-* Open a command line interpreter in `WheatFspm\fspm-wheat\example\Vegetative_stages`
+* Open a command line interpreter in `WheatFspm\example\Vegetative_stages`
 * Run script *main.py*: `python main.py`
 
 ## Scenarios_monoculms
-This example deals with the plasticity of leaf growth during the vegetative stages of wheat development. The growth of wheat monoculms was simulated for highly contrasting conditions of soil nitrogen concentration, incident light and planting density.
-This work led to the research article [Gauthier *et al.* (2021)](https://doi.org/10.1093/insilicoplants/diab034). Results were obtained from the following sources: [cn-wheat](https://github.com/openalea-incubator/cn-wheat/releases/tag/v2.0), [elong-wheat](https://github.com/openalea-incubator/elong-wheat/releases/tag/v3.0), [growth-wheat](https://github.com/openalea-incubator/growth-wheat/releases/tag/v2.0), [farquhar-wheat](https://github.com/openalea-incubator/farquhar-wheat/releases/tag/v2.0), [senesc-wheat](https://github.com/openalea-incubator/senesc-wheat/releases/tag/2.0), [respi-wheat](https://github.com/openalea-incubator/respi-wheat/releases/tag/v2.0) and [fspmwheat-wheat](https://github.com/openalea-incubator/fspm-wheat/releases/tag/release-2.0).
+This example explores the plasticity of leaf growth during the vegetative stages of wheat development. The growth of wheat monoculms was simulated for highly contrasting conditions of soil nitrogen concentration, incident light and planting density.
+This work led to the research article [Gauthier *et al.* (2021)](https://doi.org/10.1093/insilicoplants/diab034).
 
-To run the model used for the paper, please download the code archives at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5503312.svg)](https://doi.org/10.5281/zenodo.5503312)
+The original outputs as well as a singularity container with the code version used for the paper can be found at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5503312.svg)](https://doi.org/10.5281/zenodo.5503312)
  
 To run the example:
-* Open a command line interpreter in `WheatFspm\fspm-wheat\example\Scenarios_monoculms`
-* For a single scenraio, run the script *main.py*: `python main.py`
+* Open a command line interpreter in `WheatFspm\example\Scenarios_monoculms`
+* For a single scenario, run the script *main.py*: `python main.py`
 * The whole set of scenarios was run in the high-performance computing center [MESO@LR](https://meso-lr.umontpellier.fr/) (Université de Montpellier, France) 
 
 # Credits

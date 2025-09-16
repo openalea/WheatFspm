@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import random
 
-from alinea.adel.adel_dynamic import AdelDyn
-from alinea.adel.echap_leaf import echap_leaves
+from openalea.adel.adel_dynamic import AdelDyn
+from openalea.adel.echap_leaf import echap_leaves
 
 from openalea.fspmwheat import caribu_facade
 from openalea.fspmwheat import cnwheat_facade

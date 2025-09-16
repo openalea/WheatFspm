@@ -25,11 +25,11 @@ def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):
     res = df_hz.copy()
     res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.leaf_Lmax)].copy()
     res_IN = res[~ np.isnan(res.internode_Lmax)]
-    last_value_idx = res.groupby(['metamer'])['t'].transform(max) == res['t']
+    last_value_idx = res.groupby(['metamer'])['t'].transform('max') == res['t']
     res = res[last_value_idx].copy()
     res['lamina_Wmax'] = res.leaf_Wmax
     res['lamina_W_Lg'] = res.leaf_Wmax / res.lamina_Lmax
-    last_value_idx = res_IN.groupby(['metamer'])['t'].transform(max) == res_IN['t']
+    last_value_idx = res_IN.groupby(['metamer'])['t'].transform('max') == res_IN['t']
     res_IN = res_IN[last_value_idx].copy()
     leaf_traits_df = res[['metamer', 'leaf_Lmax', 'leaf_Lmax_em', 'lamina_Lmax', 'sheath_Lmax', 'lamina_Wmax', 'lamina_W_Lg', 'SSLW', 'LSSW']].merge(res_IN[['metamer', 'internode_Lmax']],
                                                                                                                                                      left_on='metamer',
@@ -37,7 +37,7 @@ def leaf_traits(scenario_outputs_dirpath, scenario_postprocessing_dirpath):
                                                                                                                                                      how='outer').copy()
     # Lamina max width / max length at leaf emergence
     res_em = df_hz[(df_hz['axis'] == 'MS') & (df_hz['plant'] == 1) & ~np.isnan(df_hz.leaf_Wmax)].copy()
-    em_idx = res_em.groupby(['metamer'])['t'].transform(min) == res_em['t']
+    em_idx = res_em.groupby(['metamer'])['t'].transform('min') == res_em['t']
     res_em = res_em[em_idx].copy()
     res_em['lamina_W_Lg_em'] = res_em.leaf_Wmax / res_em.lamina_Lmax
     leaf_traits_df = leaf_traits_df.merge(res_em[['metamer', 'lamina_W_Lg_em']], on='metamer', how='outer')
@@ -459,7 +459,7 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
                                      'nb_final_em': [nb_final_em_leaves],
                                      'nb_final_lig': [nb_final_lig_leaves],
                                      'final_avg_SLA': [final_avg_SLA],
-                                     'avg_phyllochron': [1 / fit_phyllo.params[1]],
+                                     'avg_phyllochron': [1 / fit_phyllo.params.iloc[1]],
                                      'avg_RGR_TT': [df_RGR.RGR_TT.mean()],
                                      'avg_RGR_shoot_TT': [df_RGR.RGR_shoot_TT.mean()],
                                      'avg_RGR_roots_TT': [df_RGR.RGR_roots_TT.mean()],

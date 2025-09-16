@@ -157,7 +157,10 @@ def calculate_ligule_height(sheath_internode_length, all_element_inputs, SAM_id,
         if lamina_id in all_element_inputs.keys() and not all_element_inputs[lamina_id]['is_growing']:
             ligule_height = sum(lengths['sheath'] + lengths['cumulated_internode'])
             ligule_height_df = pd.DataFrame([(SAM_id, phytomer_id, ligule_height)], columns=list(all_ligule_height_df))
-            all_ligule_height_df = pd.concat((all_ligule_height_df, ligule_height_df))
+            if all_ligule_height_df.empty:
+                all_ligule_height_df = ligule_height_df
+            else:
+                all_ligule_height_df = pd.concat((all_ligule_height_df, ligule_height_df), ignore_index=True)
 
     return all_ligule_height_df
 

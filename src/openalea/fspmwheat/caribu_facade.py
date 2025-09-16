@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 import warnings
 
-from alinea.caribu.CaribuScene import CaribuScene
-from alinea.caribu.sky_tools import GenSky, GetLight, Gensun, GetLightsSun, spitters_horaire
+from openalea.caribu.CaribuScene import CaribuScene
+from openalea.caribu.sky_tools import GenSky, GetLight, Gensun, GetLightsSun, spitters_horaire
 
 from openalea.fspmwheat import tools
 
@@ -49,7 +49,7 @@ class CaribuFacade(object):
         """
         :param openalea.mtg.MTG shared_mtg: The MTG shared between all models.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: The dataframe of inputs and outputs at elements scale shared between all models.
-        :param alinea.adel.adel_dynamic.AdelWheatDyn geometrical_model: The model which deals with geometry. This model must have an attribute "domain".
+        :param openalea.adel.adel_dynamic.AdelWheatDyn geometrical_model: The model which deals with geometry. This model must have an attribute "domain".
         :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
@@ -240,7 +240,7 @@ class CaribuFacade(object):
         :return: duplicated heterogenous scene and its domain
         :rtype: openalea.plantgl.all.Scene, (float)
         """
-        from alinea.adel.Stand import AgronomicStand
+        from openalea.adel.Stand import AgronomicStand
         import openalea.plantgl.all as plantgl
         import random
 
@@ -266,8 +266,8 @@ class CaribuFacade(object):
             elements_vid_df = pd.DataFrame({'vid': elements_vid_list, 'tmp': 1})
             positions_df = pd.DataFrame({'pos': range(len(positions)),
                                          'tmp': 1,
-                                         'azimut_leaf': 0,
-                                         'inclination_leaf': 0})
+                                         'azimut_leaf': 0.,
+                                         'inclination_leaf': 0.})
             alea = pd.merge(elements_vid_df, positions_df, on=['tmp'])
             alea = alea.drop('tmp', axis=1)
             for vid in elements_vid_list:
@@ -294,7 +294,7 @@ class CaribuFacade(object):
                         np.random.seed(shp.id)
                         new_vid_df['azimut_leaf'] = np.random.uniform(-var_leaf_azimut, var_leaf_azimut, size=len(positions))
                         new_vid_df['inclination_leaf'] = np.random.uniform(-var_leaf_inclination, var_leaf_inclination, size=len(positions))
-                        self._alea_canopy = self._alea_canopy.copy().append(new_vid_df, sort=False)
+                        self._alea_canopy = pd.concat([self._alea_canopy, new_vid_df], ignore_index=True)
                     # Translation to origin
                     anchor_point = self._shared_mtg.get_vertex_property(shp.id)['anchor_point']
                     trans_to_origin = plantgl.Translated(-anchor_point, shp.geometry)

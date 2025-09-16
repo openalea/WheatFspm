@@ -1,18 +1,16 @@
 name: wheatfspm_dev
 channels:
   - conda-forge
-  - openalea3
+  - openalea3/label/dev
 dependencies:
   - python
-  - numpy
-  - pandas
-  - scipy
   - openalea.mtg
   - openalea.plantgl
   - openalea.lpy
-  - alinea.Caribu
-  - alinea.adel
+  - openalea.Caribu
+  - openalea.adel
   - openalea.astk
+  - matplotlib-base
   - pip
   - pip:
       - -e '..[test,dev,doc]'
