@@ -1,9 +1,9 @@
 
-.. _senescwheat:
+.. _respiwheat:
 
-.. module:: _senescwheat
+.. module:: openalea.respiwheat
 
-Senesc-Wheat documentation
+Respi-Wheat documentation
 ############################
 
 Module description
@@ -19,7 +19,7 @@ Module description
     
 .. topic:: Overview
 
-    Senesc-Wheat is a model of plant senescence adapted to wheat.
+    Respi-Wheat is a model of plant respiration adapted to wheat.
     
 
 Documentation
@@ -47,7 +47,7 @@ ChangeLog
 License
 =======
 
-|senescwheat| is released under TODO License.
+|respiwheat| is released under CeCILL-C License. See file LICENSE for details.
 
 
 Indices and tables
@@ -58,5 +58,5 @@ Indices and tables
 * :ref:`search`
 
 
-.. |senescwheat| replace:: :mod:`senescwheat`
+.. |respiwheat| replace:: :mod:`openalea.respiwheat`
 

@@ -1,4 +1,4 @@
-.. |farquharwheat| replace:: :mod:`farquharwheat`
+.. |farquharwheat| replace:: :mod:`openalea.farquharwheat`
 
 .. _farquharwheat_reference:
 
@@ -11,42 +11,42 @@ describing what they are and what they do.
 
 .. contents::
 
-.. currentmodule:: farquharwheat.__init__
+.. currentmodule:: openalea.farquharwheat.__init__
 
 |farquharwheat| package
 *********************************************************
 
-.. automodule:: farquharwheat
+.. automodule:: openalea.farquharwheat
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis:
     
 
-:mod:`farquharwheat.model` module
+:mod:`openalea.farquharwheat.model` module
 *********************************************************
 
-.. automodule:: farquharwheat.model
+.. automodule:: openalea.farquharwheat.model
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
     
-:mod:`farquharwheat.simulation` module
+:mod:`openalea.farquharwheat.simulation` module
 *********************************************************
 
-.. automodule:: farquharwheat.simulation
+.. automodule:: openalea.farquharwheat.simulation
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
 
-:mod:`farquharwheat.converter` module
+:mod:`openalea.farquharwheat.converter` module
 *********************************************************
 
-.. automodule:: farquharwheat.converter
+.. automodule:: openalea.farquharwheat.converter
     :members:
     :undoc-members:
     :show-inheritance:

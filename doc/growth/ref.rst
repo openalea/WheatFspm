@@ -1,82 +1,71 @@
-.. |cnwheat| replace:: :mod:`cnwheat`
+.. |growthwheat| replace:: :mod:`openalea.growthwheat`
 
-.. _cnwheat_reference:
+.. _growthwheat_reference:
 
 Reference guide
 #################
 
-This manual details, for each module of |cnwheat|, 
-the functions and objects included in |cnwheat|, 
+This manual details, for each module of |growthwheat|, 
+the functions and objects included in |growthwheat|, 
 describing what they are and what they do.
 
 .. contents::
 
-.. currentmodule:: cnwheat.__init__
+.. currentmodule:: openalea.growthwheat.__init__
 
-|cnwheat| package
+|growthwheat| package
 *********************************************************
 
-.. automodule:: cnwheat
+.. automodule:: openalea.growthwheat
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis:
     
 
-:mod:`cnwheat.simulation` module
+:mod:`openalea.growthwheat.model` module
 *********************************************************
 
-.. automodule:: cnwheat.simulation
+.. automodule:: openalea.growthwheat.model
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
     
-:mod:`cnwheat.model` module
+:mod:`openalea.growthwheat.simulation` module
 *********************************************************
 
-.. automodule:: cnwheat.model
+.. automodule:: openalea.growthwheat.simulation
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
 
-:mod:`cnwheat.parameters` module
+:mod:`openalea.growthwheat.converter` module
 *********************************************************
 
-.. automodule:: cnwheat.parameters
+.. automodule:: openalea.growthwheat.converter
     :members:
     :undoc-members:
     :show-inheritance:
-    :synopsis: 
-    
-    
-:mod:`cnwheat.tools` module
+    :synopsis:
+
+:mod:`openalea.growthwheat.parameters` module
 *********************************************************
 
-.. automodule:: cnwheat.tools
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :synopsis: 
-
-:mod:`cnwheat.converter` module
-*********************************************************
-
-.. automodule:: cnwheat.converter
+.. automodule:: openalea.growthwheat.parameters
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis:
     
-:mod:`cnwheat.postprocessing` module
+:mod:`openalea.growthwheat.interface` module
 *********************************************************
 
-.. automodule:: cnwheat.postprocessing
+.. automodule:: openalea.growthwheat.interface
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis:
-    

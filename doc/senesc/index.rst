@@ -1,9 +1,9 @@
 
-.. _growthwheat:
+.. _senescwheat:
 
-.. module:: growthwheat
+.. module:: openalea.senescwheat
 
-Growth-Wheat documentation
+Senesc-Wheat documentation
 ############################
 
 Module description
@@ -19,7 +19,7 @@ Module description
     
 .. topic:: Overview
 
-    Growth-Wheat is a model of photosynthesis based on Growth's approach.
+    Senesc-Wheat is a model of plant senescence adapted to wheat.
     
 
 Documentation
@@ -47,7 +47,7 @@ ChangeLog
 License
 =======
 
-|growthwheat| is released under TODO License.
+|senescwheat| is released under TODO License.
 
 
 Indices and tables
@@ -58,5 +58,5 @@ Indices and tables
 * :ref:`search`
 
 
-.. |growthwheat| replace:: :mod:`growthwheat`
+.. |senescwheat| replace:: :mod:`senescwheat`
 

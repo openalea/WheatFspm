@@ -1,9 +1,9 @@
 
-.. _respiwheat:
+.. _growthwheat:
 
-.. module:: respiwheat
+.. module:: openalea.growthwheat
 
-Respi-Wheat documentation
+Growth-Wheat documentation
 ############################
 
 Module description
@@ -19,7 +19,7 @@ Module description
     
 .. topic:: Overview
 
-    Respi-Wheat is a model of plant respiration adapted to wheat.
+    Growth-Wheat is a model of photosynthesis based on Growth's approach.
     
 
 Documentation
@@ -47,7 +47,7 @@ ChangeLog
 License
 =======
 
-|respiwheat| is released under CeCILL-C License. See file LICENSE for details.
+|growthwheat| is released under TODO License.
 
 
 Indices and tables
@@ -58,5 +58,5 @@ Indices and tables
 * :ref:`search`
 
 
-.. |respiwheat| replace:: :mod:`respiwheat`
+.. |growthwheat| replace:: :mod:`openalea.growthwheat`
 
