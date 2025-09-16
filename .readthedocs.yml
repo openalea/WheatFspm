@@ -3,7 +3,7 @@ version: 2
 build:
   os: "ubuntu-24.04"
   tools:
-    python: "miniconda3-3.13-24.9"
+    python: "miniconda-latest"
 
 conda:
   environment: conda/environment.yml
