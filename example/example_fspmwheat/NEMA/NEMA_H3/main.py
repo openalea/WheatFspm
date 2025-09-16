@@ -22,9 +22,6 @@ from openalea.fspmwheat import cnwheat_facade, farquharwheat_facade, senescwheat
     Script readatpted from example NEMA_H3 used in the paper Barillot et al. (2016).
     This example uses the format MTG to exchange data between the models.
 
-    You must first install :mod:`openalea.adel`, :mod:`cnwheat`, :mod:`farquharwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
-    before running this script with the command `python`.
-
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
     :license: TODO, see LICENSE for details.
 
@@ -105,11 +102,11 @@ CULM_DENSITY = {i: DENSITY / NPLANTS for i in range(1, NPLANTS + 1)}
 
 INPUTS_OUTPUTS_PRECISION = 5  # 10
 
-LOGGING_CONFIG_FILEPATH = os.path.join('logging.json')
-
-LOGGING_LEVEL = logging.INFO  # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
-
-cnwheat_tools.setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL, log_model=False, log_compartments=False, log_derivatives=False)
+# LOGGING_CONFIG_FILEPATH = os.path.join('logging.json')
+#
+# LOGGING_LEVEL = logging.INFO  # can be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL
+#
+# cnwheat_tools.setup_logging(LOGGING_CONFIG_FILEPATH, LOGGING_LEVEL, log_model=False, log_compartments=False, log_derivatives=False)
 
 
 def calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False, ratio_diffus_PAR=None):
@@ -165,7 +162,7 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
         # read adelwheat inputs at t0
         adel_wheat = AdelDyn(seed=1234, scene_unit='m')
-        g = adel_wheat.load(dir=ADELWHEAT_INPUTS_DIRPATH)
+        g = adel_wheat.load(directory=ADELWHEAT_INPUTS_DIRPATH)
 
         # adel_wheat.plot(g)
 
@@ -286,14 +283,12 @@ def main(stop_time, run_simu=True, make_graphs=True):
             for t_elongwheat in range(start_time, stop_time, elongwheat_ts):  # Only to compute temperature related variable
 
                 # run ElongWheat
-                print('t elongwheat is {}'.format(t_elongwheat))
                 Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'air_temperature']]
                 elongwheat_facade_.run(Tair, Tsoil, option_static=True)
 
                 for t_senescwheat in range(t_elongwheat, t_elongwheat + elongwheat_ts, senescwheat_ts):
 
                     # run SenescWheat
-                    print('t senescwheat is {}'.format(t_senescwheat))
                     senescwheat_facade_.run(forced_max_protein_elements, postflowering_stages=True)
 
                     # Test for fully senesced shoot tissues  #TODO: Make the model to work even if the whole shoot is dead but the roots are alived
@@ -302,7 +297,6 @@ def main(stop_time, run_simu=True, make_graphs=True):
 
                     for t_growthwheat in range(t_senescwheat, t_senescwheat + senescwheat_ts, growthwheat_ts):
                         # run GrowthWheat
-                        print('t growthwheat is {}'.format(t_growthwheat))
                         growthwheat_facade_.run(postflowering_stages=True)
 
                         for t_farquharwheat in range(t_growthwheat, t_growthwheat + growthwheat_ts, farquharwheat_ts):
@@ -310,12 +304,9 @@ def main(stop_time, run_simu=True, make_graphs=True):
                             Tair, ambient_CO2, RH, Ur, PARi = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'PARi']]
                             # get PARa for current step
                             aggregated_PARa = calculate_PARa_from_df(g, Eabs_df, PARi, multiple_sources=False)
-                            print('t caribu is {}'.format(t_farquharwheat))
-                            # caribu_facade_.run(energy=PARi,sun_sky_option='sky')
                             caribu_facade_.update_shared_MTG({'PARa': aggregated_PARa})
                             caribu_facade_.update_shared_dataframes({'PARa': aggregated_PARa})
                             # run FarquharWheat
-                            print('t farquhar is {}'.format(t_farquharwheat))
                             farquharwheat_facade_.run(Tair, ambient_CO2, RH, Ur)
 
                             for t_cnwheat in range(t_farquharwheat, t_farquharwheat + senescwheat_ts, cnwheat_ts):

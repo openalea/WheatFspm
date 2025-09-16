@@ -266,8 +266,8 @@ class CaribuFacade(object):
             elements_vid_df = pd.DataFrame({'vid': elements_vid_list, 'tmp': 1})
             positions_df = pd.DataFrame({'pos': range(len(positions)),
                                          'tmp': 1,
-                                         'azimut_leaf': 0,
-                                         'inclination_leaf': 0})
+                                         'azimut_leaf': 0.,
+                                         'inclination_leaf': 0.})
             alea = pd.merge(elements_vid_df, positions_df, on=['tmp'])
             alea = alea.drop('tmp', axis=1)
             for vid in elements_vid_list:
@@ -294,7 +294,7 @@ class CaribuFacade(object):
                         np.random.seed(shp.id)
                         new_vid_df['azimut_leaf'] = np.random.uniform(-var_leaf_azimut, var_leaf_azimut, size=len(positions))
                         new_vid_df['inclination_leaf'] = np.random.uniform(-var_leaf_inclination, var_leaf_inclination, size=len(positions))
-                        self._alea_canopy = self._alea_canopy.copy().append(new_vid_df, sort=False)
+                        self._alea_canopy = pd.concat([self._alea_canopy, new_vid_df], ignore_index=True)
                     # Translation to origin
                     anchor_point = self._shared_mtg.get_vertex_property(shp.id)['anchor_point']
                     trans_to_origin = plantgl.Translated(-anchor_point, shp.geometry)

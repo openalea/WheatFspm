@@ -23,11 +23,9 @@ from openalea.fspmwheat import senescwheat_facade
     main
     ~~~~
 
-    An example to show how to couple models CN-Wheat, Farquhar-Wheat, Senesc-Wheat, Elong-Wheat, Growth-Wheat, Adel-Wheat and Caribu.
-    This example uses the format MTG to exchange data between the models.
-
-    You must first install :mod:`openalea.adel`, :mod:`cnwheat`, :mod:`farquharwheat`, :mod:`elongwheat`, :mod:`growthwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
-    before running this script with the command `python`.
+    A coupling of CN-Wheat, Farquhar-Wheat, Senesc-Wheat, Elong-Wheat, Growth-Wheat, Adel-Wheat and Caribu.
+    This script was used to simulate monoculms of wheat in different planting densities, light intensities and soil N concentrations. 
+    Results were published in Gauthier et al. 2021 (https://doi.org/10.1093/insilicoplants/diab034)
 
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
     :license: see LICENSE for details.
@@ -718,13 +716,13 @@ def main(simulation_length=2000, forced_start_time=0, run_simu=True, run_postpro
         res = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
         res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.leaf_Lmax)].copy()
         res_IN = res[~ np.isnan(res.internode_Lmax)]
-        last_value_idx = res.groupby(['metamer'])['t'].transform(max) == res['t']
+        last_value_idx = res.groupby(['metamer'])['t'].transform('max') == res['t']
         res = res[last_value_idx].copy()
         res['lamina_Wmax'] = res.leaf_Wmax
         res['lamina_W_Lg'] = res.leaf_Wmax / res.lamina_Lmax
         bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
         bchmk['lamina_W_Lg'] = bchmk.lamina_Wmax / bchmk.lamina_Lmax
-        last_value_idx = res_IN.groupby(['metamer'])['t'].transform(max) == res_IN['t']
+        last_value_idx = res_IN.groupby(['metamer'])['t'].transform('max') == res_IN['t']
         res_IN = res_IN[last_value_idx].copy()
         res = res[['metamer', 'leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'lamina_Wmax', 'lamina_W_Lg', 'SSLW', 'LSSW']].merge(res_IN[['metamer', 'internode_Lmax']], left_on='metamer',
                                                                                                                               right_on='metamer', how='outer').copy()

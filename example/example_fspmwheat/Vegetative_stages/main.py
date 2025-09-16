@@ -26,12 +26,10 @@ from openalea.fspmwheat import senescwheat_facade
     main
     ~~~~
 
-    An example to show how to couple models CN-Wheat, Farquhar-Wheat, Senesc-Wheat, Elong-Wheat, Growth-Wheat, Adel-Wheat and Caribu.
-    This example uses the format MTG to exchange data between the models.
-
-    You must first install :mod:`openalea.adel`, :mod:`cnwheat`, :mod:`farquharwheat`, :mod:`elongwheat`, :mod:`growthwheat` and :mod:`senescwheat` (and add them to your PYTHONPATH)
-    before running this script with the command `python`.
-
+    A coupling of CN-Wheat, Farquhar-Wheat, Senesc-Wheat, Elong-Wheat, Growth-Wheat, Adel-Wheat and Caribu.
+    This script was used to simulate a field experiment performed in 1998/99 in Grignon (France). 
+    Results were published in Gauthier et al. 2020 (https://doi.org/10.1093/jxb/eraa276)
+    
     :copyright: Copyright 2014-2016 INRA-ECOSYS, see AUTHORS.
     :license: see LICENSE for details.
 
@@ -170,7 +168,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 new_initial_state = elements_previous_outputs[~elements_previous_outputs.is_over.isnull()]
             else:
                 new_initial_state = previous_outputs_dataframes[outputs_filename]
-            idx = new_initial_state.groupby([col for col in index_columns if col != 't'])['t'].transform(max) == new_initial_state['t']
+            idx = new_initial_state.groupby([col for col in index_columns if col != 't'])['t'].transform('max') == new_initial_state['t']
             inputs_dataframes[initial_state_filename] = new_initial_state[idx].drop(['t'], axis=1)
 
         # Make sure boolean columns have either type bool or float
@@ -178,9 +176,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         for df in [inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME], inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME]]:
             for cln in bool_columns:
                 if cln in df.keys():
-                    df[cln].replace(to_replace='False', value=0.0, inplace=True)
-                    df[cln].replace(to_replace='True', value=1.0, inplace=True)
-                    df[cln] = pd.to_numeric(df[cln])
+                    df.loc[:, cln] = df.loc[:, cln].replace({'False': 0.0, 'True': 1.0})
+                    df.loc[:, cln] = pd.to_numeric(df.loc[:, cln])
     else:
         new_start_time = -1
         for inputs_filename in (AXES_INITIAL_STATE_FILENAME,
@@ -677,17 +674,17 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
         # 1) Comparison Dimensions with Ljutovac 2002
         data_obs = pd.read_csv(r'inputs\Ljutovac2002.csv')
-        bchmk = data_obs
+        bchmk = data_obs.copy()
         res = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
         res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.leaf_Lmax)].copy()
         res_IN = res[~ np.isnan(res.internode_Lmax)]
-        last_value_idx = res.groupby(['metamer'])['t'].transform(max) == res['t']
+        last_value_idx = res.groupby(['metamer'])['t'].transform('max') == res['t']
         res = res[last_value_idx].copy()
         res['lamina_Wmax'] = res.leaf_Wmax
         res['lamina_W_Lg'] = res.leaf_Wmax / res.lamina_Lmax
         bchmk = bchmk.loc[bchmk.metamer >= min(res.metamer)]
         bchmk['lamina_W_Lg'] = bchmk.lamina_Wmax / bchmk.lamina_Lmax
-        last_value_idx = res_IN.groupby(['metamer'])['t'].transform(max) == res_IN['t']
+        last_value_idx = res_IN.groupby(['metamer'])['t'].transform('max') == res_IN['t']
         res_IN = res_IN[last_value_idx].copy()
         res = res[['metamer', 'leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'lamina_Wmax', 'lamina_W_Lg', 'SSLW', 'LSSW']].merge(res_IN[['metamer', 'internode_Lmax']], left_on='metamer',
                                                                                                                               right_on='metamer', how='outer').copy()
@@ -888,66 +885,81 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
         # Photosynthesis
         df_elt['Photosynthesis_tillers'] = df_elt['Photosynthesis'].fillna(0) * df_elt['nb_replications'].fillna(1.)
-        Tillers_Photosynthesis_Ag = df_elt.groupby(['t'], as_index=False).agg({'Photosynthesis_tillers': 'sum'})
-        C_usages = pd.DataFrame({'t': Tillers_Photosynthesis_Ag['t']})
+        df_elt['day'] = df_elt['t'] // 24 + 1
+        Tillers_Photosynthesis_Ag = df_elt.groupby(['day'], as_index=False).agg({'Photosynthesis_tillers': 'sum'})
+        C_usages = pd.DataFrame({'day': Tillers_Photosynthesis_Ag['day']})
         C_usages['C_produced'] = np.cumsum(Tillers_Photosynthesis_Ag.Photosynthesis_tillers)
 
         # Respiration
-        C_usages['Respi_roots'] = np.cumsum(df_axe.C_respired_roots)
-        C_usages['Respi_shoot'] = np.cumsum(df_axe.C_respired_shoot)
+        df_axe['day'] = df_axe['t'] // 24 + 1
+        C_respi_roots_daily = df_axe.groupby(['day'], as_index=False)['C_respired_roots'].sum()
+        C_respi_shoot_daily = df_axe.groupby(['day'], as_index=False)['C_respired_shoot'].sum()
+        C_usages['Respi_roots'] = np.cumsum(C_respi_roots_daily.C_respired_roots)
+        C_usages['Respi_shoot'] = np.cumsum(C_respi_shoot_daily.C_respired_shoot)
 
         # Exudation
-        C_usages['exudation'] = np.cumsum(df_axe.C_exudated.fillna(0))
+        C_exudated_daily = df_axe.groupby(['day'], as_index=False)['C_exudated'].sum().fillna(0)
+        C_usages['exudation'] = np.cumsum(C_exudated_daily.C_exudated)
 
         # Structural growth
-        C_consumption_mstruct_roots = df_roots.sucrose_consumption_mstruct.fillna(0) + df_roots.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
-        C_usages['Structure_roots'] = np.cumsum(C_consumption_mstruct_roots.reset_index(drop=True))
+        df_roots['C_consumption_mstruct'] = df_roots.sucrose_consumption_mstruct.fillna(
+            0) + df_roots.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_roots['day'] = df_roots['t'] // 24 + 1
+        C_consumption_mstruct_roots_daily = df_roots.groupby('day')['C_consumption_mstruct'].sum()
+        C_usages['Structure_roots'] = np.cumsum(C_consumption_mstruct_roots_daily)
 
-        df_hz['C_consumption_mstruct'] = df_hz.sucrose_consumption_mstruct.fillna(0) + df_hz.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_hz['day'] = df_hz['t'] // 24 + 1
+        df_hz['C_consumption_mstruct'] = df_hz.sucrose_consumption_mstruct.fillna(
+            0) + df_hz.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
         df_hz['C_consumption_mstruct_tillers'] = df_hz['C_consumption_mstruct'] * df_hz['nb_replications']
-        C_consumption_mstruct_shoot = df_hz.groupby(['t'])['C_consumption_mstruct_tillers'].sum()
+        C_consumption_mstruct_shoot = df_hz.groupby(['day'])['C_consumption_mstruct_tillers'].sum()
         C_usages['Structure_shoot'] = np.cumsum(C_consumption_mstruct_shoot.reset_index(drop=True))
 
         # Non structural C
-        df_phloem['C_NS'] = df_phloem.sucrose.fillna(0) + df_phloem.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
-        C_NS_phloem_init = df_phloem.C_NS - df_phloem.C_NS[0]
-        C_usages['NS_phloem'] = C_NS_phloem_init.reset_index(drop=True)
+        df_phloem['C_NS'] = df_phloem.sucrose.fillna(0) + df_phloem.amino_acids.fillna(
+            0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_phloem['day'] = df_phloem['t'] // 24 + 1
+        C_NS_phloem_daily = df_phloem.groupby('day')['C_NS'].sum().reset_index(drop=True)
+        C_usages['NS_phloem'] = C_NS_phloem_daily - C_NS_phloem_daily[0]
 
         df_elt['C_NS'] = df_elt.sucrose.fillna(0) + df_elt.fructan.fillna(0) + df_elt.starch.fillna(0) + (
                 df_elt.amino_acids.fillna(0) + df_elt.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_elt['day'] = df_elt['t'] // 24 + 1
         df_elt['C_NS_tillers'] = df_elt['C_NS'] * df_elt['nb_replications'].fillna(1.)
-        C_elt = df_elt.groupby(['t']).agg({'C_NS_tillers': 'sum'})
+        C_elt = df_elt.groupby(['day']).agg({'C_NS_tillers': 'sum'})
 
-        df_hz['C_NS'] = df_hz.sucrose.fillna(0) + df_hz.fructan.fillna(0) + (df_hz.amino_acids.fillna(0) + df_hz.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_hz['C_NS'] = df_hz.sucrose.fillna(0) + df_hz.fructan.fillna(0) + (
+                    df_hz.amino_acids.fillna(0) + df_hz.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
         df_hz['C_NS_tillers'] = df_hz['C_NS'] * df_hz['nb_replications'].fillna(1.)
-        C_hz = df_hz.groupby(['t']).agg({'C_NS_tillers': 'sum'})
+        C_hz = df_hz.groupby(['day']).agg({'C_NS_tillers': 'sum'})
 
-        df_roots['C_NS'] = df_roots.sucrose.fillna(0) + df_roots.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_roots['C_NS'] = df_roots.sucrose.fillna(0) + df_roots.amino_acids.fillna(
+            0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_roots['day'] = df_roots['t'] // 24 + 1
+        C_NS_roots_daily = df_roots.groupby('day')['C_NS'].sum()
 
-        C_NS_autre = df_roots.C_NS.reset_index(drop=True) + C_elt.C_NS_tillers + C_hz.C_NS_tillers
+        C_NS_autre = C_NS_roots_daily.reset_index(drop=True) + C_elt.C_NS_tillers.reset_index(
+            drop=True) + C_hz.C_NS_tillers.reset_index(drop=True)
         C_NS_autre_init = C_NS_autre - C_NS_autre[0]
         C_usages['NS_other'] = C_NS_autre_init.reset_index(drop=True)
 
-        # Total
-        C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
-                               C_usages.C_produced
-
+        # ----- Graph
         # ----- Graph
         fig, ax = plt.subplots()
-        ax.plot(C_usages.t, C_usages.Structure_shoot / C_usages.C_produced * 100,
+        ax.plot(C_usages.day, C_usages.Structure_shoot / C_usages.C_produced * 100,
                 label=u'Structural mass - Shoot', color='g')
-        ax.plot(C_usages.t, C_usages.Structure_roots / C_usages.C_produced * 100,
+        ax.plot(C_usages.day, C_usages.Structure_roots / C_usages.C_produced * 100,
                 label=u'Structural mass - Roots', color='r')
-        ax.plot(C_usages.t, (C_usages.NS_phloem + C_usages.NS_other) / C_usages.C_produced * 100, label=u'Non-structural C', color='darkorange')
-        ax.plot(C_usages.t, (C_usages.Respi_roots + C_usages.Respi_shoot) / C_usages.C_produced * 100, label=u'C loss by respiration', color='b')
-        ax.plot(C_usages.t, C_usages.exudation / C_usages.C_produced * 100, label=u'C loss by exudation', color='c')
+        ax.plot(C_usages.day, (C_usages.NS_phloem + C_usages.NS_other) / C_usages.C_produced * 100,
+                label=u'Non-structural C', color='darkorange')
+        ax.plot(C_usages.day, (C_usages.Respi_roots + C_usages.Respi_shoot) / C_usages.C_produced * 100,
+                label=u'C loss by respiration', color='b')
+        ax.plot(C_usages.day, C_usages.exudation / C_usages.C_produced * 100, label=u'C loss by exudation', color='c')
 
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        ax.set_xlabel('Time (h)')
+        ax.set_xlabel('Time (days)')
         ax.set_ylabel(u'Carbon usages : Photosynthesis (%)')
         ax.set_ylim(bottom=0, top=100.)
-
-        fig.suptitle(u'Total cumulated usages are ' + str(round(C_usages.C_budget.tail(1) * 100, 0)) + u' % of Photosynthesis')
 
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_usages_cumulated.PNG'), format='PNG', bbox_inches='tight')
         plt.close()
@@ -1016,7 +1028,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+    main(2500, forced_start_time=0, run_simu=False, run_postprocessing=False, generate_graphs=True, run_from_outputs=False,
          show_3Dplant=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={1440: 357143, 2520: 1000000},
