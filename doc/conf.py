@@ -10,7 +10,6 @@ meta = metadata('openalea.' + project)
 release = meta.get("version")
 # for example take major/minor
 version = ".".join(release.split('.')[:3])
-author = meta['Author-email'].split(' <')[0]
 desc = meta['Summary']
 urls = {k:v for k,v in [item.split(',') for item in meta.get_all('Project-URL')]}
 
