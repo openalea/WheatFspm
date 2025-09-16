@@ -1,7 +1,7 @@
 
 .. _senescwheat:
 
-.. module:: _senescwheat
+.. module:: openalea.senescwheat
 
 Senesc-Wheat documentation
 ############################
