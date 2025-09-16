@@ -1,7 +1,7 @@
 
 .. _farquharwheat:
 
-.. module:: farquharwheat
+.. module:: openalea.farquharwheat
 
 Farquhar-Wheat documentation
 ############################
