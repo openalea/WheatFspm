@@ -1,4 +1,4 @@
-.. |senescwheat| replace:: :mod:`senescwheat`
+.. |senescwheat| replace:: :mod:`openalea.senescwheat`
 
 .. _senescwheat_reference:
 
@@ -11,41 +11,41 @@ describing what they are and what they do.
 
 .. contents::
 
-.. currentmodule:: senescwheat.__init__
+.. currentmodule:: openalea.senescwheat.__init__
 
 |senescwheat| package
 *********************************************************
 
-.. automodule:: senescwheat
+.. automodule:: openalea.senescwheat
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis:
     
 
-:mod:`senescwheat.model` module
+:mod:`openalea.senescwheat.model` module
 *********************************************************
 
-.. automodule:: senescwheat.model
+.. automodule:: openalea.senescwheat.model
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
-:mod:`senescwheat.simulation` module
+:mod:`openalea.senescwheat.simulation` module
 *********************************************************
 
-.. automodule:: senescwheat.simulation
+.. automodule:: openalea.senescwheat.simulation
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
 
-:mod:`senescwheat.converter` module
+:mod:`openalea.senescwheat.converter` module
 *********************************************************
 
-.. automodule:: senescwheat.converter
+.. automodule:: openalea.senescwheat.converter
     :members:
     :undoc-members:
     :show-inheritance:

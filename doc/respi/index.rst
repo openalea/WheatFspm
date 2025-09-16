@@ -1,7 +1,7 @@
 
 .. _respiwheat:
 
-.. module:: respiwheat
+.. module:: openalea.respiwheat
 
 Respi-Wheat documentation
 ############################
@@ -58,5 +58,5 @@ Indices and tables
 * :ref:`search`
 
 
-.. |respiwheat| replace:: :mod:`respiwheat`
+.. |respiwheat| replace:: :mod:`openalea.respiwheat`
 

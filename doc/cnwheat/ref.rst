@@ -1,4 +1,4 @@
-.. |cnwheat| replace:: :mod:`cnwheat`
+.. |cnwheat| replace:: :mod:`openalea.cnwheat`
 
 .. _cnwheat_reference:
 
@@ -11,70 +11,70 @@ describing what they are and what they do.
 
 .. contents::
 
-.. currentmodule:: cnwheat.__init__
+.. currentmodule:: openalea.cnwheat.__init__
 
 |cnwheat| package
 *********************************************************
 
-.. automodule:: cnwheat
+.. automodule:: openalea.cnwheat
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis:
     
 
-:mod:`cnwheat.simulation` module
+:mod:`openalea.cnwheat.simulation` module
 *********************************************************
 
-.. automodule:: cnwheat.simulation
+.. automodule:: openalea.cnwheat.simulation
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
     
-:mod:`cnwheat.model` module
+:mod:`openalea.cnwheat.model` module
 *********************************************************
 
-.. automodule:: cnwheat.model
+.. automodule:: openalea.cnwheat.model
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
 
-:mod:`cnwheat.parameters` module
+:mod:`openalea.cnwheat.parameters` module
 *********************************************************
 
-.. automodule:: cnwheat.parameters
+.. automodule:: openalea.cnwheat.parameters
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
     
     
-:mod:`cnwheat.tools` module
+:mod:`openalea.cnwheat.tools` module
 *********************************************************
 
-.. automodule:: cnwheat.tools
+.. automodule:: openalea.cnwheat.tools
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis: 
 
-:mod:`cnwheat.converter` module
+:mod:`openalea.cnwheat.converter` module
 *********************************************************
 
-.. automodule:: cnwheat.converter
+.. automodule:: openalea.cnwheat.converter
     :members:
     :undoc-members:
     :show-inheritance:
     :synopsis:
     
-:mod:`cnwheat.postprocessing` module
+:mod:`openalea.cnwheat.postprocessing` module
 *********************************************************
 
-.. automodule:: cnwheat.postprocessing
+.. automodule:: openalea.cnwheat.postprocessing
     :members:
     :undoc-members:
     :show-inheritance:

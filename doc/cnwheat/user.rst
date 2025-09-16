@@ -84,13 +84,13 @@ Package architecture
 
 CN-Wheat is a Python package which consists of several Python modules:
 
-* :mod:`cnwheat`: the file to make Python treat directory *cnwheat/* as a Python packages, 
-* :mod:`cnwheat.model`: the state and the equations of the model, 
-* :mod:`cnwheat.parameters`: the parameters of the model, 
-* :mod:`cnwheat.simulation`: the simulator (front-end) to run the model, 
-* :mod:`cnwheat.postprocessing`: the post-processing and graph functions, 
-* :mod:`cnwheat.tools`: tools to help for the validation of the outputs, 
-* and :mod:`cnwheat.converter`: functions to convert CN-Wheat inputs/outputs to/from Pandas dataframes.
+* :mod:`openalea.cnwheat`: the file to make Python treat directory *cnwheat/* as a Python packages, 
+* :mod:`openalea.cnwheat.model`: the state and the equations of the model, 
+* :mod:`openalea.cnwheat.parameters`: the parameters of the model, 
+* :mod:`openalea.cnwheat.simulation`: the simulator (front-end) to run the model, 
+* :mod:`openalea.cnwheat.postprocessing`: the post-processing and graph functions, 
+* :mod:`openalea.cnwheat.tools`: tools to help for the validation of the outputs, 
+* and :mod:`openalea.cnwheat.converter`: functions to convert CN-Wheat inputs/outputs to/from Pandas dataframes.
 
 .. figure:: ./image/architecture.png
    :width: 50%

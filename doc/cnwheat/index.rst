@@ -1,7 +1,7 @@
 
 .. _cnwheat:
 
-.. module:: cnwheat
+.. module:: openalea.cnwheat
 
 CN-Wheat documentation
 ######################
@@ -70,7 +70,7 @@ Contributing
 ============
 
 check for open issues or open a new issue to start a discussion around a
-feature idea or a bug: https://github.com/openalea-incubator/WheatFspm/issues .
+feature idea or a bug: https://github.com/openalea/WheatFspm/issues .
 
 Indices and tables
 ==================

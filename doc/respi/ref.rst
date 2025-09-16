@@ -1,4 +1,4 @@
-.. |respiwheat| replace:: :mod:`respiwheat`
+.. |respiwheat| replace:: :mod:`openalea.respiwheat`
 
 .. _respiwheat_reference:
 
@@ -11,12 +11,12 @@ describing what they are and what they do.
 
 .. contents::
 
-.. currentmodule:: respiwheat.__init__
+.. currentmodule:: openalea.respiwheat.__init__
 
 |respiwheat| package
 *********************************************************
 
-.. automodule:: respiwheat
+.. automodule:: openalea.respiwheat
     :members:
     :undoc-members:
     :show-inheritance:
@@ -26,7 +26,7 @@ describing what they are and what they do.
 :mod:`respiwheat.model` module
 *********************************************************
 
-.. automodule:: respiwheat.model
+.. automodule:: openalea.respiwheat.model
     :members:
     :undoc-members:
     :show-inheritance:
