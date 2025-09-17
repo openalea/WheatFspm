@@ -3,6 +3,11 @@
 
 [![Documentation Status](https://readthedocs.org/projects/cn-wheat/badge/?version=latest)](https://cn-wheat.readthedocs.io/en/latest/?badge=latest)
 
+[![Platform](https://anaconda.org/openalea3/openalea.wheatfspm/badges/version.svg)](https://anaconda.org/openalea3/openalea.wheatfspm)
+[![Platform](https://anaconda.org/openalea3/openalea.wheatfspm/badges/platforms.svg)](https://anaconda.org/openalea3/openalea.wheatfspm)
+[![Python Version](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/downloads/)
+
+
 ## About
 
 WheatFspm is a Functional Structural Plant Model (FSPM) of wheat which fully integrates shoot morphogenesis and the metabolism of carbon (C) and nitrogen (N) at organ scale within a 3D representation of plant architecture. Plants are described as a collection of tillers, each consisting in individual shoot organs (lamina, sheath, internode, peduncle, chaff), a single root compartment, the grains, and a phloem.
@@ -14,14 +19,14 @@ WheatFspm simulates:
 * N acquisition, synthesis and allocation of C and N metabolites at organ level and among tiller organs.
 * Senescence of shoot organs and roots.
 
-Model inputs are the pedoclimatic conditions (temperature, light, humidity, CO2, wind, soil NO<sub>3</sub><sup>-</sup>) and initial dimensions, mass and metabolic composition of individual organs.
+Model inputs are the pedoclimatic conditions (temperature, light, humidity, CO<sub>2</sub>, wind, soil NO<sub>3</sub><sup>-</sup>) and initial dimensions, mass and metabolic composition of individual organs.
 
-![alt text](_media/Vegetative_stages_topview.gif "Growing canopy")
+![Growing canopy](doc/_static/Vegetative_stages_topview.gif "Growing canopy")
 
 # Description
 WheatFspm consists in a set of sub-models (named submodules in git) which share inputs/outputs through an MTG object:
 
-![alt text](_media/Modular_structure.png "WheatFSPM workflow") 
+![WheatFSPM workflow](doc/_static/Modular_structure.png "WheatFSPM workflow") 
 *Adapted from Gauthier et al. (2020)*
 
 * *Farquhar-Wheat*: Farquhar-based model of photosynthesis, stomatal conductance, organ temperature and transpiration.
@@ -44,7 +49,7 @@ WheatFspm consists in a set of sub-models (named submodules in git) which share 
 - [Usage](#usage)
   * [NEMA](#nema)
   * [Vegetative stages](#vegetative-stages)
-  * [Scenarios_monoculms](#scenarios-monoculms)
+  * [Scenarios monoculms](#scenarios-monoculms)
 - [Credits](#credits)
   * [Authors](#authors)
   * [Contributors](#contributors)
@@ -66,19 +71,20 @@ WheatFspm consists in a set of sub-models (named submodules in git) which share 
     
 ## Installing
 For general information about OpenAlea installation, see https://openalea.readthedocs.io/en/latest/install.html 
-### For users
+### Users
 
 ```shell
 mamba create -n wheatfspm openalea.wheatfspm -c conda-forge -c openalea3
 ```
 To activate the environment: `mamba activate wheatfspm`
 
-### For developers
+### Developers
 
 1) To clone the project, please use:
 ```commandline
 git clone https://github.com/openalea/WheatFspm
 ```
+
 2) create and activate a conda environment with dependencies:
 ```commandline
 mamba env create -n wheatfspm -f conda/environment.yml 
@@ -104,7 +110,6 @@ This work led to the research articles [Barillot *et al.* (2016a)](https://doi.o
 To run the example:
 * Open a command line interpreter in `WheatFspm\example\NEMA`
 * To run the 3 scenarios, use : `python Multi_script_launcher.py`
-[index.rst](doc/doc_cnwheat/source/index.rst)
 ## Vegetative stages
 This example simulates the early vegetative stages of wheat growth as measured from a field experiment conducted in 1998-99 in Grignon (France). It mainly covers the processes of leaf, internode and roots growth.
 Tillering is simplified: tiller emergence is a model input while tiller metabolism and growth is approximated from that  of the main stem.
@@ -114,7 +119,7 @@ To run the example:
 * Open a command line interpreter in `WheatFspm\example\Vegetative_stages`
 * Run script *main.py*: `python main.py`
 
-## Scenarios_monoculms
+## Scenarios monoculms
 This example explores the plasticity of leaf growth during the vegetative stages of wheat development. The growth of wheat monoculms was simulated for highly contrasting conditions of soil nitrogen concentration, incident light and planting density.
 This work led to the research article [Gauthier *et al.* (2021)](https://doi.org/10.1093/insilicoplants/diab034).
 

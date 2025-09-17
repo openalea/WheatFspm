@@ -9,17 +9,10 @@ Respi-Wheat documentation
 Module description
 ==================
 
-.. sidebar:: Summary
-
-    :Version: |version|
-    :Release: |release|
-    :Date: |today|
-    :Author: See `Authors`_ section
-    :ChangeLog: See `ChangeLog`_ section
-    
 .. topic:: Overview
 
-    Respi-Wheat is a model of plant respiration adapted to wheat.
+    Respi-Wheat is a model of plant respiration adapted to wheat. It was implemented following the work of
+    Thornley and Cannell (2000)
     
 
 Documentation
@@ -30,24 +23,6 @@ Documentation
 
     User Guide<user.rst>   
     Reference Guide<ref.rst>
-
-
-Authors
-=======
-
-.. include:: ../AUTHORS
-
-
-ChangeLog
-=========
-
-.. include:: ../CHANGES
-
-
-License
-=======
-
-|respiwheat| is released under CeCILL-C License. See file LICENSE for details.
 
 
 Indices and tables
