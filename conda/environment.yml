@@ -1,7 +1,8 @@
 name: wheatfspm_dev
 channels:
-  - conda-forge
   - openalea3/label/dev
+  - openalea3/label/rc
+  - conda-forge
 dependencies:
   - python
   - openalea.mtg
