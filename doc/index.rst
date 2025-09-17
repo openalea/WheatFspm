@@ -27,10 +27,12 @@ If you want to make your own development of the model, please fork the repositor
       :caption: Contents:
 
       cnwheat/index.rst
+      elongwheat/index.rst
       growth/index.rst
       farquhar/index.rst
       respi/index.rst
       senesc/index.rst
+      fspmwheat/index.rst
 
 Indices and tables
 ==================
