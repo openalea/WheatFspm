@@ -9,17 +9,11 @@ Farquhar-Wheat documentation
 Module description
 ==================
 
-.. sidebar:: Summary
-
-    :Version: |version|
-    :Release: |release|
-    :Date: |today|
-    :Author: See `Authors`_ section
-    :ChangeLog: See `ChangeLog`_ section
-    
 .. topic:: Overview
 
-    Farquhar-Wheat is a model of photosynthesis based on Farquhar's approach.
+    Farquhar-Wheat is a model of leaf photosynthesis based on Farquhar's approach.
+    The package includes three main submodels for C assimilation,
+    stomatal conductance and energy balance calculation (leaf temperature).
     
 
 Documentation
@@ -30,25 +24,6 @@ Documentation
 
     User Guide<user.rst>   
     Reference Guide<ref.rst>
-
-
-Authors
-=======
-
-.. include:: ../AUTHORS
-
-
-ChangeLog
-=========
-
-.. include:: ../CHANGES
-
-
-License
-=======
-
-|farquharwheat| is released under TODO License.
-
 
 Indices and tables
 ==================

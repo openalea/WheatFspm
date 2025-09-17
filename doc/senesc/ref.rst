@@ -51,4 +51,12 @@ describing what they are and what they do.
     :show-inheritance:
     :synopsis:
 
-    
+
+:mod:`openalea.senescwheat.parameters` module
+*********************************************************
+
+.. automodule:: openalea.senescwheat.parameters
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :synopsis:

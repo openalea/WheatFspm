@@ -9,17 +9,12 @@ Senesc-Wheat documentation
 Module description
 ==================
 
-.. sidebar:: Summary
-
-    :Version: |version|
-    :Release: |release|
-    :Date: |today|
-    :Author: See `Authors`_ section
-    :ChangeLog: See `ChangeLog`_ section
-    
 .. topic:: Overview
 
-    Senesc-Wheat is a model of plant senescence adapted to wheat.
+    Senesc-Wheat is a model of plant senescence adapted to wheat. Leaf senescence is regulated by
+    the N status of each leaf. After the death of a tissue, the model also calculates the remobilisation
+    of C and N metabolites towards the living tissues of the organ.
+    Root senescence is assumed to occur only after floral transition.
     
 
 Documentation
@@ -30,24 +25,6 @@ Documentation
 
     User Guide<user.rst>   
     Reference Guide<ref.rst>
-
-
-Authors
-=======
-
-.. include:: ../AUTHORS
-
-
-ChangeLog
-=========
-
-.. include:: ../CHANGES
-
-
-License
-=======
-
-|senescwheat| is released under TODO License.
 
 
 Indices and tables

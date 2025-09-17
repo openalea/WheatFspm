@@ -9,71 +9,40 @@ Growth-Wheat User Guide
 Introduction
 ============
 
-This is the documentation for Growth-Wheat, a model of photosynthesis based on Growth's approach. 
-
-Prerequisites
--------------
-
-Growth-Wheat needs at least Python_ (2.7 or newer) to run and Pandas_ (0.14.0 or newer) to format outputs.
-Growth-Wheat has not been tested with **Python 3**. 
-
-.. _Python: http://www.python.org/
-.. _Pandas: http://pandas.pydata.org/
-
-
-Usage
------
-
-See :ref:`getting_started` for an introduction. 
-
-
-Installing
-==========
-
-First get the sources using ``svn``:: 
-
-  svn checkout https://subversion.renater.fr/growth-wheat
-  
-This creates the directory ``growth-wheat``.
-
-Then, in the directory ``growth-wheat``, run::
-
-  python setup.py install
-  
-Or, to install in develop mode, run::
-
-  python setup.py develop
-  
-
-.. _getting_started:
-
-
-Getting started
-===============
-
-TODO
+Growth-Wheat simulates leaf growth in mass according to leaf elongation calculated in Elong-Wheat.
+Leaf dimension increase of first interpreted by Adel-wheat model, which provides a variation in leaf area.
+For non-emerged leaves, a empiric and constant relation between leaf length and its strucral mass is used.
+For emerged leaves, the structural mass growth is computed from their green area and
+a surfacic mass defined by Elong-Wheat. According to the computed increase in structral mass, Growth-Wheat
+calculates the related consumption of sucrose and amino acids. Growth-Wheat also handles the transfer of CN metabolites between the
+hiddenzone and the newly emerged part of the leaf if any.
+Root growth and the related metabolite consumption are regulated by the local concentration of
+sucrose. The maximal rate of root growth also depends on the reproductive status of the plant.
 
 
 Inputs of Growth-Wheat
 ========================
 
-TODO
+- Initial structral masses (g), dimensions (m) of each hiddenzone + the green area for laminae, sheaths and internodes
+- Initial content of the metabolites calculated by CN-Wheat (µmol)
 
+Details on each inputs are given in the docstring.
 
 Outputs of Growth-Wheat
 =========================
 
-TODO
+Updated structural masses for hiddenzones, shoot organs and roots
+Updated CN metabolites contents
+
+Details on each outputs are given in the docstring.
 
 
-Growth inputs from MTG properties 
-===================================
+Package architecture
+=====================
 
-TODO
+Growth-Wheat is a Python package which consists of several Python modules:
 
-
-MTG properties from Growth outputs 
-====================================
-
-TODO
-
+* :mod:`openalea.growthwheat.model`: the state and the equations of the model,
+* :mod:`openalea.growthwheat.parameters`: the parameters of the model,
+* :mod:`openalea.growthwheat.simulation`: the simulator (front-end) to run the model,
+* and :mod:`openalea.growthwheat.converter`: functions to convert Growth-Wheat inputs/outputs to/from Pandas dataframes.

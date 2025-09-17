@@ -9,55 +9,34 @@ Respi-Wheat User Guide
 Introduction
 ============
 
-This is the documentation for Respi-Wheat, a model of plant respiration adapted to wheat.
-
-Prerequisites
--------------
-
-Respi-Wheat needs at least **Python 2.7** to run. 
-Respi-Wheat has not been tested with **Python 3**. 
-
-Usage
------
-
-See :ref:`getting_started` for an introduction. 
-
-
-Installing
-==========
-
-First get the sources using ``svn``:: 
-
-  svn checkout https://subversion.renater.fr/respi-wheat/trunk respi-wheat
-  
-This creates the directory ``trunk/respi-wheat``.
-
-Then, in the directory ``trunk/respi-wheat``, run::
-
-  python setup.py install
-  
-Or, to install in develop mode, run::
-
-  python setup.py develop
-  
-
-.. _getting_started:
-
-
-Getting started
-===============
-
-TODO
+Respi-Wheat simulates the different respiration fluxes related to the main physiological processes
+described in Thornley and Cannell (2000).
+The respiration fluxes described are related:
+- the growth of shoot and root organs and grains
+- phloem loading of sucrose by source organs
+- nitrates, ammonium and other ions uptake by roots
+- nitrates reduction
+- N fixation for legumes only
+- residual processes ((cost from protein turn-over, cell ion gradients, futile cycles...)
 
 
 Inputs of Respi-Wheat
 ========================
 
-TODO
+Details on each inputs are given in the docstring.
 
 
 Outputs of Respi-Wheat
 =========================
 
-TODO
+Amount of C lost by respiration (µmol C) for each described process.
 
+Details on each outputs are given in the docstring.
+
+
+Package architecture
+=====================
+
+Respi-Wheat is a Python package which consists of several Python modules:
+
+* :mod:`openalea.respiwheat.model`: the state and the equations of the model,

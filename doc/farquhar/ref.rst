@@ -51,3 +51,13 @@ describing what they are and what they do.
     :undoc-members:
     :show-inheritance:
     :synopsis:
+
+
+:mod:`openalea.farquharwheat.parameters` module
+*********************************************************
+
+.. automodule:: openalea.farquharwheat.parameters
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :synopsis:

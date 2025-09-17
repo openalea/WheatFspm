@@ -9,6 +9,19 @@ Welcome to WheatFSPM's documentation!
 .. include:: ../README.md
    :parser: myst_parser.sphinx_
 
+Contact & Contributing
+======================
+
+For any question, please submit to https://github.com/openalea-incubator/WheatFspm/issues.
+
+
+Versioning
+==========
+
+Sources are versioned on an Git repository hosted by platform GitHub: https://github.com/openalea-incubator/WheatFspm.
+If you want to make your own development of the model, please fork the repository.
+
+
 .. toctree::
       :maxdepth: 1
       :caption: Contents:
