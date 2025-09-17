@@ -1,7 +1,7 @@
 # WheatFspm
 [![License](https://img.shields.io/badge/license-CeCILL--C-blue )](https://img.shields.io/badge/license-CeCILL--C-blue )
 
-[![Documentation Status](https://readthedocs.org/projects/cn-wheat/badge/?version=latest)](https://cn-wheat.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/WheatFspm/badge/?version=latest)](https://WheatFspm.readthedocs.io/en/latest/?badge=latest)
 
 [![Platform](https://anaconda.org/openalea3/openalea.wheatfspm/badges/version.svg)](https://anaconda.org/openalea3/openalea.wheatfspm)
 [![Platform](https://anaconda.org/openalea3/openalea.wheatfspm/badges/platforms.svg)](https://anaconda.org/openalea3/openalea.wheatfspm)
