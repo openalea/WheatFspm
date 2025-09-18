@@ -21,18 +21,18 @@ WheatFspm simulates:
 
 Model inputs are the pedoclimatic conditions (temperature, light, humidity, CO<sub>2</sub>, wind, soil NO<sub>3</sub><sup>-</sup>) and initial dimensions, mass and metabolic composition of individual organs.
 
-![Growing canopy](doc/_static/Vegetative_stages_topview.gif "Growing canopy")
+![Growing canopy](https://github.com/openalea/WheatFspm/blob/master/doc/_static/Vegetative_stages_topview.gif?raw=true "Growing canopy")
 
 # Description
 WheatFspm consists in a set of sub-models (named submodules in git) which share inputs/outputs through an MTG object:
 
-![WheatFSPM workflow](doc/_static/Modular_structure.png "WheatFSPM workflow") 
+![WheatFSPM workflow](https://github.com/openalea/WheatFspm/blob/master/doc/_static/Modular_structure.png?raw=true "WheatFSPM workflow") 
 *Adapted from Gauthier et al. (2020)*
 
 * *Farquhar-Wheat*: Farquhar-based model of photosynthesis, stomatal conductance, organ temperature and transpiration.
 * *Elong-Wheat*: regulation of leaf and internode elongation by C and N metabolites, temperature and coordination rules.
 * *Growth-Wheat*: growth in biomass of leaves, internodes and roots ; related consumption in C and N metabolites.
-* *CN-Wheat*: synthesis and degradation of C and N metabolites at organ level and allocation between tillers' organs. See doc at https://cn-wheat.readthedocs.io/ 
+* *CN-Wheat*: synthesis and degradation of C and N metabolites at organ level and allocation between tillers' organs. See doc at https://wheatfspm.readthedocs.io/ 
 * *Respi-Wheat*: respiratory-costs related to the main biological processes.
 * *Senesc-Wheat*: organ senescence and consequences in organ biomass, green area and remoblisation of C and N metabolites.
 * *Fspm-Wheat*: is the submodule containing the interfaces (facades) for reading/updating information between each sub-model and the MTG. Also includes the scripts to be run for using all sub-models.
@@ -113,7 +113,7 @@ To run the example:
 ## Vegetative stages
 This example simulates the early vegetative stages of wheat growth as measured from a field experiment conducted in 1998-99 in Grignon (France). It mainly covers the processes of leaf, internode and roots growth.
 Tillering is simplified: tiller emergence is a model input while tiller metabolism and growth is approximated from that  of the main stem.
-This work led to the research article [Gauthier *et al.* (2020)](https://doi.org/10.1093/jxb/eraa276). Results were obtained from the tag [paper_JXBot_2020](https://github.com/openalea-incubator/WheatFspm/releases/tag/paper_JXBot_2020).
+This work led to the research article [Gauthier *et al.* (2020)](https://doi.org/10.1093/jxb/eraa276). Results were obtained from the tag [paper_JXBot_2020](https://github.com/openalea/WheatFspm/releases/tag/paper_JXBot_2020).
  
 To run the example:
 * Open a command line interpreter in `WheatFspm\example\Vegetative_stages`
