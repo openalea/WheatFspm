@@ -21,12 +21,12 @@ WheatFspm simulates:
 
 Model inputs are the pedoclimatic conditions (temperature, light, humidity, CO<sub>2</sub>, wind, soil NO<sub>3</sub><sup>-</sup>) and initial dimensions, mass and metabolic composition of individual organs.
 
-![Growing canopy](https://github.com/openalea/WheatFspm/tree/master/doc/_static/Vegetative_stages_topview.gif?raw=true "Growing canopy")
+![Growing canopy](https://github.com/openalea/WheatFspm/blob/master/doc/_static/Vegetative_stages_topview.gif?raw=true "Growing canopy")
 
 # Description
 WheatFspm consists in a set of sub-models (named submodules in git) which share inputs/outputs through an MTG object:
 
-![WheatFSPM workflow](https://github.com/openalea/WheatFspm/tree/master/doc/_static/Modular_structure.png?raw=true "WheatFSPM workflow") 
+![WheatFSPM workflow](https://github.com/openalea/WheatFspm/blob/master/doc/_static/Modular_structure.png?raw=true "WheatFSPM workflow") 
 *Adapted from Gauthier et al. (2020)*
 
 * *Farquhar-Wheat*: Farquhar-based model of photosynthesis, stomatal conductance, organ temperature and transpiration.
