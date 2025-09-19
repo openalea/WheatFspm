@@ -12,13 +12,13 @@ Welcome to WheatFSPM's documentation!
 Contact & Contributing
 ======================
 
-For any question, please submit to https://github.com/openalea-incubator/WheatFspm/issues.
+For any question, please submit to https://github.com/openalea/WheatFspm/issues.
 
 
 Versioning
 ==========
 
-Sources are versioned on an Git repository hosted by platform GitHub: https://github.com/openalea-incubator/WheatFspm.
+Sources are versioned on an Git repository hosted by platform GitHub: https://github.com/openalea/WheatFspm.
 If you want to make your own development of the model, please fork the repository.
 
 

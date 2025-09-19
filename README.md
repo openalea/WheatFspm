@@ -65,9 +65,9 @@ WheatFspm consists in a set of sub-models (named submodules in git) which share 
     * [openalea.MTG](https://github.com/openalea/mtg)
     * [openalea.Plantgl](https://github.com/openalea/plantgl)
     * [openalea.Lpy](https://github.com/openalea/lpy)
-    * [openalea.Caribu](https://github.com/openalea-incubator/caribu) 
-    * [openalea.Adel](https://github.com/openalea-incubator/adel)
-    * [openalea.Astk](https://github.com/openalea-incubator/astk)
+    * [openalea.Caribu](https://github.com/openalea/caribu) 
+    * [openalea.Adel](https://github.com/openalea/adel)
+    * [openalea.Astk](https://github.com/openalea/astk)
     
 ## Installing
 For general information about OpenAlea installation, see https://openalea.readthedocs.io/en/latest/install.html 
