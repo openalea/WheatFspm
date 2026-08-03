@@ -38,6 +38,12 @@ class WheatFSPM(Model):
     Export_Amino_Acids: float = declare(default=0., unit="umol.h-1", unit_comment="of N",
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="input", by="root_nitrogen", state_variable_type="extensive", edit_by="user")
+    Unloading_Sucrose_phloem: float = declare(default=0.1, unit="umol.h-1", unit_comment="of C",
+                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
+                                        variable_type="input", by="root_nitrogen", state_variable_type="extensive", edit_by="user")
+    Unloading_Amino_Acids_phloem: float = declare(default=0.1, unit="umol.h-1", unit_comment="of N",
+                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
+                                        variable_type="input", by="root_nitrogen", state_variable_type="extensive", edit_by="user")
     sucrose_phloem_outside_solve: float = declare(default=10., unit="µmol of C", unit_comment="amount in equivalent C",
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="input", by="root_carbon", state_variable_type="extensive", edit_by="user")
@@ -62,6 +68,18 @@ class WheatFSPM(Model):
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="state_variable", by="model_shoot", state_variable_type="extensive", edit_by="user")
     amino_acids_phloem: float = declare(default=1, unit="µmol", unit_comment="of N", 
+                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
+                                        variable_type="state_variable", by="model_shoot", state_variable_type="extensive", edit_by="user")
+    Unloading_Sucrose: float = declare(default=30., unit="umol.g-1.h-1", unit_comment="of equivalent C mol? sucrose",
+                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
+                                        variable_type="state_variable", by="model_shoot", state_variable_type="extensive", edit_by="user")
+    Unloading_Amino_Acids: float = declare(default=1., unit="umol.g-1.h-1", unit_comment="of equivalent amino acids N", 
+                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
+                                        variable_type="state_variable", by="model_shoot", state_variable_type="extensive", edit_by="user")
+    Unloading_Sucrose_shoot_organs: float = declare(default=30., unit="umol.h-1", unit_comment="of equivalent C mol? sucrose",
+                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
+                                        variable_type="state_variable", by="model_shoot", state_variable_type="extensive", edit_by="user")
+    Unloading_Amino_Acids_shoot_organs: float = declare(default=1., unit="umol.h-1", unit_comment="of equivalent amino acids N", 
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="state_variable", by="model_shoot", state_variable_type="extensive", edit_by="user")
     Export_cytokinins: float = declare(default=0., unit="AU.h-1", unit_comment="of cytokinins",
@@ -338,6 +356,8 @@ class WheatFSPM(Model):
         self.cn_wheat_root_props = self.g.get_vertex_property(2)["roots"]
 
         # TODO : Temporary
+        self.cn_wheat_root_props["Unloading_Sucrose"] = self.props["Unloading_Sucrose"][1]
+        self.cn_wheat_root_props["Unloading_Amino_Acids"] = self.props["Unloading_Amino_Acids"][1]
         self.g.properties()["Total_Transpiration"][2] = self.props["Total_Transpiration"][1]
 
         self.g.get_vertex_property(2)['phloem']['sucrose'] = self.props["sucrose_phloem"][1]
@@ -372,15 +392,20 @@ class WheatFSPM(Model):
             
             self.props["adventitious_to_emerge"].update({1: nodal_emergence_delays})
 
+        # TODO Temporary while an initialization bug for shared mtg is still present
+        self.g.get_vertex_property(2)['phloem']['Unloading_Sucrose_shoot_organs'] = 30.
+        self.g.get_vertex_property(2)['phloem']['Unloading_Amino_Acids_shoot_organs'] = 1.
+
         self.sync_shoot_outputs_with_root_mtg()
         
 
     def sync_shoot_inputs_with_shoot_mtg(self):
         for name in self.inputs:
-            if name == 'sucrose_phloem_outside_solve':
-                self.g.get_vertex_property(2)['phloem']['sucrose'] == self.props[name][1]
-            elif name == 'amino_acids_phloem_outside_solve':
-                self.g.get_vertex_property(2)['phloem']['amino_acids'] == self.props[name][1]
+            if name == "Unloading_Sucrose_phloem":
+                self.cn_wheat_root_props["Unloading_Sucrose"] = self.props[name][1] / self.props['mstruct'][1]
+
+            elif name == "Unloading_Amino_Acids_phloem":
+                self.cn_wheat_root_props["Unloading_Amino_Acids"] = self.props[name][1] / self.props['mstruct'][1]
             else:
                 self.cn_wheat_root_props[name] = self.props[name][1]
 
@@ -399,6 +424,13 @@ class WheatFSPM(Model):
 
             elif name == "sucrose_phloem":
                 self.props[name].update({1: self.g.get_vertex_property(2)['phloem']['sucrose']})
+            
+            # Was added to Simulation.ORGANS_INTEGRATIVE_VARIABLES to be recognized
+            elif name == "Unloading_Sucrose_shoot_organs":
+                self.props[name].update({1: self.g.get_vertex_property(2)['phloem']['Unloading_Sucrose_shoot_organs']})
+
+            elif name == "Unloading_Amino_Acids_shoot_organs":
+                self.props[name].update({1: self.g.get_vertex_property(2)['phloem']['Unloading_Amino_Acids_shoot_organs']})
 
             elif name == "adventitious_to_emerge" and self.synchronize_adventitious_emergence:
                 hiddenzones = self.g.vertices(scale=3)

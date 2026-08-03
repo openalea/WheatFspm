@@ -241,7 +241,7 @@ class Simulation(object):
     ORGANS_FLUXES = ['Export_Amino_Acids', 'Export_Nitrates', 'Export_cytokinins', 'S_Amino_Acids', 'S_cytokinins', 'S_grain_starch',
                      'S_grain_structure', 'S_Proteins', 'Unloading_Amino_Acids', 'Unloading_Sucrose', 'Uptake_Nitrates']
     #: the variables computed by integrating values of organ components parameters/variables recursively
-    ORGANS_INTEGRATIVE_VARIABLES = ['Total_Organic_Nitrogen']
+    ORGANS_INTEGRATIVE_VARIABLES = ['Total_Organic_Nitrogen', 'Unloading_Sucrose_shoot_organs', 'Unloading_Amino_Acids_shoot_organs']
     #: all the variables computed during a run step of the simulation at organ scale
     ORGANS_RUN_VARIABLES = ORGANS_STATE + ORGANS_INTERMEDIATE_VARIABLES + ORGANS_FLUXES + ORGANS_INTEGRATIVE_VARIABLES
 
@@ -1772,7 +1772,9 @@ class Simulation(object):
 
                 # compute the derivative of each compartment of phloem
                 sucrose_phloem_derivative = axis.phloem.calculate_sucrose_derivative(phloem_contributors)
+                axis.phloem.Unloading_Sucrose_shoot_organs = sucrose_phloem_derivative + (axis.roots.Unloading_Sucrose * axis.roots.mstruct * axis.roots.__class__.PARAMETERS.ALPHA)
                 amino_acids_phloem_derivative = axis.phloem.calculate_amino_acids_derivative(phloem_contributors)
+                axis.phloem.Unloading_Amino_Acids_shoot_organs = amino_acids_phloem_derivative + (axis.roots.Unloading_Amino_Acids * axis.roots.mstruct * axis.roots.__class__.PARAMETERS.ALPHA)
                 y_derivatives[axis.phloem._i_sucrose] = sucrose_phloem_derivative
                 y_derivatives[axis.phloem._i_amino_acids] = amino_acids_phloem_derivative
 
