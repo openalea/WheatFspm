@@ -101,10 +101,11 @@ class CNW_Grass(Model):
 
     def __init__(self, root_mtg, meteo, inputs_dataframes,
                  HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv', ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv', 
-                 AXES_INITIAL_STATE_FILENAME = 'axes_initial_state.csv', update_parameters_all_models = None, HOUR_TO_SECOND_CONVERSION_FACTOR = 3600, 
+                 AXES_INITIAL_STATE_FILENAME = 'axes_initial_state.csv', update_parameters_all_models = None, step_callback=None, HOUR_TO_SECOND_CONVERSION_FACTOR = 3600, 
                  ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv', SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv', INPUTS_DIRPATH='inputs', 
-                 PLANT_DENSITY=None, tillers_replications=None, stored_times = None, N_fertilizations=None, computing_light_interception=True, heterogeneous_canopy=True, show_3Dplant = False, option_static = False, 
-                 isolated_roots = False, cnwheat_roots=True, UPDATE_SHARED_DF=False, START_TIME = 0,
+                 MANAGEMENT_FILENAME = 'management.csv', tillers_replications=None, stored_times = None, computing_light_interception=True, heterogeneous_canopy=True, show_3Dplant = False, 
+                 hydraulics = False, stomatal_model_name='BWB', drought_trigger=None, rehydration_scenario=None, optimal_growth_option=False, option_static = False, 
+                 isolated_roots = False, cnwgrass_roots=True, UPDATE_SHARED_DF=False, START_TIME = 0,
                  CARIBU_TIMESTEP = 4, MORPHOGENESIS_TIMESTEP = 1, GROWTH_TIMESTEP = 1, CNMETABOLISM_TIMESTEP = 1, SENESCENCE_TIMESTEP = 1, HYDRAULICS_TIMESTEP = 1):
         
         # SELF STORAGE FOR LOOP PARAMETERS
@@ -120,20 +121,27 @@ class CNW_Grass(Model):
         self.HYDRAULICS_TIMESTEP = HYDRAULICS_TIMESTEP
 
         # canopy parameters
-        self.PLANT_DENSITY = PLANT_DENSITY
-        self.N_fertilizations = N_fertilizations
+        # Management data
+        management_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, MANAGEMENT_FILENAME), header=0, index_col=0)
+        management_variables = {}
+        for var_name in management_df.index:
+            management_variables[var_name] = get_management_value(management_df, var_name)
+        self.plant_density = management_variables.get('plant_density', {1: 250})
+        self.inter_row = management_variables.get('inter_row', 0.15)
+        self.Zsowing = management_variables.get('sowing_depth', 0.025)
+        self.N_fertilizations = management_variables.get('N_fertilizations', {})
+        # TODO choose between scenario passing or management dependancy
 
         # plant parameters
         self.tillers_replications = tillers_replications
 
         # logging and data structures
         self.stored_times = stored_times
-        self.shared_elements_inputs_outputs_df = pd.DataFrame()
-        self.shared_elements_inputs_outputs_df = pd.DataFrame()
-        self.shared_hiddenzones_inputs_outputs_df = pd.DataFrame()
-        self.shared_organs_inputs_outputs_df = pd.DataFrame()
-        self.shared_soils_inputs_outputs_df = pd.DataFrame()
         self.shared_axes_inputs_outputs_df = pd.DataFrame()
+        self.shared_organs_inputs_outputs_df = pd.DataFrame()
+        self.shared_hiddenzones_inputs_outputs_df = pd.DataFrame()
+        self.shared_elements_inputs_outputs_df = pd.DataFrame()
+        self.shared_soils_inputs_outputs_df = pd.DataFrame()
         self.all_simulation_steps = []
         self.axes_all_data_list = []
         self.organs_all_data_list = []
@@ -141,18 +149,29 @@ class CNW_Grass(Model):
         self.elements_all_data_list = []
         self.soils_all_data_list = []
 
-
         # boolean choices
         self.show_3Dplant = show_3Dplant
         self.heterogeneous_canopy = heterogeneous_canopy
         self.computing_light_interception = computing_light_interception
+        self.hydraulics = hydraulics
         self.option_static = option_static
 
         # -- ADEL and MTG CONFIGURATION --
 
         # read adelwheat inputs at t0
-        self.adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-        self.g = self.adel_wheat.load(directory=INPUTS_DIRPATH)
+        if single_plant:
+        # TODO introduce the boolean
+            self.adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
+        else:
+            stand = AgronomicStand(sowing_density=self.plant_density[1], plant_density=self.plant_density[1], inter_row=inter_row, noise=0.) #todo to be adapted if multiple cultivars
+            self.adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'), stand=stand)
+        
+        # MTG generation
+        if step_callback is not None and 'ADEL_mtg' in step_callback.keys():
+            nff = update_parameters_all_models['morphogenesis']['max_nb_leaves']
+            self.g = step_callback['ADEL_mtg'](adel_wheat, INPUTS_DIRPATH, nff)  # Create a new MTG
+        else:
+            self.g = adel_wheat.load(directory=INPUTS_DIRPATH)  # read adelwheat inputs at t0 from a serialised MTG
         
         # Section specific to coupling with Root-BRIDGES
         self.shoot_props = self.g.properties()
@@ -166,36 +185,34 @@ class CNW_Grass(Model):
         # ----- CONFIGURATION OF THE FACADES -------
         # ---------------------------------------------
 
-        # -- ELONGWHEAT (created first because it is the only facade to add new metamers) --
+        # -- MORPHOGENESIS (created first because it is the only facade to add new metamers) --
         # Initial states
-        elongwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
-            elongwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.HIDDENZONE_INPUTS if i in
-                                                                    inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
-        elongwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
-            elongwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.ELEMENT_INPUTS if i in
-                                                                    inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
-        elongwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
-            elongwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.AXIS_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+        morphogenesis_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME]
+        morphogenesis_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME]
+        morphogenesis_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME]
 
         phytoT_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, 'phytoT.csv'))
 
         # Update parameters if specified
-        if update_parameters_all_models and 'elongwheat' in update_parameters_all_models:
-            update_parameters_elongwheat = update_parameters_all_models['elongwheat']
+        if update_parameters_all_models and 'morphogenesis' in update_parameters_all_models:
+            update_parameters_morphogenesis = update_parameters_all_models['morphogenesis']
         else:
-            update_parameters_elongwheat = None
+            update_parameters_morphogenesis = None
 
         # Facade initialisation
-        self.elongwheat_facade_ = elongwheat_facade.ElongWheatFacade(self.g,
+        self.morphogenesis_facade_ = morphogenesis_facade.MorphogenesisFacade(self.g,
                                                                 MORPHOGENESIS_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                                elongwheat_axes_initial_state,
-                                                                elongwheat_hiddenzones_initial_state,
-                                                                elongwheat_elements_initial_state,
+                                                                morphogenesis_axes_initial_state,
+                                                                morphogenesis_hiddenzones_initial_state,
+                                                                morphogenesis_elements_initial_state,
                                                                 self.shared_axes_inputs_outputs_df,
                                                                 self.shared_hiddenzones_inputs_outputs_df,
                                                                 self.shared_elements_inputs_outputs_df,
                                                                 self.adel_wheat, phytoT_df,
-                                                                update_parameters_elongwheat,
+                                                                hydraulics=hydraulics,
+                                                                optimal_growth_option=optimal_growth_option,
+                                                                option_static=option_static,
+                                                                update_parameters=update_parameters_morphogenesis,
                                                                 update_shared_df=UPDATE_SHARED_DF)
 
         # -- CARIBU --
@@ -205,149 +222,210 @@ class CNW_Grass(Model):
                                                         self.adel_wheat,
                                                         update_shared_df=UPDATE_SHARED_DF)
 
-        # -- SENESCWHEAT --
+        # -- SENESCENCE --
         # Initial states    
-        senescwheat_roots_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
-            senescwheat_facade.converter.ROOTS_TOPOLOGY_COLUMNS +
-            [i for i in senescwheat_facade.converter.SENESCWHEAT_ROOTS_INPUTS if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+        senescence_roots_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
+            senescence_facade.converter.ROOTS_TOPOLOGY_COLUMNS +
+            [i for i in senescence_facade.converter.SENESCENCE_ROOTS_INPUTS if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
 
-        senescwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
-            senescwheat_facade.converter.ELEMENTS_TOPOLOGY_COLUMNS +
-            [i for i in senescwheat_facade.converter.SENESCWHEAT_ELEMENTS_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+        senescence_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+            senescence_facade.converter.ELEMENTS_TOPOLOGY_COLUMNS +
+            [i for i in senescence_facade.converter.SENESCENCE_ELEMENTS_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
 
-        senescwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
-            senescwheat_facade.converter.AXES_TOPOLOGY_COLUMNS +
-            [i for i in senescwheat_facade.converter.SENESCWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+        senescence_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+            senescence_facade.converter.AXES_TOPOLOGY_COLUMNS +
+            [i for i in senescence_facade.converter.SENESCENCE_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
         # Update parameters if specified
-        if update_parameters_all_models and 'senescwheat' in update_parameters_all_models:
-            update_parameters_senescwheat = update_parameters_all_models['senescwheat']
+        if update_parameters_all_models and 'senescence' in update_parameters_all_models:
+            update_parameters_senescence = update_parameters_all_models['senescence']
         else:
-            update_parameters_senescwheat = None
+            update_parameters_senescence = None
 
         # Facade initialisation
-        self.senescwheat_facade_ = senescwheat_facade.SenescWheatFacade(self.g,
+        self.senescence_facade_ = senescence_facade.SENESCENCEFacade(self.g,
                                                                 SENESCENCE_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                                senescwheat_roots_initial_state,
-                                                                senescwheat_axes_initial_state,
-                                                                senescwheat_elements_initial_state,
+                                                                senescence_roots_initial_state,
+                                                                senescence_axes_initial_state,
+                                                                senescence_elements_initial_state,
                                                                 self.shared_organs_inputs_outputs_df,
                                                                 self.shared_axes_inputs_outputs_df,
                                                                 self.shared_elements_inputs_outputs_df,
-                                                                update_parameters_senescwheat,
+                                                                update_parameters=update_parameters_senescence,
                                                                 update_shared_df=UPDATE_SHARED_DF,
-                                                                cnwheat_roots=cnwheat_roots)
+                                                                cnwgrass_roots=cnwgrass_roots)
 
-        # -- FARQUHARWHEAT --
-        # Initial states    
-        farquharwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
-            farquharwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS +
-            [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_ELEMENTS_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
-
-        farquharwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
-            farquharwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
-            [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
-
-        # Use the initial version of the photosynthesis sub-model (as in Barillot et al. 2016, and in Gauthier et al. 2020)
-        update_parameters_farquharwheat = {'SurfacicProteins': False, 'NSC_Retroinhibition': False}
-
-        # Facade initialisation
-        self.farquharwheat_facade_ = farquharwheat_facade.FarquharWheatFacade(self.g,
-                                                                        farquharwheat_elements_initial_state,
-                                                                        farquharwheat_axes_initial_state,
-                                                                        self.shared_elements_inputs_outputs_df,
-                                                                        update_parameters_farquharwheat,
-                                                                        update_shared_df=UPDATE_SHARED_DF)
-
-        # -- GROWTHWHEAT --
-        # Initial states    
-        growthwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
-            growthwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS +
-            [i for i in growthwheat_facade.simulation.HIDDENZONE_INPUTS if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
-
-        growthwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
-            growthwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS +
-            [i for i in growthwheat_facade.simulation.ELEMENT_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
-
-        growthwheat_root_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
-            growthwheat_facade.converter.ROOT_TOPOLOGY_COLUMNS +
-            [i for i in growthwheat_facade.simulation.ROOT_INPUTS if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
-
-        growthwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
-            growthwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
-            [i for i in growthwheat_facade.simulation.AXIS_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+        # -- GAS-EXCHANGE --
+        # Initial states
+        gasexchange_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME]
+        gasexchange_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME]
 
         # Update parameters if specified
-        if update_parameters_all_models and 'growthwheat' in update_parameters_all_models:
-            update_parameters_growthwheat = update_parameters_all_models['growthwheat']
+        if update_parameters_all_models and 'gasexchange' in update_parameters_all_models:
+            update_parameters_gasexchange = update_parameters_all_models['gasexchange']
         else:
-            update_parameters_growthwheat = None
+            update_parameters_gasexchange = None
 
         # Facade initialisation
-        self.growthwheat_facade_ = growthwheat_facade.GrowthWheatFacade(self.g,
+        self.gasexchange_facade_ = gasexchange_facade.GasExchangeFacade(self.g,
+                                                                        gasexchange_elements_initial_state,
+                                                                        gasexchange_axes_initial_state,
+                                                                        self.shared_elements_inputs_outputs_df,
+                                                                        stomatal_model_name=stomatal_model_name,
+                                                                        hydraulics=hydraulics,
+                                                                        update_parameters=update_parameters_farquharwheat,
+                                                                        update_shared_df=UPDATE_SHARED_DF)
+
+        # -- GROWTH --
+        # Initial states
+        growth_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME]
+        growth_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME]
+        growth_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME]
+        growth_root_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]
+
+        # Update parameters if specified
+        if update_parameters_all_models and 'growth' in update_parameters_all_models:
+            update_parameters_growth = update_parameters_all_models['growth']
+        else:
+            update_parameters_growth = None
+
+        # Facade initialisation
+        self.growth_facade_ = growth_facade.GrowthWheatFacade(self.g,
                                                                 GROWTH_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                                growthwheat_hiddenzones_initial_state,
-                                                                growthwheat_elements_initial_state,
-                                                                growthwheat_root_initial_state,
-                                                                growthwheat_axes_initial_state,
+                                                                growth_hiddenzones_initial_state,
+                                                                growth_elements_initial_state,
+                                                                growth_root_initial_state,
+                                                                growth_axes_initial_state,
                                                                 self.shared_organs_inputs_outputs_df,
                                                                 self.shared_hiddenzones_inputs_outputs_df,
                                                                 self.shared_elements_inputs_outputs_df,
                                                                 self.shared_axes_inputs_outputs_df,
-                                                                update_parameters_growthwheat,
+                                                                hydraulics=hydraulics,
+                                                                update_parameters=update_parameters_growthwheat,
                                                                 update_shared_df=UPDATE_SHARED_DF,
-                                                                cnwheat_roots=cnwheat_roots)
+                                                                cnwgrass_roots=cnwgrass_roots)
 
-        # -- CNWHEAT --
-        # Initial states    
-        cnwheat_organs_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME][
-            [i for i in cnwheat_facade.cnwheat_converter.ORGANS_VARIABLES if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+        # -- CNMETABOLISM --
+        # Initial states
+        cnmetabolism_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+            [i for i in cnmetabolism_facade.cnmetabolism_converter.AXES_VARIABLES if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
-        cnwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
-            [i for i in cnwheat_facade.cnwheat_converter.HIDDENZONE_VARIABLES if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+        cnmetabolism_organs_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME][
+            [i for i in cnmetabolism_facade.cnmetabolism_converter.ORGANS_VARIABLES if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
 
-        cnwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
-            [i for i in cnwheat_facade.cnwheat_converter.ELEMENTS_VARIABLES if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+        cnmetabolism_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
+            [i for i in cnmetabolism_facade.cnmetabolism_converter.HIDDENZONE_VARIABLES if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
 
-        cnwheat_soils_initial_state = inputs_dataframes[SOILS_INITIAL_STATE_FILENAME][
-            [i for i in cnwheat_facade.cnwheat_converter.SOILS_VARIABLES if i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
+        cnmetabolism_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+            [i for i in cnmetabolism_facade.cnmetabolism_converter.ELEMENTS_VARIABLES if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+        cnmetabolism_soils_initial_state = inputs_dataframes[SOILS_INITIAL_STATE_FILENAME][
+            [i for i in cnmetabolism_facade.cnmetabolism_converter.SOILS_VARIABLES if i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
+        if not hydraulics and 'SRWC' not in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns:
+            cnmetabolism_soils_initial_state['SRWC'] = 100
+        elif hydraulics and 'SRWC' not in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns:
+            raise(ValueError('Hydraulics option is True but SRWC not found in {}.'.format(SOILS_INITIAL_STATE_FILENAME)))
 
         # Update parameters if specified
-        if update_parameters_all_models and 'cnwheat' in update_parameters_all_models:
-            update_parameters_cnwheat = update_parameters_all_models['cnwheat']
+        if update_parameters_all_models and 'cnmetabolism' in update_parameters_all_models:
+            update_parameters_cnmetabolism = update_parameters_all_models['cnmetabolism']
         else:
-            update_parameters_cnwheat = {}
+            update_parameters_cnmetabolism = {}
 
         # Force solver separation if a different root model has been chosen
-        if not cnwheat_roots:
+        if not cnwgrass_roots:
             isolated_roots = True
 
         # Facade initialisation
-        self.cnwheat_facade_ = cnwheat_facade.CNWheatFacade(self.g,
+        self.cnmetabolism_facade_ = cnmetabolism_facade.CNMetabolismFacade(self.g,
                                                     CNMETABOLISM_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                    PLANT_DENSITY,
-                                                    update_parameters_cnwheat,
-                                                    cnwheat_organs_initial_state,
-                                                    cnwheat_hiddenzones_initial_state,
-                                                    cnwheat_elements_initial_state,
-                                                    cnwheat_soils_initial_state,
+                                                    plant_density,
+                                                    update_parameters_cnmetabolism,
+                                                    cnmetabolism_axes_initial_state,
+                                                    cnmetabolism_organs_initial_state,
+                                                    cnmetabolism_hiddenzones_initial_state,
+                                                    cnmetabolism_elements_initial_state,
+                                                    cnmetabolism_soils_initial_state,
                                                     self.shared_axes_inputs_outputs_df,
                                                     self.shared_organs_inputs_outputs_df,
                                                     self.shared_hiddenzones_inputs_outputs_df,
                                                     self.shared_elements_inputs_outputs_df,
                                                     self.shared_soils_inputs_outputs_df,
+                                                    tillers_replications=tillers_replications,
+                                                    external_soil_model=external_soil_model,
                                                     update_shared_df=UPDATE_SHARED_DF,
                                                     isolated_roots=isolated_roots,
-                                                    cnwheat_roots=cnwheat_roots)
+                                                    cnwgrass_roots=cnwgrass_roots)
 
         # Run cnwheat with constant nitrates concentration in the soil if specified
-        if N_fertilizations is not None and 'constant_Conc_Nitrates' in N_fertilizations.keys():
-            self.cnwheat_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True  # TODO: make (1, 'MS') more general
-            self.cnwheat_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * self.cnwheat_facade_.soils[(1, 'MS')].volume
+        if N_fertilizations is not None: 
+            if 'constant_Conc_Nitrates' in N_fertilizations.keys():
+                self.cnmetabolism_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True  # TODO: make (1, 'MS') more general
+                self.cnmetabolism_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * self.cnmetabolism_facade_.soils[(1, 'MS')].volume
 
-        # -- FSPMWHEAT --
+        # Force root nitrate uptake if specified
+        if external_soil_model and step_callback is not None:
+            try:
+                step_callback['nitrate_uptake'](0, self.cnmetabolism_facade_.population, self.g)
+            except KeyError:
+                print('Function name error in step_callback keys. It should be nitrate_uptake')
+
+
+        # -- HYDRAULICS --
+        drought_ongoing = False  # Is a drought event ongoing (bool)
+        drought_passed = False   # Has a drought event occurred (bool)
+        rehydration = False      # Is a rehydration period ongoing (bool)
+        self.hydraulics_facade_ = None
+
+        if hydraulics:
+            # Initial states
+            hydraulics_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
+                [i for i in hydraulics_facade.hydraulics_converter.AXES_VARIABLES if
+                i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+
+            hydraulics_organs_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME][
+                [i for i in hydraulics_facade.hydraulics_converter.ORGANS_VARIABLES if
+                i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+
+            hydraulics_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
+                [i for i in hydraulics_facade.hydraulics_converter.HIDDENZONE_VARIABLES if
+                i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+
+            hydraulics_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
+                [i for i in hydraulics_facade.hydraulics_converter.ELEMENTS_VARIABLES if
+                i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+
+            # Update parameters if specified
+            if update_parameters_all_models and 'hydraulics' in update_parameters_all_models:
+                update_parameters_hydraulics = update_parameters_all_models['hydraulics']
+            else:
+                update_parameters_hydraulics = {}
+
+            hydraulics_soils_initial_state = inputs_dataframes[SOILS_INITIAL_STATE_FILENAME][
+                [i for i in hydraulics_facade.hydraulics_converter.SOILS_VARIABLES if
+                i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
+
+            # Facade initialisation
+            self.hydraulics_facade_ = hydraulics_facade.hydraulicsFacade(g,
+                                                                    HYDRAULICS_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                                    update_parameters_hydraulics,
+                                                                    hydraulics_axes_initial_state,
+                                                                    hydraulics_hiddenzones_initial_state,
+                                                                    hydraulics_elements_initial_state,
+                                                                    hydraulics_organs_initial_state,
+                                                                    hydraulics_soils_initial_state,
+                                                                    self.shared_axes_inputs_outputs_df,
+                                                                    self.shared_hiddenzones_inputs_outputs_df,
+                                                                    self.shared_elements_inputs_outputs_df,
+                                                                    self.shared_organs_inputs_outputs_df,
+                                                                    self.shared_soils_inputs_outputs_df,
+                                                                    update_shared_df=UPDATE_SHARED_DF,
+                                                                    isolated_roots=isolated_roots,
+                                                                    cnwgrass_roots=cnwgrass_roots)
+
+        # -- MODEL INTEGRATION --
         # Facade initialisation
-        self.fspmwheat_facade_ = fspmwheat_facade.FSPMWheatFacade(self.g)
+        build_outputs_ = build_outputs.BuildOutputs(self.g, self.morphogenesis_facade_, self.growth_facade_, self.gasexchange_facade_, self.hydraulics_facade_)
 
         # Update geometry
         self.adel_wheat.update_geometry(self.g)
@@ -483,19 +561,11 @@ class CNW_Grass(Model):
 
             self.caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=self.heterogeneous_canopy, plant_density=self.PLANT_DENSITY[1])
 
-        for t_senescwheat in range(self.time_step_in_hours, self.time_step_in_hours + self.SENESCENCE_TIMESTEP, self.SENESCENCE_TIMESTEP):
-            # run SenescWheat
+        for t_senescence in range(self.time_step_in_hours, self.time_step_in_hours + self.SENESCENCE_TIMESTEP, self.SENESCENCE_TIMESTEP):
+            # run Senescence
             t1 = time.time()
-            self.senescwheat_facade_.run()
-            # if (1, 'MS', 5, 'internode', 'HiddenElement') not in self.senescwheat_facade_._simulation.outputs["elements"].keys():
-            #     logger_output.info("Post SW, Internode not found")
-            hidelt = self.g.node(80)
-            if (hidelt.length is None) or (np.isnan(hidelt.length)) or (np.isinf(hidelt.length)) or (hidelt.length <= 0.):
-                logger_output.info(f"Post SW, Internode element has no proper length in MTG : {hidelt.length}")
-            hidorg = self.g.node(70)
-            if (hidorg.length is None) or (np.isnan(hidorg.length)) or (np.isinf(hidorg.length)) or (hidorg.length <= 0.):
-                logger_output.info(f"Post SW, Internode organ has no proper length in MTG : {hidorg.length}")
-            if debug: print("senescwheat took :", time.time() - t1)
+            self.senescence_facade_.run()
+            if debug: print("senescence took :", time.time() - t1)
 
             # Test for dead plant # TODO: adapt in case of multiple plants
             if not self.shared_elements_inputs_outputs_df.empty and \
@@ -510,89 +580,53 @@ class CNW_Grass(Model):
                 break
 
             # Run the rest of the model if the plant is alive
-            for t_farquharwheat in range(t_senescwheat, t_senescwheat + self.SENESCENCE_TIMESTEP, self.FARQUHARWHEAT_TIMESTEP):
+            for t_gasexchange in range(t_senescence, t_senescence + self.SENESCENCE_TIMESTEP, self.FARQUHARWHEAT_TIMESTEP): # TODO what replaced gas exchange timestep?
                 # get the meteo of the current step
-                Ta, ambient_CO2, RH, Ur = self.meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
+                Ta, ambient_CO2, RH, Ur = self.meteo.loc[t_gasexchange, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
 
-                # run FarquharWheat
+                # run GasExchange
                 t1 = time.time()
-                self.farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
-                # if (1, 'MS', 5, 'internode', 'HiddenElement') not in self.farquharwheat_facade_._simulation.outputs.keys():
-                #     logger_output.info("Post FW, Internode not found")
-                hidelt = self.g.node(80)
-                if (hidelt.length is None) or (np.isnan(hidelt.length)) or (np.isinf(hidelt.length)) or (hidelt.length <= 0.):
-                    logger_output.info(f"Post FW, Internode element has no proper length in MTG : {hidelt.length}")
-                hidorg = self.g.node(70)
-                if (hidorg.length is None) or (np.isnan(hidorg.length)) or (np.isinf(hidorg.length)) or (hidorg.length <= 0.):
-                    logger_output.info(f"Post FW, Internode organ has no proper length in MTG : {hidorg.length}")
-                if debug: print("farquharwheat took :", time.time() - t1)
+                self.gasexchange_facade_.run(Ta, ambient_CO2, RH, Ur)
+                if debug: print("gasexchange took :", time.time() - t1)
 
-                for t_elongwheat in range(t_farquharwheat, t_farquharwheat + self.FARQUHARWHEAT_TIMESTEP, self.MORPHOGENESIS_TIMESTEP):
-                    # run ElongWheat
-                    Tair, Tsoil = self.meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
+                for t_morphogenesis in range(t_gasexchange, t_gasexchange + self.FARQUHARWHEAT_TIMESTEP, self.MORPHOGENESIS_TIMESTEP):
+                    # run Morphogeneis
+                    Tair, Tsoil = self.meteo.loc[t_gasexchange, ['air_temperature', 'soil_temperature']]
                     t1 = time.time()
-                    self.elongwheat_facade_.run(Tair, Tsoil, option_static=self.option_static)
-                    # if (1, 'MS', 5, 'internode', 'HiddenElement') not in self.elongwheat_facade_._simulation.outputs["elements"].keys():
-                    #     logger_output.info("Post EW, Internode not found")
-                    hidelt = self.g.node(80)
-                    if (hidelt.length is None) or (np.isnan(hidelt.length)) or (np.isinf(hidelt.length)) or (hidelt.length <= 0.):
-                        logger_output.info(f"Post EW, Internode element has no proper length in MTG : {hidelt.length}")
-                    hidorg = self.g.node(70)
-                    if (hidorg.length is None) or (np.isnan(hidorg.length)) or (np.isinf(hidorg.length)) or (hidorg.length <= 0.):
-                        logger_output.info(f"Post EW, Internode organ has no proper length in MTG : {hidorg.length}")
-                    if debug: print("elongwheat took :", time.time() - t1)
+                    self.morphogenesis_facade_.run(Tair, Tsoil, option_static=self.option_static)
+                    if debug: print("morphogenesis took :", time.time() - t1)
 
                     # Update geometry
                     self.adel_wheat.update_geometry(self.g)
                     if self.show_3Dplant:
                         self.adel_wheat.plot(self.g)
-                    hidelt = self.g.node(80)
-                    if (hidelt.length is None) or (np.isnan(hidelt.length)) or (np.isinf(hidelt.length)) or (hidelt.length <= 0.):
-                        logger_output.info(f"Post AW, Internode element has no proper length in MTG : {hidelt.length}")
-                    hidorg = self.g.node(70)
-                    if (hidorg.length is None) or (np.isnan(hidorg.length)) or (np.isinf(hidorg.length)) or (hidorg.length <= 0.):
-                        logger_output.info(f"Post AW, Internode organ has no proper length in MTG : {hidorg.length}")
 
-                    for t_growthwheat in range(t_elongwheat, t_elongwheat + self.MORPHOGENESIS_TIMESTEP, self.GROWTH_TIMESTEP):
-                        # run GrowthWheat
+                    for t_growth in range(t_morphogenesis, t_morphogenesis + self.MORPHOGENESIS_TIMESTEP, self.GROWTH_TIMESTEP):
+                        # run Growth
                         t1 = time.time()
-                        self.growthwheat_facade_.run()
-                        # if (1, 'MS', 5, 'internode', 'HiddenElement') not in self.growthwheat_facade_._simulation.outputs["elements"].keys():
-                        #     logger_output.info("Post GW, Internode not found")
-                        hidelt = self.g.node(80)
-                        if (hidelt.length is None) or (np.isnan(hidelt.length)) or (np.isinf(hidelt.length)) or (hidelt.length <= 0.):
-                            logger_output.info(f"Post GW, Internode element has no proper length in MTG : {hidelt.length}")
-                        hidorg = self.g.node(70)
-                        if (hidorg.length is None) or (np.isnan(hidorg.length)) or (np.isinf(hidorg.length)) or (hidorg.length <= 0.):
-                            logger_output.info(f"Post GW, Internode organ has no proper length in MTG : {hidorg.length}")
+                        self.growth_facade_.run()
+                        if debug: print("growth took :", time.time() - t1)
 
-                        for t_cnwheat in range(t_growthwheat, t_growthwheat + self.GROWTH_TIMESTEP, self.CNMETABOLISM_TIMESTEP):
-                            #print('t cnwheat is {}'.format(t_cnwheat))
+                        for t_cnmetabolism in range(t_growth, t_growth + self.GROWTH_TIMESTEP, self.CNMETABOLISM_TIMESTEP):
 
                             # N fertilization if any
                             if self.N_fertilizations is not None and len(self.N_fertilizations) > 0:
-                                if t_cnwheat in self.N_fertilizations.keys():
-                                    self.cnwheat_facade_.soils[(1, 'MS')].nitrates += self.N_fertilizations[t_cnwheat]
+                                if t_cnmetabolism in self.N_fertilizations.keys():
+                                    self.cnmetabolism_facade_.soils[(1, 'MS')].nitrates += self.N_fertilizations[t_cnmetabolism]
 
                             if t_cnwheat > 0:
                                 # run CNWheat
                                 Tair = self.meteo.loc[t_elongwheat, 'air_temperature']
                                 Tsoil = self.meteo.loc[t_elongwheat, 'soil_temperature']
                                 t1 = time.time()
-                                self.cnwheat_facade_.run(Tair, Tsoil, self.tillers_replications)
-                                if debug: print("cnwheat took :", time.time() - t1)
-                                hidelt = self.g.node(80)
-                                if (hidelt.length is None) or (np.isnan(hidelt.length)) or (np.isinf(hidelt.length)) or (hidelt.length <= 0.):
-                                    logger_output.info(f"Post CNW, Internode element has no proper length in MTG : {hidelt.length}")
-                                hidorg = self.g.node(70)
-                                if (hidorg.length is None) or (np.isnan(hidorg.length)) or (np.isinf(hidorg.length)) or (hidorg.length <= 0.):
-                                    logger_output.info(f"Post CNW, Internode organ has no proper length in MTG : {hidorg.length}")
+                                self.cnmetabolism_facade_.run(Tair, Tsoil, self.tillers_replications)
+                                if debug: print("cnmetabolism took :", time.time() - t1)
 
                             # append outputs at current step to global lists
-                            if (self.stored_times == 'all') or (t_cnwheat in self.stored_times):
-                                axes_outputs, elements_outputs, hiddenzones_outputs, organs_outputs, soils_outputs = self.fspmwheat_facade_.build_outputs_df_from_MTG()
+                            if (self.stored_times == 'all') or (t_cnmetabolism in self.stored_times):
+                                axes_outputs, elements_outputs, hiddenzones_outputs, organs_outputs, soils_outputs = self.fspmwheat_facade_.build_outputs_df_from_MTG() # TODO
 
-                                self.all_simulation_steps.append(t_cnwheat)
+                                self.all_simulation_steps.append(t_cnmetabolism)
                                 self.axes_all_data_list.append(axes_outputs)
                                 self.organs_all_data_list.append(organs_outputs)
                                 self.hiddenzones_all_data_list.append(hiddenzones_outputs)
@@ -608,7 +642,7 @@ class CNW_Grass(Model):
 def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs", OUTPUTS_DIRPATH = "outputs", METEO_FILENAME = "meteo_Ljutovac2002.csv", PLANT_DENSITY = {1:250},
                      forced_start_time = 0, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, N_fertilizations = {2016: 357143, 2520: 1000000},
                      stored_times = None, option_static = False, show_3Dplant = False, run_from_outputs = False, heterogeneous_canopy = True, update_parameters_all_models = None,
-                     isolated_roots = False, cnwheat_roots = True):
+                     isolated_roots = False, cnwgrass_roots = True):
     scenario = {}
 
     ### DIRS ###
@@ -619,7 +653,7 @@ def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs"
     UPDATE_SHARED_DF = False
     if stored_times is None:
         stored_times = 'all'
-    if not (stored_times == 'all' or type(stored_times) == list):
+    if not (stored_times == 'all' or isinstance(stored_times, list)):
         print('stored_times should be either \'all\', a list or an empty list.')
         raise
 
@@ -720,7 +754,7 @@ def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs"
     scenario["N_fertilizations"] = N_fertilizations
     scenario["update_parameters_all_models"] = update_parameters_all_models
     scenario["isolated_roots"] = isolated_roots
-    scenario["cnwheat_roots"] = cnwheat_roots
+    scenario["cnwgrass_roots"] = cnwgrass_roots
 
 
     return scenario
