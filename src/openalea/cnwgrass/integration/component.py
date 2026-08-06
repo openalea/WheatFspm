@@ -3,12 +3,9 @@
 import os
 import numpy as np
 import pandas as pd
-import time
-import logging
 
 from dataclasses import dataclass, fields
 from openalea.metafspm.component import Model, declare
-
 
 from openalea.adel.adel_dynamic import AdelDyn
 from openalea.adel.echap_leaf import echap_leaves
@@ -22,14 +19,21 @@ from openalea.cnwgrass.integration import senescence_facade
 from openalea.cnwgrass.integration import hydraulics_facade
 
 
-logger_output = logging.getLogger("Simulation_Logger")
-
-debug = False
-
 @dataclass
 class CNW_Grass(Model):
     """
-    TODO : Add description
+    CNW-Grass is a Functional Structural Plant Model (FSPM) of grasses which fully integrates shoot morphogenesis and the metabolism of carbon (C) and nitrogen (N) at organ scale within a 3D representation of plant architecture. Plants are described as a collection of tillers, each consisting in individual shoot organs (lamina, sheath, internode, peduncle, chaff), a single root compartment, the grains, and a phloem. CNW-Grass also includes a hydraulic model allowing to compute water flow in the plant and the co-regulation of leaf growth by metabolic and hydraulic processes. In this case, the plants also include a xylem compartment.
+
+    CNW-Grass simulates:
+
+        Organ photosynthesis, temperature and transpiration from light distribution within the 3D canopy.
+        Leaf and internode elongation.
+        Leaf, internode and root growth in mass.
+        N acquisition, synthesis and allocation of C and N metabolites at organ level and among tiller organs.
+        Senescence of shoot organs and roots.
+        Water fluxes and water potentials.
+
+    Model inputs are the pedoclimatic conditions (temperature, light, humidity, CO2, wind, soil NO3-, Soil Relative Water Content) and initial dimensions, mass and metabolic composition of individual organs.
     """
 
     # Inputs expected from bellowground models
@@ -103,9 +107,12 @@ class CNW_Grass(Model):
                  HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv', ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv', 
                  AXES_INITIAL_STATE_FILENAME = 'axes_initial_state.csv', update_parameters_all_models = None, step_callback=None, HOUR_TO_SECOND_CONVERSION_FACTOR = 3600, 
                  ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv', SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv', INPUTS_DIRPATH='inputs', 
-                 MANAGEMENT_FILENAME = 'management.csv', tillers_replications=None, stored_times = None, computing_light_interception=True, heterogeneous_canopy=True, show_3Dplant = False, 
+                 # Canopy parameters
+                 single_plant = False, plant_density = {1: 250}, inter_row = 0.15, sowing_depth = 0.025, N_fertilizations = None,
+                 # Options
+                 tillers_replications=None, stored_times = None, computing_light_interception=True, heterogeneous_canopy=True, show_3Dplant = False, 
                  hydraulics = False, stomatal_model_name='BWB', drought_trigger=None, rehydration_scenario=None, optimal_growth_option=False, option_static = False, 
-                 isolated_roots = False, cnwgrass_roots=True, UPDATE_SHARED_DF=False, START_TIME = 0,
+                 isolated_roots = False, cnwgrass_roots = True, UPDATE_SHARED_DF=False, START_TIME = 0,
                  CARIBU_TIMESTEP = 4, MORPHOGENESIS_TIMESTEP = 1, GROWTH_TIMESTEP = 1, CNMETABOLISM_TIMESTEP = 1, SENESCENCE_TIMESTEP = 1, HYDRAULICS_TIMESTEP = 1):
         
         # SELF STORAGE FOR LOOP PARAMETERS
@@ -122,15 +129,10 @@ class CNW_Grass(Model):
 
         # canopy parameters
         # Management data
-        management_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, MANAGEMENT_FILENAME), header=0, index_col=0)
-        management_variables = {}
-        for var_name in management_df.index:
-            management_variables[var_name] = get_management_value(management_df, var_name)
-        self.plant_density = management_variables.get('plant_density', {1: 250})
-        self.inter_row = management_variables.get('inter_row', 0.15)
-        self.Zsowing = management_variables.get('sowing_depth', 0.025)
-        self.N_fertilizations = management_variables.get('N_fertilizations', {})
-        # TODO choose between scenario passing or management dependancy
+        self.plant_density = plant_density
+        self.inter_row = inter_row
+        self.Zsowing = sowing_depth
+        self.N_fertilizations = N_fertilizations
 
         # plant parameters
         self.tillers_replications = tillers_replications
@@ -155,12 +157,12 @@ class CNW_Grass(Model):
         self.computing_light_interception = computing_light_interception
         self.hydraulics = hydraulics
         self.option_static = option_static
+        self.cnwgrass_root = cnwgrass_roots
 
         # -- ADEL and MTG CONFIGURATION --
 
         # read adelwheat inputs at t0
         if single_plant:
-        # TODO introduce the boolean
             self.adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
         else:
             stand = AgronomicStand(sowing_density=self.plant_density[1], plant_density=self.plant_density[1], inter_row=inter_row, noise=0.) #todo to be adapted if multiple cultivars
@@ -339,7 +341,7 @@ class CNW_Grass(Model):
         # Facade initialisation
         self.cnmetabolism_facade_ = cnmetabolism_facade.CNMetabolismFacade(self.g,
                                                     CNMETABOLISM_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                    plant_density,
+                                                    plant_density, # TODO GB check why it is needed
                                                     update_parameters_cnmetabolism,
                                                     cnmetabolism_axes_initial_state,
                                                     cnmetabolism_organs_initial_state,
@@ -357,18 +359,19 @@ class CNW_Grass(Model):
                                                     isolated_roots=isolated_roots,
                                                     cnwgrass_roots=cnwgrass_roots)
 
-        # Run cnwheat with constant nitrates concentration in the soil if specified
-        if N_fertilizations is not None: 
-            if 'constant_Conc_Nitrates' in N_fertilizations.keys():
-                self.cnmetabolism_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True  # TODO: make (1, 'MS') more general
-                self.cnmetabolism_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * self.cnmetabolism_facade_.soils[(1, 'MS')].volume
+        if cnwgrass_roots:
+            # Run cnwheat with constant nitrates concentration in the soil if specified
+            if N_fertilizations is not None: 
+                if 'constant_Conc_Nitrates' in N_fertilizations.keys():
+                    self.cnmetabolism_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True  # TODO: make (1, 'MS') more general
+                    self.cnmetabolism_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * self.cnmetabolism_facade_.soils[(1, 'MS')].volume
 
-        # Force root nitrate uptake if specified
-        if external_soil_model and step_callback is not None:
-            try:
-                step_callback['nitrate_uptake'](0, self.cnmetabolism_facade_.population, self.g)
-            except KeyError:
-                print('Function name error in step_callback keys. It should be nitrate_uptake')
+            # Force root nitrate uptake if specified
+            if external_soil_model and step_callback is not None:
+                try:
+                    step_callback['nitrate_uptake'](0, self.cnmetabolism_facade_.population, self.g)
+                except KeyError:
+                    print('Function name error in step_callback keys. It should be nitrate_uptake')
 
 
         # -- HYDRAULICS --
@@ -425,7 +428,7 @@ class CNW_Grass(Model):
 
         # -- MODEL INTEGRATION --
         # Facade initialisation
-        build_outputs_ = build_outputs.BuildOutputs(self.g, self.morphogenesis_facade_, self.growth_facade_, self.gasexchange_facade_, self.hydraulics_facade_)
+        self.build_outputs_ = build_outputs.BuildOutputs(self.g, self.morphogenesis_facade_, self.growth_facade_, self.gasexchange_facade_, self.hydraulics_facade_)
 
         # Update geometry
         self.adel_wheat.update_geometry(self.g)
@@ -434,7 +437,7 @@ class CNW_Grass(Model):
         
         self.cn_wheat_root_props = self.g.get_vertex_property(2)["roots"]
 
-        # TODO : Temporary
+        # TODO GB : Temporary
         self.cn_wheat_root_props["Unloading_Sucrose"] = self.props["Unloading_Sucrose"][1]
         self.cn_wheat_root_props["Unloading_Amino_Acids"] = self.props["Unloading_Amino_Acids"][1]
         self.g.properties()["Total_Transpiration"][2] = self.props["Total_Transpiration"][1]
@@ -471,7 +474,7 @@ class CNW_Grass(Model):
             
             self.props["adventitious_to_emerge"].update({1: nodal_emergence_delays})
 
-        # TODO Temporary while an initialization bug for shared mtg is still present
+        # TODO GB Temporary while an initialization bug for shared mtg is still present
         self.g.get_vertex_property(2)['phloem']['Unloading_Sucrose_shoot_organs'] = 30.
         self.g.get_vertex_property(2)['phloem']['Unloading_Amino_Acids_shoot_organs'] = 1.
 
@@ -551,6 +554,7 @@ class CNW_Grass(Model):
         DOY = self.meteo.loc[self.time_step_in_hours, ['DOY']].iloc[0]
         hour = self.meteo.loc[self.time_step_in_hours, ['hour']].iloc[0]
 
+        # Run Caribu, if activated
         if self.computing_light_interception:
             PARi_next_hours = self.meteo.loc[range(self.time_step_in_hours, self.time_step_in_hours + self.CARIBU_TIMESTEP), ['PARi']].sum().values[0]
 
@@ -559,79 +563,107 @@ class CNW_Grass(Model):
             else:
                 run_caribu = False
 
-            self.caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=self.heterogeneous_canopy, plant_density=self.PLANT_DENSITY[1])
+            self.caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', 
+                                    heterogeneous_canopy=self.heterogeneous_canopy, plant_density=self.plant_density[1], inter_row=inter_row)
 
-        for t_senescence in range(self.time_step_in_hours, self.time_step_in_hours + self.SENESCENCE_TIMESTEP, self.SENESCENCE_TIMESTEP):
-            # run Senescence
-            t1 = time.time()
-            self.senescence_facade_.run()
-            if debug: print("senescence took :", time.time() - t1)
+        # Run Senescence
+        self.senescence_facade_.run()
 
-            # Test for dead plant # TODO: adapt in case of multiple plants
-            if not self.shared_elements_inputs_outputs_df.empty and \
-                    np.nansum(self.shared_elements_inputs_outputs_df.loc[self.shared_elements_inputs_outputs_df['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0:
-                # append the inputs and outputs at current step to global lists
-                self.all_simulation_steps.append(t_senescwheat)
-                self.axes_all_data_list.append(self.shared_axes_inputs_outputs_df.copy())
-                self.organs_all_data_list.append(self.shared_organs_inputs_outputs_df.copy())
-                self.hiddenzones_all_data_list.append(self.shared_hiddenzones_inputs_outputs_df.copy())
-                self.elements_all_data_list.append(self.shared_elements_inputs_outputs_df.copy())
-                self.soils_all_data_list.append(self.shared_soils_inputs_outputs_df.copy())
-                break
+        # Test for dead plant # TODO: adapt in case of multiple plants
+        if not self.shared_elements_inputs_outputs_df.empty and \
+                np.nansum(self.shared_elements_inputs_outputs_df.loc[self.shared_elements_inputs_outputs_df['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0:
+            # append the inputs and outputs at current step to global lists
+            self.all_simulation_steps.append(self.time_step_in_hours)
+            self.axes_all_data_list.append(self.shared_axes_inputs_outputs_df.copy())
+            self.organs_all_data_list.append(self.shared_organs_inputs_outputs_df.copy())
+            self.hiddenzones_all_data_list.append(self.shared_hiddenzones_inputs_outputs_df.copy())
+            self.elements_all_data_list.append(self.shared_elements_inputs_outputs_df.copy())
+            self.soils_all_data_list.append(self.shared_soils_inputs_outputs_df.copy())
+            print('Dead plant')
+            break
 
-            # Run the rest of the model if the plant is alive
-            for t_gasexchange in range(t_senescence, t_senescence + self.SENESCENCE_TIMESTEP, self.FARQUHARWHEAT_TIMESTEP): # TODO what replaced gas exchange timestep?
-                # get the meteo of the current step
-                Ta, ambient_CO2, RH, Ur = self.meteo.loc[t_gasexchange, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
+        # Run the rest of the model if the plant is alive
+        # get the meteo of the current step
+        Ta, ambient_CO2, RH, Ur = self.meteo.loc[self.time_step_in_hours, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
 
-                # run GasExchange
-                t1 = time.time()
-                self.gasexchange_facade_.run(Ta, ambient_CO2, RH, Ur)
-                if debug: print("gasexchange took :", time.time() - t1)
+        # run GasExchange
+        self.gasexchange_facade_.run(Ta, ambient_CO2, RH, Ur)
 
-                for t_morphogenesis in range(t_gasexchange, t_gasexchange + self.FARQUHARWHEAT_TIMESTEP, self.MORPHOGENESIS_TIMESTEP):
-                    # run Morphogeneis
-                    Tair, Tsoil = self.meteo.loc[t_gasexchange, ['air_temperature', 'soil_temperature']]
-                    t1 = time.time()
-                    self.morphogenesis_facade_.run(Tair, Tsoil, option_static=self.option_static)
-                    if debug: print("morphogenesis took :", time.time() - t1)
+        # run Morphogeneis
+        Tair, Tsoil = self.meteo.loc[self.time_step_in_hours, ['air_temperature', 'soil_temperature']]
+        self.morphogenesis_facade_.run(Tair, Tsoil, self.Zsowing) # TODO GB why is it needed?
 
-                    # Update geometry
-                    self.adel_wheat.update_geometry(self.g)
-                    if self.show_3Dplant:
-                        self.adel_wheat.plot(self.g)
+        # Update geometry
+        self.adel_wheat.update_geometry(self.g)
+        if self.show_3Dplant:
+            self.adel_wheat.plot(self.g)
 
-                    for t_growth in range(t_morphogenesis, t_morphogenesis + self.MORPHOGENESIS_TIMESTEP, self.GROWTH_TIMESTEP):
-                        # run Growth
-                        t1 = time.time()
-                        self.growth_facade_.run()
-                        if debug: print("growth took :", time.time() - t1)
+        # run hydraulics
+        if self.hydraulics and self.hydraulics_facade_ is not None:
+            if self.cnwgrass_root:
+                turgor_soil = hydraulics_facade_.soils[(1, 'MS')]
+                # Trigger drought
+                if drought_trigger is not None and 'green_area' in drought_trigger.keys():
+                    if  (sum(g.property('green_area').values()) >= drought_trigger['green_area'] or drought_ongoing) and not drought_passed:
+                        drought_ongoing = True
+                        turgor_soil.constant_water_content = False
+                    # Rehydration scenario. Only implemented for a hourly and linear rehydration scenario.
+                    if rehydration_scenario is not None:
+                        # Maximum of drought, start of rehydration
+                        if turgor_soil.SRWC <= rehydration_scenario['stop_drought_SRWC'] and not rehydration:
+                            rehydration = True
+                            total_irrigation = (rehydration_scenario['SRWC_target'] * turgor_soil.PARAMETERS.AWC) / 100 - turgor_soil.water_content  # Total amount of water to add to the soil in order to reach the target SRWC
+                            turgor_soil.hourly_irrigation = total_irrigation / (rehydration_scenario['rehydration_duration'] * 24)  # Amount of water to add each hour to reach the target SRWC at the end of the rehydration period
 
-                        for t_cnmetabolism in range(t_growth, t_growth + self.GROWTH_TIMESTEP, self.CNMETABOLISM_TIMESTEP):
+                        # Ongoing rehydration
+                        elif rehydration:
+                            # Target SRWC reached after rehydration, end of drought event
+                            if turgor_soil.SRWC >= rehydration_scenario['SRWC_target']:
+                                rehydration = False
+                                drought_ongoing = False
+                                drought_passed = True
+                                turgor_soil.water_content = (rehydration_scenario['SRWC_target'] * turgor_soil.PARAMETERS.AWC) / 100
+                                turgor_soil.SRWC = rehydration_scenario['SRWC_target']
+                                turgor_soil.constant_water_content = True
+                                turgor_soil.hourly_rehydration = 0
 
-                            # N fertilization if any
-                            if self.N_fertilizations is not None and len(self.N_fertilizations) > 0:
-                                if t_cnmetabolism in self.N_fertilizations.keys():
-                                    self.cnmetabolism_facade_.soils[(1, 'MS')].nitrates += self.N_fertilizations[t_cnmetabolism]
+            self.hydraulics_facade_.run()
 
-                            if t_cnwheat > 0:
-                                # run CNWheat
-                                Tair = self.meteo.loc[t_elongwheat, 'air_temperature']
-                                Tsoil = self.meteo.loc[t_elongwheat, 'soil_temperature']
-                                t1 = time.time()
-                                self.cnmetabolism_facade_.run(Tair, Tsoil, self.tillers_replications)
-                                if debug: print("cnmetabolism took :", time.time() - t1)
+            # Update geometry
+            adel_wheat.update_geometry(g)
+            if show_3Dplant:
+                adel_wheat.plot(g)
 
-                            # append outputs at current step to global lists
-                            if (self.stored_times == 'all') or (t_cnmetabolism in self.stored_times):
-                                axes_outputs, elements_outputs, hiddenzones_outputs, organs_outputs, soils_outputs = self.fspmwheat_facade_.build_outputs_df_from_MTG() # TODO
+        # run Growth
+        self.growth_facade_.run()
 
-                                self.all_simulation_steps.append(t_cnmetabolism)
-                                self.axes_all_data_list.append(axes_outputs)
-                                self.organs_all_data_list.append(organs_outputs)
-                                self.hiddenzones_all_data_list.append(hiddenzones_outputs)
-                                self.elements_all_data_list.append(elements_outputs)
-                                self.soils_all_data_list.append(soils_outputs)
+        # run CN-Metabolism
+        if self.cnwgrass_root:
+            # N fertilization if any
+            if self.N_fertilizations is not None:
+                if self.time_step_in_hours in self.N_fertilizations.keys():
+                    self.cnmetabolism_facade_.soils[(1, 'MS')].nitrates += self.N_fertilizations[self.time_step_in_hours]
+
+            # Force root nitrate uptake if specified
+            if external_soil_model and step_callback is not None:
+                try:
+                    step_callback['nitrate_uptake'](self.time_step_in_hours, cnmetabolism_facade_.population, g)
+                except KeyError:
+                    print(
+                        'Function name error in step_callback keys. It should be nitrate_uptake')
+
+        self.cnmetabolism_facade_.run(Tair, Tsoil, self.tillers_replications)
+
+        # append outputs at current step to global lists
+        if (self.stored_times == 'all') or (self.time_step_in_hours in self.stored_times):
+            axes_outputs, elements_outputs, hiddenzones_outputs, organs_outputs, soils_outputs = self.build_outputs_.build_outputs_df_from_MTG()
+
+            self.all_simulation_steps.append(self.time_step_in_hours)
+            self.axes_all_data_list.append(axes_outputs)
+            self.organs_all_data_list.append(organs_outputs)
+            self.hiddenzones_all_data_list.append(hiddenzones_outputs)
+            self.elements_all_data_list.append(elements_outputs)
+            self.soils_all_data_list.append(soils_outputs)
 
         self.time_step_in_hours += self.SENESCENCE_TIMESTEP
 
@@ -639,9 +671,9 @@ class CNW_Grass(Model):
 
 
 
-def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs", OUTPUTS_DIRPATH = "outputs", METEO_FILENAME = "meteo_Ljutovac2002.csv", PLANT_DENSITY = {1:250},
+def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs", OUTPUTS_DIRPATH = "outputs", METEO_FILENAME = "meteo_Ljutovac2002.csv", plant_density = {1:250},
                      forced_start_time = 0, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, N_fertilizations = {2016: 357143, 2520: 1000000},
-                     stored_times = None, option_static = False, show_3Dplant = False, run_from_outputs = False, heterogeneous_canopy = True, update_parameters_all_models = None,
+                     stored_times = None, option_static = False, single_plant = False, show_3Dplant = False, run_from_outputs = False, heterogeneous_canopy = True, update_parameters_all_models = None,
                      isolated_roots = False, cnwgrass_roots = True):
     scenario = {}
 
@@ -746,37 +778,17 @@ def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs"
     scenario["inputs_dataframes"] = inputs_dataframes
 
     ### OPTIONS ###
-    scenario["PLANT_DENSITY"] = PLANT_DENSITY
+    scenario["plant_density"] = plant_density
     scenario["option_static"] = option_static
     scenario["show_3Dplant"] = show_3Dplant
     scenario["tillers_replications"] = tillers_replications
     scenario["heterogeneous_canopy"] = heterogeneous_canopy
     scenario["N_fertilizations"] = N_fertilizations
     scenario["update_parameters_all_models"] = update_parameters_all_models
+    scenario["single_plant"] = single_plant
     scenario["isolated_roots"] = isolated_roots
     scenario["cnwgrass_roots"] = cnwgrass_roots
 
 
     return scenario
 
-
-def save_df_to_csv(df, outputs_filepath, precision):
-    """
-    Write outputs of the model
-
-    :param pandas.DataFrame df: the current output dataframe
-    :param str outputs_filepath: path of the output file
-    :param int precision: number of digit
-
-    """
-
-    try:
-        df.to_csv(outputs_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(precision))
-    except IOError as err:
-        path, filename = os.path.split(outputs_filepath)
-        filename = os.path.splitext(filename)[0]
-        newfilename = 'ACTUAL_{}.csv'.format(filename)
-        newpath = os.path.join(path, newfilename)
-        df.to_csv(newpath, na_rep='NA', index=False, float_format='%.{}f'.format(precision))
-        warnings.warn('[{}] {}'.format(err.errno, err.strerror))
-        warnings.warn('File will be saved at {}'.format(newpath))
