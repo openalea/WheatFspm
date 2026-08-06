@@ -171,9 +171,9 @@ class CNW_Grass(Model):
         # MTG generation
         if step_callback is not None and 'ADEL_mtg' in step_callback.keys():
             nff = update_parameters_all_models['morphogenesis']['max_nb_leaves']
-            self.g = step_callback['ADEL_mtg'](adel_wheat, INPUTS_DIRPATH, nff)  # Create a new MTG
+            self.g = step_callback['ADEL_mtg'](self.adel_wheat, INPUTS_DIRPATH, nff)  # Create a new MTG
         else:
-            self.g = adel_wheat.load(directory=INPUTS_DIRPATH)  # read adelwheat inputs at t0 from a serialised MTG
+            self.g = self.adel_wheat.load(directory=INPUTS_DIRPATH)  # read adelwheat inputs at t0 from a serialised MTG
         
         # Section specific to coupling with Root-BRIDGES
         self.shoot_props = self.g.properties()
@@ -275,7 +275,7 @@ class CNW_Grass(Model):
                                                                         self.shared_elements_inputs_outputs_df,
                                                                         stomatal_model_name=stomatal_model_name,
                                                                         hydraulics=hydraulics,
-                                                                        update_parameters=update_parameters_farquharwheat,
+                                                                        update_parameters=update_parameters_gasexchange,
                                                                         update_shared_df=UPDATE_SHARED_DF)
 
         # -- GROWTH --
@@ -292,7 +292,7 @@ class CNW_Grass(Model):
             update_parameters_growth = None
 
         # Facade initialisation
-        self.growth_facade_ = growth_facade.GrowthWheatFacade(self.g,
+        self.growth_facade_ = growth_facade.GrowthFacade(self.g,
                                                                 GROWTH_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                 growth_hiddenzones_initial_state,
                                                                 growth_elements_initial_state,
@@ -303,7 +303,7 @@ class CNW_Grass(Model):
                                                                 self.shared_elements_inputs_outputs_df,
                                                                 self.shared_axes_inputs_outputs_df,
                                                                 hydraulics=hydraulics,
-                                                                update_parameters=update_parameters_growthwheat,
+                                                                update_parameters=update_parameters_growth,
                                                                 update_shared_df=UPDATE_SHARED_DF,
                                                                 cnwgrass_roots=cnwgrass_roots)
 
@@ -360,7 +360,7 @@ class CNW_Grass(Model):
                                                     cnwgrass_roots=cnwgrass_roots)
 
         if cnwgrass_roots:
-            # Run cnwheat with constant nitrates concentration in the soil if specified
+            # Run cn-metabolism with constant nitrates concentration in the soil if specified
             if N_fertilizations is not None: 
                 if 'constant_Conc_Nitrates' in N_fertilizations.keys():
                     self.cnmetabolism_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True  # TODO: make (1, 'MS') more general
@@ -435,11 +435,11 @@ class CNW_Grass(Model):
         if show_3Dplant:
             self.adel_wheat.plot(self.g)
         
-        self.cn_wheat_root_props = self.g.get_vertex_property(2)["roots"]
+        self.cnw_grass_root_props = self.g.get_vertex_property(2)["roots"]
 
         # TODO GB : Temporary
-        self.cn_wheat_root_props["Unloading_Sucrose"] = self.props["Unloading_Sucrose"][1]
-        self.cn_wheat_root_props["Unloading_Amino_Acids"] = self.props["Unloading_Amino_Acids"][1]
+        self.cnw_grass_root_props["Unloading_Sucrose"] = self.props["Unloading_Sucrose"][1]
+        self.cnw_grass_root_props["Unloading_Amino_Acids"] = self.props["Unloading_Amino_Acids"][1]
         self.g.properties()["Total_Transpiration"][2] = self.props["Total_Transpiration"][1]
 
         self.g.get_vertex_property(2)['phloem']['sucrose'] = self.props["sucrose_phloem"][1]
@@ -484,12 +484,12 @@ class CNW_Grass(Model):
     def sync_shoot_inputs_with_shoot_mtg(self):
         for name in self.inputs:
             if name == "Unloading_Sucrose_phloem":
-                self.cn_wheat_root_props["Unloading_Sucrose"] = self.props[name][1] / self.props['mstruct'][1]
+                self.cnw_grass_root_props["Unloading_Sucrose"] = self.props[name][1] / self.props['mstruct'][1]
 
             elif name == "Unloading_Amino_Acids_phloem":
-                self.cn_wheat_root_props["Unloading_Amino_Acids"] = self.props[name][1] / self.props['mstruct'][1]
+                self.cnw_grass_root_props["Unloading_Amino_Acids"] = self.props[name][1] / self.props['mstruct'][1]
             else:
-                self.cn_wheat_root_props[name] = self.props[name][1]
+                self.cnw_grass_root_props[name] = self.props[name][1]
 
     def sync_shoot_outputs_with_root_mtg(self):
         # Link this specific data structure to self for variables exchange, only for outputs that will be read by other models  here.
@@ -539,7 +539,7 @@ class CNW_Grass(Model):
                                 self.already_emerged_leaves.append(v)
                             
             else:
-                self.props[name].update({1: self.cn_wheat_root_props[name]})
+                self.props[name].update({1: self.cnw_grass_root_props[name]})
 
         
 
@@ -599,7 +599,7 @@ class CNW_Grass(Model):
             self.adel_wheat.plot(self.g)
 
         # run hydraulics
-        if self.hydraulics and self.hydraulics_facade_ is not None:
+        if self.hydraulics:
             if self.cnwgrass_root:
                 turgor_soil = hydraulics_facade_.soils[(1, 'MS')]
                 # Trigger drought
@@ -630,9 +630,9 @@ class CNW_Grass(Model):
             self.hydraulics_facade_.run()
 
             # Update geometry
-            adel_wheat.update_geometry(g)
+            self.adel_wheat.update_geometry(g)
             if show_3Dplant:
-                adel_wheat.plot(g)
+                self.adel_wheat.plot(g)
 
         # run Growth
         self.growth_facade_.run()
@@ -769,7 +769,6 @@ def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs"
     # TODO constrained to interger for now, and using float, so bellow hour time stepping breaks both for loops and input dataframe accessions
     time_step_in_hours = int(time_step_in_seconds / 3600)
     scenario["CARIBU_TIMESTEP"] = time_step_in_hours
-    scenario["FARQUHARWHEAT_TIMESTEP"] = time_step_in_hours
     scenario["MORPHOGENESIS_TIMESTEP"] = time_step_in_hours
     scenario["GROWTH_TIMESTEP"] = time_step_in_hours
     scenario["CNMETABOLISM_TIMESTEP"] = time_step_in_hours
