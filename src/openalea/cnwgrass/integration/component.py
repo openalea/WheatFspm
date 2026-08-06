@@ -157,7 +157,7 @@ class CNW_Grass(Model):
         self.computing_light_interception = computing_light_interception
         self.hydraulics = hydraulics
         self.option_static = option_static
-        self.cnwgrass_root = cnwgrass_roots
+        self.cnwgrass_roots = cnwgrass_roots
 
         # -- ADEL and MTG CONFIGURATION --
 
@@ -579,8 +579,7 @@ class CNW_Grass(Model):
             self.hiddenzones_all_data_list.append(self.shared_hiddenzones_inputs_outputs_df.copy())
             self.elements_all_data_list.append(self.shared_elements_inputs_outputs_df.copy())
             self.soils_all_data_list.append(self.shared_soils_inputs_outputs_df.copy())
-            print('Dead plant')
-            break
+            raise RuntimeError('Dead plant')
 
         # Run the rest of the model if the plant is alive
         # get the meteo of the current step
@@ -600,7 +599,7 @@ class CNW_Grass(Model):
 
         # run hydraulics
         if self.hydraulics:
-            if self.cnwgrass_root:
+            if self.cnwgrass_roots:
                 turgor_soil = hydraulics_facade_.soils[(1, 'MS')]
                 # Trigger drought
                 if drought_trigger is not None and 'green_area' in drought_trigger.keys():
@@ -638,7 +637,7 @@ class CNW_Grass(Model):
         self.growth_facade_.run()
 
         # run CN-Metabolism
-        if self.cnwgrass_root:
+        if self.cnwgrass_roots:
             # N fertilization if any
             if self.N_fertilizations is not None:
                 if self.time_step_in_hours in self.N_fertilizations.keys():
@@ -674,7 +673,7 @@ class CNW_Grass(Model):
 def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs", OUTPUTS_DIRPATH = "outputs", METEO_FILENAME = "meteo_Ljutovac2002.csv", plant_density = {1:250},
                      forced_start_time = 0, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, N_fertilizations = {2016: 357143, 2520: 1000000},
                      stored_times = None, option_static = False, single_plant = False, show_3Dplant = False, run_from_outputs = False, heterogeneous_canopy = True, update_parameters_all_models = None,
-                     isolated_roots = False, cnwgrass_roots = True):
+                     isolated_roots = False, cnwgrass_roots = True, hydraulics = False):
     scenario = {}
 
     ### DIRS ###
@@ -787,6 +786,7 @@ def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs"
     scenario["single_plant"] = single_plant
     scenario["isolated_roots"] = isolated_roots
     scenario["cnwgrass_roots"] = cnwgrass_roots
+    scenario["hydraulics"] = hydraulics
 
 
     return scenario
