@@ -323,10 +323,12 @@ class CNW_Grass(Model):
 
         cnmetabolism_soils_initial_state = inputs_dataframes[SOILS_INITIAL_STATE_FILENAME][
             [i for i in cnmetabolism_facade.cnmetabolism_converter.SOILS_VARIABLES if i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
-        if not hydraulics and 'SRWC' not in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns:
-            cnmetabolism_soils_initial_state['SRWC'] = 100
-        elif hydraulics and 'SRWC' not in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns:
-            raise(ValueError('Hydraulics option is True but SRWC not found in {}.'.format(SOILS_INITIAL_STATE_FILENAME)))
+
+        if cnwgrass_roots: # Not needed if there is a substitute root and soil model
+            if not hydraulics and 'SRWC' not in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns:
+                cnmetabolism_soils_initial_state['SRWC'] = 100
+            elif hydraulics and 'SRWC' not in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns:
+                raise(ValueError('Hydraulics option is True but SRWC not found in {}.'.format(SOILS_INITIAL_STATE_FILENAME)))
 
         # Update parameters if specified
         if update_parameters_all_models and 'cnmetabolism' in update_parameters_all_models:
@@ -590,7 +592,7 @@ class CNW_Grass(Model):
 
         # run Morphogeneis
         Tair, Tsoil = self.meteo.loc[self.time_step_in_hours, ['air_temperature', 'soil_temperature']]
-        self.morphogenesis_facade_.run(Tair, Tsoil, self.Zsowing) # TODO GB why is it needed?
+        self.morphogenesis_facade_.run(Tair, Tsoil, self.Zsowing) # TODO GB needed for perceived temperature computation
 
         # Update geometry
         self.adel_wheat.update_geometry(self.g)
