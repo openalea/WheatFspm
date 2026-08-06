@@ -151,9 +151,11 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
     GROWTH_TIMESTEP = 1
     CNMETABOLISM_TIMESTEP = 1
     hydraulics_TIMESTEP = 1
+    # Done
 
     # precision of floats used to write and format the output CSV files
     OUTPUTS_PRECISION = 8
+    # TODO check csv writing
 
     # number of seconds in 1 hour
     HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
@@ -222,6 +224,7 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
 
     # Start time of the simulation
     START_TIME = max(0, new_start_time)
+    # Done
 
     # Name of the CSV files which contains the meteo data
     meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t')
