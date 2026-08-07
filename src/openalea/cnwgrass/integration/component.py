@@ -110,7 +110,7 @@ class CNW_Grass(Model):
                  # Canopy parameters
                  single_plant = False, plant_density = {1: 250}, inter_row = 0.15, sowing_depth = 0.025, N_fertilizations = None,
                  # Options
-                 tillers_replications=None, stored_times = None, computing_light_interception=True, heterogeneous_canopy=True, show_3Dplant = False, 
+                 tillers_replications=None, stored_times = None, computing_light_interception=True, external_soil_model=False, heterogeneous_canopy=True, show_3Dplant = False, 
                  hydraulics = False, stomatal_model_name='BWB', drought_trigger=None, rehydration_scenario=None, optimal_growth_option=False, option_static = False, 
                  isolated_roots = False, cnwgrass_roots = True, UPDATE_SHARED_DF=False, START_TIME = 0,
                  CARIBU_TIMESTEP = 4, MORPHOGENESIS_TIMESTEP = 1, GROWTH_TIMESTEP = 1, CNMETABOLISM_TIMESTEP = 1, SENESCENCE_TIMESTEP = 1, HYDRAULICS_TIMESTEP = 1):
@@ -155,6 +155,7 @@ class CNW_Grass(Model):
         self.show_3Dplant = show_3Dplant
         self.heterogeneous_canopy = heterogeneous_canopy
         self.computing_light_interception = computing_light_interception
+        self.external_soil_model = external_soil_model
         self.hydraulics = hydraulics
         self.option_static = option_static
         self.cnwgrass_roots = cnwgrass_roots
@@ -411,7 +412,7 @@ class CNW_Grass(Model):
                 i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
 
             # Facade initialisation
-            self.hydraulics_facade_ = hydraulics_facade.hydraulicsFacade(g,
+            self.hydraulics_facade_ = hydraulics_facade.hydraulicsFacade(self.g,
                                                                     HYDRAULICS_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
                                                                     update_parameters_hydraulics,
                                                                     hydraulics_axes_initial_state,
@@ -592,7 +593,7 @@ class CNW_Grass(Model):
 
         # run Morphogeneis
         Tair, Tsoil = self.meteo.loc[self.time_step_in_hours, ['air_temperature', 'soil_temperature']]
-        self.morphogenesis_facade_.run(Tair, Tsoil, self.Zsowing) # TODO GB needed for perceived temperature computation
+        self.morphogenesis_facade_.run(Tair, Tsoil, self.Zsowing) # NOTE Zsowing needed for perceived temperature computation
 
         # Update geometry
         self.adel_wheat.update_geometry(self.g)
@@ -646,7 +647,7 @@ class CNW_Grass(Model):
                     self.cnmetabolism_facade_.soils[(1, 'MS')].nitrates += self.N_fertilizations[self.time_step_in_hours]
 
             # Force root nitrate uptake if specified
-            if external_soil_model and step_callback is not None:
+            if self.external_soil_model and step_callback is not None:
                 try:
                     step_callback['nitrate_uptake'](self.time_step_in_hours, cnmetabolism_facade_.population, g)
                 except KeyError:
