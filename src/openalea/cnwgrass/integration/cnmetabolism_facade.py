@@ -10,6 +10,7 @@ from openalea.cnwgrass.integration import tools
 
 import numpy as np
 import math
+from scipy.sparse import lil_matrix
 
 """
     integration.cnmetabolism_facade
@@ -452,9 +453,10 @@ class CNMetabolismFacade(object):
                 # Collect per-axis element/HZ columns we must connect
                 E_suc_cols, E_aa_cols = [], []
                 HZ_suc_cols, HZ_aa_cols = [], []
-
-                for variable in ('moistening', 'starch', 'proteins'):
-                    setattr(axis.endosperm, f"_i_{variable}", icm[axis.phloem][variable])
+                
+                if axis.endosperm is not None:
+                    for variable in ('moistening', 'starch', 'proteins'):
+                        setattr(axis.endosperm, f"_i_{variable}", icm[axis.endosperm][variable])
                 
                 # TODO include endosperm in jacobian sparcity matrix
 

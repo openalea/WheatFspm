@@ -632,9 +632,9 @@ class CNW_Grass(Model):
             self.hydraulics_facade_.run()
 
             # Update geometry
-            self.adel_wheat.update_geometry(g)
-            if show_3Dplant:
-                self.adel_wheat.plot(g)
+            self.adel_wheat.update_geometry(self.g)
+            if self.show_3Dplant:
+                self.adel_wheat.plot(self.g)
 
         # run Growth
         self.growth_facade_.run()

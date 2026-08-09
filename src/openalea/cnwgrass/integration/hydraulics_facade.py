@@ -74,7 +74,9 @@ class hydraulicsFacade(object):
                  shared_elements_inputs_outputs_df,
                  shared_organs_inputs_outputs_df,
                  shared_soils_inputs_outputs_df,
-                 update_shared_df=True):
+                 update_shared_df=True,
+                 isolated_roots=False,
+                 cnwgrass_roots=True):
         """
                 :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
                 :param int delta_t: The delta between two runs, in seconds.
@@ -92,7 +94,7 @@ class hydraulicsFacade(object):
         
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
 
-        self._simulation = hydraulics_simulation.Simulation(delta_t=delta_t)
+        self._simulation = hydraulics_simulation.Simulation(delta_t=delta_t, isolated_roots=isolated_roots, cnwgrass_roots=cnwgrass_roots)
 
         self.population, self.soils = hydraulics_converter.from_dataframes(model_axes_inputs_df, model_hiddenzones_inputs_df, model_elements_inputs_df, model_organs_inputs_df, model_soils_inputs_df)
 

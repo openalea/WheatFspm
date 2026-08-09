@@ -249,7 +249,7 @@ class Simulation(object):
                                      model.HiddenZone: 'hydraulics.derivatives.hiddenzones',
                                      model.PhotosyntheticOrganElement: 'hydraulics.derivatives.elements'}}
 
-    def __init__(self, delta_t=1, interpolate_forcing=False, elements_forcing_delta_t=None, hiddenzone_forcing_delta_t=None):
+    def __init__(self, delta_t=1, interpolate_forcing=False, elements_forcing_delta_t=None, hiddenzone_forcing_delta_t=None, isolated_roots=False, cnwgrass_roots=True):
 
         self.population = model.Population()  #: the population to simulate on
         #: The inputs of the soils.
@@ -261,6 +261,12 @@ class Simulation(object):
         self.initial_conditions = []  #: the initial conditions of the compartments in the population and soil
         self.initial_conditions_mapping = {}  #: dictionary to map the compartments to their indexes in :attr:`initial_conditions`
 
+        if isolated_roots:
+            self.initial_conditions_roots = []
+            self.initial_conditions_mapping_roots = {}
+            if not cnwgrass_roots:
+                self.first_initialization = True
+
         self.delta_t = delta_t  #: the delta t of the simulation (in seconds)
 
         self.time_step = self.delta_t / 3600.0  #: time step of the simulation (in hours)
@@ -268,6 +274,9 @@ class Simulation(object):
         self.time_grid = np.array([0.0, self.time_step])  #: the time grid of the simulation (in hours)
 
         self.interpolate_forcing = interpolate_forcing  #: a boolean flag which indicates if we want to interpolate or not the forcing (True: interpolate, False: do not interpolate)
+
+        self.isolated_roots = isolated_roots
+        self.cnwgrass_roots = cnwgrass_roots
 
         # set the loggers for compartments and derivatives
         compartments_logger = logging.getLogger('hydraulics.compartments')
@@ -365,6 +374,9 @@ class Simulation(object):
         self.soils.clear()
         del self.initial_conditions[:]
         self.initial_conditions_mapping.clear()
+        if self.isolated_roots:
+            del self.initial_conditions_roots[:]
+            self.initial_conditions_mapping_roots.clear()
 
         # create new population and soil
         self.population.plants.extend(population.plants)
@@ -480,10 +492,27 @@ class Simulation(object):
                     i += 1
             return i
 
-        i = 0
+        # initialize initial conditions roots
+        def _init_initial_conditions_roots(root_object, i):
+            compartments_names = Simulation.MODEL_COMPARTMENTS_NAMES[model.Organ]
+            self.initial_conditions_mapping_roots[root_object] = {}
+            for compartment_name in compartments_names:
+                if hasattr(root_object, compartment_name):
+                    self.initial_conditions_mapping_roots[root_object][compartment_name] = i
+                    self.initial_conditions_roots.append(0)
+                    i += 1
+            return i
 
-        for soil in soils.values():
-            i = _init_initial_conditions(soil, i)
+        i = 0
+        i_root = 0
+
+        # We initialize soil only if roots are present
+        if self.cnwgrass_roots:
+            for soil in soils.values():
+                if not self.isolated_roots:
+                    i = _init_initial_conditions(soil, i)
+                else:
+                    i_root = _init_initial_conditions_roots(soil, i_root)
 
         for plant in self.population.plants:
             i = _init_initial_conditions(plant, i)
@@ -492,7 +521,17 @@ class Simulation(object):
                 for organ in (axis.roots, axis.xylem):
                     if organ is None:
                         continue
-                    i = _init_initial_conditions(organ, i)
+                    elif organ == axis.roots and self.isolated_roots:
+                        if self.cnwgrass_roots:
+                            i_root = _init_initial_conditions_roots(organ, i_root)
+                        # If roots are not present, an initialization at each time step is not necessary
+                        else:
+                            if self.first_initialization:
+                                i_root = _init_initial_conditions_roots(organ, i_root)
+                                self.first_initialization = False
+
+                    else:
+                        i = _init_initial_conditions(organ, i)
                 for phytomer in axis.phytomers:
                     i = _init_initial_conditions(phytomer, i)
                     if phytomer.hiddenzone:
@@ -520,13 +559,24 @@ class Simulation(object):
             self._interpolate_forcing()
 
         self._update_initial_conditions()
+        if self.isolated_roots and self.cnwgrass_roots:
+            self._update_initial_conditions_roots()
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Run the solver with delta_t = %s", self.time_step)
 
         #: Call :func:`scipy.integrate.solve_ivp` to integrate the system over self.time_grid.
-        sol = solve_ivp(fun=self._calculate_all_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
-                        method='LSODA', t_eval=np.array([self.time_step]), dense_output=False)
+        if not self.isolated_roots:
+            sol = solve_ivp(fun=self._calculate_all_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
+                            method='LSODA', t_eval=np.array([self.time_step]), dense_output=False)
+        elif self.cnwgrass_roots:
+            sol = solve_ivp(fun=self._calculate_shoot_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
+                            method='LSODA', t_eval=np.array([self.time_step]), dense_output=False)
+            sol = solve_ivp(fun=self._calculate_root_derivatives, t_span=self.time_grid, y0=self.initial_conditions_roots,
+                            method='LSODA', t_eval=np.array([self.time_step]), dense_output=False)
+        else:
+            sol = solve_ivp(fun=self._calculate_shoot_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
+                            method='LSODA', t_eval=np.array([self.time_step]), dense_output=False)
 
         self.nfev_total += sol.nfev
 
@@ -553,6 +603,14 @@ class Simulation(object):
         for model_object, compartments in self.initial_conditions_mapping.items():
             for compartment_name, compartment_index in compartments.items():
                 self.initial_conditions[compartment_index] = getattr(model_object, compartment_name)
+
+    def _update_initial_conditions_roots(self):
+        """Update the compartments values in :attr:`initial_conditions` from the compartments values of :attr:`population` and :attr:`soils`.
+        """
+        # Update the compartments values
+        for model_object, compartments in self.initial_conditions_mapping_roots.items():
+            for compartment_name, compartment_index in compartments.items():
+                self.initial_conditions_roots[compartment_index] = getattr(model_object, compartment_name)
 
     def _interpolate_forcing(self):
         """Create functions to interpolate the forcing of the model to any time inside the time grid (see `self.time_grid`).

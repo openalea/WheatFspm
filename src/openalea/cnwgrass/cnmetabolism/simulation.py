@@ -671,29 +671,29 @@ class Simulation(object):
             sol = solve_ivp(fun=self._calculate_all_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
                             method='BDF', t_eval=np.array([self.time_step]), dense_output=False)
 
-            self.nfev_total += sol.nfev
-
-            # check the integration ; raise an exception if the integration failed
-            if not sol.success:
-                message = "Integration failed: {}".format(sol.message)
-                logger.exception(message)
-                raise SimulationRunError(message)
-
         elif self.cnwgrass_roots:
-            sol_shoot = solve_ivp(fun=self._calculate_shoot_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
+            sol = solve_ivp(fun=self._calculate_shoot_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
                             method='BDF', t_eval=None, dense_output=False)
             sol_root = solve_ivp(fun=self._calculate_root_derivatives, t_span=self.time_grid, y0=self.initial_conditions_roots,
                             method='BDF', t_eval=None, dense_output=False)
         
         else:
-            sol_shoot = solve_ivp(fun=self._calculate_shoot_derivatives, t_span=self.time_grid,
+            sol = solve_ivp(fun=self._calculate_shoot_derivatives, t_span=self.time_grid,
                                   y0=self.initial_conditions,
                                   method='BDF', t_eval=np.array([self.time_step]), dense_output=False,
                                 #   jac_sparsity=self._jac_sparsity_shoot,
                                   )
         
+        self.nfev_total += sol.nfev
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Run of the solver DONE")
+            
+        # check the integration ; raise an exception if the integration failed
+        if not sol.success:
+            message = "Integration failed: {}".format(sol.message)
+            logger.exception(message)
+            raise SimulationRunError(message)
 
         # Re-compute integrative variables
         self.population.calculate_aggregated_variables()
