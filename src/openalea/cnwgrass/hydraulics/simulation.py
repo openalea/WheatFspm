@@ -154,7 +154,7 @@ class Simulation(object):
     #: the fluxes exchanged between the compartments at organ scale
     ORGANS_FLUXES = []
     #: the variables computed by integrating values of xylem components parameters/variables recursively
-    ORGANS_INTEGRATIVE_VARIABLES = []
+    ORGANS_INTEGRATIVE_VARIABLES = ['water_outflux']
     #: all the variables computed during a run step of the simulation at organ scale
     ORGANS_RUN_VARIABLES = ORGANS_STATE + ORGANS_INTERMEDIATE_VARIABLES + ORGANS_FLUXES + ORGANS_INTEGRATIVE_VARIABLES
 
@@ -1027,6 +1027,384 @@ class Simulation(object):
 
         # compute the derivative of each compartment of soil
         y_derivatives[self.initial_conditions_mapping[soil]['water_content']] = soil.calculate_water_content_derivative(soil_water_outputs, soil.constant_water_content)
+
+
+        derivatives_logger = logging.getLogger('hydraulics.derivatives')
+        if logger.isEnabledFor(logging.DEBUG) and derivatives_logger.isEnabledFor(logging.DEBUG):
+            self._log_compartments(t_abs, y_derivatives, Simulation.LOGGERS_NAMES['derivatives'])
+
+        return y_derivatives
+
+
+    def _calculate_shoot_derivatives(self, t, y):
+        """Compute the derivative of `y` at `t`.
+        :meth:`_calculate_all_derivatives` is passed as **func** argument to
+        :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
+        :meth:`_calculate_all_derivatives` is called automatically by
+        :func:`scipy.integrate.solve_ivp <scipy.integrate.solve_ivp>`.
+
+        First call to :meth:`_calculate_all_derivatives` uses `y` = **y0** and
+        `t` = **t_span** [0], where **y0** and **t_span** are arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
+
+        Following calls to :meth:`_calculate_all_derivatives` use `t` in [**t_span** [0], **t_span** [1]].
+
+        :param float t: The current t at which we want to compute the derivatives.
+              Values of `t` are chosen automatically by :func:`scipy.integrate.solve_ivp`.
+              At first call to :meth:`_calculate_all_derivatives` by :func:`scipy.integrate.solve_ivp`
+              `t` = **t_span** [0], where **t_span** is one of the arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
+              For each following call to :meth:`_calculate_all_derivatives`, `t` belongs
+              to the interval [**t_span** [0], **t_span** [1]].
+        :param list y: The current values of y.
+              At first call to :meth:`_calculate_all_derivatives` by :func:`scipy.integrate.solve_ivp`, `y` = **y0**
+              where **y0** is one of the arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
+              Then, values of `y` are chosen automatically by :func:`scipy.integrate.solve_ivp`.
+
+        :return: The derivatives of `y` at `t`.
+        :rtype: list
+        """
+        logger = logging.getLogger(__name__)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            t_abs = t + self.t_offset
+            logger.debug('t = {}'.format(t_abs))
+
+        if self.interpolate_forcing:
+            # Update state parameters using interpolation functions
+            for plant in self.population.plants:
+                for axis in plant.axes:
+                    for phytomer in axis.phytomers:
+                        for organ in (phytomer.lamina, phytomer.sheath):
+                            if organ is None:
+                                continue
+                            for element in (organ.exposed_element, organ.enclosed_element):
+                                if element is not None:
+                                    element_id = (plant.index, axis.label, phytomer.index, organ.label, element.label)
+                                    for forcing_label in Simulation.ELEMENTS_FORCING:
+                                        setattr(element, forcing_label, float(self.interpolation_functions[element_id][forcing_label](t)))
+
+            # Compute integrative variables
+            self.population.calculate_aggregated_variables()
+
+        compartments_logger = logging.getLogger('hydraulics.compartments')
+        if logger.isEnabledFor(logging.DEBUG) and compartments_logger.isEnabledFor(logging.DEBUG):
+            self._log_compartments(t_abs, y, Simulation.LOGGERS_NAMES['compartments'])
+
+        # Check that the solver is not crashed
+        y_isnan = np.isnan(y)
+        if y_isnan.any():
+            message = 'The solver did not manage to compute a compartment. See the logs. NaN found in y'
+            logger.exception(message)
+            raise SimulationRunError(message)
+
+        y_derivatives = np.zeros_like(y)
+
+
+        #: Water flux with xylem and organs
+        for plant in self.population.plants:
+            for axis in plant.axes:
+                print("solver received", axis.xylem.water_potential)
+
+                for phytomer in axis.phytomers:
+                    # Hidden zone
+                    hiddenzone = phytomer.hiddenzone
+                    if hiddenzone is not None:
+                        hiddenzone.leaf_L = y[self.initial_conditions_mapping[hiddenzone]['leaf_L']]
+                        hiddenzone.thickness = y[self.initial_conditions_mapping[hiddenzone]['thickness']]
+                        hiddenzone.width = y[self.initial_conditions_mapping[hiddenzone]['width']]
+                        # Update of leaf_Lmax
+                        hiddenzone.leaf_Lmax = hiddenzone.leaf_L
+
+                        if hiddenzone.leaf_pseudo_age == 0:  #: First time after previous leaf emergence
+                            #: Width and thickness
+                            thickness_ratio = parameters.HIDDEN_ZONE_PARAMETERS.TL_ratio
+                            width_ratio = parameters.HIDDEN_ZONE_PARAMETERS.WL_ratio
+
+                            hiddenzone.width = hiddenzone.leaf_L * width_ratio
+                            hiddenzone.thickness = hiddenzone.leaf_L * thickness_ratio
+                            hiddenzone.leaf_Wmax = hiddenzone.width
+
+                            #: Volume & water content as function of dimensions
+                            hiddenzone.volume = hiddenzone.length * hiddenzone.width * hiddenzone.thickness
+                            hiddenzone.water_content = hiddenzone.volume * parameters.RHO_WATER
+                            #: Osmotic water potential
+                            hiddenzone.osmotic_water_potential = hiddenzone.calculate_osmotic_water_potential(hiddenzone.fructan, hiddenzone.sucrose, hiddenzone.amino_acids, hiddenzone.volume, axis.SAM_temperature)
+                            #: Total water potential
+                            hiddenzone.water_potential = axis.xylem.water_potential
+                            #: Turgor water potential
+                            hiddenzone.turgor_water_potential = hiddenzone.water_potential - hiddenzone.osmotic_water_potential
+                            #: Length
+                            hiddenzone.length = hiddenzone.calculate_hiddenzone_length(hiddenzone.leaf_L, hiddenzone.leaf_pseudostem_length)
+                        elif hiddenzone.leaf_pseudo_age > 0:    #: After previous leaf emergence
+                            #: Turgor water potential
+                            hiddenzone.turgor_water_potential = y[self.initial_conditions_mapping[hiddenzone]['turgor_water_potential']]
+                            #: Volume and water content
+                            hiddenzone.water_content = y[self.initial_conditions_mapping[hiddenzone]['water_content']]
+                            hiddenzone.volume = hiddenzone.calculate_volume(hiddenzone.water_content)
+                            #: Osmotic water potential
+                            hiddenzone.osmotic_water_potential = hiddenzone.calculate_osmotic_water_potential(hiddenzone.fructan, hiddenzone.sucrose, hiddenzone.amino_acids, hiddenzone.volume, axis.SAM_temperature)
+                            #: Total water potential
+                            hiddenzone.water_potential = hiddenzone.calculate_water_potential(hiddenzone.turgor_water_potential, hiddenzone.osmotic_water_potential)
+                            #: Length
+                            hiddenzone.length = hiddenzone.calculate_hiddenzone_length(hiddenzone.leaf_L, hiddenzone.leaf_pseudostem_length)
+                        else:   #: Before previous leaf emergence (calculation in morphogenesis)
+                            continue
+
+                        #: Resistance to water flow
+                        hiddenzone_dimensions = {'length': hiddenzone.length, 'thickness': hiddenzone.thickness, 'width': hiddenzone.width}
+                        hiddenzone.resistance = hiddenzone.calculate_resistance(hiddenzone_dimensions)
+                        #: Flows with xylem
+                        hiddenzone.water_influx = hiddenzone.calculate_water_flux(hiddenzone.water_potential, axis.xylem.water_potential, hiddenzone.resistance, self.delta_t)
+                        hiddenzone.water_outflow = 0    #: No water flow between hiddenzone and element
+
+
+                    # Photosynthetic Organ Elements
+                    # for organ in (phytomer.lamina, phytomer.internode, phytomer.sheath):
+                    for organ in (phytomer.lamina, phytomer.sheath):
+                        if organ is None:
+                            continue
+                        for element in (organ.exposed_element, organ.enclosed_element):
+                            if element is None:
+                                continue
+                            element.length = y[self.initial_conditions_mapping[element]['length']]
+                            element.width = y[self.initial_conditions_mapping[element]['width']]
+                            element.thickness = y[self.initial_conditions_mapping[element]['thickness']]
+                            element.organ_dimensions = {'length': element.length, 'width': element.width, 'thickness': element.thickness}
+
+                            if element.age == 0:    #: First time after element emergence
+                                #: Width and thickness of the hiddenzone
+                                if organ.label == "blade":
+                                    element.thickness = hiddenzone.thickness
+                                    element.width = hiddenzone.width
+
+                                #: Volume and water content as function of dimensions
+                                element.volume = element.calculate_organ_volume(element.organ_dimensions)
+                                element.water_content = element.volume * parameters.RHO_WATER
+                                # : Osmotic water potential
+                                element.osmotic_water_potential = element.calculate_osmotic_water_potential(element.sucrose, element.amino_acids, element.volume, element.temperature, element.fructan)
+                                #: Total water potential
+                                element.water_potential = axis.xylem.water_potential
+                                # : Turgor water potential
+                                element.turgor_water_potential = element.water_potential - element.osmotic_water_potential
+
+                                # Length of the HZ
+                                if hiddenzone is not None:
+                                    if organ.label == "blade":
+                                        hiddenzone.length = hiddenzone.length_hz_En
+
+                            elif element.age > 0:   #: Emerged element
+                                #: Water content
+                                element.water_content = y[self.initial_conditions_mapping[element]['water_content']]
+                                # : Volume
+                                element.volume = element.calculate_volume(element.water_content)
+                                # : Turgor water potential
+                                element.turgor_water_potential = y[self.initial_conditions_mapping[element]['turgor_water_potential']]
+                                #: Osmotic water potential
+                                element.osmotic_water_potential = element.calculate_osmotic_water_potential(element.sucrose, element.amino_acids, element.volume, element.temperature, element.fructan)
+                                #: Total water potential
+                                element.water_potential = element.calculate_water_potential(element.turgor_water_potential, element.osmotic_water_potential)
+
+                                # # Length of the HZ
+                                if hiddenzone is not None:
+                                    if organ.label == "blade":
+                                        hiddenzone.length = hiddenzone.length_hz_En
+
+                            #: Resistance to water flow
+                            element.resistance = element.calculate_resistance(element.organ_dimensions)
+                            #: Water fluxes with xylem
+                            element.water_influx = element.calculate_water_flux(element.water_potential, axis.xylem.water_potential, element.resistance, self.delta_t)
+
+
+        #: compute the derivative of each compartment of element
+        for plant in self.population.plants:
+            for axis in plant.axes:
+                for phytomer in axis.phytomers:
+                    # Hidden zone
+                    hiddenzone = phytomer.hiddenzone
+                    if hiddenzone is not None:
+                        #: Delta water content
+                        delta_water_content_hz = hiddenzone.calculate_delta_water_content(hiddenzone.water_influx, hiddenzone.water_outflow)
+                        #: Extensibility
+                        hiddenzone_delta_teq = hiddenzone.calculate_time_equivalent_Tref(axis.SAM_temperature, self.delta_t)
+                        phi = hiddenzone.calculate_extensibility_temperature(hiddenzone.leaf_pseudo_age, hiddenzone_delta_teq, self.delta_t)
+                        hiddenzone.phi_length = phi['z']  # extensibility for length
+                        hiddenzone.phi_width = phi['x']  # extensibility for length
+                        hiddenzone.phi_thickness = phi['y']  # extensibility for length
+                        hiddenzone.phi_volume = phi['x'] + phi['y'] + phi['z']  # volumetric extensibility
+                        #: Elasticity
+                        epsilon_x, epsilon_y, epsilon_z = hiddenzone.PARAMETERS.epsilon['x'], hiddenzone.PARAMETERS.epsilon['y'], hiddenzone.PARAMETERS.epsilon['z']
+                        hiddenzone.epsilon_volume = (epsilon_x * epsilon_y * epsilon_z) / (epsilon_z * epsilon_x + epsilon_z * epsilon_y + epsilon_x * epsilon_y)  #: Elastic reversible growth (MPa)
+
+                        if hiddenzone.leaf_pseudo_age > 0:  #: After previous leaf emergence
+                            #: Derivatives
+                            #: Delta turgor pressure
+                            delta_turgor_water_potential = hiddenzone.calculate_delta_turgor_water_potential(phi, hiddenzone.turgor_water_potential, hiddenzone.volume, delta_water_content_hz)
+                            #: Dimensions with plastic and elastic deformation
+                            hiddenzone_dimensions = {'length': hiddenzone.length, 'width': hiddenzone.width, 'thickness': hiddenzone.thickness}
+                            delta_hiddenzone_dimensions_plastic = hiddenzone.calculate_delta_organ_dimensions_plastic(hiddenzone.turgor_water_potential, phi, hiddenzone_dimensions)
+                            delta_hiddenzone_dimensions_elastic = hiddenzone.calculate_delta_organ_dimensions_elastic(delta_turgor_water_potential, hiddenzone_dimensions)
+
+                            # Saving into outputs
+                            hiddenzone.delta_hiddenzone_dimensions_plastic = delta_hiddenzone_dimensions_plastic['length'] * 1000
+
+                            if hiddenzone.leaf_L >= hiddenzone.leaf_pseudostem_length:  # Emerged blade
+                                # Growing leaf with emerged blade
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['water_content']] = 0     # Transfer of water content to emerged element
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['turgor_water_potential']] = delta_turgor_water_potential
+                                # Elastic deformation
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['width']] = delta_hiddenzone_dimensions_elastic['width']
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['thickness']] = delta_hiddenzone_dimensions_elastic['thickness']
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['leaf_L']] = delta_hiddenzone_dimensions_elastic['length']
+
+                            else:  # Enclosed blade
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['water_content']] = delta_water_content_hz
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['turgor_water_potential']] = delta_turgor_water_potential
+                                #  Plastic deformation
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['thickness']] = delta_hiddenzone_dimensions_elastic['thickness'] + delta_hiddenzone_dimensions_plastic['thickness']
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['leaf_L']] = delta_hiddenzone_dimensions_elastic['length'] + delta_hiddenzone_dimensions_plastic['length']
+                                y_derivatives[self.initial_conditions_mapping[hiddenzone]['width']] = delta_hiddenzone_dimensions_elastic['width'] + delta_hiddenzone_dimensions_plastic['width']
+                                hiddenzone.delta_leaf_L = y_derivatives[self.initial_conditions_mapping[hiddenzone]['leaf_L']]
+
+                            hiddenzone.leaf_Wmax += delta_hiddenzone_dimensions_plastic['width']
+                            hiddenzone.organ_volume = hiddenzone.calculate_organ_volume(hiddenzone_dimensions)
+                            hiddenzone.WC_mstruct = hiddenzone.water_content / (hiddenzone.water_content + hiddenzone.mstruct) * 100
+
+                        else:  #: Before previous leaf emergence
+                            continue
+
+
+                    # Photosynthetic Organ Elements
+                    # for organ in (phytomer.lamina, phytomer.internode, phytomer.sheath):
+                    for organ in (phytomer.lamina, phytomer.sheath):
+                        if organ is None:
+                            continue
+                        for element in (organ.exposed_element, organ.enclosed_element):
+                            if element is None:
+                                continue
+                            epsilon_x, epsilon_y, epsilon_z = element.PARAMETERS.epsilon['x'], element.PARAMETERS.epsilon['y'], element.PARAMETERS.epsilon['z']
+                            element.epsilon_volume = (epsilon_z * epsilon_x * epsilon_y) / (epsilon_z * epsilon_x + epsilon_z * epsilon_y + epsilon_x * epsilon_y)  #: Elastic reversible growth (MPa)
+                            element.organ_dimensions = {'length': element.length, 'width': element.width, 'thickness': element.thickness}
+                            #: Delta water content
+                            delta_water_content_ele = element.calculate_delta_water_content(element.water_influx, element.Total_Transpiration_turgor)
+                            #: Delta turgor pressure
+                            delta_turgor_water_potential = element.calculate_delta_turgor_water_potential(element.volume, delta_water_content_ele)
+                            #: Dimensions
+                            delta_element_dimensions = element.calculate_delta_organ_dimensions(delta_turgor_water_potential, element.organ_dimensions)
+                            #: Derivatives
+                            y_derivatives[self.initial_conditions_mapping[element]['turgor_water_potential']] = delta_turgor_water_potential
+
+                            if hiddenzone is not None:  # Growing leaf
+                                if element.is_growing == True:  # Growing element
+                                    y_derivatives[self.initial_conditions_mapping[element]['water_content']] = delta_water_content_ele + delta_water_content_hz  # Transfer of water content from hiddenzone
+                                    # Plastic deformation
+                                    y_derivatives[self.initial_conditions_mapping[hiddenzone]['leaf_L']] = delta_hiddenzone_dimensions_plastic['length'] + delta_element_dimensions['length']
+                                    y_derivatives[self.initial_conditions_mapping[element]['length']] = delta_hiddenzone_dimensions_plastic['length'] + delta_element_dimensions['length']
+                                    y_derivatives[self.initial_conditions_mapping[element]['width']] = delta_hiddenzone_dimensions_plastic['width'] + delta_element_dimensions['width']
+                                    y_derivatives[self.initial_conditions_mapping[element]['thickness']] = delta_hiddenzone_dimensions_plastic['thickness'] + delta_element_dimensions['thickness']
+                                    y_derivatives[self.initial_conditions_mapping[element]['length']] = delta_hiddenzone_dimensions_plastic['length'] + delta_element_dimensions['length']
+
+                                elif element.is_growing == False:   # End of leaf elongation
+                                    #: Derivatives
+                                    y_derivatives[self.initial_conditions_mapping[element]['water_content']] = delta_water_content_ele
+                                    # Elastic deformation
+                                    y_derivatives[self.initial_conditions_mapping[element]['length']] = delta_element_dimensions['length']
+                                    y_derivatives[self.initial_conditions_mapping[element]['width']] = delta_element_dimensions['width']
+                                    y_derivatives[self.initial_conditions_mapping[element]['thickness']] = delta_element_dimensions['thickness']
+                                    y_derivatives[self.initial_conditions_mapping[hiddenzone]['leaf_L']] = delta_element_dimensions['length']
+
+                                # if hiddenzone.leaf_is_growing == False:
+                                if hiddenzone.leaf_pseudo_age >= hiddenzone.PARAMETERS.tend:
+                                    # Length of HT at the end of elongation - UPDATE VICTORIA 07.01.25
+                                    hiddenzone.length = hiddenzone.calculate_hiddenzone_length(hiddenzone.leaf_L, hiddenzone.leaf_pseudostem_length)
+
+                            else:   # Mature leaf
+                                #: Derivatives
+                                y_derivatives[self.initial_conditions_mapping[element]['water_content']] = delta_water_content_ele
+                                # Elastic deformation
+                                y_derivatives[self.initial_conditions_mapping[element]['length']] = delta_element_dimensions['length']
+                                y_derivatives[self.initial_conditions_mapping[element]['width']] = delta_element_dimensions['width']
+                                y_derivatives[self.initial_conditions_mapping[element]['thickness']] = delta_element_dimensions['thickness']
+
+                            #: Dimensions volume of element
+                            element.organ_volume = element.calculate_organ_volume(element.organ_dimensions)
+                            element.WC_mstruct = element.water_content / (element.water_content + element.mstruct) * 100
+                
+                axis.xylem.water_outflux = axis.water_influx + axis.Growth # Mimic what is imposed to soil when roots are present
+
+        derivatives_logger = logging.getLogger('hydraulics.derivatives')
+        if logger.isEnabledFor(logging.DEBUG) and derivatives_logger.isEnabledFor(logging.DEBUG):
+            self._log_compartments(t_abs, y_derivatives, Simulation.LOGGERS_NAMES['derivatives'])
+
+        return y_derivatives
+
+
+    def _calculate_root_derivatives(self, t, y):
+        """Compute the derivative of `y` at `t`.
+        :meth:`_calculate_all_derivatives` is passed as **func** argument to
+        :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
+        :meth:`_calculate_all_derivatives` is called automatically by
+        :func:`scipy.integrate.solve_ivp <scipy.integrate.solve_ivp>`.
+
+        First call to :meth:`_calculate_all_derivatives` uses `y` = **y0** and
+        `t` = **t_span** [0], where **y0** and **t_span** are arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
+
+        Following calls to :meth:`_calculate_all_derivatives` use `t` in [**t_span** [0], **t_span** [1]].
+
+        :param float t: The current t at which we want to compute the derivatives.
+              Values of `t` are chosen automatically by :func:`scipy.integrate.solve_ivp`.
+              At first call to :meth:`_calculate_all_derivatives` by :func:`scipy.integrate.solve_ivp`
+              `t` = **t_span** [0], where **t_span** is one of the arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
+              For each following call to :meth:`_calculate_all_derivatives`, `t` belongs
+              to the interval [**t_span** [0], **t_span** [1]].
+        :param list y: The current values of y.
+              At first call to :meth:`_calculate_all_derivatives` by :func:`scipy.integrate.solve_ivp`, `y` = **y0**
+              where **y0** is one of the arguments passed to :func:`solve_ivp(fun, t_span, y0,...) <scipy.integrate.solve_ivp>`.
+              Then, values of `y` are chosen automatically by :func:`scipy.integrate.solve_ivp`.
+
+        :return: The derivatives of `y` at `t`.
+        :rtype: list
+        """
+        logger = logging.getLogger(__name__)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            t_abs = t + self.t_offset
+            logger.debug('t = {}'.format(t_abs))
+
+            # Compute integrative variables
+            self.population.calculate_aggregated_variables()
+
+        compartments_logger = logging.getLogger('hydraulics.compartments')
+        if logger.isEnabledFor(logging.DEBUG) and compartments_logger.isEnabledFor(logging.DEBUG):
+            self._log_compartments(t_abs, y, Simulation.LOGGERS_NAMES['compartments'])
+
+        # Check that the solver is not crashed
+        y_isnan = np.isnan(y)
+        if y_isnan.any():
+            message = 'The solver did not manage to compute a compartment. See the logs. NaN found in y'
+            logger.exception(message)
+            raise SimulationRunError(message)
+
+        y_derivatives = np.zeros_like(y)
+
+        # TODO: TEMP !!!!
+        soil_water_outputs = 0
+        soil = self.soils[(1, 'MS')]
+        soil.water_content = y[self.initial_conditions_mapping_roots[soil]['water_content']]
+        soil.SRWC = soil.calculate_SRWC(soil.water_content)
+        soil.water_potential = soil.calculate_water_potential(soil.SRWC)
+
+
+        #: Water flux with xylem and organs
+        for plant in self.population.plants:
+            for axis in plant.axes:
+                # Xylem
+                #: Total water potential
+                axis.xylem.water_potential = axis.xylem.calculate_xylem_water_potential(soil.water_potential, axis.water_influx, axis.Growth, self.delta_t)
+
+                # Store water used from soil for eahc axis
+                soil_water_outputs += (axis.water_influx + axis.Growth)
+
+        # compute the derivative of each compartment of soil
+        y_derivatives[self.initial_conditions_mapping_roots[soil]['water_content']] = soil.calculate_water_content_derivative(soil_water_outputs, soil.constant_water_content)
 
 
         derivatives_logger = logging.getLogger('hydraulics.derivatives')

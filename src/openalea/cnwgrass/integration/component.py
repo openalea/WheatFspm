@@ -48,22 +48,19 @@ class CNW_Grass(Model):
                                         variable_type="input", by="root_nitrogen", state_variable_type="extensive", edit_by="user")
     Unloading_Amino_Acids_phloem: float = declare(default=0.1, unit="umol.h-1", unit_comment="of N",
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
-                                        variable_type="input", by="root_nitrogen", state_variable_type="extensive", edit_by="user")
-    sucrose_phloem_outside_solve: float = declare(default=10., unit="µmol of C", unit_comment="amount in equivalent C",
-                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
-                                        variable_type="input", by="root_carbon", state_variable_type="extensive", edit_by="user")
-    amino_acids_phloem_outside_solve: float = declare(default=1., unit="µmol of N", unit_comment="amount in equivalent N",
-                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
-                                        variable_type="input", by="root_nitrogen", state_variable_type="extensive", edit_by="user")                         
+                                        variable_type="input", by="root_nitrogen", state_variable_type="extensive", edit_by="user")                      
     cytokinins: float = declare(default=0., unit="AU", unit_comment="",
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="input", by="root_nitrogen", state_variable_type="extensive", edit_by="user")
     mstruct: float = declare(default=0., unit="g", unit_comment="", 
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="input", by="root_carbon", state_variable_type="extensive", edit_by="user")
+    xylem_water_potential_collar: float = declare(default=-0.05, unit="MPa", unit_comment="", 
+                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
+                                        variable_type="input", by="root_water", state_variable_type="extensive", edit_by="user")
 
     # State variables condidered as outputs to bellowground models
-    Total_Transpiration: float = declare(default=0., unit="mmol.s-1", unit_comment="of water", 
+    water_outflux: float = declare(default=0., unit="g.time_step-1", unit_comment="of water", 
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="state_variable", by="model_shoot", state_variable_type="extensive", edit_by="user")
     mstruct_axis: float = declare(default=0.05, unit="g", unit_comment="of axis structural mass", 
@@ -440,15 +437,11 @@ class CNW_Grass(Model):
         
         self.cnw_grass_root_props = self.g.get_vertex_property(2)["roots"]
 
-        # TODO GB : Temporary
+        # TODO GB : Temporary inputs initialization at Component's prescribed value
         self.cnw_grass_root_props["Unloading_Sucrose"] = self.props["Unloading_Sucrose"][1]
         self.cnw_grass_root_props["Unloading_Amino_Acids"] = self.props["Unloading_Amino_Acids"][1]
-        self.g.properties()["Total_Transpiration"][2] = self.props["Total_Transpiration"][1]
+        self.g.get_vertex_property(2)['xylem']['water_potential'] = self.props["xylem_water_potential_collar"][1]
 
-        self.g.get_vertex_property(2)['phloem']['sucrose'] = self.props["sucrose_phloem"][1]
-        self.g.get_vertex_property(2)['phloem']['amino_acids'] = self.props["amino_acids_phloem"][1]
-
-        
         if self.synchronize_adventitious_emergence:
             # Specific initialization for already emerged leaves at the begining of the simulation
             self.main_stem_vid = [v for v in self.g.vertices(scale=2) if "MS" in str(self.g.node(v).label)][0]
@@ -477,9 +470,12 @@ class CNW_Grass(Model):
             
             self.props["adventitious_to_emerge"].update({1: nodal_emergence_delays})
 
-        # TODO GB Temporary while an initialization bug for shared mtg is still present
+        # TODO GB Temporary initialization of model's outputs with component's prescribed values
+        self.g.get_vertex_property(2)['phloem']['sucrose'] = self.props["sucrose_phloem"][1]
+        self.g.get_vertex_property(2)['phloem']['amino_acids'] = self.props["amino_acids_phloem"][1]
         self.g.get_vertex_property(2)['phloem']['Unloading_Sucrose_shoot_organs'] = 30.
         self.g.get_vertex_property(2)['phloem']['Unloading_Amino_Acids_shoot_organs'] = 1.
+        self.g.get_vertex_property(2)['xylem']['water_outflux'] = 0.
 
         self.sync_shoot_outputs_with_root_mtg()
         
@@ -491,6 +487,11 @@ class CNW_Grass(Model):
 
             elif name == "Unloading_Amino_Acids_phloem":
                 self.cnw_grass_root_props["Unloading_Amino_Acids"] = self.props[name][1] / self.props['mstruct'][1]
+
+            elif name == 'xylem_water_potential_collar':
+                self.g.get_vertex_property(2)['xylem']['water_potential'] = self.props[name][1]
+                print("received value", self.g.get_vertex_property(2)['xylem']['water_potential'])
+
             else:
                 self.cnw_grass_root_props[name] = self.props[name][1]
 
@@ -498,8 +499,8 @@ class CNW_Grass(Model):
         # Link this specific data structure to self for variables exchange, only for outputs that will be read by other models  here.
         # Note : here eval is necessary to ensure intended lambda function definition
         for name in self.state_variables:
-            if name == "Total_Transpiration":
-                self.props[name].update({1: self.g.get_vertex_property(2)[name]})
+            if name == "water_outflux":
+                self.props[name].update({1: self.g.get_vertex_property(2)['xylem']['water_outflux']})
 
             elif name == "mstruct_axis":
                 self.props[name].update({1: self.g.get_vertex_property(2)['mstruct']})

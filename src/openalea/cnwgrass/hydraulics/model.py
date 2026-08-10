@@ -164,7 +164,7 @@ class Phytomer:
         self.hiddenzone = hiddenzone  #: the hidden zone
         if cohorts is None:
             cohorts = []
-        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
+        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait ï¿½tre portï¿½ ï¿½ l'ï¿½chelle de la plante uniquement mais je ne vois pas comment faire mieux
         self.cohorts_replications = cohorts_replications  #: dictionary of number of replications per cohort rank
 
         # integrative variables
@@ -260,7 +260,7 @@ class Xylem(Organ):
 
         :param float soil_water_potential: MPa
         :param float total_water_influx: g H2O
-        :param float Growth: g H2O
+        :param float Growth: g H2O  
         :param float delta_t: time step of the simulation (s)
 
         :return: Total water potential (MPa)
@@ -292,7 +292,7 @@ class HiddenZone(Organ):
 
         if cohorts is None:
             cohorts = []
-        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
+        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait ï¿½tre portï¿½ ï¿½ l'ï¿½chelle de la plante uniquement mais je ne vois pas comment faire mieux
         self.cohorts_replications = cohorts_replications  #: dictionary of number of replications per cohort rank
         self.index = index
         self.label = label
@@ -302,12 +302,12 @@ class HiddenZone(Organ):
         self.amino_acids = amino_acids           #: :math:`:math:`\\mu mol N``
         self.proteins = proteins                 #: :math:`:math:`\\mu mol N``
         self.sucrose = sucrose                   #: :math:`:math:`\\mu mol C``
-        self.leaf_pseudo_age = leaf_pseudo_age   #: °Cd
+        self.leaf_pseudo_age = leaf_pseudo_age   #: ï¿½Cd
         self.leaf_L = leaf_L                     #: m
         self.leaf_is_growing = leaf_is_growing   #: -
         self.mstruct = mstruct                   #: g
         self.leaf_enclosed_mstruct = leaf_enclosed_mstruct                   #: g
-        self.hiddenzone_age = hiddenzone_age                          #: °Cd
+        self.hiddenzone_age = hiddenzone_age                          #: ï¿½Cd
         self.length = min(leaf_L, leaf_pseudostem_length)       #: m
         self.leaf_pseudostem_length = leaf_pseudostem_length    #: m
         self.lamina_Lmax = lamina_Lmax  #: m
@@ -377,11 +377,11 @@ class HiddenZone(Organ):
     def calculate_osmotic_water_potential(fructan, sucrose, amino_acids, volume, temperature):
         """ Osmotic water potential of the organ calculated according to metabolites
 
-        :param float fructan: µmol C under the form of fructan
-        :param float sucrose: µmol C under the form of sucrose
-        :param float amino_acids: µmol N under the form of amino acids
+        :param float fructan: ï¿½mol C under the form of fructan
+        :param float sucrose: ï¿½mol C under the form of sucrose
+        :param float amino_acids: ï¿½mol N under the form of amino acids
         :param float volume: (g H2O)
-        :param float temperature: hidden zone temperature, approximated by SAM temperature (°C)
+        :param float temperature: hidden zone temperature, approximated by SAM temperature (ï¿½C)
 
         :return: Osmotic water potential (MPa)
         :rtype: float
@@ -514,7 +514,7 @@ class HiddenZone(Organ):
         From Coussement et al. (2018)
         With temperature effect on leaf_pseudo_age and on maximum extensibility.
 
-        :param float age: hidden zone age (°Cd)
+        :param float age: hidden zone age (ï¿½Cd)
         :param float delta_teq: temperature-compensated time (s)
         :param float delta_t: time step of the simulation (s)
 
@@ -720,14 +720,14 @@ class PhotosyntheticOrganElement:
 
         self.label = label                                      #: the label of the element
         self.index = index
-        if cohorts is None:  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
+        if cohorts is None:  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait ï¿½tre portï¿½ ï¿½ l'ï¿½chelle de la plante uniquement mais je ne vois pas comment faire mieux
             cohorts = []
-        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
+        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait ï¿½tre portï¿½ ï¿½ l'ï¿½chelle de la plante uniquement mais je ne vois pas comment faire mieux
         self.cohorts_replications = cohorts_replications  #: dictionary of number of replications per cohort rank
 
         # state parameters
         self.is_growing = is_growing                            #: -
-        self.age = age                                          #: °Cd
+        self.age = age                                          #: ï¿½Cd
         self.Wmax = Wmax                                        #: m
         self.amino_acids = amino_acids                          #: :math:`:math:`\\mu mol N``
         self.green_area = green_area                            #: m2
@@ -735,8 +735,8 @@ class PhotosyntheticOrganElement:
         self.proteins = proteins                                #: :math:`:math:`\\mu mol N``
         self.sucrose = sucrose                                  #: :math:`:math:`\\mu mol C``
         self.fructan = fructan                                  #: :math:`:math:`\\mu mol C``
-        self.Ts = Ts                                            #: °C
-        self.temperature = temperature                          #: °C
+        self.Ts = Ts                                            #: ï¿½C
+        self.temperature = temperature                          #: ï¿½C
         self.Tr = Tr                                            #: mmol H20 m-2 s-1
         self.thickness = thickness                              #: m
         self.width = width                                      #: m
@@ -845,11 +845,11 @@ class PhotosyntheticOrganElement:
     def calculate_osmotic_water_potential(sucrose, amino_acids, volume, temperature, fructan):
         """ Osmotic water potential of the hiddenzone calculated according to metabolites
 
-        :param float sucrose: µmol C under the form of sucrose
-        :param float amino_acids: µmol N under the form of amino acids
+        :param float sucrose: ï¿½mol C under the form of sucrose
+        :param float amino_acids: ï¿½mol N under the form of amino acids
         :param float volume: (m3)
-        :param float temperature: air temperature (°C)
-        :param float fructan: µmol C under the form of fructan
+        :param float temperature: air temperature (ï¿½C)
+        :param float fructan: ï¿½mol C under the form of fructan
 
         :return: Osmotic water potential (MPa)
         :rtype: float
