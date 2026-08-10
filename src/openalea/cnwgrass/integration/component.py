@@ -111,7 +111,64 @@ class CNW_Grass(Model):
                  hydraulics = False, stomatal_model_name='BWB', drought_trigger=None, rehydration_scenario=None, optimal_growth_option=False, option_static = False, 
                  isolated_roots = False, cnwgrass_roots = True, UPDATE_SHARED_DF=False, START_TIME = 0,
                  CARIBU_TIMESTEP = 4, MORPHOGENESIS_TIMESTEP = 1, GROWTH_TIMESTEP = 1, CNMETABOLISM_TIMESTEP = 1, SENESCENCE_TIMESTEP = 1, HYDRAULICS_TIMESTEP = 1):
-        
+        """
+        :param openalea.mtg.mtg.MTG root_mtg: the MTG of the belowground root model this shoot component is coupled to (e.g. Root-BRIDGES). Its vertex-1 properties are the channel through which the two models
+                                            exchange state at each time step: this component reads them as its declared ``input`` variables (``Export_Nitrates``, ``Export_Amino_Acids``, ``Unloading_Sucrose_phloem``,
+                                            ``Unloading_Amino_Acids_phloem``, ``cytokinins``, ``mstruct``, ``xylem_water_potential_collar``) and writes back its declared ``state_variable`` outputs
+                                            (``water_outflux``, ``mstruct_axis``, ``sucrose_phloem``, ``amino_acids_phloem``, ``Unloading_Sucrose``, ``Unloading_Amino_Acids``,
+                                            ``Unloading_Sucrose_shoot_organs``, ``Unloading_Amino_Acids_shoot_organs``, ``Export_cytokinins``, ``adventitious_to_emerge``).
+        :param pandas.DataFrame meteo: hourly meteorological forcing, indexed by time step ``t`` (hours), with at least the columns ``PARi``, ``DOY``, ``hour``, ``air_temperature``, ``ambient_CO2``, ``humidity``,
+                                            ``Wind`` and ``soil_temperature``.
+        :param dict [str, pandas.DataFrame] inputs_dataframes: the initial-state dataframes of the shoot model, keyed by the corresponding ``*_INITIAL_STATE_FILENAME`` argument
+                                            (one entry each for hiddenzones, elements, axes, organs and soils). Typically built by :func:`scenario_utility`.
+        :param str HIDDENZONES_INITIAL_STATE_FILENAME: key of `inputs_dataframes` holding the initial state of the hiddenzones (growing leaf/internode bases).
+        :param str ELEMENTS_INITIAL_STATE_FILENAME: key of `inputs_dataframes` holding the initial state of the photosynthetic and non-photosynthetic organ elements.
+        :param str AXES_INITIAL_STATE_FILENAME: key of `inputs_dataframes` holding the initial state at axis scale.
+        :param dict or None update_parameters_all_models: a dict to override default model parameters, keyed by sub-model name
+                                            {'cnmetabolism': {'organ1': {'param1': 'val1', 'param2': 'val2'}, 'organ2': {...}}, 'morphogenesis': {'param1': 'val1', ...}, ...}.
+        :param dict or None step_callback: a dict of functions used to force some external inputs that are natively computed by the model, keyed by function name. Recognised keys are
+                                            ``'ADEL_mtg'`` (called as ``step_callback['ADEL_mtg'](adel_wheat, INPUTS_DIRPATH, nff)`` to build the initial MTG instead of loading a serialised one)
+                                            and ``'nitrate_uptake'`` (called at each time step as ``step_callback['nitrate_uptake'](t, population, g)`` when `external_soil_model` is True).
+        :param int HOUR_TO_SECOND_CONVERSION_FACTOR: number of seconds in one hour, used to convert the `*_TIMESTEP` arguments (in hours) into a `delta_t` in seconds for each facade.
+        :param str ORGANS_INITIAL_STATE_FILENAME: key of `inputs_dataframes` holding the initial state of the non-photosynthetic organs (roots, grains, ...).
+        :param str SOILS_INITIAL_STATE_FILENAME: key of `inputs_dataframes` holding the initial state at soil scale.
+        :param str INPUTS_DIRPATH: path of the directory containing the model inputs (serialised ADEL-Wheat scene/MTG, ``phytoT.csv``, ...).
+        :param bool single_plant: if True, build a single isolated plant with :class:`AdelDyn` instead of a stand generated from `plant_density` and `inter_row`.
+        :param dict [int, float] plant_density: the density of plants (plants.m-2), one key per plant id.
+        :param float inter_row: the inter-row distance (m), used to build the canopy stand when `single_plant` is False.
+        :param float sowing_depth: the sowing depth (m, stored as `self.Zsowing`), used in the perceived-temperature computation of the morphogenesis model.
+        :param dict or None N_fertilizations: nitrogen fertilization events applied to the soil nitrate pool. Either {time_step_in_hours: amount of nitrates added (umol) at that hour, ...},
+                                            or {'constant_Conc_Nitrates': value} to force a constant soil nitrate concentration instead of punctual additions. Only used if `cnwgrass_roots` is True.
+        :param dict [str, float] or None tillers_replications: a dictionary with tiller id as key, and weight of replication as value, used to scale up CN-Metabolism fluxes for unreplicated tillers.
+        :param str or list or None stored_times: time steps at which the model outputs are stored. Either 'all', a list of time steps (hours), or an empty list.
+        :param bool computing_light_interception: whether to run the Caribu facade to compute light interception; if False, organs keep whatever `PARa`/`Erel` they were initialised with.
+        :param bool external_soil_model: whether an external soil model is coupled to cnmetabolism. If True, cnmetabolism will skip its own soil calculations and expect root N uptake to be forced
+                                            through the `step_callback['nitrate_uptake']` function.
+        :param bool heterogeneous_canopy: whether to create a duplicated heterogeneous canopy from the initial MTG (passed to the Caribu facade at each run).
+        :param bool show_3Dplant: whether to plot the 3D scene with PlantGL after each geometry update.
+        :param bool hydraulics: if True, couple the model to the turgor-driven hydraulics model (xylem water potentials and turgor-driven growth); also enables the 'Tuzet' and 'hydraulics' stomatal
+                                            conductance models.
+        :param str stomatal_model_name: the model of stomatal conductance. Should be one of 'BWB', 'Leuning', 'Tuzet' or 'hydraulics'. 'Tuzet' and 'hydraulics' require `hydraulics` to be True.
+        :param dict or None drought_trigger: a dict to define an external drought-control scenario, {'trigger_variable': value}. For now only implemented for the 'green_area' variable
+                                            (value = total green area below which the drought is triggered). Only used if `hydraulics` and `cnwgrass_roots` are True.
+        :param dict or None rehydration_scenario: a dict to specify the rehydration scenario following a drought event,
+                                            {'stop_drought_SRWC': SRWC at which the drought event stops (%), 'SRWC_target': target SRWC for rehydration (%), 'rehydration_duration': duration of the
+                                            rehydration period (days)}. Only used if `hydraulics` and `cnwgrass_roots` are True.
+        :param bool optimal_growth_option: if True, the morphogenesis model assumes optimal growth conditions instead of metabolism-limited growth.
+        :param bool option_static: whether the model should be run on a static plant architecture (no new organ initiation from morphogenesis).
+        :param bool isolated_roots: if True, the root/xylem compartments are integrated by the ODE solvers separately from the shoot compartments, so that roots can be driven by another,
+                                            independently-stepped model. Forced to True whenever `cnwgrass_roots` is False.
+        :param bool cnwgrass_roots: whether the CNW-Grass root model is used to represent the roots and soil. Set to False when roots and soil are entirely delegated to a coupled belowground
+                                            model (e.g. Root-BRIDGES via `root_mtg`), in which case `isolated_roots` is forced to True.
+        :param bool UPDATE_SHARED_DF: if True, update the shared inputs/outputs dataframes of every facade at init and after each run; otherwise they are only filled when outputs are stored.
+        :param int START_TIME: the first time step of the simulation (hours), used to initialise `self.time_step_in_hours` and, when resuming from previous outputs, as the first index read from `meteo`.
+        :param int CARIBU_TIMESTEP: number of hours between two calls to the Caribu light-interception facade.
+        :param int MORPHOGENESIS_TIMESTEP: number of hours between two calls to the morphogenesis facade.
+        :param int GROWTH_TIMESTEP: number of hours between two calls to the growth facade.
+        :param int CNMETABOLISM_TIMESTEP: number of hours between two calls to the CN-metabolism facade.
+        :param int SENESCENCE_TIMESTEP: number of hours between two calls to the senescence facade; also used as the increment of `self.time_step_in_hours` at the end of each `__call__`.
+        :param int HYDRAULICS_TIMESTEP: number of hours between two calls to the hydraulics facade (used only if `hydraulics` is True).
+        """
         # SELF STORAGE FOR LOOP PARAMETERS
         self.meteo = meteo
 
