@@ -1102,8 +1102,6 @@ class Simulation(object):
         #: Water flux with xylem and organs
         for plant in self.population.plants:
             for axis in plant.axes:
-                print("solver received", axis.xylem.water_potential)
-
                 for phytomer in axis.phytomers:
                     # Hidden zone
                     hiddenzone = phytomer.hiddenzone

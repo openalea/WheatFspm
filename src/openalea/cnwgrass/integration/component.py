@@ -490,7 +490,6 @@ class CNW_Grass(Model):
 
             elif name == 'xylem_water_potential_collar':
                 self.g.get_vertex_property(2)['xylem']['water_potential'] = self.props[name][1]
-                print("received value", self.g.get_vertex_property(2)['xylem']['water_potential'])
 
             else:
                 self.cnw_grass_root_props[name] = self.props[name][1]

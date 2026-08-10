@@ -117,6 +117,8 @@ class hydraulicsFacade(object):
                                            hydraulics_organs_data_df=model_organs_inputs_df,
                                            hydraulics_soils_data_df=model_soils_inputs_df)
 
+        self.isolated_roots = isolated_roots
+
     def run(self, update_shared_df=False):
 
         """
@@ -229,7 +231,10 @@ class hydraulicsFacade(object):
                     mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
                     if mtg_organ_label in mtg_axis_properties:
                         mtg_organ_properties = mtg_axis_properties[mtg_organ_label]
-                        hydraulics_organ_data_names = set(hydraulics_simulation.Simulation.ORGANS_STATE).intersection(hydraulics_organ.__dict__)
+                        access_mtg_names = hydraulics_simulation.Simulation.ORGANS_STATE
+                        if hydraulics_organ_class == hydraulics_model.Xylem and self.isolated_roots:
+                            access_mtg_names += ["water_potential"]
+                        hydraulics_organ_data_names = set(access_mtg_names).intersection(hydraulics_organ.__dict__)
                         if set(mtg_organ_properties).issuperset(hydraulics_organ_data_names):
                             hydraulics_organ_data_dict = {}
                             for hydraulics_organ_data_name in hydraulics_organ_data_names:
