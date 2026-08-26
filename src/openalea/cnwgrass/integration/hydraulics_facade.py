@@ -233,7 +233,7 @@ class hydraulicsFacade(object):
                         mtg_organ_properties = mtg_axis_properties[mtg_organ_label]
                         access_mtg_names = hydraulics_simulation.Simulation.ORGANS_STATE
                         if hydraulics_organ_class == hydraulics_model.Xylem and self.isolated_roots:
-                            access_mtg_names += ["water_potential"]
+                            access_mtg_names += ['water_potential', 'root_xylem_water_potential', 'shoot_root_xylem_conductance']
                         hydraulics_organ_data_names = set(access_mtg_names).intersection(hydraulics_organ.__dict__)
                         if set(mtg_organ_properties).issuperset(hydraulics_organ_data_names):
                             hydraulics_organ_data_dict = {}

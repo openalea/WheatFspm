@@ -248,6 +248,8 @@ class Xylem(Organ):
 
         # state parameters
         self.water_potential = water_potential    #: MPa
+        self.root_xylem_water_potential = water_potential    #: MPa first initialized for 0 gradient
+        self.shoot_root_xylem_conductance = 1e-2   # g.MPa-1.s-1
 
         # integrative variables
         self.delta_t = 3600     #: the delta t of the simulation (in seconds)

@@ -55,12 +55,15 @@ class CNW_Grass(Model):
     mstruct: float = declare(default=0., unit="g", unit_comment="", 
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="input", by="root_carbon", state_variable_type="extensive", edit_by="user")
-    xylem_water_potential_collar: float = declare(default=-0.05, unit="MPa", unit_comment="", 
+    root_xylem_water_potential: float = declare(default=-0.1, unit="MPa", unit_comment="",
+                                        min_value="", max_value="", description="", value_comment="", references="", DOI="",
+                                        variable_type="input", by="root_water", state_variable_type="extensive", edit_by="user")
+    shoot_root_xylem_conductance: float = declare(default=1e-2, unit="g.MPa-1.s-1", unit_comment="of water",
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="input", by="root_water", state_variable_type="extensive", edit_by="user")
 
     # State variables condidered as outputs to bellowground models
-    water_outflux: float = declare(default=0., unit="g.time_step-1", unit_comment="of water", 
+    xylem_water_potential: float = declare(default=-0.1, unit="MPa", unit_comment="",
                                         min_value="", max_value="", description="", value_comment="", references="", DOI="",
                                         variable_type="state_variable", by="model_shoot", state_variable_type="extensive", edit_by="user")
     mstruct_axis: float = declare(default=0.05, unit="g", unit_comment="of axis structural mass", 
@@ -114,7 +117,7 @@ class CNW_Grass(Model):
         """
         :param openalea.mtg.mtg.MTG root_mtg: the MTG of the belowground root model this shoot component is coupled to (e.g. Root-BRIDGES). Its vertex-1 properties are the channel through which the two models
                                             exchange state at each time step: this component reads them as its declared ``input`` variables (``Export_Nitrates``, ``Export_Amino_Acids``, ``Unloading_Sucrose_phloem``,
-                                            ``Unloading_Amino_Acids_phloem``, ``cytokinins``, ``mstruct``, ``xylem_water_potential_collar``) and writes back its declared ``state_variable`` outputs
+                                            ``Unloading_Amino_Acids_phloem``, ``cytokinins``, ``mstruct``, ``xylem_water_potential``) and writes back its declared ``state_variable`` outputs
                                             (``water_outflux``, ``mstruct_axis``, ``sucrose_phloem``, ``amino_acids_phloem``, ``Unloading_Sucrose``, ``Unloading_Amino_Acids``,
                                             ``Unloading_Sucrose_shoot_organs``, ``Unloading_Amino_Acids_shoot_organs``, ``Export_cytokinins``, ``adventitious_to_emerge``).
         :param pandas.DataFrame meteo: hourly meteorological forcing, indexed by time step ``t`` (hours), with at least the columns ``PARi``, ``DOY``, ``hour``, ``air_temperature``, ``ambient_CO2``, ``humidity``,
@@ -497,7 +500,8 @@ class CNW_Grass(Model):
         # TODO GB : Temporary inputs initialization at Component's prescribed value
         self.cnw_grass_root_props["Unloading_Sucrose"] = self.props["Unloading_Sucrose"][1]
         self.cnw_grass_root_props["Unloading_Amino_Acids"] = self.props["Unloading_Amino_Acids"][1]
-        self.g.get_vertex_property(2)['xylem']['water_potential'] = self.props["xylem_water_potential_collar"][1]
+        self.g.get_vertex_property(2)['xylem']['root_xylem_water_potential'] = self.props["root_xylem_water_potential"][1]
+        self.g.get_vertex_property(2)['xylem']['shoot_root_xylem_conductance'] = self.props["shoot_root_xylem_conductance"][1]
 
         if self.synchronize_adventitious_emergence:
             # Specific initialization for already emerged leaves at the begining of the simulation
@@ -532,7 +536,7 @@ class CNW_Grass(Model):
         self.g.get_vertex_property(2)['phloem']['amino_acids'] = self.props["amino_acids_phloem"][1]
         self.g.get_vertex_property(2)['phloem']['Unloading_Sucrose_shoot_organs'] = 30.
         self.g.get_vertex_property(2)['phloem']['Unloading_Amino_Acids_shoot_organs'] = 1.
-        self.g.get_vertex_property(2)['xylem']['water_outflux'] = 0.
+        self.g.get_vertex_property(2)['xylem']['water_potential'] = self.props["xylem_water_potential"][1]
 
         self.sync_shoot_outputs_with_root_mtg()
         
@@ -541,12 +545,14 @@ class CNW_Grass(Model):
         for name in self.inputs:
             if name == "Unloading_Sucrose_phloem":
                 self.cnw_grass_root_props["Unloading_Sucrose"] = self.props[name][1] / self.props['mstruct'][1]
+                # print(self.cnw_grass_root_props["Unloading_Sucrose"])
 
             elif name == "Unloading_Amino_Acids_phloem":
                 self.cnw_grass_root_props["Unloading_Amino_Acids"] = self.props[name][1] / self.props['mstruct'][1]
 
-            elif name == 'xylem_water_potential_collar':
-                self.g.get_vertex_property(2)['xylem']['water_potential'] = self.props[name][1]
+            elif name in ('root_xylem_water_potential', 'shoot_root_xylem_conductance'):
+                self.g.get_vertex_property(2)['xylem'][name] = self.props[name][1]
+                # print("received", name, self.g.get_vertex_property(2)['xylem'][name])
 
             else:
                 self.cnw_grass_root_props[name] = self.props[name][1]
@@ -555,8 +561,9 @@ class CNW_Grass(Model):
         # Link this specific data structure to self for variables exchange, only for outputs that will be read by other models  here.
         # Note : here eval is necessary to ensure intended lambda function definition
         for name in self.state_variables:
-            if name == "water_outflux":
-                self.props[name].update({1: self.g.get_vertex_property(2)['xylem']['water_outflux']})
+            if name == "xylem_water_potential":
+                self.props[name].update({1: self.g.get_vertex_property(2)['xylem']['water_potential']})
+                # print("sent potential", self.props[name][1])
 
             elif name == "mstruct_axis":
                 self.props[name].update({1: self.g.get_vertex_property(2)['mstruct']})

@@ -150,11 +150,11 @@ class Simulation(object):
     #: of the compartments associated to each organ (see :attr:`MODEL_COMPARTMENTS_NAMES`)
     ORGANS_STATE = ORGANS_STATE_PARAMETERS + MODEL_COMPARTMENTS_NAMES.get(model.Organ, [])
     #: the variables that we need to compute in order to compute fluxes and/or compartments values at organ scale
-    ORGANS_INTERMEDIATE_VARIABLES = ['water_potential']
+    ORGANS_INTERMEDIATE_VARIABLES = ['water_potential', 'root_xylem_water_potential', 'shoot_root_xylem_conductance']
     #: the fluxes exchanged between the compartments at organ scale
     ORGANS_FLUXES = []
     #: the variables computed by integrating values of xylem components parameters/variables recursively
-    ORGANS_INTEGRATIVE_VARIABLES = ['water_outflux']
+    ORGANS_INTEGRATIVE_VARIABLES = []
     #: all the variables computed during a run step of the simulation at organ scale
     ORGANS_RUN_VARIABLES = ORGANS_STATE + ORGANS_INTERMEDIATE_VARIABLES + ORGANS_FLUXES + ORGANS_INTEGRATIVE_VARIABLES
 
@@ -577,6 +577,12 @@ class Simulation(object):
         else:
             sol = solve_ivp(fun=self._calculate_shoot_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
                             method='LSODA', t_eval=np.array([self.time_step]), dense_output=False)
+            for plant in self.population.plants:
+                for axis in plant.axes:
+                    axis.xylem.water_potential = (axis.xylem.shoot_root_xylem_conductance * axis.xylem.root_xylem_water_potential
+                                                  + self.sum_organs_kr_psi) / (
+                                                    axis.xylem.shoot_root_xylem_conductance + self.sum_organs_kr)
+                    print("result", axis.xylem.root_xylem_water_potential, axis.xylem.shoot_root_xylem_conductance, axis.xylem.water_potential, self.sum_organs_kr, self.sum_organs_kr_psi / self.sum_organs_kr)
 
         self.nfev_total += sol.nfev
 
@@ -1098,6 +1104,8 @@ class Simulation(object):
 
         y_derivatives = np.zeros_like(y)
 
+        sum_organs_kr = 0.
+        sum_organs_kr_psi = 0.
 
         #: Water flux with xylem and organs
         for plant in self.population.plants:
@@ -1154,6 +1162,9 @@ class Simulation(object):
                         hiddenzone.water_influx = hiddenzone.calculate_water_flux(hiddenzone.water_potential, axis.xylem.water_potential, hiddenzone.resistance, self.delta_t)
                         hiddenzone.water_outflow = 0    #: No water flow between hiddenzone and element
 
+                        # Positionned here to capture the last computation of the last loop
+                        sum_organs_kr += hiddenzone.nb_replications / hiddenzone.resistance
+                        sum_organs_kr_psi += hiddenzone.nb_replications * hiddenzone.water_potential / hiddenzone.resistance
 
                     # Photosynthetic Organ Elements
                     # for organ in (phytomer.lamina, phytomer.internode, phytomer.sheath):
@@ -1211,6 +1222,8 @@ class Simulation(object):
                             #: Water fluxes with xylem
                             element.water_influx = element.calculate_water_flux(element.water_potential, axis.xylem.water_potential, element.resistance, self.delta_t)
 
+                            sum_organs_kr += element.nb_replications / element.resistance # TODO check replication for elements
+                            sum_organs_kr_psi += element.nb_replications * element.water_potential / element.resistance
 
         #: compute the derivative of each compartment of element
         for plant in self.population.plants:
@@ -1325,8 +1338,9 @@ class Simulation(object):
                             #: Dimensions volume of element
                             element.organ_volume = element.calculate_organ_volume(element.organ_dimensions)
                             element.WC_mstruct = element.water_content / (element.water_content + element.mstruct) * 100
-                
-                axis.xylem.water_outflux = axis.water_influx + axis.Growth # Mimic what is imposed to soil when roots are present
+
+        self.sum_organs_kr = sum_organs_kr
+        self.sum_organs_kr_psi = sum_organs_kr_psi
 
         derivatives_logger = logging.getLogger('hydraulics.derivatives')
         if logger.isEnabledFor(logging.DEBUG) and derivatives_logger.isEnabledFor(logging.DEBUG):
