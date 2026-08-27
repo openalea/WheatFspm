@@ -390,6 +390,14 @@ class HiddenZone(Organ):
         """
         temperature_K = temperature + parameters.CELSIUS_2_KELVIN
 
+        #: A pathologically small (just-tracked tiller) element/hiddenzone can have a volume many orders of
+        #: magnitude below anything MS ever produces, making this division blow up and feed a runaway loop via
+        #: calculate_delta_turgor_water_potential -> water_potential -> water_influx. Floor at a scale chosen
+        #: to sit between the smallest observed pathological case (~7.8e-13 m3, a just-tracked tiller element)
+        #: and the smallest observed legitimate one (~6.3e-10 m3, a genuinely tiny but stable MS sheath
+        #: element) -- low enough to never engage for real, self-balancing MS/tiller dynamics.
+        volume = max(volume, 1E-11)
+
         #: Concentration of solutes
         sucrose = (sucrose * 1E-6) / parameters.NB_C_SUCROSE
         amino_acids = (amino_acids * 1E-6) / parameters.AMINO_ACIDS_N_RATIO
@@ -564,6 +572,9 @@ class HiddenZone(Organ):
         epsilon_x, epsilon_y, epsilon_z = HiddenZone.PARAMETERS.epsilon['x'], HiddenZone.PARAMETERS.epsilon['y'], HiddenZone.PARAMETERS.epsilon['z']
         elastic_component = (epsilon_x * epsilon_y * epsilon_z) / (epsilon_z * epsilon_x + epsilon_z * epsilon_y + epsilon_x * epsilon_y)   #: Elastic reversible growth (MPa)
         plastic_component = (phi['x'] + phi['y'] + phi['z'])   #: Plastic irreversible growth
+
+        #: See the identical guard (and its rationale) in calculate_osmotic_water_potential above.
+        organ_volume = max(organ_volume, 2E-11)
 
         delta_turgor_water_potential = ((1 / (
                     parameters.RHO_WATER * organ_volume * parameters.VSTORAGE)) * delta_water_content - plastic_component * (max(turgor_water_potential, HiddenZone.PARAMETERS.GAMMA) - HiddenZone.PARAMETERS.GAMMA)) * elastic_component  #: (MPa)
@@ -859,6 +870,9 @@ class PhotosyntheticOrganElement:
         """
         temperature_K = temperature + parameters.CELSIUS_2_KELVIN
 
+        #: See the identical guard (and its rationale) in HiddenZone.calculate_osmotic_water_potential.
+        volume = max(volume, 1E-11)
+
         #: Concentration of solutes
         sucrose = (sucrose * 1E-6) / parameters.NB_C_SUCROSE
         amino_acids = (amino_acids * 1E-6) / parameters.AMINO_ACIDS_N_RATIO
@@ -926,6 +940,10 @@ class PhotosyntheticOrganElement:
         epsilon_z, epsilon_x, epsilon_y = PhotosyntheticOrganElement.PARAMETERS.epsilon['z'], PhotosyntheticOrganElement.PARAMETERS.epsilon['x'], PhotosyntheticOrganElement.PARAMETERS.epsilon['y']
         elastic_component = (epsilon_z * epsilon_x * epsilon_y) / (epsilon_z * epsilon_x + epsilon_z * epsilon_y + epsilon_x * epsilon_y)  #: Elastic reversible growth (MPa)
         plastic_component = 0   #: Plastic irreversible growth (MPa)
+
+        #: See the identical guard (and its rationale) in HiddenZone.calculate_osmotic_water_potential.
+        volume = max(volume, 1E-11)
+
         delta_turgor_water_potential = ((1 / (
                     parameters.RHO_WATER * volume * parameters.VSTORAGE)) * delta_water_content - plastic_component) * elastic_component  #: (MPa)
 

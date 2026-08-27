@@ -18,7 +18,7 @@ class Simulation(object):
     """The Simulation class permits to initialize and run a simulation.
     """
 
-    def __init__(self, delta_t=1, update_parameters=None, cnwgrass_roots=True):
+    def __init__(self, delta_t=1, update_parameters=None, cnwgrass_roots=True, explicit_tillers=False):
 
         #: The inputs of Senescence.
         #:
@@ -42,6 +42,13 @@ class Simulation(object):
             parameters.__dict__.update(update_parameters)
 
         self.cnwgrass_roots = cnwgrass_roots
+
+        #: if True, compute senescence for every tiller axis's elements found in :attr:`inputs`, not just the
+        #: main stem's -- see the `axe_label != 'MS'` guard in :meth:`run`. Must stay in sync with
+        #: SENESCENCEFacade's own explicit_tillers flag, which controls whether tiller elements are collected
+        #: into `inputs` in the first place.
+        self.explicit_tillers = explicit_tillers
+
     def initialize(self, inputs):
         """
         Initialize :attr:`inputs` from `inputs`.
@@ -98,7 +105,7 @@ class Simulation(object):
         for element_inputs_id, element_inputs_dict in all_elements_inputs.items():
 
             axe_label = element_inputs_id[1]
-            if axe_label != 'MS':  # TODO: Calculation only for the main stem
+            if axe_label != 'MS' and not self.explicit_tillers:
                 continue
 
             # Temperature-compensated time (delta_teq)

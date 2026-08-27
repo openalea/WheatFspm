@@ -249,7 +249,8 @@ class Simulation(object):
                                      model.HiddenZone: 'hydraulics.derivatives.hiddenzones',
                                      model.PhotosyntheticOrganElement: 'hydraulics.derivatives.elements'}}
 
-    def __init__(self, delta_t=1, interpolate_forcing=False, elements_forcing_delta_t=None, hiddenzone_forcing_delta_t=None, isolated_roots=False, cnwgrass_roots=True):
+    def __init__(self, delta_t=1, interpolate_forcing=False, elements_forcing_delta_t=None, hiddenzone_forcing_delta_t=None, isolated_roots=False, cnwgrass_roots=True,
+                 explicit_tillers=False):
 
         self.population = model.Population()  #: the population to simulate on
         #: The inputs of the soils.
@@ -277,6 +278,7 @@ class Simulation(object):
 
         self.isolated_roots = isolated_roots
         self.cnwgrass_roots = cnwgrass_roots
+        self.explicit_tillers = explicit_tillers
 
         # set the loggers for compartments and derivatives
         compartments_logger = logging.getLogger('hydraulics.compartments')
@@ -435,7 +437,11 @@ class Simulation(object):
                                                                                        axis.label)
                             logger.exception(message)
                             raise SimulationInitializationError(message)
-                        if (plant.index, axis.label) not in self.soils:  # each axis must be associated to a soil
+                        #: axis.roots/xylem may be shared across several axes of one plant (main stem + explicit
+                        #: tillers, see hydraulics_facade._initialize_model): only the main stem owns a soil
+                        #: entry -- every soil lookup elsewhere in this module is hardcoded to (plant, 'MS'), so a
+                        #: tiller axis is never expected to have its own dedicated soil.
+                        if axis.label == 'MS' and (plant.index, axis.label) not in self.soils:  # each axis must be associated to a soil
                             message = 'No soil found in (plant={},axis={})'.format(plant.index,
                                                                                    axis.label)
                             logger.exception(message)
@@ -575,14 +581,23 @@ class Simulation(object):
             sol = solve_ivp(fun=self._calculate_root_derivatives, t_span=self.time_grid, y0=self.initial_conditions_roots,
                             method='LSODA', t_eval=np.array([self.time_step]), dense_output=False)
         else:
+            #: This branch is the only one built to use jac_sparsity: BDF (unlike LSODA) accepts it, and
+            #: hydraulics_facade._initialize_indices_and_sparsity builds self._jac_sparsity_shoot fresh every
+            #: call, right before this runs. See that method's docstring for why the true Jacobian is
+            #: block-diagonal (one block per phytomer) and therefore safe to exploit this way.
             sol = solve_ivp(fun=self._calculate_shoot_derivatives, t_span=self.time_grid, y0=self.initial_conditions,
-                            method='LSODA', t_eval=np.array([self.time_step]), dense_output=False)
+                            method='BDF', t_eval=np.array([self.time_step]), dense_output=False,
+                            jac_sparsity=self._jac_sparsity_shoot
+                            )
             for plant in self.population.plants:
-                for axis in plant.axes:
-                    axis.xylem.water_potential = (axis.xylem.shoot_root_xylem_conductance * axis.xylem.root_xylem_water_potential
-                                                  + self.sum_organs_kr_psi) / (
-                                                    axis.xylem.shoot_root_xylem_conductance + self.sum_organs_kr)
-                    print("result", axis.xylem.root_xylem_water_potential, axis.xylem.shoot_root_xylem_conductance, axis.xylem.water_potential, self.sum_organs_kr, self.sum_organs_kr_psi / self.sum_organs_kr)
+                #: TODO: revisit once xylem/phloem pools are split per axis instead of shared plant-wide.
+                #: axis.xylem is the SAME shared object for every axis of the plant (see
+                #: hydraulics_facade._build_axis_organs) -- assign once via the main stem instead of
+                #: redundantly recomputing and rewriting the identical value once per axis.
+                ms_axis = next(axis for axis in plant.axes if axis.label == 'MS')
+                ms_axis.xylem.water_potential = (ms_axis.xylem.shoot_root_xylem_conductance * ms_axis.xylem.root_xylem_water_potential
+                                                 + self.sum_organs_kr_psi) / (
+                                                   ms_axis.xylem.shoot_root_xylem_conductance + self.sum_organs_kr)
 
         self.nfev_total += sol.nfev
 
@@ -799,11 +814,18 @@ class Simulation(object):
 
         #: Water flux with xylem and organs
         for plant in self.population.plants:
-            for axis in plant.axes:
-                # Xylem
-                #: Total water potential
-                axis.xylem.water_potential = axis.xylem.calculate_xylem_water_potential(soil.water_potential, axis.water_influx, axis.Growth, self.delta_t)
+            # Xylem
+            #: axis.xylem is the SAME shared object for every axis of the plant (see
+            #: hydraulics_facade._build_axis_organs) -- water_influx/Growth are additive per-axis totals (see
+            #: Axis.calculate_aggregated_variables), so sum them across every axis before computing the single
+            #: shared xylem's total water potential once, instead of overwriting it per axis (which silently
+            #: dropped every axis but whichever was processed last).
+            plant_water_influx = sum(axis.water_influx for axis in plant.axes)
+            plant_Growth = sum(axis.Growth for axis in plant.axes)
+            ms_axis = next(axis for axis in plant.axes if axis.label == 'MS')
+            ms_axis.xylem.water_potential = ms_axis.xylem.calculate_xylem_water_potential(soil.water_potential, plant_water_influx, plant_Growth, self.delta_t)
 
+            for axis in plant.axes:
                 for phytomer in axis.phytomers:
                     # Hidden zone
                     hiddenzone = phytomer.hiddenzone
@@ -1407,13 +1429,19 @@ class Simulation(object):
 
         #: Water flux with xylem and organs
         for plant in self.population.plants:
-            for axis in plant.axes:
-                # Xylem
-                #: Total water potential
-                axis.xylem.water_potential = axis.xylem.calculate_xylem_water_potential(soil.water_potential, axis.water_influx, axis.Growth, self.delta_t)
+            # Xylem
+            #: axis.xylem is the SAME shared object for every axis of the plant (see
+            #: hydraulics_facade._build_axis_organs) -- water_influx/Growth are additive per-axis totals (see
+            #: Axis.calculate_aggregated_variables), so sum them across every axis before computing the single
+            #: shared xylem's total water potential once, instead of overwriting it per axis (which silently
+            #: dropped every axis but whichever was processed last).
+            plant_water_influx = sum(axis.water_influx for axis in plant.axes)
+            plant_Growth = sum(axis.Growth for axis in plant.axes)
+            ms_axis = next(axis for axis in plant.axes if axis.label == 'MS')
+            ms_axis.xylem.water_potential = ms_axis.xylem.calculate_xylem_water_potential(soil.water_potential, plant_water_influx, plant_Growth, self.delta_t)
 
-                # Store water used from soil for eahc axis
-                soil_water_outputs += (axis.water_influx + axis.Growth)
+            # Store water used from soil for the whole plant
+            soil_water_outputs += (plant_water_influx + plant_Growth)
 
         # compute the derivative of each compartment of soil
         y_derivatives[self.initial_conditions_mapping_roots[soil]['water_content']] = soil.calculate_water_content_derivative(soil_water_outputs, soil.constant_water_content)

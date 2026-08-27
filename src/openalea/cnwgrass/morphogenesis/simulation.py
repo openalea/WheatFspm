@@ -31,12 +31,14 @@ class Simulation(object):
     """The Simulation class allows to initialize and run a simulation.
     """
 
-    def __init__(self, delta_t=1, hydraulics=False, optimal_growth_option=False, update_parameters=None):
+    def __init__(self, delta_t=1, hydraulics=False, optimal_growth_option=False, update_parameters=None, explicit_tillers=False):
         """
         :param int delta_t: the delta t of the simulation (in seconds)
         :param bool hydraulics: if True the model will assume the coupling to the turgor-driven growth model
         :param bool optimal_growth_option: if True the model will assume optimal growth conditions
         :param None or dict update_parameters: if a dict is provided, the specified parameters in keys will be updated
+        :param bool explicit_tillers: if True, compute real elongation kinetics for every tiller axis's hiddenzones
+            instead of mirroring the main stem's -- see the `axe_label != 'MS'` guard in :meth:`run`.
         """
 
         #: `inputs` is a dictionary of dictionaries:
@@ -78,6 +80,10 @@ class Simulation(object):
 
         #: Optimal growth option
         self.optimal_growth_option = optimal_growth_option
+
+        #: if True, compute real elongation kinetics for every tiller axis's hiddenzones (instead of mirroring
+        #: the main stem's geometry onto them every timestep) -- see :meth:`run`.
+        self.explicit_tillers = explicit_tillers
 
         #: Update parameters if specified
         if update_parameters:
@@ -204,8 +210,8 @@ class Simulation(object):
             xylem_water_potential = all_axes_inputs[axis_id].get('xylem_water_potential')  # Set at None if hydraulics is False
             hz_turgor_water_potential = hiddenzone_inputs.get('turgor_water_potential')    # Set at None if hydraulics is False
 
-            #: Tillers: in this version tillers functioning is replicated from corresponding elements of MS
-            if axe_label != 'MS':
+            #: Tillers: unless explicit_tillers is set, tiller functioning is replicated from corresponding elements of MS
+            if axe_label != 'MS' and not self.explicit_tillers:
                 tiller_to_MS_phytomer_id = tuple([axis_id[0], 'MS', all_axes_outputs[axis_id]['cohort'] + phytomer_id - 1])
 
                 if tiller_to_MS_phytomer_id in all_hiddenzone_outputs.keys():
@@ -289,14 +295,27 @@ class Simulation(object):
                 below_internode_lengths = all_sheath_internode_lengths[axis_id][phytomer_id]['cumulated_internode']
                 bottom_hiddenzone_height = self.model.calculate_cumulated_internode_length(below_internode_lengths)
 
+                # Ligule heights used to anchor pseudostem/internode-emergence distances: normally the axis's own
+                # previously-ligulated leaves. A tiller's basal phytomer has no coleoptile and thus no earlier
+                # entry on its own axis -- it grows enclosed within the sheath of the subtending main-stem leaf
+                # (at MS phytomer = cohort) instead, so anchor to the main stem's ligule heights up to that
+                # phytomer in that case.
+                own_axis_ligule_heights = all_ligule_height_df[all_ligule_height_df['axis_id'] == axis_id]
+                if axe_label != 'MS' and not (own_axis_ligule_heights['phytomer'] < phytomer_id).any():
+                    pseudostem_ligule_heights = all_ligule_height_df[all_ligule_height_df['axis_id'] == (axis_id[0], 'MS')]
+                    pseudostem_phytomer_id = curr_axis_outputs['cohort'] + 1  # select up to (and including) the subtending MS leaf
+                else:
+                    pseudostem_ligule_heights = own_axis_ligule_heights
+                    pseudostem_phytomer_id = phytomer_id
+
                 # Distance between the bottom of the hiddenzone and the highest previous ligule
-                leaf_pseudostem_length = self.model.calculate_leaf_pseudostem_length(all_ligule_height_df[all_ligule_height_df['axis_id'] == axis_id], bottom_hiddenzone_height, phytomer_id)
+                leaf_pseudostem_length = self.model.calculate_leaf_pseudostem_length(pseudostem_ligule_heights, bottom_hiddenzone_height, pseudostem_phytomer_id)
                 curr_hiddenzone_outputs['leaf_pseudostem_length'] = leaf_pseudostem_length
                 curr_hiddenzone_outputs['delta_leaf_pseudostem_length'] = leaf_pseudostem_length - hiddenzone_inputs['leaf_pseudostem_length']  # Variable used in growth
 
                 # Calculate the internode pseudostem length
                 curr_internode_L = hiddenzone_inputs['internode_L']
-                internode_distance_to_emerge = self.model.calculate_internode_distance_to_emerge(all_ligule_height_df[all_ligule_height_df['axis_id'] == axis_id], bottom_hiddenzone_height, phytomer_id,
+                internode_distance_to_emerge = self.model.calculate_internode_distance_to_emerge(pseudostem_ligule_heights, bottom_hiddenzone_height, pseudostem_phytomer_id,
                                                                                             curr_internode_L)
                 curr_hiddenzone_outputs['internode_distance_to_emerge'] = internode_distance_to_emerge
                 curr_hiddenzone_outputs['delta_internode_distance_to_emerge'] = internode_distance_to_emerge - hiddenzone_inputs['internode_distance_to_emerge']  # Variable used in growth

@@ -88,7 +88,7 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
          run_from_outputs=False, stored_times=None, show_3Dplant=False,
          hydraulics=False, stomatal_model_name='BWB', drought_trigger=None, rehydration_scenario=None,
          optimal_growth_option=False, option_static=False,
-         external_soil_model=False, tillers_replications=None, heterogeneous_canopy=True,
+         external_soil_model=False, tillers_replications=None, explicit_tillers=False, heterogeneous_canopy=True,
          update_parameters_all_models=None, step_callback=None,
          INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv', MANAGEMENT_FILENAME='management.csv',
          OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
@@ -114,7 +114,9 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
     :param bool optimal_growth_option: if True the model will assume optimal growth conditions
     :param bool option_static: Whether the model should be run for a static plant architecture
     :param bool external_soil_model: whether an external soil model is coupled to cnmetabolism. If True, cnmetabolism will skip calculations made in soil and uptake N by roots
-    :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value.
+    :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value. Ignored by CN-Metabolism when `explicit_tillers` is True.
+    :param bool explicit_tillers: if True, CN-Metabolism builds and integrates a real Axis for every tiller found in the MTG (sharing the main stem's roots/phloem/grains/endosperm) instead of
+                                             lumping tillers into the main stem via `tillers_replications` weights.
     :param bool heterogeneous_canopy: Whether to create a duplicated heterogeneous canopy from the initial mtg.
     :param dict update_parameters_all_models: a dict to update model parameters
                                              {'cnmetabolism': {'organ1': {'param1': 'val1', 'param2': 'val2'},
@@ -317,7 +319,8 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
                                                                      optimal_growth_option=optimal_growth_option,
                                                                      option_static=option_static,
                                                                      update_parameters=update_parameters_morphogenesis,
-                                                                     update_shared_df=UPDATE_SHARED_DF)
+                                                                     update_shared_df=UPDATE_SHARED_DF,
+                                                                     explicit_tillers=explicit_tillers)
 
     # -- CARIBU --
     caribu_facade_ = caribu_facade.CaribuFacade(g,
@@ -354,6 +357,7 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
                                                             shared_organs_inputs_outputs_df,
                                                             shared_axes_inputs_outputs_df,
                                                             shared_elements_inputs_outputs_df,
+                                                            explicit_tillers=explicit_tillers,
                                                             update_parameters=update_parameters_senescence,
                                                             update_shared_df=UPDATE_SHARED_DF)
 
@@ -375,6 +379,7 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
                                                                shared_elements_inputs_outputs_df,
                                                                stomatal_model_name=stomatal_model_name,
                                                                hydraulics=hydraulics,
+                                                               explicit_tillers=explicit_tillers,
                                                                update_parameters=update_parameters_gasexchange,
                                                                update_shared_df=UPDATE_SHARED_DF)
 
@@ -403,6 +408,7 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
                                                 shared_elements_inputs_outputs_df,
                                                 shared_axes_inputs_outputs_df,
                                                 hydraulics=hydraulics,
+                                                explicit_tillers=explicit_tillers,
                                                 update_parameters=update_parameters_growth,
                                                 update_shared_df=UPDATE_SHARED_DF)
 
@@ -449,6 +455,7 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
                                                                   shared_elements_inputs_outputs_df,
                                                                   shared_soils_inputs_outputs_df,
                                                                   tillers_replications=tillers_replications,
+                                                                  explicit_tillers=explicit_tillers,
                                                                   external_soil_model=external_soil_model,
                                                                   update_shared_df=UPDATE_SHARED_DF)
 
@@ -500,7 +507,8 @@ def run(simulation_length, forced_start_time=0, run_simu=True, run_postprocessin
                                                                 shared_elements_inputs_outputs_df,
                                                                 shared_organs_inputs_outputs_df,
                                                                 shared_soils_inputs_outputs_df,
-                                                                update_shared_df=UPDATE_SHARED_DF)
+                                                                update_shared_df=UPDATE_SHARED_DF,
+                                                                explicit_tillers=explicit_tillers)
 
 
     # Run cnmetabolism with constant nitrates concentration in the soil if specified

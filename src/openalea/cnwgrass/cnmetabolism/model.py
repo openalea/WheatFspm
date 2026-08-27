@@ -2,7 +2,7 @@
 
 from __future__ import division  # use "//" to do integer division
 import numpy as np
-from math import exp
+from math import exp, sqrt
 
 from openalea.cnwgrass.cnmetabolism import parameters
 
@@ -13,6 +13,33 @@ from openalea.cnwgrass.cnmetabolism import parameters
     The module :mod:`cnmetabolism.model` defines the equations of the CN exchanges in a population of plants.
 
 """
+
+#: Several consumption/degradation rate formulas branch hard on a substrate being <= 0 (or clamp it with
+#: max(0., x)): triosesP (S_Starch, S_Sucrose, S_Amino_Acids), sucrose (Regul_S_Fructan, S_Fructan, D_Fructan)
+#: and the fructan stock cap in D_Fructan. For a small/mature element or hiddenzone, a pool's net hourly
+#: balance can genuinely land within the ODE solver's own atol (~1E-6) of 0 -- below the precision at which
+#: BDF can even resolve its sign. Left as a hard branch, this is a real (non-differentiable) kink exactly
+#: where that noise lives; BDF's polynomial predictor can extrapolate through it into a reciprocal-type term
+#: and overflow float64. SMOOTHING_EPSILON sets the width of a smooth (C1) transition around 0 instead --
+#: well above solver noise, negligible next to any real substrate pool.
+SMOOTHING_EPSILON = 1E-4  #: umol (C or N)
+
+#: Regul_S_Fructan's hard branch is different in kind from the ones above: it switches on the SIGN of a FLUX
+#: (Unloading_Sucrose / Loading_Sucrose), not a substrate pool sitting at the solver's noise floor. CSV data
+#: shows this flux genuinely swinging by whole units (observed range roughly -4.5 to +0.5) across real,
+#: accepted hourly steps -- the model's own dynamics race through a narrow transition zone far faster than
+#: SMOOTHING_EPSILON=1E-4 wide, so smoothing at that scale is mathematically C1 but practically invisible:
+#: BDF still experiences an effective jump within a step. This needs a transition width comparable to how far
+#: the flux actually moves in a step, not to triosesP's near-zero noise floor -- otherwise S_Fructan keeps
+#: swinging between ~0 and its unregulated max (VMAX_SFRUCTAN_POT) in a single hour, which is what produced
+#: the HiddenZone[fructan] NaN crashes.
+REGUL_SFRUCTAN_SMOOTHING_EPSILON = 0.05  #: umol C h-1 (Unloading_Sucrose / Loading_Sucrose)
+
+
+def _smooth_positive(x, epsilon=SMOOTHING_EPSILON):
+    """C1-continuous approximation of max(0., x): -> x for x >> epsilon, -> 0 for x << -epsilon, with a smooth
+    ~epsilon-wide transition around 0 instead of a hard kink."""
+    return 0.5 * (x + sqrt(x ** 2 + epsilon ** 2))
 
 
 class EcophysiologicalConstants:
@@ -170,18 +197,26 @@ class Axis(object):
 
     def calculate_aggregated_variables(self):
         """Calculate the integrative variables of the axis recursively.
+
+        `self.roots` / `self.phloem` / `self.grains` may be the SAME shared object across several axes of one
+        plant (main stem + explicit tillers, see cnmetabolism_facade._initialize_model). Their mass is only
+        folded into `self.mstruct` / `self.nitrates` / `self.senesced_mstruct` for the main stem, which owns
+        them -- otherwise summing `axis.mstruct` (or `.nitrates`) across a plant's axes would double- (or
+        N-fold-) count the plant's single below-ground root system / reproductive structure.
         """
         self.mstruct = 0
         self.senesced_mstruct = 0
         self.nitrates = 0
+        is_owner_axis = (self.label == 'MS')
         if self.roots is not None:
-            self.roots.calculate_aggregated_variables()
-            self.mstruct += self.roots.mstruct
-            self.senesced_mstruct += self.roots.senesced_mstruct
-            self.nitrates += self.roots.nitrates
-        if self.phloem is not None:
+            if is_owner_axis:
+                self.roots.calculate_aggregated_variables()
+                self.mstruct += self.roots.mstruct
+                self.senesced_mstruct += self.roots.senesced_mstruct
+                self.nitrates += self.roots.nitrates
+        if self.phloem is not None and is_owner_axis:
             self.phloem.calculate_aggregated_variables()
-        if self.grains is not None:
+        if self.grains is not None and is_owner_axis:
             self.grains.calculate_aggregated_variables()
             self.mstruct += self.grains.structural_dry_mass
         for phytomer in self.phytomers:
@@ -532,13 +567,17 @@ class HiddenZone(Organ):
         :rtype: float
         """
 
-        if Unloading_Sucrose >= 0:
-            Vmax_Sfructans = HiddenZone.PARAMETERS.VMAX_SFRUCTAN_POT
-        else:  # Regulation by sucrose unloading if hidden zone is a source for C
-            rate_Loading_Sucrose_massic = -Unloading_Sucrose / self.mstruct / parameters.SECOND_TO_HOUR_RATE_CONVERSION
-            Vmax_Sfructans = HiddenZone.PARAMETERS.VMAX_SFRUCTAN_POT * (HiddenZone.PARAMETERS.K_REGUL_SFRUCTAN ** HiddenZone.PARAMETERS.N_REGUL_SFRUCTAN /
-                                                                        (max(0., rate_Loading_Sucrose_massic ** HiddenZone.PARAMETERS.N_REGUL_SFRUCTAN) +
-                                                                         HiddenZone.PARAMETERS.K_REGUL_SFRUCTAN ** HiddenZone.PARAMETERS.N_REGUL_SFRUCTAN))
+        # Regulation by sucrose unloading if hidden zone is a source for C. `Unloading_Sucrose` is a flux (not a
+        # substrate pool), and it can genuinely oscillate in sign hour to hour once fructan synthesis itself
+        # starts drawing enough sucrose to swing the phloem/hiddenzone gradient -- the hard >= 0 branch below
+        # used to snap between the unregulated VMAX_SFRUCTAN_POT and the regulated rate every time it crossed,
+        # which can sustain a bang-bang limit cycle. Both branches agree in value exactly at the crossing point
+        # (rate_Loading_Sucrose_massic == 0 there), so smoothing just that term into a one-sided ramp removes
+        # the branch without changing behaviour away from the crossing.
+        rate_Loading_Sucrose_massic = _smooth_positive(-Unloading_Sucrose, REGUL_SFRUCTAN_SMOOTHING_EPSILON) / self.mstruct / parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        Vmax_Sfructans = HiddenZone.PARAMETERS.VMAX_SFRUCTAN_POT * (HiddenZone.PARAMETERS.K_REGUL_SFRUCTAN ** HiddenZone.PARAMETERS.N_REGUL_SFRUCTAN /
+                                                                    (rate_Loading_Sucrose_massic ** HiddenZone.PARAMETERS.N_REGUL_SFRUCTAN +
+                                                                     HiddenZone.PARAMETERS.K_REGUL_SFRUCTAN ** HiddenZone.PARAMETERS.N_REGUL_SFRUCTAN))
         return Vmax_Sfructans
 
     def calculate_S_Fructan(self, sucrose, Regul_S_Fructan, T_effect_Vmax):
@@ -1444,13 +1483,13 @@ class PhotosyntheticOrganElement(object):
         :return: Maximal rate of fructan synthesis (�mol` C g-1 mstruct h-1)
         :rtype: float
         """
-        if Loading_Sucrose <= 0:
-            Vmax_Sfructans = self.__class__.PARAMETERS.VMAX_SFRUCTAN_POT
-        else:  # Regulation by sucrose loading
-            rate_Loading_Sucrose_massic = Loading_Sucrose / self.mstruct / parameters.SECOND_TO_HOUR_RATE_CONVERSION
-            Vmax_Sfructans = ((self.__class__.PARAMETERS.VMAX_SFRUCTAN_POT * self.__class__.PARAMETERS.K_REGUL_SFRUCTAN ** self.__class__.PARAMETERS.N_REGUL_SFRUCTAN) /
-                              (max(0, rate_Loading_Sucrose_massic ** self.__class__.PARAMETERS.N_REGUL_SFRUCTAN) +
-                               self.__class__.PARAMETERS.K_REGUL_SFRUCTAN ** self.__class__.PARAMETERS.N_REGUL_SFRUCTAN))
+        # Regulation by sucrose loading -- see HiddenZone.calculate_Regul_S_Fructan for why the hard branch on
+        # the flux's sign is smoothed away instead of kept (same "switch-off" formula, opposite polarity: here
+        # the unregulated rate applies when Loading_Sucrose <= 0).
+        rate_Loading_Sucrose_massic = _smooth_positive(Loading_Sucrose, REGUL_SFRUCTAN_SMOOTHING_EPSILON) / self.mstruct / parameters.SECOND_TO_HOUR_RATE_CONVERSION
+        Vmax_Sfructans = ((self.__class__.PARAMETERS.VMAX_SFRUCTAN_POT * self.__class__.PARAMETERS.K_REGUL_SFRUCTAN ** self.__class__.PARAMETERS.N_REGUL_SFRUCTAN) /
+                          (rate_Loading_Sucrose_massic ** self.__class__.PARAMETERS.N_REGUL_SFRUCTAN +
+                           self.__class__.PARAMETERS.K_REGUL_SFRUCTAN ** self.__class__.PARAMETERS.N_REGUL_SFRUCTAN))
         return Vmax_Sfructans
 
     @staticmethod
@@ -1479,11 +1518,9 @@ class PhotosyntheticOrganElement(object):
         :return: Rate of Starch synthesis (�mol` C g-1 mstruct h-1)
         :rtype: float
         """
-        if triosesP <= 0:
-            S_Starch = 0
-        else:
-            S_Starch = (((triosesP / (self.mstruct * self.__class__.PARAMETERS.ALPHA)) * self.__class__.PARAMETERS.VMAX_STARCH) /
-                        ((triosesP / (self.mstruct * self.__class__.PARAMETERS.ALPHA)) + self.__class__.PARAMETERS.K_STARCH)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
+        triosesP_eff = _smooth_positive(triosesP)
+        S_Starch = (((triosesP_eff / (self.mstruct * self.__class__.PARAMETERS.ALPHA)) * self.__class__.PARAMETERS.VMAX_STARCH) /
+                    ((triosesP_eff / (self.mstruct * self.__class__.PARAMETERS.ALPHA)) + self.__class__.PARAMETERS.K_STARCH)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
         return S_Starch
 
     def calculate_D_Starch(self, starch, T_effect_Vmax):
@@ -1508,11 +1545,9 @@ class PhotosyntheticOrganElement(object):
         :return: Rate of Sucrose synthesis (�mol` C g-1 mstruct h-1)
         :rtype: float
         """
-        if triosesP <= 0:
-            S_Sucrose = 0
-        else:
-            S_Sucrose = (((triosesP / (self.mstruct * self.__class__.PARAMETERS.ALPHA)) * self.__class__.PARAMETERS.VMAX_SUCROSE) /
-                         ((triosesP / (self.mstruct * self.__class__.PARAMETERS.ALPHA)) + self.__class__.PARAMETERS.K_SUCROSE)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
+        triosesP_eff = _smooth_positive(triosesP)
+        S_Sucrose = (((triosesP_eff / (self.mstruct * self.__class__.PARAMETERS.ALPHA)) * self.__class__.PARAMETERS.VMAX_SUCROSE) /
+                     ((triosesP_eff / (self.mstruct * self.__class__.PARAMETERS.ALPHA)) + self.__class__.PARAMETERS.K_SUCROSE)) * parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
         return S_Sucrose
 
     def calculate_Loading_Sucrose(self, sucrose, sucrose_phloem, mstruct_axis, T_effect_conductivity):
@@ -1637,13 +1672,12 @@ class PhotosyntheticOrganElement(object):
         :return: Rate of Amino acids synthesis (�mol` N h-1 g-1 mstruct)
         :rtype: float
         """
-        if nitrates <= 0 or triosesP <= 0:
-            calculate_S_amino_acids = 0
-        else:
-            calculate_S_amino_acids = self.__class__.PARAMETERS.VMAX_AMINO_ACIDS / \
-                                      ((1 + self.__class__.PARAMETERS.K_AMINO_ACIDS_NITRATES / (nitrates / (self.mstruct * self.__class__.PARAMETERS.ALPHA))) *
-                                       (1 + self.__class__.PARAMETERS.K_AMINO_ACIDS_TRIOSESP / (triosesP / (self.mstruct * self.__class__.PARAMETERS.ALPHA)))) * \
-                                      parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
+        nitrates_eff = _smooth_positive(nitrates)
+        triosesP_eff = _smooth_positive(triosesP)
+        calculate_S_amino_acids = self.__class__.PARAMETERS.VMAX_AMINO_ACIDS / \
+                                  ((1 + self.__class__.PARAMETERS.K_AMINO_ACIDS_NITRATES / (nitrates_eff / (self.mstruct * self.__class__.PARAMETERS.ALPHA))) *
+                                   (1 + self.__class__.PARAMETERS.K_AMINO_ACIDS_TRIOSESP / (triosesP_eff / (self.mstruct * self.__class__.PARAMETERS.ALPHA)))) * \
+                                  parameters.SECOND_TO_HOUR_RATE_CONVERSION * T_effect_Vmax
         return calculate_S_amino_acids
 
     def calculate_S_proteins(self, amino_acids, T_effect_Vmax):
