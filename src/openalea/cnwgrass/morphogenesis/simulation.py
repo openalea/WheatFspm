@@ -171,7 +171,7 @@ class Simulation(object):
             # hiddenzone initiation
             for i in range(0, init_leaf):
                 # Initialise hiddenzone
-                hiddenzone_id = axis_id + tuple([1 + i + curr_axis_outputs['nb_leaves'] - init_leaf])  # TODO: peut etre simplifi� tant que 'calculate_SAM_status' renvoie 1 erreur si init_leaf>1
+                hiddenzone_id = axis_id + tuple([1 + i + curr_axis_outputs['nb_leaves'] - init_leaf])  # TODO: peut etre simplifié tant que 'calculate_SAM_status' renvoie 1 erreur si init_leaf>1
                 new_hiddenzone = self.hiddenzone_init.__dict__.copy()
                 self.outputs['hiddenzone'][hiddenzone_id] = new_hiddenzone
 
@@ -641,6 +641,24 @@ class Simulation(object):
                         new_internode = self.element_init.__dict__.copy()
                         self.outputs['elements'][hidden_internode_id] = new_internode
                         self.outputs['elements'][hidden_internode_id]['length'] = curr_hiddenzone_outputs['internode_L']
+
+                #: A tiller's phytomer 1 has no "previous leaf" on its own axis to ligulate (tillers have no
+                #: coleoptile/phytomer 0) -- the prev_leaf_ligulated check just below can therefore never
+                #: become True for it, leaving it permanently stuck in the unbounded pre-ligulation growth
+                #: regime (calculate_delta_internode_L_preL), which then cascades via ligule height /
+                #: pseudostem length into every later phytomer on the same axis. Real tiller basal internodes
+                #: are negligibly short anyway -- stop it here, every timestep it's still growing (not just at
+                #: the one moment it was first initiated -- a tiller whose phytomer-1 internode was already
+                #: growing before this guard existed must be caught too). Deliberately NOT setting
+                #: internode_is_remobilizing=True: growth/simulation.py treats that as "elongation is fully
+                #: over", draining the WHOLE hiddenzone's sucrose/amino_acids/fructan/proteins into the
+                #: internode and marking the hiddenzone itself is_over=True for deletion -- which would starve
+                #: and delete the leaf sharing this hiddenzone before it ever gets to grow. Just stop the
+                #: internode itself.
+                if axe_label != 'MS' and phytomer_id == 1 and curr_hiddenzone_outputs['internode_is_growing']:
+                    curr_hiddenzone_outputs['internode_is_growing'] = False
+                    if hidden_internode_id in self.outputs['elements']:
+                        self.outputs['elements'][hidden_internode_id]['is_growing'] = False
 
                 if curr_hiddenzone_outputs['internode_is_growing']:
 

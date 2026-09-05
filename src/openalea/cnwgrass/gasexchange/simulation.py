@@ -104,7 +104,7 @@ class Simulation:
         the results in :attr:`outputs`.
 
         :param float Ta: air temperature at t (degree Celsius)
-        :param float ambient_CO2: air CO2 at t (�mol mol-1)
+        :param float ambient_CO2: air CO2 at t (µmol mol-1)
         :param float RH: relative humidity at t (decimal fraction)
         :param float Ur: wind speed at the top of the canopy at t (m s-1)
         """
@@ -123,7 +123,7 @@ class Simulation:
                 Ts = self.inputs['axes'][axis_id]['SAM_temperature']
 
             else:
-                Ts = Ta # Initial value of Ts (�C)
+                Ts = Ta # Initial value of Ts (°C)
                 #: Ci is stored as exactly 0 (see the surfacic_nitrogen == 0 branch below) whenever the element
                 #: had no photosynthetic nitrogen at the previous step -- treat that the same as "no previous
                 #: value" (like None/NaN) rather than feeding Ci=0 into calculate_photosynthesis, which divides
@@ -131,7 +131,7 @@ class Simulation:
                 if element_inputs['Ci'] is None or np.isnan(element_inputs['Ci']) or element_inputs['Ci'] <= 0:
                     Ci = ambient_CO2
                 else:
-                    Ci = element_inputs['Ci']      #: previous organ internal CO2 concentration (�mol mol-1) todo Ci = parameters.Ci_init_ratio * ambient_CO2 see with Victoria if we keep this
+                    Ci = element_inputs['Ci']      #: previous organ internal CO2 concentration (µmol mol-1) todo Ci = parameters.Ci_init_ratio * ambient_CO2 see with Victoria if we keep this
                 height_canopy = self.inputs['axes'][axis_id]['height_canopy']
                 water_potential = element_inputs.get('water_potential', None)
 
