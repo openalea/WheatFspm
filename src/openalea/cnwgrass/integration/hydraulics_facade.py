@@ -320,11 +320,33 @@ class hydraulicsFacade(object):
                 #: (see hydraulics/simulation.py) -- correct and self-consistent whether this hiddenzone is
                 #: genuinely fresh (tiny leaf_L) or already partway grown.
                 if 'width' in missing_initial_hiddenzone_properties and not self._is_unusable_mtg_value(hydraulics_hiddenzone.leaf_L):
-                    print("width not default anymore")
                     hydraulics_hiddenzone.width = hydraulics_hiddenzone.leaf_L * hydraulics_model.HiddenZone.PARAMETERS.WL_ratio
                 if 'thickness' in missing_initial_hiddenzone_properties and not self._is_unusable_mtg_value(hydraulics_hiddenzone.leaf_L):
-                    print("thickness not default anymore")
                     hydraulics_hiddenzone.thickness = hydraulics_hiddenzone.leaf_L * hydraulics_model.HiddenZone.PARAMETERS.TL_ratio
+
+                #: water_content/turgor_water_potential fall back to the exact same kind of flat,
+                #: pristine-hiddenzone default as width/thickness above: HIDDEN_ZONE_INIT_COMPARTMENTS
+                #: computes water_content from the CLASS's own tiny default leaf_L/width/thickness, and
+                #: turgor_water_potential from a fixed generic SRWC/osmotic potential -- neither reflects
+                #: this hiddenzone's real accumulated solutes or its (now correctly leaf_L-scaled) volume.
+                #: Since turgor drives the elastic length-growth term directly
+                #: (delta_turgor_water_potential -> delta_hiddenzone_dimensions_elastic, see
+                #: hydraulics/simulation.py), starting it wrong reproduces the exact same multi-hundred-hour
+                #: spurious elongation transient even with width/thickness already fixed above. Recompute
+                #: both consistently from this hiddenzone's own real state, mirroring exactly what the
+                #: model's own leaf_pseudo_age == 0 branch does for a genuinely fresh hiddenzone.
+                if ('water_content' in missing_initial_hiddenzone_properties or 'turgor_water_potential' in missing_initial_hiddenzone_properties) \
+                        and not self._is_unusable_mtg_value(hydraulics_hiddenzone.leaf_L) \
+                        and not self._is_unusable_mtg_value(hydraulics_hiddenzone.leaf_pseudostem_length):
+                    hz_length = hydraulics_hiddenzone.calculate_hiddenzone_length(hydraulics_hiddenzone.leaf_L, hydraulics_hiddenzone.leaf_pseudostem_length)
+                    hz_volume = hz_length * hydraulics_hiddenzone.width * hydraulics_hiddenzone.thickness
+                    if 'water_content' in missing_initial_hiddenzone_properties:
+                        hydraulics_hiddenzone.water_content = hz_volume * hydraulics_model.parameters.RHO_WATER
+                    if 'turgor_water_potential' in missing_initial_hiddenzone_properties:
+                        osmotic_water_potential = hydraulics_hiddenzone.calculate_osmotic_water_potential(
+                            hydraulics_hiddenzone.fructan, hydraulics_hiddenzone.sucrose, hydraulics_hiddenzone.amino_acids,
+                            hz_volume, hydraulics_axis.SAM_temperature)
+                        hydraulics_hiddenzone.turgor_water_potential = hydraulics_axis.xylem.water_potential - osmotic_water_potential
 
                 #: leaf_Wmax/lamina_Lmax default to None (not a usable finite value like water_content/width/
                 #: thickness/turgor_water_potential do) -- if either is still unusable at this point (missing

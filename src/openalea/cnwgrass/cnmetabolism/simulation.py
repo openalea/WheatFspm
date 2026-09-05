@@ -1402,7 +1402,11 @@ class Simulation(object):
                 for phytomer in shoot_axis.phytomers:
                     # Hidden zone
                     hiddenzone = phytomer.hiddenzone
-                    if phytomer.hiddenzone is not None:
+                    #: mstruct > 0 mirrors the exact same gate _initialize_indices_and_sparcity uses (and the
+                    #: element loop just below already uses) to decide whether to assign _i_* indices at all --
+                    #: a brand-new hiddenzone (mstruct still 0 right at creation) never gets indexed there, so
+                    #: reading y[hiddenzone._i_sucrose] here for one would raise AttributeError.
+                    if phytomer.hiddenzone is not None and hiddenzone.mstruct > 0:
                         hiddenzone.sucrose = y[hiddenzone._i_sucrose]
                         hiddenzone.fructan = y[hiddenzone._i_fructan]
                         hiddenzone.amino_acids = y[hiddenzone._i_amino_acids]
@@ -1496,7 +1500,9 @@ class Simulation(object):
                             y_derivatives[i_proteins] = proteins_derivative
                             y_derivatives[i_cytokinins] = cytokinins_derivative
 
-                    if phytomer.hiddenzone is not None:
+                    #: same mstruct > 0 gate as above -- a not-yet-indexed hiddenzone has no _i_* attributes to
+                    #: write y_derivatives into further down this block.
+                    if phytomer.hiddenzone is not None and hiddenzone.mstruct > 0:
                         # Unloading of sucrose from phloem
                         hiddenzone.Unloading_Sucrose = hiddenzone.calculate_Unloading_Sucrose(hiddenzone.sucrose, axis.phloem.sucrose, plant_shoot_mstruct, shoot_axis.T_effect_conductivity)
 
