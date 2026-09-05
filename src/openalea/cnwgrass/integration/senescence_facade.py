@@ -44,6 +44,7 @@ class SENESCENCEFacade(object):
                  shared_organs_inputs_outputs_df,
                  shared_axes_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
+                 explicit_tillers=False,
                  update_parameters=None,
                  update_shared_df=True,
                  cnwgrass_roots=True):
@@ -57,13 +58,15 @@ class SENESCENCEFacade(object):
         :param pandas.DataFrame shared_organs_inputs_outputs_df: the dataframe of inputs and outputs at organs scale shared between all models.
         :param pandas.DataFrame shared_axes_inputs_outputs_df: the dataframe of inputs and outputs at axis scale shared between all models.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at element scale shared between all models.
+        :param bool explicit_tillers: if True, compute real senescence (green area / mstruct loss) for every tiller's elements found in the MTG, instead of only the main stem's.
         :param dict or None update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
         :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
         self.cnwgrass_roots = cnwgrass_roots
-        self._simulation = simulation.Simulation(delta_t=delta_t, update_parameters=update_parameters, cnwgrass_roots=cnwgrass_roots)  #: the simulator to use to run the model
+        self.explicit_tillers = explicit_tillers
+        self._simulation = simulation.Simulation(delta_t=delta_t, update_parameters=update_parameters, cnwgrass_roots=cnwgrass_roots, explicit_tillers=explicit_tillers)  #: the simulator to use to run the model
 
         all_senescence_inputs_dict = converter.from_dataframes(model_roots_inputs_df, model_axes_inputs_df, model_elements_inputs_df)
         self._update_shared_MTG(all_senescence_inputs_dict['roots'], all_senescence_inputs_dict['axes'], all_senescence_inputs_dict['elements'])
@@ -105,7 +108,7 @@ class SENESCENCEFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
-                if mtg_axis_label != 'MS':
+                if mtg_axis_label != 'MS' and not self.explicit_tillers:
                     continue
                 axis_id = (mtg_plant_index, mtg_axis_label)
                 mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
@@ -177,7 +180,7 @@ class SENESCENCEFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
-                if mtg_axis_label != 'MS':
+                if mtg_axis_label != 'MS' and not self.explicit_tillers:
                     continue
 
                 # update the axis property in the MTG
@@ -190,14 +193,15 @@ class SENESCENCEFacade(object):
                         for axis_data_name, axis_data_value in senescence_axis_data_dict.items():
                             self._shared_mtg.property(axis_data_name)[mtg_axis_vid] = axis_data_value
 
-                    # update the roots in the MTG
-                    if axis_id not in senescence_roots_data_dict:
-                        continue
-                    if 'roots' not in self._shared_mtg.get_vertex_property(mtg_axis_vid):
-                        self._shared_mtg.property('roots')[mtg_axis_vid] = {}
-                    mtg_roots_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)['roots']
-                    for roots_data_name, roots_data_value in senescence_roots_data_dict.items():
-                        self._shared_mtg.property(roots_data_name)[mtg_axis_vid] = roots_data_value
+                    # update the roots in the MTG (only ever produced for the main stem -- a tiller axis has no
+                    # roots of its own, see cnmetabolism_facade -- so this must not skip the metamer/organ/element
+                    # update loop below for a tiller just because it has no roots entry)
+                    if axis_id in senescence_roots_data_dict:
+                        if 'roots' not in self._shared_mtg.get_vertex_property(mtg_axis_vid):
+                            self._shared_mtg.property('roots')[mtg_axis_vid] = {}
+                        mtg_roots_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)['roots']
+                        for roots_data_name, roots_data_value in senescence_roots_data_dict.items():
+                            self._shared_mtg.property(roots_data_name)[mtg_axis_vid] = roots_data_value
 
                 for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
                     mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
@@ -217,7 +221,7 @@ class SENESCENCEFacade(object):
                                 self._shared_mtg.property(senescence_element_data_name)[mtg_element_vid] = senescence_element_data_value
                                 # Temporaire avant de trouver une solution pour :
                                 # 1) piloter la senescence des feuilles par green_area plutot que par senesced_length,
-                                # 2) updater les organes � partir des �l�ments et non l'inverse.
+                                # 2) updater les organes à partir des éléments et non l'inverse.
                                 if senescence_element_data_name == 'senesced_length_element' and mtg_element_label in ['LeafElement1', 'StemElement']:
                                     self._shared_mtg.property('senesced_length')[mtg_organ_vid] = np.nan_to_num(self._shared_mtg.property(senescence_element_data_name).get(mtg_element_vid, 0.))
 

@@ -80,6 +80,7 @@ class CNMetabolismFacade(object):
                  shared_elements_inputs_outputs_df,
                  shared_soils_inputs_outputs_df,
                  tillers_replications=None,
+                 explicit_tillers=False,
                  external_soil_model=False,
                  update_shared_df=True,
                  isolated_roots=False,
@@ -99,7 +100,9 @@ class CNMetabolismFacade(object):
         :param pandas.DataFrame shared_hiddenzones_inputs_outputs_df: the dataframe of inputs and outputs at hiddenzones scale shared between all models.
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
         :param pandas.DataFrame shared_soils_inputs_outputs_df: the dataframe of inputs and outputs at soils scale shared between all models.
-        :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value.
+        :param dict [str, float] tillers_replications: a dictionary with tiller id as key, and weight of replication as value. Ignored when `explicit_tillers` is True.
+        :param bool explicit_tillers: if True, build and integrate a real Axis for every tiller found in the MTG (sharing the main stem's roots/phloem/grains/endosperm) instead of lumping
+                                            tillers into the main stem via `tillers_replications` weights.
         :param bool external_soil_model: whether an external soil model is coupled to cnmetabolism. If True, cnmetabolism will skip calculations made in soil and uptake N by roots
         :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
 
@@ -107,6 +110,7 @@ class CNMetabolismFacade(object):
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
         self.tillers_replications = tillers_replications
+        self.explicit_tillers = explicit_tillers
         self.external_soil_model = external_soil_model
 
         self._simulation = cnmetabolism_simulation.Simulation(respiration_model=respiration_model, delta_t=delta_t, culm_density=culm_density, external_soil_model=external_soil_model, isolated_roots=isolated_roots, cnwgrass_roots=cnwgrass_roots)
@@ -138,8 +142,8 @@ class CNMetabolismFacade(object):
         Run the model and update the MTG and the dataframes shared between all models.
 
         :param update_shared_df:
-        :param float Tair: air temperature (�C)
-        :param float Tsoil: soil temperature (�C)
+        :param float Tair: air temperature (°C)
+        :param float Tsoil: soil temperature (°C)
         :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
         """
 
@@ -221,17 +225,199 @@ class CNMetabolismFacade(object):
                                                meteo_data=meteo_data,
                                                graphs_dirpath=graphs_dirpath)
 
+    #: axis-scale state variable(s) that are not required to already be present in the MTG when building an
+    #: Axis: 'mstruct' is entirely self-maintained by CN-Metabolism itself (Simulation.initialize() always
+    #: recomputes it from the axis's own phytomers via Population.calculate_aggregated_variables(), before
+    #: anything reads it) rather than being written by another facade -- so it is simply absent for any axis
+    #: CN-Metabolism has never built before, which is the normal case the first time a tiller axis is seen
+    #: under explicit_tillers.
+    AXES_STATE_SELF_MAINTAINED = {'mstruct'}
+
+    def _read_axis_state(self, mtg_axis_vid, mtg_axis_label):
+        """Create a new CN-Metabolism Axis and read its axis-scale state from the MTG.
+
+        Raises a clear error if a required axis-scale property is missing, instead of a bare KeyError
+        - relevant in particular for tiller axes under `explicit_tillers`, which are not otherwise touched by this facade.
+        """
+        cnmetabolism_axis = cnmetabolism_model.Axis(mtg_axis_label)
+        mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
+        missing_axis_state = set(cnmetabolism_simulation.Simulation.AXES_STATE) - set(mtg_axis_properties) - self.AXES_STATE_SELF_MAINTAINED
+        if missing_axis_state:
+            raise ValueError("Axis '{}' (vertex {}) is missing axis-scale state variable(s) {} in the MTG. "
+                              "explicit_tillers=True requires every tiller axis to carry the same axis-scale state as the main stem "
+                              "(check axes_initial_state.csv / that morphogenesis has been run for this axis).".format(
+                                  mtg_axis_label, mtg_axis_vid, sorted(missing_axis_state)))
+        cnmetabolism_axis_data_dict = {cnmetabolism_axis_data_name: mtg_axis_properties[cnmetabolism_axis_data_name]
+                                        for cnmetabolism_axis_data_name in cnmetabolism_simulation.Simulation.AXES_STATE
+                                        if cnmetabolism_axis_data_name in mtg_axis_properties}
+        cnmetabolism_axis.__dict__.update(cnmetabolism_axis_data_dict)
+        if cnmetabolism_axis.mstruct is None:
+            #: Placeholder only: overwritten a moment later by Simulation.initialize() -> Population.calculate_aggregated_variables().
+            cnmetabolism_axis.mstruct = 0.0
+        return cnmetabolism_axis, mtg_axis_properties
+
+    def _build_axis_organs(self, mtg_axis_vid, mtg_axis_properties, cnmetabolism_axis):
+        """Build the roots/phloem/grains/endosperm organs of `cnmetabolism_axis` from the MTG. Returns whether the axis is valid."""
+        is_valid_axis = True
+        for cnmetabolism_organ_class in (cnmetabolism_model.Roots, cnmetabolism_model.Phloem, cnmetabolism_model.Grains, cnmetabolism_model.Endosperm):
+            mtg_organ_label = cnmetabolism_converter.CNMETABOLISM_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnmetabolism_organ_class]
+            # create a new organ
+            cnmetabolism_organ = cnmetabolism_organ_class(mtg_organ_label)
+            if mtg_organ_label in mtg_axis_properties:
+                mtg_organ_properties = mtg_axis_properties[mtg_organ_label]
+                access_mtg_names = cnmetabolism_simulation.Simulation.ORGANS_STATE
+                if cnmetabolism_organ_class == cnmetabolism_model.Roots and self.isolated_roots:
+                    access_mtg_names += cnmetabolism_simulation.Simulation.ORGANS_FLUXES[:3] + ["Unloading_Sucrose", "Unloading_Amino_Acids"]
+                cnmetabolism_organ_data_names = set(access_mtg_names).intersection(cnmetabolism_organ.__dict__)
+                if set(mtg_organ_properties).issuperset(cnmetabolism_organ_data_names):
+                    cnmetabolism_organ_data_dict = {}
+                    for cnmetabolism_organ_data_name in cnmetabolism_organ_data_names:
+                        cnmetabolism_organ_data_dict[cnmetabolism_organ_data_name] = mtg_organ_properties[cnmetabolism_organ_data_name]
+
+                        # Debug: Tell if missing input variable
+                        if math.isnan(mtg_organ_properties[cnmetabolism_organ_data_name]) or mtg_organ_properties[cnmetabolism_organ_data_name] is None:
+                            print('Missing variable', cnmetabolism_organ_data_name, 'for vertex id', mtg_axis_vid, 'which is', mtg_organ_label)
+
+                    cnmetabolism_organ.__dict__.update(cnmetabolism_organ_data_dict)
+                    if mtg_organ_label == 'roots' and self.external_soil_model:
+                        cnmetabolism_organ.Uptake_Nitrates = mtg_organ_properties['Uptake_Nitrates']
+                        cnmetabolism_organ.HATS_LATS = mtg_organ_properties['HATS_LATS']
+
+                    # Update parameters if specified
+                    if mtg_organ_label in self._update_parameters:
+                        cnmetabolism_organ.PARAMETERS.__dict__.update(self._update_parameters[mtg_organ_label])
+
+                    cnmetabolism_organ.initialize()
+                    # add the new organ to current axis
+                    setattr(cnmetabolism_axis, mtg_organ_label, cnmetabolism_organ)
+
+                elif cnmetabolism_organ_class is not cnmetabolism_model.Grains:
+                    is_valid_axis = False
+                    break
+
+            # For the 1st instantiation of the Grains class during a simulation covering vegetative and reproductive stages
+            elif cnmetabolism_organ_class is cnmetabolism_model.Grains:
+                if mtg_axis_properties['status'] != 'reproductive':
+                    continue
+                # grains = cnmetabolism_model.Grains(cnmetabolism_converter.CNMETABOLISM_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnmetabolism_model.Grains])
+                # grains.initialize()
+                # setattr(cnmetabolism_axis, cnmetabolism_converter.CNMETABOLISM_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnmetabolism_model.Grains], grains)
+
+            elif cnmetabolism_organ_class is cnmetabolism_model.Endosperm:
+                continue
+
+            else:
+                is_valid_axis = False
+                print('Invalid axis because of {}'.format(cnmetabolism_organ_class))
+                break
+        return is_valid_axis
+
+    def _build_axis_phytomers(self, mtg_axis_vid, cnmetabolism_axis, Tair, cohorts, cohorts_replications):
+        """Build the phytomers (hiddenzones/organs/elements) of `cnmetabolism_axis` from the MTG. Returns whether the axis has at least one valid phytomer."""
+        has_valid_phytomer = False
+        for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
+            mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
+
+            # create a new phytomer
+            cnmetabolism_phytomer = cnmetabolism_model.Phytomer(mtg_metamer_index, cohorts=cohorts, cohorts_replications=cohorts_replications)  #: Hack to treat tillering cases :TEMPORARY
+
+            mtg_hiddenzone_label = cnmetabolism_converter.CNMETABOLISM_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnmetabolism_model.HiddenZone]
+            mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
+
+            if mtg_hiddenzone_label in mtg_metamer_properties:
+                mtg_hiddenzone_properties = mtg_metamer_properties[mtg_hiddenzone_label]
+
+                if set(mtg_hiddenzone_properties).issuperset(cnmetabolism_simulation.Simulation.HIDDENZONE_STATE) and not mtg_hiddenzone_properties['is_over']:
+                    has_valid_hiddenzone = True
+                    cnmetabolism_hiddenzone_data_dict = {}
+                    for cnmetabolism_hiddenzone_data_name in cnmetabolism_simulation.Simulation.HIDDENZONE_STATE:
+                        cnmetabolism_hiddenzone_data_dict[cnmetabolism_hiddenzone_data_name] = mtg_hiddenzone_properties[cnmetabolism_hiddenzone_data_name]
+
+                    # create a new hiddenzone
+                    cnmetabolism_hiddenzone = cnmetabolism_model.HiddenZone(mtg_hiddenzone_label, cohorts=cohorts, cohorts_replications=cohorts_replications, index=cnmetabolism_phytomer.index,
+                                                                  **cnmetabolism_hiddenzone_data_dict)
+
+                    # Update parameters if specified
+                    if mtg_hiddenzone_label in self._update_parameters:
+                        cnmetabolism_hiddenzone.PARAMETERS.__dict__.update(self._update_parameters[mtg_hiddenzone_label])
+
+                    cnmetabolism_hiddenzone.initialize()
+                    # add the new hiddenzone to current phytomer
+                    setattr(cnmetabolism_phytomer, mtg_hiddenzone_label, cnmetabolism_hiddenzone)
+                else:
+                    has_valid_hiddenzone = False
+            else:
+                has_valid_hiddenzone = False
+
+            has_valid_organ = False
+            for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
+                mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
+                if mtg_organ_label not in MTG_TO_CNMETABOLISM_PHYTOMERS_ORGANS_MAPPING or self._shared_mtg.get_vertex_property(mtg_organ_vid)['length'] == 0:
+                    continue
+
+                # create a new organ
+                cnmetabolism_organ_class = MTG_TO_CNMETABOLISM_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]
+                cnmetabolism_organ = cnmetabolism_organ_class(mtg_organ_label)
+
+                # Update parameters if specified
+                if 'PhotosyntheticOrgan' in self._update_parameters:
+                    cnmetabolism_organ.PARAMETERS.__dict__.update(self._update_parameters['PhotosyntheticOrgan'])
+
+                cnmetabolism_organ.initialize()
+                has_valid_element = False
+
+                # Create a new element
+                for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
+                    mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
+                    mtg_element_label = self._shared_mtg.label(mtg_element_vid)
+                    if mtg_element_label not in cnmetabolism_converter.DATAFRAME_TO_CNMETABOLISM_ELEMENTS_NAMES_MAPPING \
+                            or (self._shared_mtg.get_vertex_property(mtg_element_vid)['length'] == 0) \
+                            or (self._shared_mtg.get_vertex_property(mtg_element_vid).get('mstruct', 0) == 0) \
+                            or ((mtg_element_label == 'HiddenElement') and (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True))) \
+                            or (self._shared_mtg.get_vertex_property(mtg_element_vid).get('green_area', 0) <= 0.25E-6):
+                        continue  # TODO: Check that we are not taking out some relevant cases with the condition on mstruct == 0
+
+                    has_valid_element = True
+                    cnmetabolism_element_data_dict = {}
+                    for cnmetabolism_element_data_name in cnmetabolism_simulation.Simulation.ELEMENTS_STATE:
+                        mtg_element_data_value = mtg_element_properties.get(cnmetabolism_element_data_name)
+                        # In case the value is None, or the property is not even defined, we take default value from InitCompartment
+                        if mtg_element_data_value is None or np.isnan(mtg_element_data_value):
+                            if cnmetabolism_element_data_name == 'Ts':
+                                mtg_element_data_value = Tair
+                            else:
+                                mtg_element_data_value = cnmetabolism_parameters.PhotosyntheticOrganElementInitCompartments().__dict__[cnmetabolism_element_data_name]
+                        cnmetabolism_element_data_dict[cnmetabolism_element_data_name] = mtg_element_data_value
+                    cnmetabolism_element = CNMETABOLISM_ORGANS_TO_ELEMENTS_MAPPING[cnmetabolism_organ_class](mtg_element_label, cohorts=cohorts, cohorts_replications=cohorts_replications,
+                                                                                              index=cnmetabolism_phytomer.index, **cnmetabolism_element_data_dict)
+                    # Add parameters from organ scale
+                    cnmetabolism_element.PARAMETERS.__dict__.update(cnmetabolism_organ.PARAMETERS.__dict__)
+
+                    # add the new element to current organ
+                    setattr(cnmetabolism_organ, cnmetabolism_converter.DATAFRAME_TO_CNMETABOLISM_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnmetabolism_element)
+
+                if has_valid_element:
+                    has_valid_organ = True
+                    setattr(cnmetabolism_phytomer, CNMETABOLISM_ATTRIBUTES_MAPPING[cnmetabolism_organ_class], cnmetabolism_organ)
+
+            if has_valid_organ or has_valid_hiddenzone:
+                cnmetabolism_axis.phytomers.append(cnmetabolism_phytomer)
+                has_valid_phytomer = True
+
+        return has_valid_phytomer
+
     def _initialize_model(self, Tair, Tsoil):
         """
         Initialize the inputs of the model from the MTG shared between all models and the soils.
 
-        :param float Tair: air temperature (�C)
-        :param float Tsoil: soil temperature (�C)
+        :param float Tair: air temperature (°C)
+        :param float Tsoil: soil temperature (°C)
         """
 
-        # Convert number of replications per tiller into number of replications per cohort
+        # Convert number of replications per tiller into number of replications per cohort.
+        # This is the MS + cohort-weighting shortcut ; ignored (kept empty) when self.explicit_tillers is True.
         cohorts_replications = {}
-        if self.tillers_replications is not None:
+        if not self.explicit_tillers and self.tillers_replications is not None:
             for tiller_id, replication_weight in self.tillers_replications.items():
                 try:
                     tiller_rank = int(tiller_id[1:])
@@ -247,179 +433,77 @@ class CNMetabolismFacade(object):
             # create a new plant
             cnmetabolism_plant = cnmetabolism_model.Plant(mtg_plant_index)
             is_valid_plant = False
+            ms_axis = None
+            tiller_axis_vids = []  #: (mtg_axis_vid, mtg_axis_label) pairs, only used when self.explicit_tillers is True
 
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                if isinstance(mtg_axis_label, bytes):
+                    #: Some MTGs carry byte-string axis labels (see morphogenesis_facade for the same guard);
+                    #: normalize to str so 'MS'/tiller-rank comparisons below (and axis.label == 'MS' checks
+                    #: throughout cnmetabolism/simulation.py) behave consistently regardless of the MTG source.
+                    mtg_axis_label = mtg_axis_label.decode('UTF-8')
 
-                #: Hack to deal with tillering cases : TEMPORARY
                 if mtg_axis_label != 'MS':
-                    try:
-                        tiller_rank = int(mtg_axis_label[1:])
-                        cnmetabolism_plant.cohorts.append(tiller_rank + 3)
-                        continue
-                    except ValueError:
-                        continue
+                    if self.explicit_tillers:
+                        #: Real per-tiller simulation: this axis is built in the second pass below, once MS's shared
+                        #: roots/phloem/grains/endosperm are available to attach it to (the MTG does not carry
+                        #: independent roots/phloem/grains/endosperm per tiller: there is a single below-ground
+                        #: root system and a single phloem pool per plant).
+                        tiller_axis_vids.append((mtg_axis_vid, mtg_axis_label))
+                    else:
+                        #: Hack to deal with tillering cases : TEMPORARY
+                        try:
+                            tiller_rank = int(mtg_axis_label[1:])
+                            cnmetabolism_plant.cohorts.append(tiller_rank + 3)
+                        except ValueError:
+                            pass
+                    continue
 
                 #: Main Stem
-                # create a new axis
-                cnmetabolism_axis = cnmetabolism_model.Axis(mtg_axis_label)
-                mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
-                cnmetabolism_axis_data_dict = {}
-                for cnmetabolism_axis_data_name in cnmetabolism_simulation.Simulation.AXES_STATE:
-                    cnmetabolism_axis_data_dict[cnmetabolism_axis_data_name] = mtg_axis_properties[cnmetabolism_axis_data_name]
-                cnmetabolism_axis.__dict__.update(cnmetabolism_axis_data_dict)
-                is_valid_axis = True
-                for cnmetabolism_organ_class in (cnmetabolism_model.Roots, cnmetabolism_model.Phloem, cnmetabolism_model.Grains, cnmetabolism_model.Endosperm):
-                    mtg_organ_label = cnmetabolism_converter.CNMETABOLISM_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnmetabolism_organ_class]
-                    # create a new organ
-                    cnmetabolism_organ = cnmetabolism_organ_class(mtg_organ_label)
-                    if mtg_organ_label in mtg_axis_properties:
-                        mtg_organ_properties = mtg_axis_properties[mtg_organ_label]
-                        access_mtg_names = cnmetabolism_simulation.Simulation.ORGANS_STATE
-                        if cnmetabolism_organ_class == cnmetabolism_model.Roots and self.isolated_roots:
-                            access_mtg_names += cnmetabolism_simulation.Simulation.ORGANS_FLUXES[:3] + ["Unloading_Sucrose", "Unloading_Amino_Acids"]
-                        cnmetabolism_organ_data_names = set(access_mtg_names).intersection(cnmetabolism_organ.__dict__)
-                        if set(mtg_organ_properties).issuperset(cnmetabolism_organ_data_names):
-                            cnmetabolism_organ_data_dict = {}
-                            for cnmetabolism_organ_data_name in cnmetabolism_organ_data_names:
-                                cnmetabolism_organ_data_dict[cnmetabolism_organ_data_name] = mtg_organ_properties[cnmetabolism_organ_data_name]
-
-                                # Debug: Tell if missing input variable
-                                if math.isnan(mtg_organ_properties[cnmetabolism_organ_data_name]) or mtg_organ_properties[cnmetabolism_organ_data_name] is None:
-                                    print('Missing variable', cnmetabolism_organ_data_name, 'for vertex id', mtg_axis_vid, 'which is', mtg_organ_label)
-
-                            cnmetabolism_organ.__dict__.update(cnmetabolism_organ_data_dict)
-                            if mtg_organ_label == 'roots' and self.external_soil_model:
-                                cnmetabolism_organ.Uptake_Nitrates = mtg_organ_properties['Uptake_Nitrates']
-                                cnmetabolism_organ.HATS_LATS = mtg_organ_properties['HATS_LATS']
-
-                            # Update parameters if specified
-                            if mtg_organ_label in self._update_parameters:
-                                cnmetabolism_organ.PARAMETERS.__dict__.update(self._update_parameters[mtg_organ_label])
-
-                            cnmetabolism_organ.initialize()
-                            # add the new organ to current axis
-                            setattr(cnmetabolism_axis, mtg_organ_label, cnmetabolism_organ)
-
-                        elif cnmetabolism_organ_class is not cnmetabolism_model.Grains:
-                            is_valid_axis = False
-                            break
-
-                    # For the 1st instantiation of the Grains class during a simulation covering vegetative and reproductive stages
-                    elif cnmetabolism_organ_class is cnmetabolism_model.Grains:
-                        if mtg_axis_properties['status'] != 'reproductive':
-                            continue
-                        # grains = cnmetabolism_model.Grains(cnmetabolism_converter.CNMETABOLISM_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnmetabolism_model.Grains])
-                        # grains.initialize()
-                        # setattr(cnmetabolism_axis, cnmetabolism_converter.CNMETABOLISM_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnmetabolism_model.Grains], grains)
-
-                    elif cnmetabolism_organ_class is cnmetabolism_model.Endosperm:
-                        continue
-
-                    else:
-                        is_valid_axis = False
-                        print('Invalid axis because of {}'.format(cnmetabolism_organ_class))
-                        break
+                cnmetabolism_axis, mtg_axis_properties = self._read_axis_state(mtg_axis_vid, mtg_axis_label)
+                is_valid_axis = self._build_axis_organs(mtg_axis_vid, mtg_axis_properties, cnmetabolism_axis)
 
                 if not is_valid_axis:
                     continue
 
-                has_valid_phytomer = False
-                for mtg_metamer_vid in self._shared_mtg.components_iter(mtg_axis_vid):
-                    mtg_metamer_index = int(self._shared_mtg.index(mtg_metamer_vid))
-
-                    # create a new phytomer
-                    cnmetabolism_phytomer = cnmetabolism_model.Phytomer(mtg_metamer_index, cohorts=cnmetabolism_plant.cohorts, cohorts_replications=cohorts_replications)  #: Hack to treat tillering cases :TEMPORARY
-
-                    mtg_hiddenzone_label = cnmetabolism_converter.CNMETABOLISM_CLASSES_TO_DATAFRAME_ORGANS_MAPPING[cnmetabolism_model.HiddenZone]
-                    mtg_metamer_properties = self._shared_mtg.get_vertex_property(mtg_metamer_vid)
-
-                    if mtg_hiddenzone_label in mtg_metamer_properties:
-                        mtg_hiddenzone_properties = mtg_metamer_properties[mtg_hiddenzone_label]
-
-                        if set(mtg_hiddenzone_properties).issuperset(cnmetabolism_simulation.Simulation.HIDDENZONE_STATE) and not mtg_hiddenzone_properties['is_over']:
-                            has_valid_hiddenzone = True
-                            cnmetabolism_hiddenzone_data_dict = {}
-                            for cnmetabolism_hiddenzone_data_name in cnmetabolism_simulation.Simulation.HIDDENZONE_STATE:
-                                cnmetabolism_hiddenzone_data_dict[cnmetabolism_hiddenzone_data_name] = mtg_hiddenzone_properties[cnmetabolism_hiddenzone_data_name]
-
-                            # create a new hiddenzone
-                            cnmetabolism_hiddenzone = cnmetabolism_model.HiddenZone(mtg_hiddenzone_label, cohorts=cnmetabolism_plant.cohorts, cohorts_replications=cohorts_replications, index=cnmetabolism_phytomer.index,
-                                                                          **cnmetabolism_hiddenzone_data_dict)
-
-                            # Update parameters if specified
-                            if mtg_hiddenzone_label in self._update_parameters:
-                                cnmetabolism_hiddenzone.PARAMETERS.__dict__.update(self._update_parameters[mtg_hiddenzone_label])
-
-                            cnmetabolism_hiddenzone.initialize()
-                            # add the new hiddenzone to current phytomer
-                            setattr(cnmetabolism_phytomer, mtg_hiddenzone_label, cnmetabolism_hiddenzone)
-                        else:
-                            has_valid_hiddenzone = False
-                    else:
-                        has_valid_hiddenzone = False
-
-                    has_valid_organ = False
-                    for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
-                        mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
-                        if mtg_organ_label not in MTG_TO_CNMETABOLISM_PHYTOMERS_ORGANS_MAPPING or self._shared_mtg.get_vertex_property(mtg_organ_vid)['length'] == 0:
-                            continue
-
-                        # create a new organ
-                        cnmetabolism_organ_class = MTG_TO_CNMETABOLISM_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]
-                        cnmetabolism_organ = cnmetabolism_organ_class(mtg_organ_label)
-
-                        # Update parameters if specified
-                        if 'PhotosyntheticOrgan' in self._update_parameters:
-                            cnmetabolism_organ.PARAMETERS.__dict__.update(self._update_parameters['PhotosyntheticOrgan'])
-
-                        cnmetabolism_organ.initialize()
-                        has_valid_element = False
-
-                        # Create a new element
-                        for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
-                            mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
-                            mtg_element_label = self._shared_mtg.label(mtg_element_vid)
-                            if mtg_element_label not in cnmetabolism_converter.DATAFRAME_TO_CNMETABOLISM_ELEMENTS_NAMES_MAPPING \
-                                    or (self._shared_mtg.get_vertex_property(mtg_element_vid)['length'] == 0) \
-                                    or (self._shared_mtg.get_vertex_property(mtg_element_vid).get('mstruct', 0) == 0) \
-                                    or ((mtg_element_label == 'HiddenElement') and (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True))) \
-                                    or (self._shared_mtg.get_vertex_property(mtg_element_vid).get('green_area', 0) <= 0.25E-6):
-                                continue  # TODO: Check that we are not taking out some relevant cases with the condition on mstruct == 0
-
-                            has_valid_element = True
-                            cnmetabolism_element_data_dict = {}
-                            for cnmetabolism_element_data_name in cnmetabolism_simulation.Simulation.ELEMENTS_STATE:
-                                mtg_element_data_value = mtg_element_properties.get(cnmetabolism_element_data_name)
-                                # In case the value is None, or the property is not even defined, we take default value from InitCompartment
-                                if mtg_element_data_value is None or np.isnan(mtg_element_data_value):
-                                    if cnmetabolism_element_data_name == 'Ts':
-                                        mtg_element_data_value = Tair
-                                    else:
-                                        mtg_element_data_value = cnmetabolism_parameters.PhotosyntheticOrganElementInitCompartments().__dict__[cnmetabolism_element_data_name]
-                                cnmetabolism_element_data_dict[cnmetabolism_element_data_name] = mtg_element_data_value
-                            cnmetabolism_element = CNMETABOLISM_ORGANS_TO_ELEMENTS_MAPPING[cnmetabolism_organ_class](mtg_element_label, cohorts=cnmetabolism_plant.cohorts, cohorts_replications=cohorts_replications,
-                                                                                                      index=cnmetabolism_phytomer.index, **cnmetabolism_element_data_dict)
-                            # Add parameters from organ scale
-                            cnmetabolism_element.PARAMETERS.__dict__.update(cnmetabolism_organ.PARAMETERS.__dict__)
-
-                            # add the new element to current organ
-                            setattr(cnmetabolism_organ, cnmetabolism_converter.DATAFRAME_TO_CNMETABOLISM_ELEMENTS_NAMES_MAPPING[mtg_element_label], cnmetabolism_element)
-
-                        if has_valid_element:
-                            has_valid_organ = True
-                            setattr(cnmetabolism_phytomer, CNMETABOLISM_ATTRIBUTES_MAPPING[cnmetabolism_organ_class], cnmetabolism_organ)
-
-                    if has_valid_organ or has_valid_hiddenzone:
-                        cnmetabolism_axis.phytomers.append(cnmetabolism_phytomer)
-                        has_valid_phytomer = True
+                has_valid_phytomer = self._build_axis_phytomers(mtg_axis_vid, cnmetabolism_axis, Tair, cnmetabolism_plant.cohorts, cohorts_replications)
 
                 if not has_valid_phytomer:
                     is_valid_axis = False
 
                 if is_valid_axis:
                     cnmetabolism_plant.axes.append(cnmetabolism_axis)
+                    ms_axis = cnmetabolism_axis
                     is_valid_plant = True
+
+            #: Second pass: real tiller axes, sharing the main stem's roots/phloem/grains/endosperm.
+            if self.explicit_tillers and tiller_axis_vids:
+                if ms_axis is None:
+                    raise ValueError("explicit_tillers=True but no valid main stem (MS) axis was built for plant {}; "
+                                      "tillers cannot be attached to shared roots/phloem/grains/endosperm.".format(mtg_plant_index))
+                for mtg_axis_vid, mtg_axis_label in tiller_axis_vids:
+                    try:
+                        cnmetabolism_tiller_axis, _ = self._read_axis_state(mtg_axis_vid, mtg_axis_label)
+                    except ValueError:
+                        #: A tiller freshly created by morphogenesis this same time step may not yet carry its
+                        #: axis-scale state (e.g. SAM_temperature/nb_leaves/status not seeded until the next
+                        #: morphogenesis pass). Skip it for this time step rather than aborting the whole run --
+                        #: exactly like an incomplete phytomer/hiddenzone/organ is skipped elsewhere below --
+                        #: it will be picked up once morphogenesis has fully initialized it.
+                        continue
+                    cnmetabolism_tiller_axis.roots = ms_axis.roots
+                    cnmetabolism_tiller_axis.phloem = ms_axis.phloem
+                    cnmetabolism_tiller_axis.grains = ms_axis.grains
+                    cnmetabolism_tiller_axis.endosperm = ms_axis.endosperm
+
+                    #: cohorts=[] / cohorts_replications=None here so that phytomer.nb_replications == 1 : each real
+                    #: tiller phytomer is now its own axis-scale object, it must not also be scaled by a cohort weight.
+                    has_valid_phytomer = self._build_axis_phytomers(mtg_axis_vid, cnmetabolism_tiller_axis, Tair, [], None)
+
+                    if has_valid_phytomer:
+                        cnmetabolism_plant.axes.append(cnmetabolism_tiller_axis)
+                        is_valid_plant = True
 
             if is_valid_plant:
                 self.population.plants.append(cnmetabolism_plant)
@@ -438,7 +522,11 @@ class CNMetabolismFacade(object):
         icm = self._simulation.initial_conditions_mapping
         for plant in self._simulation.population.plants:
             for axis in plant.axes:
-                axis._phloem_contributors = [axis.roots]
+                #: axis.phloem (and axis.roots) may be the SAME shared object across several axes of one plant
+                #: (main stem + explicit tillers): build the contributor list once per plant, on the shared
+                #: phloem object itself, so every axis referencing it sees (and extends) the same merged list.
+                if not hasattr(axis.phloem, '_contributors'):
+                    axis.phloem._contributors = [axis.roots]
                 for variable in ('sucrose', 'amino_acids'):
                     setattr(axis.phloem, f"_i_{variable}", icm[axis.phloem][variable])
 
@@ -457,8 +545,17 @@ class CNMetabolismFacade(object):
                 if axis.endosperm is not None:
                     for variable in ('moistening', 'starch', 'proteins'):
                         setattr(axis.endosperm, f"_i_{variable}", icm[axis.endosperm][variable])
-                
-                # TODO include endosperm in jacobian sparcity matrix
+                    #: Phloem.calculate_sucrose_derivative/calculate_amino_acids_derivative both special-case an
+                    #: Endosperm contributor (sucrose += D_starch, amino_acids += D_proteins, see
+                    #: cnmetabolism/model.py's Phloem), but it was never actually added to axis.phloem._contributors
+                    #: -- meaning that coupling was silently never applied, and the phloem rows never declared a
+                    #: dependency on endosperm's starch/proteins columns. axis.endosperm may be the SAME shared
+                    #: object across several axes of one plant (main stem + explicit tillers): only wire it up once.
+                    if not hasattr(axis.endosperm, '_sparsity_built'):
+                        axis.endosperm._sparsity_built = True
+                        axis.phloem._contributors.append(axis.endosperm)
+                        S[i_ph_suc, icm[axis.endosperm]['starch']] = True
+                        S[i_ph_aa, icm[axis.endosperm]['proteins']] = True
 
                 for phytomer in axis.phytomers:
                     hiddenzone = phytomer.hiddenzone
@@ -475,7 +572,7 @@ class CNMetabolismFacade(object):
                             HZ_suc_cols.append(icm[hiddenzone]['sucrose'])
                             HZ_aa_cols.append(icm[hiddenzone]['amino_acids'])
 
-                            axis._phloem_contributors.append(hiddenzone)
+                            axis.phloem._contributors.append(hiddenzone)
                     
                     for organ in (phytomer.chaff, phytomer.peduncle, phytomer.lamina, phytomer.internode, phytomer.sheath):
                             if organ is not None:
@@ -505,7 +602,7 @@ class CNMetabolismFacade(object):
                                             S[i_e_aa,  icm[hiddenzone]['amino_acids']]   = True
 
                                         if not element.is_growing:
-                                            axis._phloem_contributors.append(element)
+                                            axis.phloem._contributors.append(element)
 
                 # Couplings that are easy to forget (make these dense):
                 #    a) HZ rows depend on element loadings → HZ rows depend on element sucrose/AA
@@ -519,7 +616,10 @@ class CNMetabolismFacade(object):
                 S.rows[i_ph_aa].extend(E_aa_cols  + HZ_aa_cols); S.data[i_ph_aa].extend([True]*(len(E_aa_cols) + len(HZ_aa_cols)))
 
                 # NOTE: likely not to happen in Wheat-BRIDGES simulations for now
-                if axis.grains is not None:
+                #: axis.grains may be the SAME shared object across several axes of one plant (main stem +
+                #: explicit tillers): only build its sparsity entries once, to avoid duplicating row entries.
+                if axis.grains is not None and not hasattr(axis.grains, '_sparsity_built'):
+                    axis.grains._sparsity_built = True
                     grain_idxs = []
                     for variable in ('structure','starch','proteins','age_from_flowering'):
                         setattr(axis.grains, f"_i_{variable}", icm[axis.grains][variable])
@@ -527,8 +627,15 @@ class CNMetabolismFacade(object):
                     for i in grain_idxs:
                         S.rows[i].extend(grain_idxs); S.data[i].extend([True]*len(grain_idxs))
                         S[i, i_ph_suc] = True; S[i, i_ph_aa] = True
-                    # grains contribute to phloem via AA (if any)
-                    S[i_ph_aa, icm[axis.grains]['proteins']] = True  # harmless over-approx
+                    #: Phloem.calculate_sucrose_derivative/calculate_amino_acids_derivative both special-case a
+                    #: Grains contributor (sucrose -= S_grain_structure + S_grain_starch*structural_dry_mass,
+                    #: amino_acids -= S_Proteins, see cnmetabolism/model.py's Phloem), but grains was never added
+                    #: to axis.phloem._contributors -- that coupling was silently never applied. Also declare the
+                    #: reverse (phloem row depends on grains columns) sparsity links -- only the AA one existed.
+                    axis.phloem._contributors.append(axis.grains)
+                    S[i_ph_suc, icm[axis.grains]['structure']] = True
+                    S[i_ph_suc, icm[axis.grains]['starch']] = True
+                    S[i_ph_aa, icm[axis.grains]['proteins']] = True
 
         self._simulation._jac_sparsity_shoot = S.tocsr()
 
@@ -559,7 +666,10 @@ class CNMetabolismFacade(object):
                 cnmetabolism_axis_label = cnmetabolism_axis.label
                 while True:
                     mtg_axis_vid = next(mtg_axes_iterator)
-                    if self._shared_mtg.label(mtg_axis_vid) == cnmetabolism_axis_label:
+                    found_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                    if isinstance(found_axis_label, bytes):
+                        found_axis_label = found_axis_label.decode('UTF-8')
+                    if found_axis_label == cnmetabolism_axis_label:
                         break
 
                 cnmetabolism_axis_property_names = [property_name for property_name in cnmetabolism_simulation.Simulation.AXES_RUN_VARIABLES if hasattr(cnmetabolism_axis, property_name)]
@@ -567,18 +677,22 @@ class CNMetabolismFacade(object):
                     cnmetabolism_axis_property_value = getattr(cnmetabolism_axis, cnmetabolism_axis_property_name)
                     self._shared_mtg.property(cnmetabolism_axis_property_name)[mtg_axis_vid] = cnmetabolism_axis_property_value
 
-                for mtg_organ_label in MTG_TO_CNMETABOLISM_AXES_ORGANS_MAPPING.keys():
-                    cnmetabolism_organ = getattr(cnmetabolism_axis, mtg_organ_label)
-                    if cnmetabolism_organ is None:
-                        continue
-                    elif mtg_organ_label not in self._shared_mtg.get_vertex_property(mtg_axis_vid) and cnmetabolism_organ is not None:
-                        # Add a property describing the organ to the current axis of the MTG
-                        self._shared_mtg.property(mtg_organ_label)[mtg_axis_vid] = {}
-                    # Update the property describing the organ of the current axis in the MTG
-                    mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)[mtg_organ_label]
-                    for cnmetabolism_property_name in cnmetabolism_simulation.Simulation.ORGANS_RUN_VARIABLES:
-                        if hasattr(cnmetabolism_organ, cnmetabolism_property_name):
-                            mtg_organ_properties[cnmetabolism_property_name] = getattr(cnmetabolism_organ, cnmetabolism_property_name)
+                #: roots/phloem/grains/endosperm are shared objects across every axis of the plant (see
+                #: _build_axis_organs) -- write them back to the MTG only once, under MS, so they are not
+                #: duplicated (with byte-identical values) under every tiller axis in the outputs.
+                if cnmetabolism_axis_label == 'MS':
+                    for mtg_organ_label in MTG_TO_CNMETABOLISM_AXES_ORGANS_MAPPING.keys():
+                        cnmetabolism_organ = getattr(cnmetabolism_axis, mtg_organ_label)
+                        if cnmetabolism_organ is None:
+                            continue
+                        elif mtg_organ_label not in self._shared_mtg.get_vertex_property(mtg_axis_vid) and cnmetabolism_organ is not None:
+                            # Add a property describing the organ to the current axis of the MTG
+                            self._shared_mtg.property(mtg_organ_label)[mtg_axis_vid] = {}
+                        # Update the property describing the organ of the current axis in the MTG
+                        mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)[mtg_organ_label]
+                        for cnmetabolism_property_name in cnmetabolism_simulation.Simulation.ORGANS_RUN_VARIABLES:
+                            if hasattr(cnmetabolism_organ, cnmetabolism_property_name):
+                                mtg_organ_properties[cnmetabolism_property_name] = getattr(cnmetabolism_organ, cnmetabolism_property_name)
                 mtg_metamers_iterator = self._shared_mtg.components_iter(mtg_axis_vid)
                 for cnmetabolism_phytomer in cnmetabolism_axis.phytomers:
                     cnmetabolism_phytomer_index = cnmetabolism_phytomer.index

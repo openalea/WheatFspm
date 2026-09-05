@@ -110,7 +110,7 @@ class CNW_Grass(Model):
                  # Canopy parameters
                  single_plant = False, plant_density = {1: 250}, inter_row = 0.15, sowing_depth = 0.025, N_fertilizations = None,
                  # Options
-                 tillers_replications=None, stored_times = None, computing_light_interception=True, external_soil_model=False, heterogeneous_canopy=True, show_3Dplant = False, 
+                 tillers_replications=None, explicit_tillers=False, stored_times = None, computing_light_interception=True, external_soil_model=False, heterogeneous_canopy=True, show_3Dplant = False,
                  hydraulics = False, stomatal_model_name='BWB', drought_trigger=None, rehydration_scenario=None, optimal_growth_option=False, option_static = False, 
                  isolated_roots = False, cnwgrass_roots = True, UPDATE_SHARED_DF=False, START_TIME = 0,
                  CARIBU_TIMESTEP = 4, MORPHOGENESIS_TIMESTEP = 1, GROWTH_TIMESTEP = 1, CNMETABOLISM_TIMESTEP = 1, SENESCENCE_TIMESTEP = 1, HYDRAULICS_TIMESTEP = 1):
@@ -143,6 +143,11 @@ class CNW_Grass(Model):
         :param dict or None N_fertilizations: nitrogen fertilization events applied to the soil nitrate pool. Either {time_step_in_hours: amount of nitrates added (umol) at that hour, ...},
                                             or {'constant_Conc_Nitrates': value} to force a constant soil nitrate concentration instead of punctual additions. Only used if `cnwgrass_roots` is True.
         :param dict [str, float] or None tillers_replications: a dictionary with tiller id as key, and weight of replication as value, used to scale up CN-Metabolism fluxes for unreplicated tillers.
+                                            Ignored by CN-Metabolism when `explicit_tillers` is True.
+        :param bool explicit_tillers: if True, CN-Metabolism builds and integrates a real :class:`Axis` for every tiller present in the MTG (sharing the roots/phloem/grains/endosperm of the main
+                                            stem, since those organs are not duplicated per tiller in the MTG), instead of lumping tillers into the main stem via `tillers_replications` weights.
+                                            Also makes Gas-Exchange compute real photosynthesis/transpiration, Growth compute real dimensional/mass growth, and Senescence compute real senescence,
+                                            for every tiller instead of only the main stem's.
         :param str or list or None stored_times: time steps at which the model outputs are stored. Either 'all', a list of time steps (hours), or an empty list.
         :param bool computing_light_interception: whether to run the Caribu facade to compute light interception; if False, organs keep whatever `PARa`/`Erel` they were initialised with.
         :param bool external_soil_model: whether an external soil model is coupled to cnmetabolism. If True, cnmetabolism will skip its own soil calculations and expect root N uptake to be forced
@@ -192,7 +197,9 @@ class CNW_Grass(Model):
         self.N_fertilizations = N_fertilizations
 
         # plant parameters
+        tillers_replications = tillers_replications if not explicit_tillers else None
         self.tillers_replications = tillers_replications
+        self.explicit_tillers = explicit_tillers
 
         # logging and data structures
         self.stored_times = stored_times
@@ -273,7 +280,8 @@ class CNW_Grass(Model):
                                                                 optimal_growth_option=optimal_growth_option,
                                                                 option_static=option_static,
                                                                 update_parameters=update_parameters_morphogenesis,
-                                                                update_shared_df=UPDATE_SHARED_DF)
+                                                                update_shared_df=UPDATE_SHARED_DF,
+                                                                explicit_tillers=explicit_tillers)
 
         # -- CARIBU --
         if self.computing_light_interception:
@@ -311,6 +319,7 @@ class CNW_Grass(Model):
                                                                 self.shared_organs_inputs_outputs_df,
                                                                 self.shared_axes_inputs_outputs_df,
                                                                 self.shared_elements_inputs_outputs_df,
+                                                                explicit_tillers=explicit_tillers,
                                                                 update_parameters=update_parameters_senescence,
                                                                 update_shared_df=UPDATE_SHARED_DF,
                                                                 cnwgrass_roots=cnwgrass_roots)
@@ -333,6 +342,7 @@ class CNW_Grass(Model):
                                                                         self.shared_elements_inputs_outputs_df,
                                                                         stomatal_model_name=stomatal_model_name,
                                                                         hydraulics=hydraulics,
+                                                                        explicit_tillers=explicit_tillers,
                                                                         update_parameters=update_parameters_gasexchange,
                                                                         update_shared_df=UPDATE_SHARED_DF)
 
@@ -361,6 +371,7 @@ class CNW_Grass(Model):
                                                                 self.shared_elements_inputs_outputs_df,
                                                                 self.shared_axes_inputs_outputs_df,
                                                                 hydraulics=hydraulics,
+                                                                explicit_tillers=explicit_tillers,
                                                                 update_parameters=update_parameters_growth,
                                                                 update_shared_df=UPDATE_SHARED_DF,
                                                                 cnwgrass_roots=cnwgrass_roots)
@@ -414,6 +425,7 @@ class CNW_Grass(Model):
                                                     self.shared_elements_inputs_outputs_df,
                                                     self.shared_soils_inputs_outputs_df,
                                                     tillers_replications=tillers_replications,
+                                                    explicit_tillers=explicit_tillers,
                                                     external_soil_model=external_soil_model,
                                                     update_shared_df=UPDATE_SHARED_DF,
                                                     isolated_roots=isolated_roots,
@@ -484,7 +496,8 @@ class CNW_Grass(Model):
                                                                     self.shared_soils_inputs_outputs_df,
                                                                     update_shared_df=UPDATE_SHARED_DF,
                                                                     isolated_roots=isolated_roots,
-                                                                    cnwgrass_roots=cnwgrass_roots)
+                                                                    cnwgrass_roots=cnwgrass_roots,
+                                                                    explicit_tillers=explicit_tillers)
 
         # -- MODEL INTEGRATION --
         # Facade initialisation
@@ -566,7 +579,12 @@ class CNW_Grass(Model):
                 # print("sent potential", self.props[name][1])
 
             elif name == "mstruct_axis":
-                self.props[name].update({1: self.g.get_vertex_property(2)['mstruct']})
+                #: Whole-plant total structural mass (all axes' own shoot mstruct, plus the single shared
+                #: roots/grains which are only folded into the main stem's -- see
+                #: cnmetabolism.model.Axis.calculate_aggregated_variables). Reading only vertex 2 (MS) would
+                #: silently drop every explicit tiller's own real shoot mstruct; this reduces to exactly
+                #: today's MS-only value when tiller axes carry no 'mstruct' (i.e. explicit_tillers=False).
+                self.props[name].update({1: sum(self.g.get_vertex_property(v).get('mstruct', 0.0) for v in self.g.vertices(scale=2))})
 
             elif name == "amino_acids_phloem":
                 self.props[name].update({1: self.g.get_vertex_property(2)['phloem']['amino_acids']})
@@ -667,7 +685,7 @@ class CNW_Grass(Model):
         # run hydraulics
         if self.hydraulics:
             if self.cnwgrass_roots:
-                turgor_soil = hydraulics_facade_.soils[(1, 'MS')]
+                turgor_soil = self.hydraulics_facade_.soils[(1, 'MS')]
                 # Trigger drought
                 if drought_trigger is not None and 'green_area' in drought_trigger.keys():
                     if  (sum(g.property('green_area').values()) >= drought_trigger['green_area'] or drought_ongoing) and not drought_passed:
@@ -738,7 +756,7 @@ class CNW_Grass(Model):
 
 
 def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs", OUTPUTS_DIRPATH = "outputs", METEO_FILENAME = "meteo_Ljutovac2002.csv", plant_density = {1:250},
-                     forced_start_time = 0, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, N_fertilizations = {2016: 357143, 2520: 1000000},
+                     forced_start_time = 0, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}, explicit_tillers=False, N_fertilizations = {2016: 357143, 2520: 1000000},
                      stored_times = None, option_static = False, single_plant = False, show_3Dplant = False, run_from_outputs = False, heterogeneous_canopy = True, update_parameters_all_models = None,
                      isolated_roots = False, cnwgrass_roots = True, hydraulics = False):
     scenario = {}
@@ -847,6 +865,7 @@ def scenario_utility(time_step_in_seconds: int = 3600, INPUTS_DIRPATH = "inputs"
     scenario["option_static"] = option_static
     scenario["show_3Dplant"] = show_3Dplant
     scenario["tillers_replications"] = tillers_replications
+    scenario["explicit_tillers"] = explicit_tillers
     scenario["heterogeneous_canopy"] = heterogeneous_canopy
     scenario["N_fertilizations"] = N_fertilizations
     scenario["update_parameters_all_models"] = update_parameters_all_models

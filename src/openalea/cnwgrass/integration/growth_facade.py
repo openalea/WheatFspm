@@ -41,6 +41,18 @@ class GrowthFacade(object):
 
 """
 
+    #: hiddenzone-scale inputs declared as required by the Growth model but not unconditionally needed:
+    #: 'leaf_Lmax'/'internode_Lmax' are never actually read by any computation in growth/simulation.py;
+    #: 'is_over' is only ever written by Growth, never read as an input; 'delta_internode_pseudo_age' /
+    #: 'delta_leaf_pseudo_age' are declared in morphogenesis's own `hiddenzone_outputs` (written) but NOT in its
+    #: `hiddenzone_inputs` (read from the MTG) -- they only exist in the MTG once morphogenesis's real,
+    #: MS-only computation has freshly added them that same time step (internode past ligulation / leaf past
+    #: emergence), which is also exactly the only case Growth itself ever reads them (see the
+    #: `internode_pseudo_age >= internode_rapid_growth_t` / `leaf_is_growing` gates in growth/simulation.py) --
+    #: so requiring them here before that state is ever reached would permanently exclude the hiddenzone.
+    #: See the note where this is used in `_initialize_model`.
+    HIDDENZONE_INPUTS_NOT_REQUIRED = {'leaf_Lmax', 'internode_Lmax', 'is_over', 'delta_internode_pseudo_age', 'delta_leaf_pseudo_age'}
+
     def __init__(self, shared_mtg, delta_t,
                  model_hiddenzones_inputs_df,
                  model_elements_inputs_df,
@@ -51,6 +63,7 @@ class GrowthFacade(object):
                  shared_elements_inputs_outputs_df,
                  shared_axes_inputs_outputs_df,
                  hydraulics=False,
+                 explicit_tillers=False,
                  update_parameters=None,
                  update_shared_df=True,
                  cnwgrass_roots=True):
@@ -67,11 +80,13 @@ class GrowthFacade(object):
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
         :param pandas.DataFrame shared_axes_inputs_outputs_df: the dataframe of inputs and outputs at axis scale shared between all models.
         :param bool hydraulics: if True the model will assume the coupling to the turgor-driven growth model
+        :param bool explicit_tillers: if True, compute real dimensional/mass growth for every tiller's hiddenzones/elements found in the MTG, instead of only the main stem's.
         :param dict or None update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
         :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
 
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
+        self.explicit_tillers = explicit_tillers
 
         self._simulation = simulation.Simulation(delta_t=delta_t, hydraulics=hydraulics, update_parameters=update_parameters, cnwgrass_roots=cnwgrass_roots)  #: the simulator to use to run the model
 
@@ -122,7 +137,13 @@ class GrowthFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
-                if mtg_axis_label != 'MS':
+                if isinstance(mtg_axis_label, bytes):
+                    #: Some MTGs carry byte-string axis labels (numpy.bytes_ included) -- normalize to str so
+                    #: 'MS' comparisons behave consistently, and so hiddenzone_id/element_id tuples built from it
+                    #: don't mix str and bytes axis labels within the same `sorted(...)` call in growth/simulation.py
+                    #: (str/bytes are not orderable against each other and sorted() raises TypeError otherwise).
+                    mtg_axis_label = mtg_axis_label.decode('UTF-8')
+                if mtg_axis_label != 'MS' and not self.explicit_tillers:
                     continue
 
                 mtg_axis_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)
@@ -160,10 +181,23 @@ class GrowthFacade(object):
                         hiddenzone_id = (mtg_plant_index, mtg_axis_label, mtg_metamer_index)
                         mtg_hiddenzone_properties = mtg_metamer_properties['hiddenzone']
 
-                        if set(mtg_hiddenzone_properties).issuperset(self._simulation.hiddenzone_inputs):  # Initial values are set by morphogenesis
+                        #: 'leaf_Lmax' / 'internode_Lmax' are declared as required hiddenzone inputs but never
+                        #: actually read by any computation in growth/simulation.py, and 'is_over' is Growth's
+                        #: own output (only ever written, never read as an input) -- so none of the three need to
+                        #: already be present in the MTG. This matters for a brand-new tiller hiddenzone: under
+                        #: hydraulics=True, morphogenesis itself stops tracking 'leaf_Lmax' (see
+                        #: morphogenesis/model.py's `variables_to_delete`), so a tiller can never inherit it from
+                        #: MS via the copy mechanism, and 'is_over' is never set until Growth itself first
+                        #: processes the hiddenzone -- requiring them here would permanently exclude every tiller.
+                        required_hiddenzone_inputs = set(self._simulation.hiddenzone_inputs) - GrowthFacade.HIDDENZONE_INPUTS_NOT_REQUIRED
+                        if set(mtg_hiddenzone_properties).issuperset(required_hiddenzone_inputs):  # Initial values are set by morphogenesis
                             growth_hiddenzone_inputs_dict = {}
                             for growth_hiddenzone_input_name in self._simulation.hiddenzone_inputs:
-                                growth_hiddenzone_inputs_dict[growth_hiddenzone_input_name] = mtg_hiddenzone_properties[growth_hiddenzone_input_name]
+                                #: default to 0.0 (not None) when absent: 'delta_internode_pseudo_age' / 'delta_leaf_pseudo_age'
+                                #: can genuinely be read by a numeric computation once the corresponding hiddenzone
+                                #: reaches the relevant developmental stage (see HIDDENZONE_INPUTS_NOT_REQUIRED above);
+                                #: 0.0 ("no progress this step") is a safe fallback there, whereas None would raise.
+                                growth_hiddenzone_inputs_dict[growth_hiddenzone_input_name] = mtg_hiddenzone_properties.get(growth_hiddenzone_input_name, 0.0)
                             all_growth_hiddenzones_inputs_dict[hiddenzone_id] = growth_hiddenzone_inputs_dict
 
                         # We take only the elements of growing metamers i.e. the ones with hiddenzones
@@ -224,9 +258,18 @@ class GrowthFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
+                if isinstance(mtg_axis_label, bytes):
+                    mtg_axis_label = mtg_axis_label.decode('UTF-8')
                 axis_id = (mtg_plant_index, mtg_axis_label)
 
-                if mtg_axis_label != 'MS':
+                if mtg_axis_label != 'MS' and not self.explicit_tillers:
+                    continue
+
+                if axis_id not in all_growth_axes_data_dict:
+                    #: A tiller freshly created by morphogenesis this same time step, or otherwise not yet
+                    #: carrying the axis-scale inputs Growth requires, was excluded from _initialize_model's
+                    #: inputs (see the `set(...).issuperset(...)` check above) and so has no output either --
+                    #: skip it for this time step rather than crashing on a missing dict entry.
                     continue
 
                 growth_axis_data_dict = all_growth_axes_data_dict[axis_id]
@@ -254,8 +297,16 @@ class GrowthFacade(object):
                         for hiddenzone_data_name, hiddenzone_data_value in growth_hiddenzone_data_dict.items():
                             self._shared_mtg.property('hiddenzone')[mtg_metamer_vid][hiddenzone_data_name] = hiddenzone_data_value
 
-                    elif 'hiddenzone' in self._shared_mtg.get_vertex_property(mtg_metamer_vid):
-                        # remove the 'hiddenzone' property from this metamer
+                    elif mtg_axis_label == 'MS' and 'hiddenzone' in self._shared_mtg.get_vertex_property(mtg_metamer_vid):
+                        #: remove the 'hiddenzone' property from this metamer -- only valid for the main stem,
+                        #: whose hiddenzones are self-sustained by Growth's own writes every time step (see the
+                        #: `issuperset` check in _initialize_model): there, hiddenzone_id being absent from
+                        #: Growth's outputs really does mean this leaf has fully emerged and its hiddenzone is
+                        #: legitimately gone. A tiller's hiddenzone is never self-sustained that way (it is
+                        #: seeded from morphogenesis's copy-from-MS mechanism, not from Growth), so its
+                        #: hiddenzone_id can be absent from Growth's outputs simply because Growth doesn't have
+                        #: all the inputs it wants for it yet -- deleting it in that case would silently wipe
+                        #: the tiller's own geometry, not reflect a real developmental event.
                         del self._shared_mtg.property('hiddenzone')[mtg_metamer_vid]
 
                     #: Organ scale

@@ -47,6 +47,7 @@ class GasExchangeFacade(object):
                  shared_elements_inputs_outputs_df,
                  stomatal_model_name='BWB',
                  hydraulics=False,
+                 explicit_tillers=False,
                  update_parameters=None,
                  update_shared_df=True):
         """
@@ -56,10 +57,12 @@ class GasExchangeFacade(object):
         :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
         :param str stomatal_model_name: the model of stomatal conductance. Should be one of 'BWB', 'Leuning', 'Tuzet' or 'hydraulics'.
         :param bool hydraulics: if True the model will assume the coupling to the turgor-driven growth model.
+        :param bool explicit_tillers: if True, compute real photosynthesis/transpiration/stomatal conductance for every tiller element found in the MTG, instead of only the main stem's.
         :param None or dict update_parameters: A dictionary with the parameters to update, should have the form {'param1': value1, 'param2': value2, ...}.
         :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
         self._shared_mtg = shared_mtg  #: the MTG shared between all models
+        self.explicit_tillers = explicit_tillers
 
         self._simulation = simulation.Simulation(update_parameters=update_parameters, stomatal_model_name=stomatal_model_name, hydraulics=hydraulics)  #: the simulator to use to run the model
 
@@ -81,7 +84,7 @@ class GasExchangeFacade(object):
         Run the model and update the MTG and the dataframes shared between all models.
 
         :param float Ta: air temperature at t (degree Celsius)
-        :param float ambient_CO2: air CO2 at t (µmol mol-1)
+        :param float ambient_CO2: air CO2 at t (Âµmol mol-1)
         :param float RH: relative humidity at t (decimal fraction)
         :param float Ur: wind speed at the top of the canopy at t (m s-1)
         :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
@@ -106,7 +109,7 @@ class GasExchangeFacade(object):
             mtg_plant_index = int(self._shared_mtg.index(mtg_plant_vid))
             for mtg_axis_vid in self._shared_mtg.components_iter(mtg_plant_vid):
                 mtg_axis_label = self._shared_mtg.label(mtg_axis_vid)
-                if mtg_axis_label != 'MS':
+                if mtg_axis_label != 'MS' and not self.explicit_tillers:
                     continue
                 axis_id = (mtg_plant_index, mtg_axis_label)
                 gasexchange_axis_inputs_dict = {}
@@ -152,7 +155,11 @@ class GasExchangeFacade(object):
                                         triangle_heights = get_height({mtg_element_vid: self._shared_mtg.property('geometry')[mtg_element_vid]})
                                         mtg_element_input = np.nanmean(triangle_heights[mtg_element_vid])
                                     else:
-                                        mtg_element_input = 0
+                                        #: too small to have a geometry yet -- NaN (not 0) so run() treats it like a
+                                        #: HiddenElement (no photosynthesis calculation), consistent with the comment
+                                        #: in gasexchange/simulation.py's run(). A literal 0 was feeding Zh=0 into
+                                        #: organ_temperature(), causing a divide-by-zero.
+                                        mtg_element_input = np.nan
                                     height_element_list.append(mtg_element_input)
                                 #: Width is actually diameter for Sheath and Internodes
                                 if mtg_organ_label in ['sheath', 'internode', 'pedoncule', 'ear'] and gasexchange_element_input_name == 'width':

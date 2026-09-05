@@ -164,7 +164,7 @@ class Phytomer:
         self.hiddenzone = hiddenzone  #: the hidden zone
         if cohorts is None:
             cohorts = []
-        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait �tre port� � l'�chelle de la plante uniquement mais je ne vois pas comment faire mieux
+        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
         self.cohorts_replications = cohorts_replications  #: dictionary of number of replications per cohort rank
 
         # integrative variables
@@ -294,7 +294,7 @@ class HiddenZone(Organ):
 
         if cohorts is None:
             cohorts = []
-        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait �tre port� � l'�chelle de la plante uniquement mais je ne vois pas comment faire mieux
+        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
         self.cohorts_replications = cohorts_replications  #: dictionary of number of replications per cohort rank
         self.index = index
         self.label = label
@@ -304,12 +304,12 @@ class HiddenZone(Organ):
         self.amino_acids = amino_acids           #: :math:`:math:`\\mu mol N``
         self.proteins = proteins                 #: :math:`:math:`\\mu mol N``
         self.sucrose = sucrose                   #: :math:`:math:`\\mu mol C``
-        self.leaf_pseudo_age = leaf_pseudo_age   #: �Cd
+        self.leaf_pseudo_age = leaf_pseudo_age   #: °Cd
         self.leaf_L = leaf_L                     #: m
         self.leaf_is_growing = leaf_is_growing   #: -
         self.mstruct = mstruct                   #: g
         self.leaf_enclosed_mstruct = leaf_enclosed_mstruct                   #: g
-        self.hiddenzone_age = hiddenzone_age                          #: �Cd
+        self.hiddenzone_age = hiddenzone_age                          #: °Cd
         self.length = min(leaf_L, leaf_pseudostem_length)       #: m
         self.leaf_pseudostem_length = leaf_pseudostem_length    #: m
         self.lamina_Lmax = lamina_Lmax  #: m
@@ -379,16 +379,24 @@ class HiddenZone(Organ):
     def calculate_osmotic_water_potential(fructan, sucrose, amino_acids, volume, temperature):
         """ Osmotic water potential of the organ calculated according to metabolites
 
-        :param float fructan: �mol C under the form of fructan
-        :param float sucrose: �mol C under the form of sucrose
-        :param float amino_acids: �mol N under the form of amino acids
+        :param float fructan: µmol C under the form of fructan
+        :param float sucrose: µmol C under the form of sucrose
+        :param float amino_acids: µmol N under the form of amino acids
         :param float volume: (g H2O)
-        :param float temperature: hidden zone temperature, approximated by SAM temperature (�C)
+        :param float temperature: hidden zone temperature, approximated by SAM temperature (°C)
 
         :return: Osmotic water potential (MPa)
         :rtype: float
         """
         temperature_K = temperature + parameters.CELSIUS_2_KELVIN
+
+        #: A pathologically small (just-tracked tiller) element/hiddenzone can have a volume many orders of
+        #: magnitude below anything MS ever produces, making this division blow up and feed a runaway loop via
+        #: calculate_delta_turgor_water_potential -> water_potential -> water_influx. Floor at a scale chosen
+        #: to sit between the smallest observed pathological case (~7.8e-13 m3, a just-tracked tiller element)
+        #: and the smallest observed legitimate one (~6.3e-10 m3, a genuinely tiny but stable MS sheath
+        #: element) -- low enough to never engage for real, self-balancing MS/tiller dynamics.
+        volume = max(volume, 1E-11)
 
         #: Concentration of solutes
         sucrose = (sucrose * 1E-6) / parameters.NB_C_SUCROSE
@@ -516,7 +524,7 @@ class HiddenZone(Organ):
         From Coussement et al. (2018)
         With temperature effect on leaf_pseudo_age and on maximum extensibility.
 
-        :param float age: hidden zone age (�Cd)
+        :param float age: hidden zone age (°Cd)
         :param float delta_teq: temperature-compensated time (s)
         :param float delta_t: time step of the simulation (s)
 
@@ -564,6 +572,9 @@ class HiddenZone(Organ):
         epsilon_x, epsilon_y, epsilon_z = HiddenZone.PARAMETERS.epsilon['x'], HiddenZone.PARAMETERS.epsilon['y'], HiddenZone.PARAMETERS.epsilon['z']
         elastic_component = (epsilon_x * epsilon_y * epsilon_z) / (epsilon_z * epsilon_x + epsilon_z * epsilon_y + epsilon_x * epsilon_y)   #: Elastic reversible growth (MPa)
         plastic_component = (phi['x'] + phi['y'] + phi['z'])   #: Plastic irreversible growth
+
+        #: See the identical guard (and its rationale) in calculate_osmotic_water_potential above.
+        organ_volume = max(organ_volume, 2E-11)
 
         delta_turgor_water_potential = ((1 / (
                     parameters.RHO_WATER * organ_volume * parameters.VSTORAGE)) * delta_water_content - plastic_component * (max(turgor_water_potential, HiddenZone.PARAMETERS.GAMMA) - HiddenZone.PARAMETERS.GAMMA)) * elastic_component  #: (MPa)
@@ -722,14 +733,14 @@ class PhotosyntheticOrganElement:
 
         self.label = label                                      #: the label of the element
         self.index = index
-        if cohorts is None:  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait �tre port� � l'�chelle de la plante uniquement mais je ne vois pas comment faire mieux
+        if cohorts is None:  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
             cohorts = []
-        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait �tre port� � l'�chelle de la plante uniquement mais je ne vois pas comment faire mieux
+        self.cohorts = cohorts  #: list of cohort values - Hack to treat tillering cases : TEMPORARY. Devrait être porté à l'échelle de la plante uniquement mais je ne vois pas comment faire mieux
         self.cohorts_replications = cohorts_replications  #: dictionary of number of replications per cohort rank
 
         # state parameters
         self.is_growing = is_growing                            #: -
-        self.age = age                                          #: �Cd
+        self.age = age                                          #: °Cd
         self.Wmax = Wmax                                        #: m
         self.amino_acids = amino_acids                          #: :math:`:math:`\\mu mol N``
         self.green_area = green_area                            #: m2
@@ -737,8 +748,8 @@ class PhotosyntheticOrganElement:
         self.proteins = proteins                                #: :math:`:math:`\\mu mol N``
         self.sucrose = sucrose                                  #: :math:`:math:`\\mu mol C``
         self.fructan = fructan                                  #: :math:`:math:`\\mu mol C``
-        self.Ts = Ts                                            #: �C
-        self.temperature = temperature                          #: �C
+        self.Ts = Ts                                            #: °C
+        self.temperature = temperature                          #: °C
         self.Tr = Tr                                            #: mmol H20 m-2 s-1
         self.thickness = thickness                              #: m
         self.width = width                                      #: m
@@ -847,17 +858,20 @@ class PhotosyntheticOrganElement:
     def calculate_osmotic_water_potential(sucrose, amino_acids, volume, temperature, fructan):
         """ Osmotic water potential of the hiddenzone calculated according to metabolites
 
-        :param float sucrose: �mol C under the form of sucrose
-        :param float amino_acids: �mol N under the form of amino acids
+        :param float sucrose: µmol C under the form of sucrose
+        :param float amino_acids: µmol N under the form of amino acids
         :param float volume: (m3)
-        :param float temperature: air temperature (�C)
-        :param float fructan: �mol C under the form of fructan
+        :param float temperature: air temperature (°C)
+        :param float fructan: µmol C under the form of fructan
 
         :return: Osmotic water potential (MPa)
         :rtype: float
 
         """
         temperature_K = temperature + parameters.CELSIUS_2_KELVIN
+
+        #: See the identical guard (and its rationale) in HiddenZone.calculate_osmotic_water_potential.
+        volume = max(volume, 1E-11)
 
         #: Concentration of solutes
         sucrose = (sucrose * 1E-6) / parameters.NB_C_SUCROSE
@@ -926,6 +940,10 @@ class PhotosyntheticOrganElement:
         epsilon_z, epsilon_x, epsilon_y = PhotosyntheticOrganElement.PARAMETERS.epsilon['z'], PhotosyntheticOrganElement.PARAMETERS.epsilon['x'], PhotosyntheticOrganElement.PARAMETERS.epsilon['y']
         elastic_component = (epsilon_z * epsilon_x * epsilon_y) / (epsilon_z * epsilon_x + epsilon_z * epsilon_y + epsilon_x * epsilon_y)  #: Elastic reversible growth (MPa)
         plastic_component = 0   #: Plastic irreversible growth (MPa)
+
+        #: See the identical guard (and its rationale) in HiddenZone.calculate_osmotic_water_potential.
+        volume = max(volume, 1E-11)
+
         delta_turgor_water_potential = ((1 / (
                     parameters.RHO_WATER * volume * parameters.VSTORAGE)) * delta_water_content - plastic_component) * elastic_component  #: (MPa)
 
